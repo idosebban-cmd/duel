@@ -1,0 +1,141 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+export interface OnboardingState {
+  // Avatar
+  character: string | null;
+  element: string | null;
+  affiliation: string | null;
+
+  // Basics
+  name: string;
+  birthday: string | null; // ISO string for localStorage compatibility
+  age: number | null;
+  gender: 'woman' | 'man' | 'non-binary' | null;
+  interestedIn: 'men' | 'women' | 'everyone' | null;
+  location: string;
+
+  // Photos
+  photos: string[]; // base64 data URLs for persistence
+
+  // Games
+  gameTypes: string[];
+  favoriteGames: string[];
+
+  // Relationship
+  lookingFor: 'casual' | 'short-term' | 'long-term' | 'not-sure' | 'open' | null;
+
+  // Lifestyle
+  kids: string | null;
+  drinking: string | null;
+  smoking: string | null;
+  cannabis: string | null;
+  pets: string | null;
+  exercise: string | null;
+
+  // Navigation
+  currentStep: number;
+  completedSteps: number[];
+}
+
+interface OnboardingActions {
+  updateAvatar: (character: string, element: string, affiliation: string) => void;
+  updateBasics: (data: {
+    name: string;
+    birthday: string;
+    age: number;
+    gender: 'woman' | 'man' | 'non-binary';
+    interestedIn: 'men' | 'women' | 'everyone';
+    location: string;
+  }) => void;
+  updatePhotos: (photos: string[]) => void;
+  updateGameTypes: (gameTypes: string[]) => void;
+  updateFavoriteGames: (favoriteGames: string[]) => void;
+  updateRelationship: (lookingFor: OnboardingState['lookingFor']) => void;
+  updateLifestyle: (field: keyof Pick<OnboardingState, 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise'>, value: string) => void;
+  completeStep: (step: number) => void;
+  setCurrentStep: (step: number) => void;
+  reset: () => void;
+}
+
+const initialState: OnboardingState = {
+  character: null,
+  element: null,
+  affiliation: null,
+  name: '',
+  birthday: null,
+  age: null,
+  gender: null,
+  interestedIn: null,
+  location: '',
+  photos: [],
+  gameTypes: [],
+  favoriteGames: [],
+  lookingFor: null,
+  kids: null,
+  drinking: null,
+  smoking: null,
+  cannabis: null,
+  pets: null,
+  exercise: null,
+  currentStep: 0,
+  completedSteps: [],
+};
+
+export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
+  persist(
+    (set) => ({
+      ...initialState,
+
+      updateAvatar: (character, element, affiliation) =>
+        set({ character, element, affiliation }),
+
+      updateBasics: (data) =>
+        set({
+          name: data.name,
+          birthday: data.birthday,
+          age: data.age,
+          gender: data.gender,
+          interestedIn: data.interestedIn,
+          location: data.location,
+        }),
+
+      updatePhotos: (photos) => set({ photos }),
+
+      updateGameTypes: (gameTypes) => set({ gameTypes }),
+
+      updateFavoriteGames: (favoriteGames) => set({ favoriteGames }),
+
+      updateRelationship: (lookingFor) => set({ lookingFor }),
+
+      updateLifestyle: (field, value) =>
+        set((state) => ({ ...state, [field]: value })),
+
+      completeStep: (step) =>
+        set((state) => ({
+          completedSteps: state.completedSteps.includes(step)
+            ? state.completedSteps
+            : [...state.completedSteps, step],
+        })),
+
+      setCurrentStep: (step) => set({ currentStep: step }),
+
+      reset: () => set(initialState),
+    }),
+    {
+      name: 'duel-onboarding',
+    }
+  )
+);
+
+// Step definitions for routing
+export const STEPS = [
+  { id: 0, path: '/onboarding/welcome', label: 'Welcome' },
+  { id: 1, path: '/onboarding/avatar', label: 'Avatar' },
+  { id: 2, path: '/onboarding/basics', label: 'Basics' },
+  { id: 3, path: '/onboarding/photos', label: 'Photos' },
+  { id: 4, path: '/onboarding/games', label: 'Games' },
+  { id: 5, path: '/onboarding/relationship-goals', label: 'Goals' },
+  { id: 6, path: '/onboarding/lifestyle', label: 'Lifestyle' },
+  { id: 7, path: '/onboarding/preview', label: 'Preview' },
+] as const;

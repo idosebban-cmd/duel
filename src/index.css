@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  body {
+    @apply font-body bg-cream text-charcoal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Manga-style text outline */
+  .text-outline {
+    text-shadow:
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000;
+  }
+
+  .text-outline-sm {
+    text-shadow:
+      -1px -1px 0 rgba(0,0,0,0.7),
+      1px -1px 0 rgba(0,0,0,0.7),
+      -1px 1px 0 rgba(0,0,0,0.7),
+      1px 1px 0 rgba(0,0,0,0.7);
+  }
+
+  /* Gradient text */
+  .gradient-text-pink {
+    background: linear-gradient(135deg, #FF6BA8, #FF3D71);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-text-multi {
+    background: linear-gradient(135deg, #FF6BA8, #B565FF, #00D9FF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glossy overlay effect */
+  .glossy::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  /* Halftone dots */
+  .halftone {
+    background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #FFF8F0;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #FF6BA8;
+    border-radius: 999px;
+  }
+
+  /* Card selection glow */
+  .card-selected-pink {
+    box-shadow: 0 0 0 4px #FF6BA8, 0 0 20px rgba(255, 107, 168, 0.5);
+  }
+
+  .card-selected-cyan {
+    box-shadow: 0 0 0 4px #00D9FF, 0 0 20px rgba(0, 217, 255, 0.5);
+  }
+
+  .card-selected-purple {
+    box-shadow: 0 0 0 4px #B565FF, 0 0 20px rgba(181, 101, 255, 0.5);
+  }
+}
