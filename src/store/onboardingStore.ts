@@ -124,6 +124,10 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
+      partialize: (state) => {
+        const { photos: _photos, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
