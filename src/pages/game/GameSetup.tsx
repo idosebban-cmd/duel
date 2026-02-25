@@ -29,7 +29,11 @@ export function GameSetup() {
   const onboarding = useOnboardingStore();
 
   const defaultName = onboarding.name || '';
-  const defaultAvatar = onboarding.character ? '🎮' : '🎮';
+  const characterId = onboarding.character;
+  const characterImagePath = characterId
+    ? `/characters/${characterId.charAt(0).toUpperCase() + characterId.slice(1)}.png`
+    : null;
+  const defaultAvatar = characterImagePath ?? '🎮';
 
   const [name, setName] = useState(defaultName);
   const [avatar, setAvatar] = useState(defaultAvatar);
@@ -159,21 +163,33 @@ export function GameSetup() {
 
           <div>
             <p className="font-body text-white/40 text-xs mb-2">Avatar</p>
-            <div className="flex flex-wrap gap-2">
-              {AVATARS.map((a) => (
-                <button
-                  key={a}
-                  onClick={() => setAvatar(a)}
-                  className="w-9 h-9 rounded-xl text-xl flex items-center justify-center transition-all"
-                  style={{
-                    background: avatar === a ? 'rgba(78,255,196,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: avatar === a ? '2px solid #4EFFC4' : '2px solid rgba(255,255,255,0.1)',
-                  }}
+            {characterImagePath ? (
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden"
+                  style={{ background: 'rgba(78,255,196,0.2)', border: '2px solid #4EFFC4' }}
                 >
-                  {a}
-                </button>
-              ))}
-            </div>
+                  <img src={characterImagePath} alt="avatar" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
+                </div>
+                <p className="font-body text-white/40 text-xs">Using your character</p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {AVATARS.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAvatar(a)}
+                    className="w-9 h-9 rounded-xl text-xl flex items-center justify-center transition-all"
+                    style={{
+                      background: avatar === a ? 'rgba(78,255,196,0.2)' : 'rgba(255,255,255,0.05)',
+                      border: avatar === a ? '2px solid #4EFFC4' : '2px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
 
