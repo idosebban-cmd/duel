@@ -81,8 +81,12 @@ export function LobbyScreen() {
       setError(message);
     });
 
-    if (!socket.connected) socket.connect();
-    else socket.emit('join_lobby', { gameId, userId: myUserId });
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      setConnectionStatus('connected');
+      socket.emit('join_lobby', { gameId, userId: myUserId });
+    }
 
     return () => {
       socket.off('connect');
