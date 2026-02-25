@@ -38,19 +38,18 @@ export function CharacterCard({
         transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
       >
         {/* Front face */}
-        <div
+        <motion.div
           className="absolute inset-0 rounded-xl overflow-hidden cursor-pointer"
           style={{
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            background: isSelected
-              ? `linear-gradient(135deg, ${character.color}33, ${character.color}66)`
-              : `linear-gradient(135deg, ${character.color}22, white)`,
             border: isSelected
               ? `3px solid ${character.color}`
               : isMySecret
               ? '3px solid #FF9F1C'
-              : '2px solid black',
+              : isSelectable
+              ? '2px solid rgba(255,255,255,0.3)'
+              : '2px solid rgba(0,0,0,0.12)',
             boxShadow: isSelected
               ? `0 0 0 2px ${character.color}, 0 0 16px ${character.color}88`
               : isSelectable
@@ -58,42 +57,33 @@ export function CharacterCard({
               : '2px 2px 0 rgba(0,0,0,0.1)',
           }}
           onClick={isSelectable && !isFlipped ? onClick : undefined}
+          whileHover={isSelectable && !isFlipped ? { y: -2, scale: 1.02 } : {}}
         >
-          {/* Emoji avatar */}
+          {/* Character image — fills the card */}
+          <img
+            src={character.image}
+            alt={character.name}
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: 'cover', imageRendering: 'pixelated' }}
+            draggable={false}
+          />
+
+          {/* Gradient overlay at the bottom for the name */}
           <div
-            className="flex items-center justify-center"
+            className="absolute inset-x-0 bottom-0 flex items-end justify-center"
             style={{
-              height: isLg ? 100 : 52,
-              fontSize: isLg ? 40 : 28,
-              background: `linear-gradient(135deg, ${character.color}44, ${character.color}22)`,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)',
+              paddingBottom: isLg ? 8 : 4,
+              paddingTop: isLg ? 28 : 16,
             }}
           >
-            {character.emoji}
+            <span
+              className="font-display font-bold text-white text-center leading-tight truncate px-1"
+              style={{ fontSize: isLg ? 13 : 7 }}
+            >
+              {character.name}
+            </span>
           </div>
-
-          {/* Name */}
-          <div
-            className="text-center font-display font-bold truncate px-1"
-            style={{
-              fontSize: isLg ? 13 : 7,
-              color: '#2D3142',
-              paddingTop: isLg ? 4 : 2,
-              paddingBottom: isLg ? 4 : 2,
-            }}
-          >
-            {character.name}
-          </div>
-
-          {/* Attribute badges (lg only) */}
-          {isLg && (
-            <div className="flex flex-wrap gap-1 px-2 pb-2 justify-center">
-              {character.attributes.glasses && <Badge label="Glasses" color="#00D9FF" />}
-              {character.attributes.hat && <Badge label="Hat" color="#FFE66D" />}
-              {character.attributes.facialHair && <Badge label="Facial hair" color="#B565FF" />}
-              <Badge label={character.attributes.hairColor} color="#FF6BA8" />
-              <Badge label={character.attributes.gender} color="#4EFFC4" />
-            </div>
-          )}
 
           {/* My secret badge */}
           {isMySecret && (
@@ -117,16 +107,7 @@ export function CharacterCard({
               <span style={{ fontSize: 10, color: 'white' }}>✓</span>
             </motion.div>
           )}
-
-          {/* Hover lift (selectable only) */}
-          {isSelectable && (
-            <motion.div
-              className="absolute inset-0 rounded-xl"
-              whileHover={{ y: -2 }}
-              style={{ pointerEvents: 'none' }}
-            />
-          )}
-        </div>
+        </motion.div>
 
         {/* Back face (flipped) */}
         <div
@@ -143,16 +124,5 @@ export function CharacterCard({
         </div>
       </motion.div>
     </div>
-  );
-}
-
-function Badge({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className="rounded-full px-1.5 py-0.5 font-body font-medium capitalize"
-      style={{ fontSize: 9, background: `${color}33`, color: '#2D3142', border: `1px solid ${color}66` }}
-    >
-      {label}
-    </span>
   );
 }

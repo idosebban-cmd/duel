@@ -1,122 +1,37 @@
 [
   {
-    "id": "char_01", "name": "Maria",
-    "color": "#FF6BA8", "emoji": "💁‍♀️",
-    "attributes": { "gender": "woman", "hairColor": "brown", "hairLength": "long", "glasses": true, "hat": false, "facialHair": false, "accessories": ["earrings"], "ageRange": "young" }
+    "id": "char_01",
+    "name": "Luna",
+    "color": "#B565FF",
+    "image": "/characters/unicorn.png",
+    "attributes": { "type": "unicorn", "wings": false, "glasses": false, "hat": false, "magic": true, "color": "rainbow" }
   },
   {
-    "id": "char_02", "name": "Sofia",
-    "color": "#FF9F1C", "emoji": "🧢",
-    "attributes": { "gender": "woman", "hairColor": "blonde", "hairLength": "medium", "glasses": false, "hat": true, "facialHair": false, "accessories": ["necklace"], "ageRange": "middle-aged" }
+    "id": "char_02",
+    "name": "Pixel",
+    "color": "#7BC8F6",
+    "image": "/characters/cat.png",
+    "attributes": { "type": "cat", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "gray" }
   },
   {
-    "id": "char_03", "name": "Elena",
-    "color": "#B565FF", "emoji": "👓",
-    "attributes": { "gender": "woman", "hairColor": "black", "hairLength": "short", "glasses": true, "hat": false, "facialHair": false, "accessories": [], "ageRange": "older" }
+    "id": "char_03",
+    "name": "Ember",
+    "color": "#FF6B35",
+    "image": "/characters/phoenix.png",
+    "attributes": { "type": "phoenix", "wings": true, "glasses": false, "hat": false, "magic": true, "color": "fire" }
   },
   {
-    "id": "char_04", "name": "Zara",
-    "color": "#FF3D71", "emoji": "💃",
-    "attributes": { "gender": "woman", "hairColor": "red", "hairLength": "long", "glasses": false, "hat": false, "facialHair": false, "accessories": ["earrings"], "ageRange": "young" }
+    "id": "char_04",
+    "name": "Byte",
+    "color": "#00D9FF",
+    "image": "/characters/robot.png",
+    "attributes": { "type": "robot", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "blue" }
   },
   {
-    "id": "char_05", "name": "Priya",
-    "color": "#4EFFC4", "emoji": "🌸",
-    "attributes": { "gender": "woman", "hairColor": "black", "hairLength": "long", "glasses": true, "hat": false, "facialHair": false, "accessories": [], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_06", "name": "Luna",
-    "color": "#00D9FF", "emoji": "🌙",
-    "attributes": { "gender": "woman", "hairColor": "white", "hairLength": "short", "glasses": false, "hat": true, "facialHair": false, "accessories": ["necklace"], "ageRange": "older" }
-  },
-  {
-    "id": "char_07", "name": "Cleo",
-    "color": "#FFE66D", "emoji": "⚡",
-    "attributes": { "gender": "woman", "hairColor": "blonde", "hairLength": "short", "glasses": false, "hat": false, "facialHair": false, "accessories": [], "ageRange": "young" }
-  },
-  {
-    "id": "char_08", "name": "Iris",
-    "color": "#CAFFBF", "emoji": "🌺",
-    "attributes": { "gender": "woman", "hairColor": "brown", "hairLength": "medium", "glasses": true, "hat": true, "facialHair": false, "accessories": ["earrings"], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_09", "name": "Marco",
-    "color": "#FF8C42", "emoji": "🧔",
-    "attributes": { "gender": "man", "hairColor": "brown", "hairLength": "short", "glasses": false, "hat": false, "facialHair": true, "accessories": [], "ageRange": "young" }
-  },
-  {
-    "id": "char_10", "name": "Sam",
-    "color": "#7BC8F6", "emoji": "🕶️",
-    "attributes": { "gender": "man", "hairColor": "black", "hairLength": "short", "glasses": true, "hat": false, "facialHair": false, "accessories": [], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_11", "name": "Duke",
-    "color": "#F7B2BD", "emoji": "🤠",
-    "attributes": { "gender": "man", "hairColor": "blonde", "hairLength": "short", "glasses": false, "hat": true, "facialHair": true, "accessories": [], "ageRange": "older" }
-  },
-  {
-    "id": "char_12", "name": "Raj",
-    "color": "#9BF6FF", "emoji": "🎸",
-    "attributes": { "gender": "man", "hairColor": "black", "hairLength": "medium", "glasses": false, "hat": false, "facialHair": true, "accessories": [], "ageRange": "young" }
-  },
-  {
-    "id": "char_13", "name": "Felix",
-    "color": "#BDE0FE", "emoji": "🧐",
-    "attributes": { "gender": "man", "hairColor": "gray", "hairLength": "short", "glasses": true, "hat": false, "facialHair": false, "accessories": [], "ageRange": "older" }
-  },
-  {
-    "id": "char_14", "name": "Theo",
-    "color": "#FFAFCC", "emoji": "🎩",
-    "attributes": { "gender": "man", "hairColor": "red", "hairLength": "medium", "glasses": false, "hat": true, "facialHair": false, "accessories": [], "ageRange": "young" }
-  },
-  {
-    "id": "char_15", "name": "Bruno",
-    "color": "#A8DADC", "emoji": "💪",
-    "attributes": { "gender": "man", "hairColor": "bald", "hairLength": "bald", "glasses": true, "hat": false, "facialHair": true, "accessories": [], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_16", "name": "Kai",
-    "color": "#CDB4DB", "emoji": "😎",
-    "attributes": { "gender": "man", "hairColor": "blonde", "hairLength": "short", "glasses": true, "hat": true, "facialHair": true, "accessories": [], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_17", "name": "Alex",
-    "color": "#FF6B6B", "emoji": "✨",
-    "attributes": { "gender": "non-binary", "hairColor": "black", "hairLength": "short", "glasses": true, "hat": false, "facialHair": false, "accessories": ["earrings"], "ageRange": "young" }
-  },
-  {
-    "id": "char_18", "name": "River",
-    "color": "#4ECDC4", "emoji": "🌊",
-    "attributes": { "gender": "non-binary", "hairColor": "blonde", "hairLength": "long", "glasses": false, "hat": true, "facialHair": false, "accessories": ["necklace"], "ageRange": "young" }
-  },
-  {
-    "id": "char_19", "name": "Storm",
-    "color": "#45B7D1", "emoji": "⛈️",
-    "attributes": { "gender": "non-binary", "hairColor": "gray", "hairLength": "short", "glasses": false, "hat": false, "facialHair": true, "accessories": [], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_20", "name": "Sage",
-    "color": "#FFA07A", "emoji": "🌿",
-    "attributes": { "gender": "non-binary", "hairColor": "brown", "hairLength": "medium", "glasses": true, "hat": false, "facialHair": false, "accessories": ["earrings"], "ageRange": "middle-aged" }
-  },
-  {
-    "id": "char_21", "name": "Quinn",
-    "color": "#98D8C8", "emoji": "🦊",
-    "attributes": { "gender": "non-binary", "hairColor": "red", "hairLength": "long", "glasses": false, "hat": true, "facialHair": false, "accessories": [], "ageRange": "young" }
-  },
-  {
-    "id": "char_22", "name": "Robin",
-    "color": "#DDA0DD", "emoji": "🐦",
-    "attributes": { "gender": "non-binary", "hairColor": "white", "hairLength": "medium", "glasses": true, "hat": true, "facialHair": false, "accessories": ["necklace"], "ageRange": "older" }
-  },
-  {
-    "id": "char_23", "name": "Drew",
-    "color": "#F0E68C", "emoji": "🎭",
-    "attributes": { "gender": "non-binary", "hairColor": "brown", "hairLength": "short", "glasses": false, "hat": false, "facialHair": false, "accessories": [], "ageRange": "older" }
-  },
-  {
-    "id": "char_24", "name": "Lee",
-    "color": "#87CEEB", "emoji": "🌟",
-    "attributes": { "gender": "non-binary", "hairColor": "black", "hairLength": "medium", "glasses": true, "hat": false, "facialHair": false, "accessories": ["earrings"], "ageRange": "middle-aged" }
+    "id": "char_05",
+    "name": "Rex",
+    "color": "#FFE66D",
+    "image": "/characters/lion.png",
+    "attributes": { "type": "lion", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "golden" }
   }
 ]

@@ -1,19 +1,17 @@
 export interface CharacterAttributes {
-  gender: 'man' | 'woman' | 'non-binary';
-  hairColor: 'blonde' | 'brown' | 'black' | 'red' | 'gray' | 'white' | 'bald';
-  hairLength: 'short' | 'long' | 'medium' | 'bald';
+  type: 'unicorn' | 'cat' | 'phoenix' | 'robot' | 'lion';
+  wings: boolean;
   glasses: boolean;
   hat: boolean;
-  facialHair: boolean;
-  accessories: string[];
-  ageRange: 'young' | 'middle-aged' | 'older';
+  magic: boolean;
+  color: 'rainbow' | 'gray' | 'fire' | 'blue' | 'golden';
 }
 
 export interface Character {
   id: string;
   name: string;
   color: string;
-  emoji: string;
+  image: string;
   attributes: CharacterAttributes;
 }
 
