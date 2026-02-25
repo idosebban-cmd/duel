@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: duel-game
+    runtime: node
+    buildCommand: npm install && npm run build && cd server && npm install
+    startCommand: node server/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

@@ -1,6 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+// When served from the same origin as the server, use window.location.origin.
+// In dev, fall back to VITE_SERVER_URL or localhost:3001.
+const SERVER_URL =
+  import.meta.env.VITE_SERVER_URL ||
+  (typeof window !== 'undefined' && window.location.port !== '5173'
+    ? window.location.origin
+    : 'http://localhost:3001');
 
 let socket: Socket | null = null;
 
