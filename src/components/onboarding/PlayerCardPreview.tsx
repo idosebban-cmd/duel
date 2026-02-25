@@ -29,10 +29,13 @@ function createParticles(count: number): Particle[] {
   }));
 }
 
-const characterEmojis: Record<string, string> = {
-  dragon: '🐉', cat: '🐱', robot: '🤖', phoenix: '🔥',
-  bear: '🐻', fox: '🦊', octopus: '🐙', owl: '🦉',
-  wolf: '🐺', unicorn: '🦄', ghost: '👻', lion: '🦁',
+const characterImages: Record<string, string> = {
+  dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
+  robot: '/characters/Robot.png', phoenix: '/characters/Phoenix.png',
+  bear: '/characters/Bear.png', fox: '/characters/Fox.png',
+  octopus: '/characters/Octopus.png', owl: '/characters/Owl.png',
+  wolf: '/characters/Wolf.png', unicorn: '/characters/Unicorn.png',
+  ghost: '/characters/Ghost.png', lion: '/characters/Lion.png',
 };
 
 const elementEmojis: Record<string, string> = {
@@ -236,7 +239,9 @@ export function PlayerCardPreview() {
                     backdropFilter: 'blur(10px)',
                   }}
                 >
-                  {character ? characterEmojis[character] : '?'}
+                  {character && characterImages[character]
+                    ? <img src={characterImages[character]} alt={character} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
+                    : '?'}
                 </div>
 
                 {/* Element badge */}

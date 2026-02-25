@@ -361,13 +361,15 @@ function PlayerCard({ name, avatar, ready, isMe }: {
       transition={{ duration: 2, repeat: Infinity }}
     >
       <div
-        className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl"
+        className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center text-2xl overflow-hidden"
         style={{
           background: 'rgba(255,255,255,0.1)',
           border: '2px solid rgba(255,255,255,0.2)',
         }}
       >
-        {avatar}
+        {avatar.startsWith('/')
+          ? <img src={avatar} alt="avatar" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
+          : avatar}
       </div>
       <p className="font-display font-bold text-white text-sm truncate">
         {name}
