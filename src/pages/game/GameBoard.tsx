@@ -168,7 +168,7 @@ export function GameBoard() {
         {showGuessModal && (
           <GuessModal
             characters={game.characters}
-            flippedCards={opponentFlipped}
+            flippedCards={myFlipped}
             onConfirm={handleGuess}
             onClose={() => setShowGuessModal(false)}
           />
@@ -259,32 +259,6 @@ export function GameBoard() {
                 </div>
               </div>
             )}
-
-            {/* Opponent's board */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-display font-bold text-xs uppercase tracking-widest text-white/50">
-                  {opponentName}'s Board
-                </p>
-                <span className="font-body text-xs text-white/30">
-                  {opponentFlipped.length} eliminated
-                </span>
-              </div>
-              <div
-                className="rounded-2xl p-3"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '2px solid rgba(255,255,255,0.08)' }}
-              >
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-                  {game.characters.map((char) => (
-                    <CharacterCard
-                      key={char.id}
-                      character={char}
-                      isFlipped={opponentFlipped.includes(char.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
 
             {/* My board (my eliminations) */}
             <div>
