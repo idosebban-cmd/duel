@@ -88,6 +88,10 @@ export function GameBoard() {
       setTimeout(() => store.setError(null), 4000);
     });
 
+    socket.on('game_rejoined', ({ gameState }: { gameState: any }) => {
+      store.setGameState(gameState);
+    });
+
     // Reconnect: if we have a gameId but no game state, rejoin
     if (!game) {
       socket.emit('rejoin_game', { gameId, userId: myId });
@@ -102,6 +106,7 @@ export function GameBoard() {
       socket.off('opponent_disconnected');
       socket.off('opponent_reconnected');
       socket.off('error');
+      socket.off('game_rejoined');
     };
   }, [gameId, myId]); // eslint-disable-line react-hooks/exhaustive-deps
 
