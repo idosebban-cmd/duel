@@ -152,7 +152,6 @@ export function GameBoard() {
   }
 
   const myChar = game.characters.find((c) => c.id === game.me.secretCharacterId);
-  const opponentFlipped = game.opponent.flippedCards;
   const myFlipped = game.me.flippedCards;
 
   const elapsedMins = String(Math.floor(elapsed / 60)).padStart(2, '0');
