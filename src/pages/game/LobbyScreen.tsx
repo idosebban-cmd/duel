@@ -28,6 +28,13 @@ export function LobbyScreen() {
   const timeRemaining = lobbyState?.timeRemaining ?? 600;
   const timerColor = timeRemaining < 60 ? '#FF3D71' : timeRemaining < 120 ? '#FFE66D' : '#4EFFC4';
 
+  // If no identity set, send them to setup first with gameId pre-filled
+  useEffect(() => {
+    if (!myUserId && gameId) {
+      navigate(`/game?join=${gameId}`, { replace: true });
+    }
+  }, [myUserId, gameId, navigate]);
+
   const handleCountdownComplete = useCallback(() => {
     navigate(`/game/${gameId}/play`);
   }, [gameId, navigate]);

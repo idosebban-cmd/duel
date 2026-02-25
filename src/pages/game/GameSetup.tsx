@@ -9,22 +9,25 @@
  * 3. Click Join → goes to the lobby
  */
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/gameStore';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || window.location.origin;
 
 export function GameSetup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setIdentity } = useGameStore();
 
   const [userId, setUserId] = useState('');
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState('🎮');
-  const [gameId, setGameId] = useState('');
+  // Pre-fill gameId from ?join= query param (set when lobby redirects an unidentified player)
+  const [gameId, setGameId] = useState(searchParams.get('join') ?? '');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const isJoining = !!searchParams.get('join');
 
   // Quickly create a game on the server and join it as player 1
   const handleCreate = async () => {
@@ -99,7 +102,9 @@ export function GameSetup() {
           >
             GUESS WHO?
           </h1>
-          <p className="font-body text-white/40 text-sm mt-1">Game Setup</p>
+          <p className="font-body text-white/40 text-sm mt-1">
+            {isJoining ? "You've been invited to play!" : 'Game Setup'}
+          </p>
         </motion.div>
 
         {/* Identity */}
@@ -152,34 +157,38 @@ export function GameSetup() {
           </div>
         </motion.div>
 
-        {/* Create new game */}
+        {/* Create / Join */}
         <motion.div
           className="flex flex-col gap-3"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <motion.button
-            onClick={handleCreate}
-            disabled={creating}
-            className="w-full py-4 rounded-2xl font-display font-extrabold text-lg"
-            style={{
-              background: creating ? '#374151' : 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
-              border: '4px solid black',
-              color: creating ? '#6b7280' : '#0f172a',
-              boxShadow: creating ? 'none' : '8px 8px 0px 0px #B565FF',
-            }}
-            whileHover={!creating ? { scale: 1.02 } : {}}
-            whileTap={!creating ? { scale: 0.97 } : {}}
-          >
-            {creating ? 'Creating...' : '⚔️ Create New Game'}
-          </motion.button>
+          {!isJoining && (
+            <>
+              <motion.button
+                onClick={handleCreate}
+                disabled={creating}
+                className="w-full py-4 rounded-2xl font-display font-extrabold text-lg"
+                style={{
+                  background: creating ? '#374151' : 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
+                  border: '4px solid black',
+                  color: creating ? '#6b7280' : '#0f172a',
+                  boxShadow: creating ? 'none' : '8px 8px 0px 0px #B565FF',
+                }}
+                whileHover={!creating ? { scale: 1.02 } : {}}
+                whileTap={!creating ? { scale: 0.97 } : {}}
+              >
+                {creating ? 'Creating...' : '⚔️ Create New Game'}
+              </motion.button>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-            <p className="font-body text-xs text-white/30">or join existing</p>
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-          </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                <p className="font-body text-xs text-white/30">or join existing</p>
+                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+              </div>
+            </>
+          )}
 
           <div className="flex gap-2">
             <input
@@ -203,7 +212,7 @@ export function GameSetup() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              Join
+              {isJoining ? '→ Join Game' : 'Join'}
             </motion.button>
           </div>
         </motion.div>
