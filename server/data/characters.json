@@ -33,5 +33,40 @@
     "color": "#FFE66D",
     "image": "/characters/lion.png",
     "attributes": { "type": "lion", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "golden" }
+  },
+  {
+    "id": "char_06",
+    "name": "Teddy",
+    "color": "#C8956C",
+    "image": "/characters/bear.png",
+    "attributes": { "type": "bear", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "brown" }
+  },
+  {
+    "id": "char_07",
+    "name": "Boo",
+    "color": "#A8D8EA",
+    "image": "/characters/ghost.png",
+    "attributes": { "type": "ghost", "wings": false, "glasses": false, "hat": false, "magic": true, "color": "white" }
+  },
+  {
+    "id": "char_08",
+    "name": "Foxy",
+    "color": "#FF8C42",
+    "image": "/characters/fox.png",
+    "attributes": { "type": "fox", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "orange" }
+  },
+  {
+    "id": "char_09",
+    "name": "Hoot",
+    "color": "#8B6914",
+    "image": "/characters/owl.png",
+    "attributes": { "type": "owl", "wings": true, "glasses": false, "hat": false, "magic": false, "color": "brown" }
+  },
+  {
+    "id": "char_10",
+    "name": "Inky",
+    "color": "#9B59B6",
+    "image": "/characters/octopus.png",
+    "attributes": { "type": "octopus", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "purple" }
   }
 ]
