@@ -105,8 +105,7 @@ export function PlayerCardPreview() {
   }, []);
 
   const handleStartPlaying = () => {
-    // In a real app: submit to backend, navigate to main app
-    alert('🎮 Welcome to Duel! Your profile is ready.');
+    navigate('/game');
   };
 
   return (
