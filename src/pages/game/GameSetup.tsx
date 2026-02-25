@@ -12,17 +12,27 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/gameStore';
+import { useOnboardingStore } from '../../store/onboardingStore';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || window.location.origin;
+
+function generateUserId(displayName: string) {
+  const slug = displayName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16);
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${slug}_${suffix}`;
+}
 
 export function GameSetup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setIdentity } = useGameStore();
+  const onboarding = useOnboardingStore();
 
-  const [userId, setUserId] = useState('');
-  const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState('🎮');
+  const defaultName = onboarding.name || '';
+  const defaultAvatar = onboarding.character ? '🎮' : '🎮';
+
+  const [name, setName] = useState(defaultName);
+  const [avatar, setAvatar] = useState(defaultAvatar);
   // Pre-fill gameId from ?join= query param (set when lobby redirects an unidentified player)
   const [gameId, setGameId] = useState(searchParams.get('join') ?? '');
   const [creating, setCreating] = useState(false);
@@ -31,7 +41,8 @@ export function GameSetup() {
 
   // Quickly create a game on the server and join it as player 1
   const handleCreate = async () => {
-    if (!userId || !name) { setError('Enter your user ID and name first'); return; }
+    if (!name) { setError('Enter your display name first'); return; }
+    const userId = generateUserId(name);
     setCreating(true);
     setError('');
     try {
@@ -55,15 +66,16 @@ export function GameSetup() {
         setError(data.error ?? 'Failed to create game');
       }
     } catch {
-      setError('Cannot reach server. Is it running on port 3001?');
+      setError('Cannot reach server. Is it running?');
     } finally {
       setCreating(false);
     }
   };
 
   const handleJoin = async () => {
-    if (!userId || !name) { setError('Enter your user ID and name first'); return; }
+    if (!name) { setError('Enter your display name first'); return; }
     if (!gameId.trim()) { setError('Enter a game ID'); return; }
+    const userId = generateUserId(name);
     setError('');
     try {
       const res = await fetch(`${SERVER_URL}/api/games/${gameId.trim()}/join`, {
@@ -135,15 +147,6 @@ export function GameSetup() {
           <p className="font-display font-bold text-white/70 text-xs uppercase tracking-widest">
             Your Identity
           </p>
-
-          <input
-            type="text"
-            placeholder="User ID (e.g. user_alex)"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl font-body text-sm text-charcoal outline-none"
-            style={{ border: '3px solid #00D9FF', background: 'white' }}
-          />
 
           <input
             type="text"
@@ -244,9 +247,6 @@ export function GameSetup() {
           </motion.p>
         )}
 
-        <p className="text-center font-body text-xs text-white/20">
-          Server: {SERVER_URL}
-        </p>
       </div>
     </div>
   );

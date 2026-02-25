@@ -124,6 +124,16 @@ export function LifestyleQuestions() {
     }
   };
 
+  const handleSkip = () => {
+    if (currentQ < questions.length - 1) {
+      setDirection(1);
+      setCurrentQ((q) => q + 1);
+    } else {
+      completeStep(6);
+      navigate('/onboarding/preview');
+    }
+  };
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -315,10 +325,18 @@ export function LifestyleQuestions() {
               })}
             </div>
 
-            {/* Auto-advance hint */}
-            <p className="text-center mt-4 font-body text-xs text-charcoal/35">
-              Select an option to automatically advance
-            </p>
+            {/* Skip / hint row */}
+            <div className="flex items-center justify-between mt-4">
+              <p className="font-body text-xs text-charcoal/35">
+                Select an option to automatically advance
+              </p>
+              <button
+                onClick={handleSkip}
+                className="font-body text-xs text-charcoal/40 hover:text-charcoal/60 transition-colors underline underline-offset-2 flex-shrink-0 ml-3"
+              >
+                Skip →
+              </button>
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

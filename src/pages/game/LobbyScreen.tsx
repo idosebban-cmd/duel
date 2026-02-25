@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swords } from 'lucide-react';
@@ -24,9 +24,11 @@ export function LobbyScreen() {
   } = useGameStore();
 
   const socketRef = useRef(connectSocket());
-  const timerDisplay = useTimer(lobbyState?.timeRemaining ?? 600);
-  const timeRemaining = lobbyState?.timeRemaining ?? 600;
-  const timerColor = timeRemaining < 60 ? '#FF3D71' : timeRemaining < 120 ? '#FFE66D' : '#4EFFC4';
+  const [connectTimedOut, setConnectTimedOut] = useState(false);
+
+  const timeRemaining = lobbyState?.timeRemaining ?? null;
+  const timerDisplay = useTimer(timeRemaining ?? 0);
+  const timerColor = (timeRemaining ?? 999) < 60 ? '#FF3D71' : (timeRemaining ?? 999) < 120 ? '#FFE66D' : '#4EFFC4';
 
   // If no identity set, send them to setup first with gameId pre-filled
   useEffect(() => {
@@ -46,7 +48,17 @@ export function LobbyScreen() {
     setGameId(gameId);
     setConnectionStatus('connecting');
 
+    // Time out after 15 s of no connection
+    const timeoutId = setTimeout(() => {
+      if (socketRef.current.connected) return;
+      setConnectTimedOut(true);
+      setConnectionStatus('error');
+      setError('Could not reach the server. It may be starting up — try again in a moment.');
+    }, 15000);
+
     socket.on('connect', () => {
+      clearTimeout(timeoutId);
+      setConnectTimedOut(false);
       setConnectionStatus('connected');
       socket.emit('join_lobby', { gameId, userId: myUserId });
     });
@@ -89,6 +101,7 @@ export function LobbyScreen() {
     }
 
     return () => {
+      clearTimeout(timeoutId);
       socket.off('connect');
       socket.off('connect_error');
       socket.off('lobby_updated');
@@ -110,6 +123,15 @@ export function LobbyScreen() {
     socketRef.current.emit('cancel_game', { gameId, userId: myUserId });
     disconnectSocket();
     navigate('/');
+  };
+
+  const handleRetry = () => {
+    setConnectTimedOut(false);
+    setConnectionStatus('connecting');
+    setError(null);
+    const socket = socketRef.current;
+    socket.disconnect();
+    socket.connect();
   };
 
   const me = lobbyState
@@ -222,31 +244,33 @@ export function LobbyScreen() {
             )}
           </motion.div>
 
-          {/* Timer */}
-          <motion.div
-            className="mb-6 mx-auto max-w-xs rounded-2xl px-6 py-4 text-center"
-            style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: `2px solid ${timerColor}44`,
-            }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <p className="font-body text-white/40 text-xs uppercase tracking-widest mb-1">
-              Time remaining
-            </p>
-            <p
-              className="font-mono font-bold text-4xl"
+          {/* Timer — only shown once we have server data */}
+          {timeRemaining !== null && (
+            <motion.div
+              className="mb-6 mx-auto max-w-xs rounded-2xl px-6 py-4 text-center"
               style={{
-                color: timerColor,
-                textShadow: `0 0 20px ${timerColor}88`,
-                animation: timeRemaining < 60 ? 'pulse 1s ease-in-out infinite' : 'none',
+                background: 'rgba(255,255,255,0.05)',
+                border: `2px solid ${timerColor}44`,
               }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             >
-              {timerDisplay}
-            </p>
-          </motion.div>
+              <p className="font-body text-white/40 text-xs uppercase tracking-widest mb-1">
+                Time remaining
+              </p>
+              <p
+                className="font-mono font-bold text-4xl"
+                style={{
+                  color: timerColor,
+                  textShadow: `0 0 20px ${timerColor}88`,
+                  animation: timeRemaining < 60 ? 'pulse 1s ease-in-out infinite' : 'none',
+                }}
+              >
+                {timerDisplay}
+              </p>
+            </motion.div>
+          )}
 
           {/* Error / connection status */}
           {errorMessage && (
@@ -257,6 +281,15 @@ export function LobbyScreen() {
               animate={{ opacity: 1 }}
             >
               {errorMessage}
+              {connectTimedOut && (
+                <button
+                  onClick={handleRetry}
+                  className="block mx-auto mt-2 px-4 py-1.5 rounded-xl font-display font-bold text-xs text-white"
+                  style={{ background: '#FF3D71', border: '2px solid white' }}
+                >
+                  Retry Connection
+                </button>
+              )}
             </motion.div>
           )}
           {connectionStatus === 'connecting' && !errorMessage && (

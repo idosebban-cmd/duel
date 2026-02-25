@@ -113,17 +113,45 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
 
         {/* Confirm */}
         <div className="px-5 pb-5 pt-3 flex-shrink-0">
-          <AnimatePresence>
+          {/* Step indicator */}
+          <AnimatePresence mode="wait">
+            {!selected && (
+              <motion.p
+                key="hint"
+                className="text-center font-body text-xs text-charcoal/40 mb-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                Step 1 of 2 — tap a character
+              </motion.p>
+            )}
+            {selected && !confirming && (
+              <motion.p
+                key="step1"
+                className="text-center font-body text-xs mb-3"
+                style={{ color: '#B565FF', fontWeight: 600 }}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                Step 1 of 2 — press the button to review your choice
+              </motion.p>
+            )}
             {confirming && selected && (
               <motion.div
-                className="mb-3 px-3 py-2 rounded-xl text-center"
-                style={{ background: '#FF9F1C33', border: '2px solid #FF9F1C' }}
+                key="step2"
+                className="mb-3 px-3 py-2 rounded-xl"
+                style={{ background: '#FF3D7122', border: '2px solid #FF3D71' }}
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
               >
-                <p className="font-display font-bold text-sm text-charcoal">
-                  Sure about {characters.find((c) => c.id === selected)?.name}? This is your final answer!
+                <p className="font-body text-xs text-cherry-punch font-semibold text-center mb-1">
+                  Step 2 of 2 — final confirmation
+                </p>
+                <p className="font-display font-bold text-sm text-charcoal text-center">
+                  Lock in <span style={{ color: '#FF3D71' }}>{characters.find((c) => c.id === selected)?.name}</span> as your final answer?
                 </p>
               </motion.div>
             )}
@@ -149,7 +177,7 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
             {!selected
               ? 'Tap a character to select'
               : confirming
-              ? `✓ Confirm: ${characters.find((c) => c.id === selected)?.name}!`
+              ? `🎯 Confirm: ${characters.find((c) => c.id === selected)?.name}!`
               : `Guess ${characters.find((c) => c.id === selected)?.name}`}
           </motion.button>
         </div>

@@ -40,13 +40,14 @@ export function GameBoard() {
     return () => clearInterval(t);
   }, []);
 
-  // ── Cycle placeholder ────────────────────────────────────────
+  // ── Cycle placeholder (only when input is empty) ─────────────
   useEffect(() => {
+    if (question.length > 0) return;
     const t = setInterval(() => {
       setPlaceholderIdx((i) => (i + 1) % PLACEHOLDER_EXAMPLES.length);
     }, 3000);
     return () => clearInterval(t);
-  }, []);
+  }, [question.length]);
 
   // ── Socket events ────────────────────────────────────────────
   useEffect(() => {
@@ -208,7 +209,7 @@ export function GameBoard() {
               </span>
             </div>
 
-            <TurnBadge isMyTurn={isMyTurn} turnPhase={game.turnPhase} opponentName={opponentName} />
+            <div className="flex-1" />
 
             <button
               onClick={() => setShowExitConfirm(true)}
@@ -309,36 +310,6 @@ export function GameBoard() {
                 </div>
               </div>
 
-              {/* Flip confirm */}
-              <AnimatePresence>
-                {store.pendingFlips.length > 0 && (
-                  <motion.div
-                    className="mt-2 flex gap-2"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <button
-                      onClick={handleConfirmFlips}
-                      className="flex-1 py-2 rounded-xl font-display font-bold text-sm"
-                      style={{
-                        background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
-                        border: '3px solid black',
-                        color: '#0f172a',
-                      }}
-                    >
-                      Flip {store.pendingFlips.length} card{store.pendingFlips.length !== 1 ? 's' : ''}
-                    </button>
-                    <button
-                      onClick={() => store.clearPendingFlips()}
-                      className="px-4 py-2 rounded-xl font-body text-sm text-white/50 hover:text-white/80 transition-colors"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)' }}
-                    >
-                      Clear
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
 
             {/* Turn history */}
@@ -488,20 +459,48 @@ export function GameBoard() {
                   </div>
 
                   {isMyTurn && (
-                    <motion.button
-                      onClick={handleEndTurn}
-                      className="w-full py-3 rounded-2xl font-display font-bold text-base"
-                      style={{
-                        background: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
-                        border: '4px solid black',
-                        color: 'white',
-                        boxShadow: '6px 6px 0px 0px #4EFFC4',
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      Done Eliminating → End Turn
-                    </motion.button>
+                    <div className="flex gap-2">
+                      {store.pendingFlips.length > 0 ? (
+                        <>
+                          <motion.button
+                            onClick={handleConfirmFlips}
+                            className="flex-1 py-3 rounded-2xl font-display font-bold text-base"
+                            style={{
+                              background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
+                              border: '4px solid black',
+                              color: '#0f172a',
+                              boxShadow: '6px 6px 0px 0px #B565FF',
+                            }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            Flip {store.pendingFlips.length} card{store.pendingFlips.length !== 1 ? 's' : ''}
+                          </motion.button>
+                          <button
+                            onClick={() => store.clearPendingFlips()}
+                            className="px-4 py-3 rounded-2xl font-body text-sm text-white/50 hover:text-white/80 transition-colors"
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)' }}
+                          >
+                            Clear
+                          </button>
+                        </>
+                      ) : (
+                        <motion.button
+                          onClick={handleEndTurn}
+                          className="w-full py-3 rounded-2xl font-display font-bold text-base"
+                          style={{
+                            background: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
+                            border: '4px solid black',
+                            color: 'white',
+                            boxShadow: '6px 6px 0px 0px #4EFFC4',
+                          }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                        >
+                          Done Eliminating → End Turn
+                        </motion.button>
+                      )}
+                    </div>
                   )}
                 </motion.div>
               )}
@@ -643,32 +642,6 @@ export function GameBoard() {
   );
 }
 
-function TurnBadge({ isMyTurn, turnPhase, opponentName }: { isMyTurn: boolean; turnPhase: string; opponentName: string }) {
-  const labels: Record<string, string> = {
-    ask: isMyTurn ? 'YOUR TURN' : `${opponentName.toUpperCase()}'S TURN`,
-    answer: isMyTurn ? 'WAITING...' : 'ANSWER NOW',
-    flip: isMyTurn ? 'FLIP CARDS' : 'WAITING...',
-  };
-  const label = labels[turnPhase] ?? (isMyTurn ? 'YOUR TURN' : "THEIR TURN");
-
-  return (
-    <motion.div
-      className="px-3 py-1.5 rounded-xl font-display font-bold text-sm"
-      style={{
-        background: isMyTurn
-          ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)'
-          : 'rgba(255,255,255,0.08)',
-        color: isMyTurn ? '#0f172a' : 'rgba(255,255,255,0.4)',
-        border: isMyTurn ? '2px solid black' : '2px solid rgba(255,255,255,0.1)',
-        boxShadow: isMyTurn ? '0 0 12px rgba(78,255,196,0.5)' : 'none',
-      }}
-      animate={isMyTurn ? { scale: [1, 1.04, 1] } : {}}
-      transition={isMyTurn ? { duration: 1.5, repeat: Infinity } : {}}
-    >
-      {label}
-    </motion.div>
-  );
-}
 
 function WaitingDots() {
   return (
