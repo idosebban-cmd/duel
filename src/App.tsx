@@ -8,12 +8,17 @@ import { GameSelection } from './components/onboarding/GameSelection';
 import { RelationshipGoals } from './components/onboarding/RelationshipGoals';
 import { LifestyleQuestions } from './components/onboarding/LifestyleQuestions';
 import { PlayerCardPreview } from './components/onboarding/PlayerCardPreview';
+import { GameSetup } from './pages/game/GameSetup';
+import { LobbyScreen } from './pages/game/LobbyScreen';
+import { GameBoard } from './pages/game/GameBoard';
+import { GameResult } from './pages/game/GameResult';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AnimatePresence mode="wait">
         <Routes>
+          {/* Onboarding */}
           <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
           <Route path="/onboarding/avatar" element={<AvatarSelection />} />
@@ -23,6 +28,13 @@ export default function App() {
           <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
           <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
           <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
+
+          {/* Guess Who game */}
+          <Route path="/game" element={<GameSetup />} />
+          <Route path="/game/:gameId/lobby" element={<LobbyScreen />} />
+          <Route path="/game/:gameId/play" element={<GameBoard />} />
+          <Route path="/game/:gameId/result" element={<GameResult />} />
+
           <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
         </Routes>
       </AnimatePresence>
