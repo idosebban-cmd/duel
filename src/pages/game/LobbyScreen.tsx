@@ -66,6 +66,7 @@ export function LobbyScreen() {
 
     socket.on('game_started', ({ gameState }: { gameState: any }) => {
       setGameState(gameState);
+      navigate(`/game/${gameId}/play`);
     });
 
     socket.on('lobby_expired', () => {

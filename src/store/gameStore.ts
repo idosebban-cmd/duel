@@ -76,18 +76,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setError: (errorMessage) => set({ errorMessage }),
 
-  startCountdown: (from) => {
-    set({ isCountingDown: true, countdownValue: from });
-    let count = from;
-    const tick = setInterval(() => {
-      count -= 1;
-      if (count <= 0) {
-        clearInterval(tick);
-        set({ isCountingDown: false, countdownValue: 0 });
-      } else {
-        set({ countdownValue: count });
-      }
-    }, 1000);
+  startCountdown: (_from) => {
+    // Just show the CountdownScreen — it manages its own animation
+    // and calls onComplete when done. Don't auto-kill it with a timer.
+    set({ isCountingDown: true });
   },
 
   setSelectedGuess: (selectedGuessCharId) => set({ selectedGuessCharId }),
