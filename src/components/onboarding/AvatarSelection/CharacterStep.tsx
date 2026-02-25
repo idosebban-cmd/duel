@@ -3,25 +3,25 @@ import { motion } from 'framer-motion';
 interface Character {
   id: string;
   name: string;
-  emoji: string;
+  image: string;
   hint: string;
   color: string;
   gradient: string;
 }
 
 const characters: Character[] = [
-  { id: 'dragon', name: 'Dragon', emoji: '🐉', hint: 'Bold & Competitive', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #FF9F1C)' },
-  { id: 'cat', name: 'Cat', emoji: '🐱', hint: 'Playful & Mysterious', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)' },
-  { id: 'robot', name: 'Robot', emoji: '🤖', hint: 'Logical & Quirky', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #4EFFC4)' },
-  { id: 'phoenix', name: 'Phoenix', emoji: '🔥', hint: 'Transformative & Deep', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #FF3D71)' },
-  { id: 'bear', name: 'Bear', emoji: '🐻', hint: 'Warm & Steady', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FFE66D)' },
-  { id: 'fox', name: 'Fox', emoji: '🦊', hint: 'Clever & Witty', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #B565FF)' },
-  { id: 'octopus', name: 'Octopus', emoji: '🐙', hint: 'Creative & Adaptable', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #B565FF)' },
-  { id: 'owl', name: 'Owl', emoji: '🦉', hint: 'Wise & Thoughtful', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #00D9FF)' },
-  { id: 'wolf', name: 'Wolf', emoji: '🐺', hint: 'Loyal & Intense', color: '#2D3142', gradient: 'linear-gradient(135deg, #2D3142, #B565FF)' },
-  { id: 'unicorn', name: 'Unicorn', emoji: '🦄', hint: 'Optimistic & Magical', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FFE66D)' },
-  { id: 'ghost', name: 'Ghost', emoji: '👻', hint: 'Mysterious & Introverted', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
-  { id: 'lion', name: 'Lion', emoji: '🦁', hint: 'Confident & Leader', color: '#FFE66D', gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)' },
+  { id: 'dragon', name: 'Dragon', image: '/characters/Dragon.png', hint: 'Bold & Competitive', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #FF9F1C)' },
+  { id: 'cat', name: 'Cat', image: '/characters/Cat.png', hint: 'Playful & Mysterious', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)' },
+  { id: 'robot', name: 'Robot', image: '/characters/Robot.png', hint: 'Logical & Quirky', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #4EFFC4)' },
+  { id: 'phoenix', name: 'Phoenix', image: '/characters/Phoenix.png', hint: 'Transformative & Deep', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #FF3D71)' },
+  { id: 'bear', name: 'Bear', image: '/characters/Bear.png', hint: 'Warm & Steady', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FFE66D)' },
+  { id: 'fox', name: 'Fox', image: '/characters/Fox.png', hint: 'Clever & Witty', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #B565FF)' },
+  { id: 'octopus', name: 'Octopus', image: '/characters/Octopus.png', hint: 'Creative & Adaptable', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #B565FF)' },
+  { id: 'owl', name: 'Owl', image: '/characters/Owl.png', hint: 'Wise & Thoughtful', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #00D9FF)' },
+  { id: 'wolf', name: 'Wolf', image: '/characters/Wolf.png', hint: 'Loyal & Intense', color: '#2D3142', gradient: 'linear-gradient(135deg, #2D3142, #B565FF)' },
+  { id: 'unicorn', name: 'Unicorn', image: '/characters/Unicorn.png', hint: 'Optimistic & Magical', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FFE66D)' },
+  { id: 'ghost', name: 'Ghost', image: '/characters/Ghost.png', hint: 'Mysterious & Introverted', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
+  { id: 'lion', name: 'Lion', image: '/characters/Lion.png', hint: 'Confident & Leader', color: '#FFE66D', gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)' },
 ];
 
 interface CharacterStepProps {
@@ -98,13 +98,17 @@ export function CharacterStep({ selected, onSelect }: CharacterStepProps) {
 
               {/* Character avatar */}
               <div
-                className="w-full aspect-square rounded-xl mb-3 flex items-center justify-center text-5xl sm:text-6xl"
+                className="w-full aspect-square rounded-xl mb-3 overflow-hidden"
                 style={{
                   background: isSelected ? char.gradient : 'linear-gradient(135deg, #f5f5f5, #ebebeb)',
                   border: '2px solid rgba(0,0,0,0.1)',
                 }}
               >
-                {char.emoji}
+                <img
+                  src={char.image}
+                  alt={char.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Character info */}

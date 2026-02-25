@@ -3,84 +3,84 @@
     "id": "char_01",
     "name": "Luna",
     "color": "#B565FF",
-    "image": "/characters/unicorn.png",
+    "image": "/characters/Unicorn.png",
     "attributes": { "type": "unicorn", "wings": false, "glasses": false, "hat": false, "magic": true, "color": "rainbow" }
   },
   {
     "id": "char_02",
     "name": "Pixel",
     "color": "#7BC8F6",
-    "image": "/characters/cat.png",
+    "image": "/characters/Cat.png",
     "attributes": { "type": "cat", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "gray" }
   },
   {
     "id": "char_03",
     "name": "Ember",
     "color": "#FF6B35",
-    "image": "/characters/phoenix.png",
+    "image": "/characters/Phoenix.png",
     "attributes": { "type": "phoenix", "wings": true, "glasses": false, "hat": false, "magic": true, "color": "fire" }
   },
   {
     "id": "char_04",
     "name": "Byte",
     "color": "#00D9FF",
-    "image": "/characters/robot.png",
+    "image": "/characters/Robot.png",
     "attributes": { "type": "robot", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "blue" }
   },
   {
     "id": "char_05",
     "name": "Rex",
     "color": "#FFE66D",
-    "image": "/characters/lion.png",
+    "image": "/characters/Lion.png",
     "attributes": { "type": "lion", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "golden" }
   },
   {
     "id": "char_06",
     "name": "Teddy",
     "color": "#C8956C",
-    "image": "/characters/bear.png",
+    "image": "/characters/Bear.png",
     "attributes": { "type": "bear", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "brown" }
   },
   {
     "id": "char_07",
     "name": "Boo",
     "color": "#A8D8EA",
-    "image": "/characters/ghost.png",
+    "image": "/characters/Ghost.png",
     "attributes": { "type": "ghost", "wings": false, "glasses": false, "hat": false, "magic": true, "color": "white" }
   },
   {
     "id": "char_08",
     "name": "Foxy",
     "color": "#FF8C42",
-    "image": "/characters/fox.png",
+    "image": "/characters/Fox.png",
     "attributes": { "type": "fox", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "orange" }
   },
   {
     "id": "char_09",
     "name": "Hoot",
     "color": "#8B6914",
-    "image": "/characters/owl.png",
+    "image": "/characters/Owl.png",
     "attributes": { "type": "owl", "wings": true, "glasses": false, "hat": false, "magic": false, "color": "brown" }
   },
   {
     "id": "char_10",
     "name": "Inky",
     "color": "#9B59B6",
-    "image": "/characters/octopus.png",
+    "image": "/characters/Octopus.png",
     "attributes": { "type": "octopus", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "purple" }
   },
   {
     "id": "char_11",
-    "name": "Callie",
-    "color": "#FF8C42",
-    "image": "/characters/calico.png",
-    "attributes": { "type": "calico", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "orange" }
+    "name": "Shadow",
+    "color": "#6C8EBF",
+    "image": "/characters/Wolf.png",
+    "attributes": { "type": "wolf", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "gray" }
   },
   {
     "id": "char_12",
     "name": "Drake",
     "color": "#4CAF50",
-    "image": "/characters/dragon.png",
+    "image": "/characters/Dragon.png",
     "attributes": { "type": "dragon", "wings": true, "glasses": false, "hat": false, "magic": true, "color": "green" }
   }
 ]
