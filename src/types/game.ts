@@ -1,10 +1,10 @@
 export interface CharacterAttributes {
-  type: 'unicorn' | 'cat' | 'phoenix' | 'robot' | 'lion' | 'bear' | 'ghost' | 'fox' | 'owl' | 'octopus';
+  type: 'unicorn' | 'cat' | 'phoenix' | 'robot' | 'lion' | 'bear' | 'ghost' | 'fox' | 'owl' | 'octopus' | 'calico' | 'dragon';
   wings: boolean;
   glasses: boolean;
   hat: boolean;
   magic: boolean;
-  color: 'rainbow' | 'gray' | 'fire' | 'blue' | 'golden' | 'brown' | 'white' | 'orange' | 'purple';
+  color: 'rainbow' | 'gray' | 'fire' | 'blue' | 'golden' | 'brown' | 'white' | 'orange' | 'purple' | 'green';
 }
 
 export interface Character {

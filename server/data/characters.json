@@ -68,5 +68,19 @@
     "color": "#9B59B6",
     "image": "/characters/octopus.png",
     "attributes": { "type": "octopus", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "purple" }
+  },
+  {
+    "id": "char_11",
+    "name": "Callie",
+    "color": "#FF8C42",
+    "image": "/characters/calico.png",
+    "attributes": { "type": "calico", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "orange" }
+  },
+  {
+    "id": "char_12",
+    "name": "Drake",
+    "color": "#4CAF50",
+    "image": "/characters/dragon.png",
+    "attributes": { "type": "dragon", "wings": true, "glasses": false, "hat": false, "magic": true, "color": "green" }
   }
 ]
