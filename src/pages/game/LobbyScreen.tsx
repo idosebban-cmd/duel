@@ -18,7 +18,7 @@ export function LobbyScreen() {
   const navigate = useNavigate();
   const {
     myUserId, myName,
-    lobbyState, isCountingDown,
+    lobbyState, isCountingDown, connectionStatus, errorMessage,
     setLobbyState, setGameId, setGameState,
     startCountdown, setConnectionStatus, setError,
   } = useGameStore();
@@ -242,6 +242,23 @@ export function LobbyScreen() {
               {timerDisplay}
             </p>
           </motion.div>
+
+          {/* Error / connection status */}
+          {errorMessage && (
+            <motion.div
+              className="mb-4 px-4 py-3 rounded-xl text-center font-body text-sm"
+              style={{ background: 'rgba(255,61,113,0.15)', border: '1px solid #FF3D71', color: '#FF3D71' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              {errorMessage}
+            </motion.div>
+          )}
+          {connectionStatus === 'connecting' && !errorMessage && (
+            <p className="text-center font-body text-xs text-white/30 mb-2 animate-pulse">
+              Connecting to server...
+            </p>
+          )}
 
           {/* Buttons */}
           <motion.div

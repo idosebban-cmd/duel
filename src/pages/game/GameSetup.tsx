@@ -61,12 +61,23 @@ export function GameSetup() {
     }
   };
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!userId || !name) { setError('Enter your user ID and name first'); return; }
     if (!gameId.trim()) { setError('Enter a game ID'); return; }
     setError('');
-    setIdentity(userId, name, avatar);
-    navigate(`/game/${gameId.trim()}/lobby`);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/games/${gameId.trim()}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, name, avatar }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Failed to join game'); return; }
+      setIdentity(userId, name, avatar);
+      navigate(`/game/${gameId.trim()}/lobby`);
+    } catch {
+      setError('Cannot reach server');
+    }
   };
 
   const AVATARS = ['🎮', '🎯', '🃏', '🎲', '🕹️', '🏆', '⚔️', '🔥', '⚡', '🌊', '💎', '🌟'];

@@ -25,6 +25,31 @@ router.post('/create', (req, res) => {
   });
 });
 
+// POST /api/games/:gameId/join - Register as player 2 in an open lobby
+router.post('/:gameId/join', (req, res) => {
+  const { userId, name, avatar } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  const game = gameService.getGame(req.params.gameId);
+  if (!game) return res.status(404).json({ error: 'Game not found' });
+  if (game.phase !== 'lobby') return res.status(400).json({ error: 'Game is not accepting players' });
+
+  // Already player 1 — nothing to register
+  if (game.player1.userId === userId) {
+    return res.json({ gameId: game.gameId });
+  }
+
+  // Claim the player 2 slot (or re-confirm an existing registration)
+  if (game.player2.userId === userId || game.player2.userId === 'player2') {
+    game.player2.userId = userId;
+    game.player2.name = name || game.player2.name;
+    game.player2.avatar = avatar || game.player2.avatar;
+    return res.json({ gameId: game.gameId });
+  }
+
+  return res.status(400).json({ error: 'Game is full' });
+});
+
 // GET /api/games/:gameId - Get game state (for debugging / reconnect)
 router.get('/:gameId', (req, res) => {
   const game = gameService.getGame(req.params.gameId);
