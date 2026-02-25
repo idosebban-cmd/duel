@@ -72,7 +72,13 @@ export function GameSetup() {
         body: JSON.stringify({ userId, name, avatar }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Failed to join game'); return; }
+      if (!res.ok) {
+        const msg = data.error === 'Game not found'
+          ? 'Game not found — the server may have restarted. Ask your partner to create a new game.'
+          : (data.error ?? 'Failed to join game');
+        setError(msg);
+        return;
+      }
       setIdentity(userId, name, avatar);
       navigate(`/game/${gameId.trim()}/lobby`);
     } catch {
