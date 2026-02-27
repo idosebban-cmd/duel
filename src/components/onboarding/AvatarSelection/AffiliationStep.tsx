@@ -14,7 +14,7 @@ const affiliations: Affiliation[] = [
   { id: 'country', name: 'Country', image: '/affiliation/Country.png', hint: 'Simple living', color: '#FFE66D', gradient: 'linear-gradient(135deg, #FFE66D, #4EFFC4)' },
   { id: 'nature', name: 'Nature', image: '/affiliation/Nature.png', hint: 'Wild outdoors', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FFE66D)' },
   { id: 'fitness', name: 'Fitness', image: '/affiliation/Sports.png', hint: 'Active lifestyle', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #FF3D71)' },
-  { id: 'academia', name: 'Academia', image: '/affiliation/Library.png', hint: 'Knowledge seeker', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
+  { id: 'academia', name: 'Library', image: '/affiliation/Library.png', hint: 'Knowledge seeker', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
   { id: 'music', name: 'Music', image: '/affiliation/Music.png', hint: 'Creative soul', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #B565FF)' },
   { id: 'art', name: 'Art', image: '/affiliation/Art.png', hint: 'Artistic spirit', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #FF9F1C)' },
   { id: 'tech', name: 'Tech', image: '/affiliation/Tech.png', hint: 'Digital native', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #00D9FF)' },
