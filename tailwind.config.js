@@ -19,8 +19,8 @@ export default {
         'charcoal': '#2D3142',
       },
       fontFamily: {
-        display: ['Anybody', 'sans-serif'],
-        body: ['DM Sans', 'sans-serif'],
+        display: ['Return Of The Boss', 'sans-serif'],
+        body: ['Balsamiq Sans', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
