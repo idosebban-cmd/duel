@@ -4,13 +4,13 @@ import { Gamepad2, Zap, Heart } from 'lucide-react';
 
 // Decorative pixel elements
 const decorElements = [
-  { icon: '/icons/Star.png', x: '8%', y: '15%', size: 32, delay: 0 },
-  { icon: '/icons/Heart.png', x: '92%', y: '20%', size: 28, delay: 0.3 },
-  { icon: '/icons/Lightning bolt.png', x: '5%', y: '70%', size: 24, delay: 0.6 },
-  { icon: '/icons/Celebration.png', x: '88%', y: '75%', size: 30, delay: 0.2 },
-  { icon: '/icons/Star.png', x: '50%', y: '8%', size: 20, delay: 0.8 },
-  { icon: '/icons/Console remote.png', x: '15%', y: '45%', size: 26, delay: 0.4 },
-  { icon: '/icons/Heart.png', x: '80%', y: '50%', size: 22, delay: 0.7 },
+  { icon: '/icons/Star.png',           x: '6%',  y: '10%', size: 52, delay: 0   },
+  { icon: '/icons/Heart.png',          x: '90%', y: '12%', size: 48, delay: 0.3 },
+  { icon: '/icons/Lightning bolt.png', x: '4%',  y: '65%', size: 44, delay: 0.6 },
+  { icon: '/icons/Celebration.png',    x: '88%', y: '68%', size: 50, delay: 0.2 },
+  { icon: '/icons/Star.png',           x: '48%', y: '5%',  size: 40, delay: 0.8 },
+  { icon: '/icons/Console remote.png', x: '18%', y: '40%', size: 46, delay: 0.4 },
+  { icon: '/icons/Heart.png',          x: '78%', y: '42%', size: 42, delay: 0.7 },
 ];
 
 export function WelcomeScreen() {
