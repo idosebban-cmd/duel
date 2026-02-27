@@ -4,13 +4,13 @@ import { Gamepad2, Zap, Heart } from 'lucide-react';
 
 // Decorative pixel elements
 const decorElements = [
-  { emoji: '★', x: '8%', y: '15%', size: 24, delay: 0, color: '#FFE66D' },
-  { emoji: '♥', x: '92%', y: '20%', size: 20, delay: 0.3, color: '#FF6BA8' },
-  { emoji: '★', x: '5%', y: '70%', size: 16, delay: 0.6, color: '#4EFFC4' },
-  { emoji: '♥', x: '88%', y: '75%', size: 22, delay: 0.2, color: '#B565FF' },
-  { emoji: '★', x: '50%', y: '8%', size: 14, delay: 0.8, color: '#FF9F1C' },
-  { emoji: '●', x: '15%', y: '45%', size: 12, delay: 0.4, color: '#00D9FF' },
-  { emoji: '●', x: '80%', y: '50%', size: 10, delay: 0.7, color: '#FF6BA8' },
+  { icon: '/icons/Star.png', x: '8%', y: '15%', size: 32, delay: 0 },
+  { icon: '/icons/Heart.png', x: '92%', y: '20%', size: 28, delay: 0.3 },
+  { icon: '/icons/Lightning bolt.png', x: '5%', y: '70%', size: 24, delay: 0.6 },
+  { icon: '/icons/Celebration.png', x: '88%', y: '75%', size: 30, delay: 0.2 },
+  { icon: '/icons/Star.png', x: '50%', y: '8%', size: 20, delay: 0.8 },
+  { icon: '/icons/Console remote.png', x: '15%', y: '45%', size: 26, delay: 0.4 },
+  { icon: '/icons/Heart.png', x: '80%', y: '50%', size: 22, delay: 0.7 },
 ];
 
 export function WelcomeScreen() {
@@ -57,11 +57,11 @@ export function WelcomeScreen() {
       {decorElements.map((el, i) => (
         <motion.div
           key={i}
-          className="absolute select-none pointer-events-none font-display font-extrabold"
-          style={{ left: el.x, top: el.y, fontSize: el.size, color: el.color }}
+          className="absolute select-none pointer-events-none"
+          style={{ left: el.x, top: el.y, width: el.size, height: el.size }}
           initial={{ opacity: 0, scale: 0 }}
           animate={{
-            opacity: [0.6, 1, 0.6],
+            opacity: [0.7, 1, 0.7],
             scale: [1, 1.2, 1],
             y: [0, -8, 0],
           }}
@@ -72,7 +72,7 @@ export function WelcomeScreen() {
             ease: 'easeInOut',
           }}
         >
-          {el.emoji}
+          <img src={el.icon} alt="" className="w-full h-full object-contain" />
         </motion.div>
       ))}
 
