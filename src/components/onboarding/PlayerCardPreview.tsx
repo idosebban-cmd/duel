@@ -36,6 +36,9 @@ const characterImages: Record<string, string> = {
   octopus: '/characters/Octopus.png', owl: '/characters/Owl.png',
   wolf: '/characters/Wolf.png', unicorn: '/characters/Unicorn.png',
   ghost: '/characters/Ghost.png', lion: '/characters/Lion.png',
+  witch: '/characters/Witch.png', knight: '/characters/Knight.png',
+  viking: '/characters/Viking.png', pixie: '/characters/Pixie.png',
+  ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
 };
 
 const elementEmojis: Record<string, string> = {
@@ -299,7 +302,7 @@ export function PlayerCardPreview() {
                       key={photoIndex}
                       src={photos[photoIndex]}
                       alt={`Photo ${photoIndex + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
