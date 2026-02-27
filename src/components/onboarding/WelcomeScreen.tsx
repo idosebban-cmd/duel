@@ -116,16 +116,6 @@ export function WelcomeScreen() {
           </h1>
         </motion.div>
 
-        {/* Controller icon */}
-        <motion.div
-          className="mb-6 p-3 rounded-2xl bg-lemon-pop shadow-manga"
-          animate={{ rotate: [-3, 3, -3] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ border: '3px solid #000' }}
-        >
-          <Gamepad2 size={36} className="text-charcoal" />
-        </motion.div>
-
         {/* Headline */}
         <motion.h2
           className="font-display font-extrabold text-4xl sm:text-5xl text-charcoal mb-4 leading-tight"
@@ -206,7 +196,7 @@ export function WelcomeScreen() {
         >
           {/* Glossy overlay */}
           <span className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-          🎮 Create Your Character
+          Create Your Character
         </motion.button>
 
         <motion.p
