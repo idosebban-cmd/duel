@@ -3,22 +3,22 @@ import { motion } from 'framer-motion';
 interface Affiliation {
   id: string;
   name: string;
-  emoji: string;
+  image: string;
   descriptor: string;
   color: string;
 }
 
 const affiliations: Affiliation[] = [
-  { id: 'city', name: 'City', emoji: '🏙️', descriptor: 'Urban life', color: '#B565FF' },
-  { id: 'country', name: 'Country', emoji: '🌾', descriptor: 'Simple living', color: '#FFE66D' },
-  { id: 'nature', name: 'Nature', emoji: '🌲', descriptor: 'Wild outdoors', color: '#4EFFC4' },
-  { id: 'fitness', name: 'Fitness', emoji: '💪', descriptor: 'Active lifestyle', color: '#FF9F1C' },
-  { id: 'academia', name: 'Academia', emoji: '📚', descriptor: 'Knowledge seeker', color: '#00D9FF' },
-  { id: 'music', name: 'Music', emoji: '🎵', descriptor: 'Creative soul', color: '#FF6BA8' },
-  { id: 'art', name: 'Art', emoji: '🎨', descriptor: 'Artistic spirit', color: '#FF3D71' },
-  { id: 'tech', name: 'Tech', emoji: '💻', descriptor: 'Digital native', color: '#B565FF' },
-  { id: 'cosmic', name: 'Cosmic', emoji: '🌌', descriptor: 'Spiritual mystic', color: '#4EFFC4' },
-  { id: 'travel', name: 'Travel', emoji: '✈️', descriptor: 'World explorer', color: '#FF9F1C' },
+  { id: 'city', name: 'City', image: '/affiliation/City.png', descriptor: 'Urban life', color: '#B565FF' },
+  { id: 'country', name: 'Country', image: '/affiliation/Country.png', descriptor: 'Simple living', color: '#FFE66D' },
+  { id: 'nature', name: 'Nature', image: '/affiliation/Nature.png', descriptor: 'Wild outdoors', color: '#4EFFC4' },
+  { id: 'fitness', name: 'Fitness', image: '/affiliation/Sports.png', descriptor: 'Active lifestyle', color: '#FF9F1C' },
+  { id: 'academia', name: 'Academia', image: '/affiliation/Library.png', descriptor: 'Knowledge seeker', color: '#00D9FF' },
+  { id: 'music', name: 'Music', image: '/affiliation/Music.png', descriptor: 'Creative soul', color: '#FF6BA8' },
+  { id: 'art', name: 'Art', image: '/affiliation/Art.png', descriptor: 'Artistic spirit', color: '#FF3D71' },
+  { id: 'tech', name: 'Tech', image: '/affiliation/Tech.png', descriptor: 'Digital native', color: '#B565FF' },
+  { id: 'cosmic', name: 'Cosmic', image: '/affiliation/Cosmos.png', descriptor: 'Spiritual mystic', color: '#4EFFC4' },
+  { id: 'travel', name: 'Travel', image: '/affiliation/Travel.png', descriptor: 'World explorer', color: '#FF9F1C' },
 ];
 
 interface AffiliationStepProps {
@@ -92,13 +92,13 @@ export function AffiliationStep({ selected, onSelect, characterName, elementName
             >
               {/* Icon */}
               <span
-                className="text-2xl w-12 h-12 flex items-center justify-center rounded-xl flex-shrink-0"
+                className="w-12 h-12 flex items-center justify-center rounded-xl flex-shrink-0"
                 style={{
                   background: isSelected ? `${aff.color}30` : '#f5f5f5',
                   border: `2px solid ${isSelected ? aff.color : 'transparent'}`,
                 }}
               >
-                {aff.emoji}
+                <img src={aff.image} alt={aff.name} className="w-8 h-8 object-contain" style={{ imageRendering: 'pixelated' }} />
               </span>
 
               <div className="min-w-0">
@@ -138,8 +138,9 @@ export function AffiliationStep({ selected, onSelect, characterName, elementName
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-2xl pointer-events-none" />
-          <div className="text-4xl">
-            {affiliations.find(a => a.id === selected)?.emoji || '?'}
+          <div className="w-10 h-10 flex items-center justify-center">
+            {affiliations.find(a => a.id === selected) &&
+              <img src={affiliations.find(a => a.id === selected)!.image} alt={selected || ''} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />}
           </div>
           <div>
             <p className="font-body text-white/80 text-xs font-medium uppercase tracking-widest">Your Avatar</p>

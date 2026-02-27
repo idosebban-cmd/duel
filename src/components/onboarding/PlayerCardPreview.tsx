@@ -45,10 +45,12 @@ const elementEmojis: Record<string, string> = {
   fire: '🔥', water: '💧', earth: '🌿', air: '💨', electric: '⚡',
 };
 
-const affiliationEmojis: Record<string, string> = {
-  city: '🏙️', country: '🌾', nature: '🌲', fitness: '💪',
-  academia: '📚', music: '🎵', art: '🎨', tech: '💻',
-  cosmic: '🌌', travel: '✈️',
+const affiliationImages: Record<string, string> = {
+  city: '/affiliation/City.png', country: '/affiliation/Country.png',
+  nature: '/affiliation/Nature.png', fitness: '/affiliation/Sports.png',
+  academia: '/affiliation/Library.png', music: '/affiliation/Music.png',
+  art: '/affiliation/Art.png', tech: '/affiliation/Tech.png',
+  cosmic: '/affiliation/Cosmos.png', travel: '/affiliation/Travel.png',
 };
 
 const gameTypeEmojis: Record<string, string> = {
@@ -243,15 +245,15 @@ export function PlayerCardPreview() {
                 </div>
 
                 {/* Affiliation badge */}
-                {affiliation && affiliationEmojis[affiliation] && (
+                {affiliation && affiliationImages[affiliation] && (
                   <motion.div
-                    className="absolute -top-2 -left-2 w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                    className="absolute -top-2 -left-2 w-10 h-10 rounded-xl flex items-center justify-center p-1.5"
                     style={{ background: 'white', border: '3px solid #000', boxShadow: '2px 2px 0px 0px rgba(0,0,0,0.2)' }}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.4, type: 'spring' }}
                   >
-                    {affiliationEmojis[affiliation]}
+                    <img src={affiliationImages[affiliation]} alt={affiliation} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
                   </motion.div>
                 )}
 
