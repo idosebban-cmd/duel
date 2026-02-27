@@ -92,13 +92,13 @@ export function AffiliationStep({ selected, onSelect, characterName, elementName
             >
               {/* Icon */}
               <span
-                className="w-12 h-12 flex items-center justify-center rounded-xl flex-shrink-0"
+                className="w-16 h-16 flex items-center justify-center rounded-xl flex-shrink-0"
                 style={{
                   background: isSelected ? `${aff.color}30` : '#f5f5f5',
                   border: `2px solid ${isSelected ? aff.color : 'transparent'}`,
                 }}
               >
-                <img src={aff.image} alt={aff.name} className="w-8 h-8 object-contain" style={{ imageRendering: 'pixelated' }} />
+                <img src={aff.image} alt={aff.name} className="w-14 h-14 object-contain" style={{ imageRendering: 'pixelated' }} />
               </span>
 
               <div className="min-w-0">
