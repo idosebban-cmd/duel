@@ -137,7 +137,7 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
               <motion.img
                 src={el.image}
                 alt={el.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 mb-3 object-contain drop-shadow-md"
+                className="w-24 h-24 sm:w-28 sm:h-28 mb-3 object-contain drop-shadow-md"
                 animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 0.5, repeat: isSelected ? Infinity : 0, repeatDelay: 2 }}
               />
