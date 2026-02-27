@@ -5,14 +5,14 @@ import { Gamepad2, Zap, Heart } from 'lucide-react';
 // Decorative pixel elements
 const decorElements = [
   // Top strip — clear of content
-  { icon: '/icons/Star.png',           x: '3%',  y: '5%',  size: 48, delay: 0   },
-  { icon: '/icons/Console remote.png', x: '43%', y: '2%',  size: 42, delay: 0.4 },
-  { icon: '/icons/Heart.png',          x: '81%', y: '5%',  size: 44, delay: 0.3 },
+  { icon: '/game-icons/Video games.png',   x: '3%',  y: '5%',  size: 48, delay: 0   },
+  { icon: '/game-icons/Party games.png',   x: '43%', y: '2%',  size: 42, delay: 0.4 },
+  { icon: '/game-icons/Card games.png',    x: '81%', y: '5%',  size: 44, delay: 0.3 },
   // Bottom strip — clear of content
-  { icon: '/icons/Lightning bolt.png', x: '3%',  y: '86%', size: 48, delay: 0.6 },
-  { icon: '/icons/Celebration.png',    x: '23%', y: '89%', size: 40, delay: 0.2 },
-  { icon: '/icons/Heart.png',          x: '60%', y: '89%', size: 40, delay: 0.7 },
-  { icon: '/icons/Star.png',           x: '81%', y: '86%', size: 44, delay: 0.8 },
+  { icon: '/game-icons/Mobile games.png',  x: '3%',  y: '86%', size: 48, delay: 0.6 },
+  { icon: '/game-icons/Active games.png',  x: '23%', y: '89%', size: 40, delay: 0.2 },
+  { icon: '/game-icons/Puzzles.png',       x: '60%', y: '89%', size: 40, delay: 0.7 },
+  { icon: '/game-icons/Trivia & quizzes.png', x: '81%', y: '86%', size: 44, delay: 0.8 },
 ];
 
 export function WelcomeScreen() {
