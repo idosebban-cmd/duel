@@ -140,8 +140,6 @@ export function AvatarSelection() {
               <AffiliationStep
                 selected={localAffiliation}
                 onSelect={setLocalAffiliation}
-                characterName={localChar}
-                elementName={localElement}
               />
             )}
           </motion.div>
