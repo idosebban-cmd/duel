@@ -7,26 +7,26 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 interface GameType {
   id: string;
   name: string;
-  emoji: string;
+  icon: string;
   color: string;
   gradient: string;
 }
 
 const gameTypes: GameType[] = [
-  { id: 'trivia', name: 'Trivia & Quizzes', emoji: '🎯', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #FF9F1C)' },
-  { id: 'puzzles', name: 'Puzzles', emoji: '🧩', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #00D9FF)' },
-  { id: 'drawing', name: 'Drawing & Creative', emoji: '🎨', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FFE66D)' },
-  { id: 'word', name: 'Word Games', emoji: '💬', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #00D9FF)' },
-  { id: 'board', name: 'Board Games', emoji: '🎲', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #FFE66D)' },
-  { id: 'video', name: 'Video Games', emoji: '🎮', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #FF3D71)' },
-  { id: 'card', name: 'Card Games', emoji: '🃏', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #B565FF)' },
-  { id: 'competitive', name: 'Competitive', emoji: '⚔️', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FF3D71)' },
-  { id: 'coop', name: 'Co-op', emoji: '🤝', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FFE66D)' },
-  { id: 'party', name: 'Party Games', emoji: '🎪', color: '#FFE66D', gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)' },
-  { id: 'strategy', name: 'Strategy', emoji: '♟️', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
-  { id: 'rpg', name: 'Role-playing', emoji: '🎭', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)' },
-  { id: 'active', name: 'Active Games', emoji: '🏃', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FF9F1C)' },
-  { id: 'mobile', name: 'Mobile Games', emoji: '📱', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #4EFFC4)' },
+  { id: 'trivia', name: 'Trivia & Quizzes', icon: '/game-icons/Trivia & quizzes.png', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #FF9F1C)' },
+  { id: 'puzzles', name: 'Puzzles', icon: '/game-icons/Puzzles.png', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #00D9FF)' },
+  { id: 'drawing', name: 'Drawing & Creative', icon: '/game-icons/Drawing & Creative.png', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FFE66D)' },
+  { id: 'word', name: 'Word Games', icon: '/game-icons/Word games.png', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #00D9FF)' },
+  { id: 'board', name: 'Board Games', icon: '/game-icons/Boardgames.png', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #FFE66D)' },
+  { id: 'video', name: 'Video Games', icon: '/game-icons/Video games.png', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #FF3D71)' },
+  { id: 'card', name: 'Card Games', icon: '/game-icons/Card games.png', color: '#FF3D71', gradient: 'linear-gradient(135deg, #FF3D71, #B565FF)' },
+  { id: 'competitive', name: 'Competitive', icon: '/game-icons/Competative games.png', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FF3D71)' },
+  { id: 'coop', name: 'Co-op', icon: '/game-icons/Coop games.png', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FFE66D)' },
+  { id: 'party', name: 'Party Games', icon: '/game-icons/Party games.png', color: '#FFE66D', gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)' },
+  { id: 'strategy', name: 'Strategy', icon: '/game-icons/Strategy.png', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
+  { id: 'rpg', name: 'Role-playing', icon: '/game-icons/Role play.png', color: '#B565FF', gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)' },
+  { id: 'active', name: 'Active Games', icon: '/game-icons/Active games.png', color: '#4EFFC4', gradient: 'linear-gradient(135deg, #4EFFC4, #FF9F1C)' },
+  { id: 'mobile', name: 'Mobile Games', icon: '/game-icons/Mobile games.png', color: '#FF9F1C', gradient: 'linear-gradient(135deg, #FF9F1C, #4EFFC4)' },
 ];
 
 const MIN_SELECTION = 3;
@@ -213,7 +213,7 @@ export function GameSelection() {
                       </motion.span>
                     )}
 
-                    <span className="text-3xl">{game.emoji}</span>
+                    <img src={game.icon} alt={game.name} className="w-10 h-10 object-contain" />
                     <span
                       className="font-display font-bold text-sm text-center leading-tight"
                       style={{ color: isSelected ? 'white' : '#2D3142' }}
