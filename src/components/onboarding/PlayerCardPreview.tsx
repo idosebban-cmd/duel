@@ -41,8 +41,10 @@ const characterImages: Record<string, string> = {
   ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
 };
 
-const elementEmojis: Record<string, string> = {
-  fire: '🔥', water: '💧', earth: '🌿', air: '💨', electric: '⚡',
+const elementImages: Record<string, string> = {
+  fire: '/elements/Fire.png', water: '/elements/Water.png',
+  earth: '/elements/Earth.png', air: '/elements/Wind.png',
+  electric: '/elements/Electricity.png',
 };
 
 const affiliationImages: Record<string, string> = {
@@ -246,28 +248,28 @@ export function PlayerCardPreview() {
 
                 {/* Affiliation badge */}
                 {affiliation && affiliationImages[affiliation] && (
-                  <motion.div
-                    className="absolute -top-2 -left-2 w-10 h-10 rounded-xl flex items-center justify-center p-1.5"
-                    style={{ background: 'white', border: '3px solid #000', boxShadow: '2px 2px 0px 0px rgba(0,0,0,0.2)' }}
+                  <motion.img
+                    src={affiliationImages[affiliation]}
+                    alt={affiliation}
+                    className="absolute -top-4 -left-4 w-12 h-12 object-contain drop-shadow-lg"
+                    style={{ imageRendering: 'pixelated' }}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.4, type: 'spring' }}
-                  >
-                    <img src={affiliationImages[affiliation]} alt={affiliation} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
-                  </motion.div>
+                  />
                 )}
 
                 {/* Element badge */}
-                {element && (
-                  <motion.div
-                    className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                    style={{ background: 'white', border: '3px solid #000', boxShadow: '2px 2px 0px 0px rgba(0,0,0,0.2)' }}
+                {element && elementImages[element] && (
+                  <motion.img
+                    src={elementImages[element]}
+                    alt={element}
+                    className="absolute -bottom-4 -right-4 w-12 h-12 object-contain drop-shadow-lg"
+                    style={{ imageRendering: 'pixelated' }}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.5, type: 'spring' }}
-                  >
-                    {elementEmojis[element]}
-                  </motion.div>
+                  />
                 )}
               </motion.div>
 
