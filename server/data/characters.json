@@ -82,5 +82,47 @@
     "color": "#4CAF50",
     "image": "/characters/Dragon.png",
     "attributes": { "type": "dragon", "wings": true, "glasses": false, "hat": false, "magic": true, "color": "green" }
+  },
+  {
+    "id": "char_13",
+    "name": "Hex",
+    "color": "#7B2D8B",
+    "image": "/characters/Witch.png",
+    "attributes": { "type": "witch", "wings": false, "glasses": false, "hat": true, "magic": true, "color": "purple" }
+  },
+  {
+    "id": "char_14",
+    "name": "Steel",
+    "color": "#8C9EAD",
+    "image": "/characters/Knight.png",
+    "attributes": { "type": "knight", "wings": false, "glasses": false, "hat": true, "magic": false, "color": "silver" }
+  },
+  {
+    "id": "char_15",
+    "name": "Bjorn",
+    "color": "#D4703A",
+    "image": "/characters/Viking.png",
+    "attributes": { "type": "viking", "wings": false, "glasses": false, "hat": true, "magic": false, "color": "red" }
+  },
+  {
+    "id": "char_16",
+    "name": "Fae",
+    "color": "#FFB6E1",
+    "image": "/characters/Pixie.png",
+    "attributes": { "type": "pixie", "wings": true, "glasses": false, "hat": false, "magic": true, "color": "pink" }
+  },
+  {
+    "id": "char_17",
+    "name": "Kage",
+    "color": "#2C2C2C",
+    "image": "/characters/Ninja.png",
+    "attributes": { "type": "ninja", "wings": false, "glasses": false, "hat": false, "magic": false, "color": "black" }
+  },
+  {
+    "id": "char_18",
+    "name": "Pearl",
+    "color": "#40C4C4",
+    "image": "/characters/Mermaid.png",
+    "attributes": { "type": "mermaid", "wings": false, "glasses": false, "hat": false, "magic": true, "color": "teal" }
   }
 ]
