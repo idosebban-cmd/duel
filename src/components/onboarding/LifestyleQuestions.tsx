@@ -325,16 +325,13 @@ export function LifestyleQuestions() {
               })}
             </div>
 
-            {/* Skip / hint row */}
-            <div className="flex items-center justify-between mt-4">
-              <p className="font-body text-xs text-charcoal/35">
-                Select an option to automatically advance
-              </p>
+            {/* Skip button */}
+            <div className="flex justify-center mt-5">
               <button
                 onClick={handleSkip}
-                className="font-body text-xs text-charcoal/40 hover:text-charcoal/60 transition-colors underline underline-offset-2 flex-shrink-0 ml-3"
+                className="font-body text-sm font-medium text-charcoal/50 hover:text-charcoal/80 transition-colors px-5 py-2 rounded-xl border-2 border-charcoal/15 hover:border-charcoal/30 bg-white/60"
               >
-                Skip →
+                Skip this question →
               </button>
             </div>
           </motion.div>

@@ -92,11 +92,6 @@ export function PlayerCardPreview() {
   const capitalize = (s: string | null) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
-  const avatarLabel = [
-    capitalize(affiliation),
-    capitalize(element),
-    capitalize(character),
-  ].filter(Boolean).join(' ');
 
   const lifestyleItems = [
     kids && { emoji: '👶', label: kids },
@@ -247,6 +242,19 @@ export function PlayerCardPreview() {
                     : '?'}
                 </div>
 
+                {/* Affiliation badge */}
+                {affiliation && affiliationEmojis[affiliation] && (
+                  <motion.div
+                    className="absolute -top-2 -left-2 w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                    style={{ background: 'white', border: '3px solid #000', boxShadow: '2px 2px 0px 0px rgba(0,0,0,0.2)' }}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.4, type: 'spring' }}
+                  >
+                    {affiliationEmojis[affiliation]}
+                  </motion.div>
+                )}
+
                 {/* Element badge */}
                 {element && (
                   <motion.div
@@ -266,17 +274,6 @@ export function PlayerCardPreview() {
                 style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.2)' }}>
                 {name || 'Your Name'}{age ? `, ${age}` : ''}
               </h2>
-
-              {/* Avatar label badge */}
-              {avatarLabel && (
-                <div
-                  className="inline-flex items-center gap-2 mt-2 px-4 py-1.5 rounded-full text-sm font-display font-bold text-white"
-                  style={{ background: 'rgba(0,0,0,0.25)', border: '2px solid rgba(255,255,255,0.3)' }}
-                >
-                  {affiliation && affiliationEmojis[affiliation]}
-                  {avatarLabel}
-                </div>
-              )}
 
               {/* Gender/interest info */}
               <div className="flex justify-center gap-2 mt-2 flex-wrap">
