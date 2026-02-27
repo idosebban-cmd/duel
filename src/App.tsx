@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { preloadImages } from './utils/preloadImages';
 import { WelcomeScreen } from './components/onboarding/WelcomeScreen';
 import { AvatarSelection } from './components/onboarding/AvatarSelection';
 import { BasicsForm } from './components/onboarding/BasicsForm';
@@ -14,6 +16,8 @@ import { GameBoard } from './pages/game/GameBoard';
 import { GameResult } from './pages/game/GameResult';
 
 export default function App() {
+  useEffect(() => { preloadImages(); }, []);
+
   return (
     <BrowserRouter>
       <AnimatePresence mode="wait">
