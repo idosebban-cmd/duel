@@ -22,6 +22,12 @@ const characters: Character[] = [
   { id: 'unicorn', name: 'Unicorn', image: '/characters/Unicorn.png', hint: 'Optimistic & Magical', color: '#FF6BA8', gradient: 'linear-gradient(135deg, #FF6BA8, #FFE66D)' },
   { id: 'ghost', name: 'Ghost', image: '/characters/Ghost.png', hint: 'Mysterious & Introverted', color: '#00D9FF', gradient: 'linear-gradient(135deg, #00D9FF, #B565FF)' },
   { id: 'lion', name: 'Lion', image: '/characters/Lion.png', hint: 'Confident & Leader', color: '#FFE66D', gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)' },
+  { id: 'witch', name: 'Witch', image: '/characters/Witch.png', hint: 'Mystical & Cunning', color: '#7B2D8B', gradient: 'linear-gradient(135deg, #7B2D8B, #B565FF)' },
+  { id: 'knight', name: 'Knight', image: '/characters/Knight.png', hint: 'Honorable & Brave', color: '#8C9EAD', gradient: 'linear-gradient(135deg, #8C9EAD, #2D3142)' },
+  { id: 'viking', name: 'Viking', image: '/characters/Viking.png', hint: 'Bold & Fearless', color: '#D4703A', gradient: 'linear-gradient(135deg, #D4703A, #FFE66D)' },
+  { id: 'pixie', name: 'Pixie', image: '/characters/Pixie.png', hint: 'Whimsical & Bright', color: '#FFB6E1', gradient: 'linear-gradient(135deg, #FFB6E1, #B565FF)' },
+  { id: 'ninja', name: 'Ninja', image: '/characters/Ninja.png', hint: 'Stealthy & Precise', color: '#2C2C2C', gradient: 'linear-gradient(135deg, #2C2C2C, #6C8EBF)' },
+  { id: 'mermaid', name: 'Mermaid', image: '/characters/Mermaid.png', hint: 'Dreamy & Enchanting', color: '#40C4C4', gradient: 'linear-gradient(135deg, #40C4C4, #B565FF)' },
 ];
 
 interface CharacterStepProps {

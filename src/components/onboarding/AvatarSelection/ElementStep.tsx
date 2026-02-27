@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 interface Element {
   id: string;
   name: string;
-  emoji: string;
+  image: string;
   description: string;
   gradient: string;
   glow: string;
@@ -14,7 +14,7 @@ const elements: Element[] = [
   {
     id: 'fire',
     name: 'Fire',
-    emoji: '🔥',
+    image: '/elements/Fire.png',
     description: 'Passionate & intense',
     gradient: 'linear-gradient(135deg, #FF3D71 0%, #FF9F1C 100%)',
     glow: 'rgba(255, 61, 113, 0.5)',
@@ -23,7 +23,7 @@ const elements: Element[] = [
   {
     id: 'water',
     name: 'Water',
-    emoji: '💧',
+    image: '/elements/Water.png',
     description: 'Calm & adaptive',
     gradient: 'linear-gradient(135deg, #00D9FF 0%, #4EFFC4 100%)',
     glow: 'rgba(0, 217, 255, 0.5)',
@@ -32,7 +32,7 @@ const elements: Element[] = [
   {
     id: 'earth',
     name: 'Earth',
-    emoji: '🌿',
+    image: '/elements/Earth.png',
     description: 'Grounded & reliable',
     gradient: 'linear-gradient(135deg, #CAFFBF 0%, #FF9F1C 100%)',
     glow: 'rgba(202, 255, 191, 0.6)',
@@ -41,7 +41,7 @@ const elements: Element[] = [
   {
     id: 'air',
     name: 'Air',
-    emoji: '💨',
+    image: '/elements/Wind.png',
     description: 'Free & spontaneous',
     gradient: 'linear-gradient(135deg, #e0f7ff 0%, #00D9FF 100%)',
     glow: 'rgba(224, 247, 255, 0.8)',
@@ -50,7 +50,7 @@ const elements: Element[] = [
   {
     id: 'electric',
     name: 'Electric',
-    emoji: '⚡',
+    image: '/elements/Electricity.png',
     description: 'Quick & energetic',
     gradient: 'linear-gradient(135deg, #FFE66D 0%, #B565FF 100%)',
     glow: 'rgba(255, 230, 109, 0.6)',
@@ -134,13 +134,13 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
               <div className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent rounded-2xl pointer-events-none" />
 
               {/* Element icon */}
-              <motion.span
-                className="text-5xl sm:text-6xl mb-3 block"
+              <motion.img
+                src={el.image}
+                alt={el.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 mb-3 object-contain drop-shadow-md"
                 animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 0.5, repeat: isSelected ? Infinity : 0, repeatDelay: 2 }}
-              >
-                {el.emoji}
-              </motion.span>
+              />
 
               <span className="font-display font-bold text-xl sm:text-2xl text-charcoal drop-shadow-sm">
                 {el.name}
