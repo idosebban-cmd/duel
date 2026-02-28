@@ -98,25 +98,18 @@ export function WelcomeScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
       >
-        {/* ── LOGO ── swap the <h1> below for <img src="/logo/logo.png" alt="Duel" className="h-28 w-auto object-contain" /> once the logo file is added */}
         <motion.div
           className="mb-2"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
         >
-          <h1
-            className="font-display select-none leading-none"
-            style={{
-              fontSize: '100px',
-              color: '#FFE66D',
-              textShadow:
-                '0 0 18px rgba(255,230,109,0.9), 0 0 50px rgba(255,230,109,0.35), 4px 4px 0px #FF9F1C, 7px 7px 0px rgba(0,0,0,0.6)',
-              letterSpacing: '0.06em',
-            }}
-          >
-            DUEL
-          </h1>
+          <img
+            src="/logo/logo"
+            alt="Duel"
+            className="h-40 w-auto object-contain select-none"
+            style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
+          />
         </motion.div>
 
         {/* "PLAYER 1 START" divider */}
