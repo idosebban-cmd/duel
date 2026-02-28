@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Gamepad2, Zap, Heart } from 'lucide-react';
 
 // Decorative pixel elements
 const decorElements = [
@@ -157,16 +156,16 @@ export function WelcomeScreen() {
           transition={{ delay: 0.5 }}
         >
           {[
-            { icon: <Zap size={14} />, text: 'Real connections', color: '#FFE66D' },
-            { icon: <Heart size={14} />, text: 'Games first', color: '#FF6BA8' },
-            { icon: <Gamepad2 size={14} />, text: 'No cringe DMs', color: '#4EFFC4' },
+            { icon: '/icons/Lightning bolt.png', text: 'Real connections', color: '#FFE66D' },
+            { icon: '/icons/Heart.png', text: 'Games first', color: '#FF6BA8' },
+            { icon: '/icons/Console remote.png', text: 'No cringe DMs', color: '#4EFFC4' },
           ].map((pill) => (
             <span
               key={pill.text}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold text-charcoal border-2 border-black shadow-manga"
               style={{ backgroundColor: pill.color }}
             >
-              {pill.icon}
+              <img src={pill.icon} alt="" className="w-3.5 h-3.5 object-contain" />
               {pill.text}
             </span>
           ))}
