@@ -2,13 +2,13 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const floatingIcons = [
-  { icon: '/icons/Star.png',           x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
-  { icon: '/icons/Lightning bolt.png', x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
-  { icon: '/icons/Heart.png',          x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
-  { icon: '/icons/Celebration.png',    x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
-  { icon: '/icons/Console remote.png', x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
-  { icon: '/icons/Star.png',           x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
-  { icon: '/icons/Lightning bolt.png', x: '48%', y: '88%', size: 42, delay: 0.2, rotate: -5  },
+  { icon: '/icons/Star.png',              x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
+  { icon: '/icons/Lightning bolt.png',    x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
+  { icon: '/icons/Heart.png',             x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
+  { icon: '/icons/Trivia & quizzes.png',  x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
+  { icon: '/icons/Active games.png',      x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
+  { icon: '/icons/Star.png',              x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
+  { icon: '/icons/Lightning bolt.png',    x: '48%', y: '88%', size: 42, delay: 0.2, rotate: -5  },
 ];
 
 export function WelcomeScreen() {
@@ -110,6 +110,18 @@ export function WelcomeScreen() {
             className="h-40 w-auto object-contain select-none"
             style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
           />
+          <h1
+            className="font-display select-none leading-none mt-2"
+            style={{
+              fontSize: '72px',
+              color: '#FFE66D',
+              textShadow:
+                '0 0 18px rgba(255,230,109,0.9), 0 0 50px rgba(255,230,109,0.35), 4px 4px 0px #FF9F1C, 7px 7px 0px rgba(0,0,0,0.6)',
+              letterSpacing: '0.06em',
+            }}
+          >
+            DUEL
+          </h1>
         </motion.div>
 
         {/* "PLAYER 1 START" divider */}
@@ -155,7 +167,7 @@ export function WelcomeScreen() {
           {[
             { icon: '/icons/Lightning bolt.png', text: 'Real connections', bg: '#FFE66D', fg: '#12122A' },
             { icon: '/icons/Heart.png',          text: 'Games first',      bg: '#FF6BA8', fg: '#fff'    },
-            { icon: '/icons/Console remote.png', text: 'No cringe DMs',   bg: '#4EFFC4', fg: '#12122A' },
+            { icon: '/icons/Active games.png',   text: 'No cringe DMs',   bg: '#4EFFC4', fg: '#12122A' },
           ].map((pill) => (
             <span
               key={pill.text}
