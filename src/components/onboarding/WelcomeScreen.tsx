@@ -107,7 +107,7 @@ export function WelcomeScreen() {
           <img
             src="/logo/Logo.png"
             alt=""
-            className="h-40 w-auto object-contain select-none"
+            className="h-40 w-auto object-contain select-none mx-auto block"
             style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
           />
           <h1
