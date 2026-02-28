@@ -1,169 +1,177 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-// Decorative pixel elements
-const decorElements = [
-  // Top strip — clear of content
-  { icon: '/icons/Console remote.png', x: '3%',  y: '5%',  size: 48, delay: 0   },
-  { icon: '/icons/Celebration.png',    x: '43%', y: '2%',  size: 42, delay: 0.4 },
-  { icon: '/icons/Star.png',           x: '81%', y: '5%',  size: 44, delay: 0.3 },
-  // Bottom strip — clear of content
-  { icon: '/icons/Lightning bolt.png', x: '3%',  y: '86%', size: 48, delay: 0.6 },
-  { icon: '/icons/Heart.png',          x: '23%', y: '89%', size: 40, delay: 0.2 },
-  { icon: '/icons/Console remote.png', x: '60%', y: '89%', size: 40, delay: 0.7 },
-  { icon: '/icons/Star.png',           x: '81%', y: '86%', size: 44, delay: 0.8 },
+const floatingIcons = [
+  { icon: '/icons/Star.png',           x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
+  { icon: '/icons/Lightning bolt.png', x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
+  { icon: '/icons/Heart.png',          x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
+  { icon: '/icons/Celebration.png',    x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
+  { icon: '/icons/Console remote.png', x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
+  { icon: '/icons/Star.png',           x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
+  { icon: '/icons/Lightning bolt.png', x: '48%', y: '88%', size: 42, delay: 0.2, rotate: -5  },
 ];
 
 export function WelcomeScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(160deg, #FFF8F0 0%, #FFF0F5 40%, #F0F0FF 100%)',
-      }}
+    <div
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: '#12122A' }}
     >
-      {/* Halftone background */}
-      <div className="absolute inset-0 halftone opacity-60 pointer-events-none" />
-
-      {/* Background burst shapes */}
+      {/* Grid background */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(255,230,109,0.15) 0%, transparent 70%)',
+          backgroundImage:
+            'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
         }}
       />
 
-      {/* Speed lines */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-5" aria-hidden="true">
-        {[...Array(8)].map((_, i) => (
-          <line
-            key={i}
-            x1={`${(i / 8) * 100}%`} y1="0"
-            x2="50%" y2="50%"
-            stroke="#2D3142" strokeWidth="1"
-          />
-        ))}
-        {[...Array(8)].map((_, i) => (
-          <line
-            key={`b-${i}`}
-            x1={`${(i / 8) * 100}%`} y1="100%"
-            x2="50%" y2="50%"
-            stroke="#2D3142" strokeWidth="1"
-          />
-        ))}
-      </svg>
+      {/* Scanlines */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
+        }}
+      />
 
-      {/* Floating decorative elements */}
-      {decorElements.map((el, i) => (
+      {/* Corner brackets */}
+      <div className="absolute top-5 left-5 w-10 h-10 border-t-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute top-5 right-5 w-10 h-10 border-t-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute bottom-5 left-5 w-10 h-10 border-b-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute bottom-5 right-5 w-10 h-10 border-b-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none" />
+
+      {/* Ambient glow orbs */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '20%', left: '15%', width: 320, height: 320,
+          background: 'radial-gradient(circle, rgba(181,101,255,0.10) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }}
+      />
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '20%', right: '10%', width: 280, height: 280,
+          background: 'radial-gradient(circle, rgba(255,107,168,0.10) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }}
+      />
+
+      {/* Floating icons */}
+      {floatingIcons.map((el, i) => (
         <motion.div
           key={i}
           className="absolute select-none pointer-events-none"
           style={{ left: el.x, top: el.y, width: el.size, height: el.size }}
-          initial={{ opacity: 0, scale: 0 }}
+          initial={{ opacity: 0, scale: 0, rotate: el.rotate }}
           animate={{
-            opacity: [0.7, 1, 0.7],
-            scale: [1, 1.2, 1],
-            y: [0, -8, 0],
+            opacity: [0.45, 0.85, 0.45],
+            scale: [1, 1.18, 1],
+            y: [0, -10, 0],
+            rotate: [el.rotate, el.rotate + 6, el.rotate],
           }}
           transition={{
-            duration: 2.5 + i * 0.3,
+            duration: 3 + i * 0.35,
             repeat: Infinity,
             delay: el.delay,
             ease: 'easeInOut',
           }}
         >
-          <img src={el.icon} alt="" className="w-full h-full object-contain" />
+          <img
+            src={el.icon}
+            alt=""
+            className="w-full h-full object-contain"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.55))' }}
+          />
         </motion.div>
       ))}
 
-      {/* Comic burst behind logo */}
-      <motion.div
-        className="absolute"
-        style={{
-          width: 280,
-          height: 280,
-          background: 'radial-gradient(circle, rgba(255,230,109,0.25) 0%, transparent 65%)',
-          borderRadius: '50%',
-        }}
-        animate={{ scale: [1, 1.08, 1], rotate: [0, 5, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
       {/* Main content */}
       <motion.div
-        className="relative z-10 flex flex-col items-center px-6 text-center max-w-md"
+        className="relative z-10 flex flex-col items-center px-6 text-center max-w-sm w-full"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
       >
-        {/* Logo */}
+        {/* ── LOGO ── swap the <h1> below for <img src="/logo/logo.png" alt="Duel" className="h-28 w-auto object-contain" /> once the logo file is added */}
         <motion.div
+          className="mb-2"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
         >
           <h1
-            className="font-display text-8xl font-extrabold tracking-tight leading-none mb-2 select-none"
+            className="font-display select-none leading-none"
             style={{
-              background: 'linear-gradient(135deg, #FF6BA8 0%, #B565FF 50%, #FF3D71 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              filter: 'drop-shadow(3px 3px 0px rgba(0,0,0,0.15))',
+              fontSize: '100px',
+              color: '#FFE66D',
+              textShadow:
+                '0 0 18px rgba(255,230,109,0.9), 0 0 50px rgba(255,230,109,0.35), 4px 4px 0px #FF9F1C, 7px 7px 0px rgba(0,0,0,0.6)',
+              letterSpacing: '0.06em',
             }}
           >
             DUEL
           </h1>
         </motion.div>
 
-        {/* Headline */}
-        <motion.h2
-          className="font-display font-extrabold text-4xl sm:text-5xl text-charcoal mb-4 leading-tight"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+        {/* "PLAYER 1 START" divider */}
+        <motion.div
+          className="flex items-center gap-3 w-full mb-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
         >
-          Welcome to{' '}
-          <span
-            style={{
-              background: 'linear-gradient(135deg, #FF6BA8, #FF3D71)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(78,255,196,0.45))' }} />
+          <motion.span
+            className="font-body text-xs font-bold tracking-widest uppercase"
+            style={{ color: '#4EFFC4' }}
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
           >
-            Duel
-          </span>
-        </motion.h2>
+            PLAYER 1 START
+          </motion.span>
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(78,255,196,0.45), transparent)' }} />
+        </motion.div>
 
-        {/* Subheading */}
+        {/* Tagline */}
         <motion.p
-          className="font-body font-medium text-lg sm:text-xl text-charcoal/70 mb-4 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
+          className="font-body font-bold text-lg mb-7 leading-snug"
+          style={{ color: 'rgba(255,255,255,0.7)' }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.45 }}
         >
           Play games together.{' '}
-          <span className="text-charcoal/90 font-semibold">Skip the awkward texts.</span>
+          <span style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>
+            Skip the awkward texts.
+          </span>
         </motion.p>
 
         {/* Feature pills */}
         <motion.div
-          className="flex gap-2 mb-10 flex-wrap justify-center"
+          className="flex gap-2 mb-9 flex-wrap justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.55 }}
         >
           {[
-            { icon: '/icons/Lightning bolt.png', text: 'Real connections', color: '#FFE66D' },
-            { icon: '/icons/Heart.png', text: 'Games first', color: '#FF6BA8' },
-            { icon: '/icons/Console remote.png', text: 'No cringe DMs', color: '#4EFFC4' },
+            { icon: '/icons/Lightning bolt.png', text: 'Real connections', bg: '#FFE66D', fg: '#12122A' },
+            { icon: '/icons/Heart.png',          text: 'Games first',      bg: '#FF6BA8', fg: '#fff'    },
+            { icon: '/icons/Console remote.png', text: 'No cringe DMs',   bg: '#4EFFC4', fg: '#12122A' },
           ].map((pill) => (
             <span
               key={pill.text}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold text-charcoal border-2 border-black shadow-manga"
-              style={{ backgroundColor: pill.color }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-bold border-2 border-black"
+              style={{
+                backgroundColor: pill.bg,
+                color: pill.fg,
+                boxShadow: '3px 3px 0px rgba(0,0,0,0.6)',
+              }}
             >
               <img src={pill.icon} alt="" className="w-3.5 h-3.5 object-contain" />
               {pill.text}
@@ -171,51 +179,52 @@ export function WelcomeScreen() {
           ))}
         </motion.div>
 
-        {/* CTA Button */}
+        {/* CTA */}
         <motion.button
           onClick={() => navigate('/onboarding/avatar')}
-          className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl text-white rounded-[20px] py-5 px-8 cursor-pointer select-none"
+          className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
           style={{
-            background: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 40%, #FF3D71 100%)',
-            border: '4px solid black',
-            boxShadow: '8px 8px 0px 0px #B565FF',
-            textShadow: '1px 1px 0 rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+            border: '3px solid rgba(255,255,255,0.25)',
+            boxShadow: '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)',
+            color: '#12122A',
           }}
-          whileHover={{
-            scale: 1.05,
-            boxShadow: '10px 10px 0px 0px #B565FF',
-          }}
-          whileTap={{
-            scale: 0.97,
-            boxShadow: '4px 4px 0px 0px #B565FF',
-            translateX: 4,
-            translateY: 4,
-          }}
-          transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65 }}
+          whileHover={{
+            scale: 1.05,
+            boxShadow: '0 0 50px rgba(78,255,196,0.75), 6px 6px 0px rgba(0,0,0,0.4)',
+          }}
+          whileTap={{ scale: 0.97, boxShadow: '2px 2px 0px rgba(0,0,0,0.4)' }}
         >
-          {/* Glossy overlay */}
-          <span className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-          Create Your Character
+          <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+          INSERT COIN →
         </motion.button>
 
         <motion.p
-          className="mt-4 font-body text-sm text-charcoal/40"
+          className="mt-4 font-body text-sm"
+          style={{ color: 'rgba(255,255,255,0.28)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.85 }}
         >
           Already have an account?{' '}
-          <button className="text-hot-bubblegum font-semibold hover:underline">Sign in</button>
+          <button
+            className="font-semibold hover:underline"
+            style={{ color: '#FF6BA8' }}
+          >
+            Sign in
+          </button>
         </motion.p>
       </motion.div>
 
-      {/* Bottom decorative bar */}
+      {/* Bottom neon bar */}
       <motion.div
-        className="absolute bottom-0 left-0 right-0 h-2"
+        className="absolute bottom-0 left-0 right-0 h-[3px]"
         style={{
           background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)',
+          boxShadow: '0 0 14px rgba(78,255,196,0.7)',
         }}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
