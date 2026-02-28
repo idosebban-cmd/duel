@@ -38,7 +38,7 @@ export function GameSetup() {
   const defaultAvatar = `/characters/${randomCharacter}.png`;
 
   const [name, setName] = useState(defaultName);
-  const [avatar, setAvatar] = useState(defaultAvatar);
+  const [avatar] = useState(defaultAvatar);
   // Pre-fill gameId from ?join= query param (set when lobby redirects an unidentified player)
   const [gameId, setGameId] = useState(searchParams.get('join') ?? '');
   const [creating, setCreating] = useState(false);
