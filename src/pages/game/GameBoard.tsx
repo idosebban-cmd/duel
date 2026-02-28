@@ -259,7 +259,7 @@ export function GameBoard() {
                 >
                   ★ Your Mystery Character
                 </p>
-                <div className="max-w-xs">
+                <div style={{ width: 120 }}>
                   <CharacterCard character={myChar} isFlipped={false} isMySecret size="lg" />
                 </div>
               </div>
@@ -291,7 +291,7 @@ export function GameBoard() {
                     : '2px solid rgba(255,255,255,0.08)',
                 }}
               >
-                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))' }}>
                   {game.characters.map((char) => {
                     const isFlipped = myFlipped.includes(char.id);
                     const isPending = store.pendingFlips.includes(char.id);

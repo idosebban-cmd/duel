@@ -30,10 +30,12 @@ export function GameSetup() {
 
   const defaultName = onboarding.name || '';
   const characterId = onboarding.character;
-  const characterImagePath = characterId
-    ? `/characters/${characterId.charAt(0).toUpperCase() + characterId.slice(1)}.png`
-    : null;
-  const defaultAvatar = characterImagePath ?? '🎮';
+
+  // Pick a random character that isn't the player's own, so the opponent can't identify them
+  const ALL_CHARACTERS = ['Bear','Cat','Dragon','Fox','Ghost','Knight','Lion','Mermaid','Ninja','Octopus','Owl','Phoenix','Pixie','Robot','Unicorn','Viking','Witch','Wolf'];
+  const others = ALL_CHARACTERS.filter((c) => c.toLowerCase() !== characterId?.toLowerCase());
+  const randomCharacter = others[Math.floor(Math.random() * others.length)] ?? ALL_CHARACTERS[0];
+  const defaultAvatar = `/characters/${randomCharacter}.png`;
 
   const [name, setName] = useState(defaultName);
   const [avatar, setAvatar] = useState(defaultAvatar);
@@ -102,8 +104,6 @@ export function GameSetup() {
     }
   };
 
-  const AVATARS = ['🎮', '🎯', '🃏', '🎲', '🕹️', '🏆', '⚔️', '🔥', '⚡', '🌊', '💎', '🌟'];
-
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8"
@@ -163,33 +163,15 @@ export function GameSetup() {
 
           <div>
             <p className="font-body text-white/40 text-xs mb-2">Avatar</p>
-            {characterImagePath ? (
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden"
-                  style={{ background: 'rgba(78,255,196,0.2)', border: '2px solid #4EFFC4' }}
-                >
-                  <img src={characterImagePath} alt="avatar" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
-                </div>
-                <p className="font-body text-white/40 text-xs">Using your character</p>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,255,255,0.15)' }}
+              >
+                <img src={avatar} alt="avatar" className="w-full h-full object-contain" />
               </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {AVATARS.map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAvatar(a)}
-                    className="w-9 h-9 rounded-xl text-xl flex items-center justify-center transition-all"
-                    style={{
-                      background: avatar === a ? 'rgba(78,255,196,0.2)' : 'rgba(255,255,255,0.05)',
-                      border: avatar === a ? '2px solid #4EFFC4' : '2px solid rgba(255,255,255,0.1)',
-                    }}
-                  >
-                    {a}
-                  </button>
-                ))}
-              </div>
-            )}
+              <p className="font-body text-white/40 text-xs">Randomly assigned — your identity is hidden</p>
+            </div>
           </div>
         </motion.div>
 

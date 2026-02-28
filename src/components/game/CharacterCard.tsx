@@ -28,8 +28,7 @@ export function CharacterCard({
       style={{
         perspective: 1000,
         width: '100%',
-        height: isLg ? 160 : undefined,
-        aspectRatio: isLg ? undefined : '3 / 4',
+        aspectRatio: '3 / 4',
       }}
     >
       <motion.div
@@ -65,7 +64,7 @@ export function CharacterCard({
             src={character.image}
             alt={character.name}
             className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover' }}
+            style={{ objectFit: isLg ? 'contain' : 'cover' }}
             draggable={false}
           />
 
