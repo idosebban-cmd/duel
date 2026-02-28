@@ -27,8 +27,9 @@ export function CharacterCard({
       className="relative"
       style={{
         perspective: 1000,
-        width: isLg ? '100%' : 60,
-        height: isLg ? 160 : 80,
+        width: '100%',
+        height: isLg ? 160 : undefined,
+        aspectRatio: isLg ? undefined : '3 / 4',
       }}
     >
       <motion.div
@@ -64,7 +65,7 @@ export function CharacterCard({
             src={character.image}
             alt={character.name}
             className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover', imageRendering: 'pixelated' }}
+            style={{ objectFit: 'cover' }}
             draggable={false}
           />
 

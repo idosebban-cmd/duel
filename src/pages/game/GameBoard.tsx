@@ -281,7 +281,7 @@ export function GameBoard() {
                 </span>
               </div>
               <div
-                className="rounded-2xl p-3"
+                className="rounded-2xl p-2"
                 style={{
                   background: canFlip
                     ? 'rgba(78,255,196,0.05)'
@@ -291,7 +291,7 @@ export function GameBoard() {
                     : '2px solid rgba(255,255,255,0.08)',
                 }}
               >
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+                <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                   {game.characters.map((char) => {
                     const isFlipped = myFlipped.includes(char.id);
                     const isPending = store.pendingFlips.includes(char.id);
