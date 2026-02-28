@@ -2,13 +2,13 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const floatingIcons = [
-  { icon: '/icons/Star.png',              x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
-  { icon: '/icons/Lightning bolt.png',    x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
-  { icon: '/icons/Heart.png',             x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
-  { icon: '/icons/Trivia & quizzes.png',  x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
-  { icon: '/icons/Active games.png',      x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
-  { icon: '/icons/Star.png',              x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
-  { icon: '/icons/Lightning bolt.png',    x: '48%', y: '88%', size: 42, delay: 0.2, rotate: -5  },
+  { icon: '/icons/Star.png',                       x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
+  { icon: '/icons/Lightning bolt.png',             x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
+  { icon: '/icons/Heart.png',                      x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
+  { icon: '/icons/Trivia%20%26%20quizzes.png',     x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
+  { icon: '/icons/Active%20games.png',             x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
+  { icon: '/icons/Star.png',                       x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
+  { icon: '/icons/Lightning%20bolt.png',           x: '48%', y: '88%', size: 42, delay: 0.2, rotate: -5  },
 ];
 
 export function WelcomeScreen() {
@@ -105,8 +105,8 @@ export function WelcomeScreen() {
           transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
         >
           <img
-            src="/logo/logo"
-            alt="Duel"
+            src="/logo/Logo.png"
+            alt=""
             className="h-40 w-auto object-contain select-none"
             style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
           />
@@ -165,9 +165,9 @@ export function WelcomeScreen() {
           transition={{ delay: 0.55 }}
         >
           {[
-            { icon: '/icons/Lightning bolt.png', text: 'Real connections', bg: '#FFE66D', fg: '#12122A' },
-            { icon: '/icons/Heart.png',          text: 'Games first',      bg: '#FF6BA8', fg: '#fff'    },
-            { icon: '/icons/Active games.png',   text: 'No cringe DMs',   bg: '#4EFFC4', fg: '#12122A' },
+            { icon: '/icons/Lightning%20bolt.png', text: 'Real connections', bg: '#FFE66D', fg: '#12122A' },
+            { icon: '/icons/Heart.png',           text: 'Games first',      bg: '#FF6BA8', fg: '#fff'    },
+            { icon: '/icons/Active%20games.png',  text: 'No cringe DMs',   bg: '#4EFFC4', fg: '#12122A' },
           ].map((pill) => (
             <span
               key={pill.text}
