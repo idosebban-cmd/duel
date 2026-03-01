@@ -63,6 +63,14 @@ const lookingForColors: Record<string, string> = {
   open: '#FFE66D',
 };
 
+const lookingForIcons: Record<string, string> = {
+  casual: '/looking-for/Casual.png',
+  'short-term': '/looking-for/Short-term.png',
+  'long-term': '/looking-for/long-term.png',
+  'not-sure': '/looking-for/Not-sure.png',
+  open: '/looking-for/Open.png',
+};
+
 
 export function PlayerCardPreview() {
   const navigate = useNavigate();
@@ -320,14 +328,15 @@ export function PlayerCardPreview() {
                     {gameTypes.map((gt) => (
                       <motion.span
                         key={gt}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold text-charcoal"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-charcoal"
                         style={{
                           background: 'linear-gradient(135deg, #FFF0F5, #F5F0FF)',
-                          border: '2px solid rgba(0,0,0,0.1)',
+                          border: '2px solid #000',
+                          boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
                         }}
                         whileHover={{ scale: 1.05 }}
                       >
-                        <img src={gameTypeIcons[gt] || '/game-icons/Active%20games.png'} alt="" className="w-4 h-4 object-contain" />
+                        <img src={gameTypeIcons[gt] || '/game-icons/Active%20games.png'} alt="" className="w-5 h-5 object-contain" />
                         <span className="capitalize">{gt}</span>
                       </motion.span>
                     ))}
@@ -361,6 +370,7 @@ export function PlayerCardPreview() {
                           boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
                         }}
                       >
+                        {lookingForIcons[id] && <img src={lookingForIcons[id]} alt="" className="w-5 h-5 object-contain" />}
                         {lookingForLabels[id]}
                       </span>
                     ))}
@@ -378,10 +388,10 @@ export function PlayerCardPreview() {
                     {lifestyleItems.map((item) => (
                       <span
                         key={item.label}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium text-charcoal bg-cream"
-                        style={{ border: '2px solid rgba(0,0,0,0.1)' }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-charcoal bg-cream"
+                        style={{ border: '2px solid #000', boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)' }}
                       >
-                        <img src={item.icon} alt="" className="w-4 h-4 object-contain" />
+                        <img src={item.icon} alt="" className="w-5 h-5 object-contain" />
                         {item.label}
                       </span>
                     ))}
