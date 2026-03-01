@@ -124,6 +124,12 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
+      partialize: (state) => {
+        // Exclude photos — base64 data URLs are too large for localStorage (5 MB limit).
+        // Photos live in memory only for the duration of the onboarding session.
+        const { photos: _photos, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
