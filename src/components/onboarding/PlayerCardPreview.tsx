@@ -30,11 +30,21 @@ const affiliationImages: Record<string, string> = {
   cosmic: '/affiliation/Cosmos.png', travel: '/affiliation/Travel.png',
 };
 
-const gameTypeEmojis: Record<string, string> = {
-  trivia: '🎯', puzzles: '🧩', drawing: '🎨', word: '💬',
-  board: '🎲', video: '🎮', card: '🃏', competitive: '⚔️',
-  coop: '🤝', party: '🎪', strategy: '♟️', rpg: '🎭',
-  active: '🏃', mobile: '📱',
+const gameTypeIcons: Record<string, string> = {
+  trivia:      '/game-icons/Trivia%20%26%20quizzes.png',
+  puzzles:     '/game-icons/Puzzles.png',
+  drawing:     '/game-icons/Drawing%20%26%20Creative.png',
+  word:        '/game-icons/Word%20games.png',
+  board:       '/game-icons/Boardgames.png',
+  video:       '/game-icons/Video%20games.png',
+  card:        '/game-icons/Card%20games.png',
+  competitive: '/game-icons/Competative%20games.png',
+  coop:        '/game-icons/Coop%20games.png',
+  party:       '/game-icons/Party%20games.png',
+  strategy:    '/game-icons/Strategy.png',
+  rpg:         '/game-icons/Role%20play.png',
+  active:      '/game-icons/Active%20games.png',
+  mobile:      '/game-icons/Mobile%20games.png',
 };
 
 const lookingForLabels: Record<string, string> = {
@@ -51,6 +61,14 @@ const lookingForColors: Record<string, string> = {
   'long-term': '#4EFFC4',
   'not-sure': '#B565FF',
   open: '#FFE66D',
+};
+
+const lookingForIcons: Record<string, string> = {
+  casual:       '/looking%20for/Casual.png',
+  'short-term': '/looking%20for/Short%20term.png',
+  'long-term':  '/looking%20for/long-term.png',
+  'not-sure':   '/looking%20for/Not%20sure.png',
+  open:         '/looking%20for/Open.png',
 };
 
 export function PlayerCardPreview() {
@@ -71,11 +89,11 @@ export function PlayerCardPreview() {
 
 
   const lifestyleItems = [
-    kids && { emoji: '👶', label: kids },
-    drinking && { emoji: '🍹', label: drinking === 'Socially' ? 'Social drinker' : drinking },
-    smoking && { emoji: '🚭', label: smoking === 'No' ? 'Non-smoker' : smoking },
-    exercise && { emoji: '💪', label: exercise },
-  ].filter(Boolean) as { emoji: string; label: string }[];
+    kids     && { icon: '/Lifestyle/Baby.png',     label: kids },
+    drinking && { icon: '/Lifestyle/Cocktail.png', label: drinking === 'Socially' ? 'Social drinker' : drinking },
+    smoking  && { icon: '/Lifestyle/Smoking.png',  label: smoking === 'No' ? 'Non-smoker' : smoking },
+    exercise && { icon: '/Lifestyle/Exercise.png', label: exercise },
+  ].filter(Boolean) as { icon: string; label: string }[];
 
 
   const handleStartPlaying = () => {
@@ -128,7 +146,7 @@ export function PlayerCardPreview() {
             >
               YOUR PLAYER CARD
             </h1>
-            <p className="font-body text-charcoal/60 mt-1">
+            <p className="font-body mt-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
               Here's how you'll appear to matches
             </p>
           </motion.div>
@@ -309,7 +327,7 @@ export function PlayerCardPreview() {
                         }}
                         whileHover={{ scale: 1.05 }}
                       >
-                        <span>{gameTypeEmojis[gt] || '🎮'}</span>
+                        <img src={gameTypeIcons[gt] || '/game-icons/Active%20games.png'} alt="" className="w-4 h-4 object-contain" />
                         <span className="capitalize">{gt}</span>
                       </motion.span>
                     ))}
@@ -343,7 +361,8 @@ export function PlayerCardPreview() {
                           boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
                         }}
                       >
-                        💫 {lookingForLabels[id]}
+                        <img src={lookingForIcons[id]} alt="" className="w-5 h-5 object-contain" />
+                        {lookingForLabels[id]}
                       </span>
                     ))}
                   </div>
@@ -363,7 +382,7 @@ export function PlayerCardPreview() {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-medium text-charcoal bg-cream"
                         style={{ border: '2px solid rgba(0,0,0,0.1)' }}
                       >
-                        <span>{item.emoji}</span>
+                        <img src={item.icon} alt="" className="w-4 h-4 object-contain" />
                         {item.label}
                       </span>
                     ))}
@@ -406,22 +425,6 @@ export function PlayerCardPreview() {
           >
             {/* Glossy overlay */}
             <span className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-
-            {/* Sparkle decorations */}
-            <motion.span
-              className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl"
-              animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              ⚡
-            </motion.span>
-            <motion.span
-              className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl"
-              animate={{ rotate: [0, -20, 20, 0], scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-            >
-              🎮
-            </motion.span>
 
             <span className="flex items-center justify-center gap-2">
               <Gamepad2 size={24} />
