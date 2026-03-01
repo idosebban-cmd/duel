@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const floatingIcons = [
   { icon: '/icons/Star.png',                       x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
-  { icon: '/icons/Lightning bolt.png',             x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
+  { icon: '/icons/Lightning%20bolt.png',            x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
   { icon: '/icons/Heart.png',                      x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
   { icon: '/icons/Trivia%20%26%20quizzes.png',     x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
   { icon: '/icons/Active%20games.png',             x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
