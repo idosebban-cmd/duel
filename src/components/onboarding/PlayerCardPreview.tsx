@@ -345,18 +345,18 @@ export function PlayerCardPreview() {
               )}
 
               {/* Looking for */}
-              {Array.isArray(lookingFor) && lookingFor.length > 0 && (
+              {Array.isArray(lookingFor) && lookingFor.some(id => lookingForLabels[id]) && (
                 <div>
                   <p className="font-display font-bold text-sm text-charcoal/50 mb-2 uppercase tracking-wider">
                     Looking For
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(lookingFor as string[]).map((id) => (
+                    {(lookingFor as string[]).filter(id => lookingForLabels[id]).map((id) => (
                       <span
                         key={id}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-white"
                         style={{
-                          background: `linear-gradient(135deg, ${lookingForColors[id] || '#FF6BA8'}, ${lookingForColors[id] || '#B565FF'})`,
+                          background: `linear-gradient(135deg, ${lookingForColors[id]}, ${lookingForColors[id]})`,
                           border: '2px solid #000',
                           boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
                         }}
