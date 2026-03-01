@@ -63,13 +63,6 @@ const lookingForColors: Record<string, string> = {
   open: '#FFE66D',
 };
 
-const lookingForIcons: Record<string, string> = {
-  casual:       '/looking-for/Casual.png',
-  'short-term': '/looking-for/Short-term.png',
-  'long-term':  '/looking-for/long-term.png',
-  'not-sure':   '/looking-for/Not-sure.png',
-  open:         '/looking-for/Open.png',
-};
 
 export function PlayerCardPreview() {
   const navigate = useNavigate();
@@ -368,7 +361,6 @@ export function PlayerCardPreview() {
                           boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
                         }}
                       >
-                        <img src={lookingForIcons[id]} alt="" className="w-5 h-5 object-contain" />
                         {lookingForLabels[id]}
                       </span>
                     ))}
