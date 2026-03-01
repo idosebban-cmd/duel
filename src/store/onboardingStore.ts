@@ -147,9 +147,18 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
+      version: 1,
+      migrate: (persistedState: unknown) => {
+        const s = persistedState as Record<string, unknown>;
+        // v0 → v1: lookingFor changed from string|null to string[]
+        if (typeof s.lookingFor === 'string') {
+          s.lookingFor = s.lookingFor ? [s.lookingFor] : [];
+        } else if (!Array.isArray(s.lookingFor)) {
+          s.lookingFor = [];
+        }
+        return s;
+      },
       partialize: (state) => {
-        // Exclude photos — base64 data URLs are too large for localStorage (5 MB limit).
-        // Photos live in memory only for the duration of the onboarding session.
         const { photos: _photos, ...rest } = state;
         return rest;
       },

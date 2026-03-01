@@ -241,6 +241,13 @@ export function PlayerCardPreview() {
             </div>
 
             {/* Photos carousel */}
+            {photos.length === 0 && (
+              <div className="px-5 py-5 text-center" style={{ background: 'rgba(0,0,0,0.04)', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+                <p className="font-body text-sm" style={{ color: 'rgba(0,0,0,0.35)' }}>
+                  📷 No photos yet — go back to the Photos step to add them
+                </p>
+              </div>
+            )}
             {photos.length > 0 && (
               <div className="relative">
                 <div className="aspect-[4/3] overflow-hidden">
@@ -345,13 +352,13 @@ export function PlayerCardPreview() {
               )}
 
               {/* Looking for */}
-              {lookingFor.length > 0 && (
+              {Array.isArray(lookingFor) && lookingFor.length > 0 && (
                 <div>
                   <p className="font-display font-bold text-sm text-charcoal/50 mb-2 uppercase tracking-wider">
                     Looking For
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {lookingFor.map((id) => (
+                    {(lookingFor as string[]).map((id) => (
                       <span
                         key={id}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-white"
