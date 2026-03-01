@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const loadSessionPhotos = (): string[] => {
+  try {
+    const raw = sessionStorage.getItem('duel-photos');
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
+
 export interface OnboardingState {
   // Avatar
   character: string | null;
@@ -68,7 +77,7 @@ const initialState: OnboardingState = {
   gender: null,
   interestedIn: null,
   location: '',
-  photos: [],
+  photos: loadSessionPhotos(),
   gameTypes: [],
   favoriteGames: [],
   lookingFor: [],
@@ -100,7 +109,13 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
           location: data.location,
         }),
 
-      updatePhotos: (photos) => set({ photos }),
+      updatePhotos: (photos) => {
+        try {
+          if (photos.length > 0) sessionStorage.setItem('duel-photos', JSON.stringify(photos));
+          else sessionStorage.removeItem('duel-photos');
+        } catch {}
+        set({ photos });
+      },
 
       updateGameTypes: (gameTypes) => set({ gameTypes }),
 
@@ -125,7 +140,10 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 
       setCurrentStep: (step) => set({ currentStep: step }),
 
-      reset: () => set(initialState),
+      reset: () => {
+        try { sessionStorage.removeItem('duel-photos'); } catch {}
+        set({ ...initialState, photos: [] });
+      },
     }),
     {
       name: 'duel-onboarding',

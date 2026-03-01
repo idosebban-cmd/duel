@@ -64,11 +64,11 @@ const lookingForColors: Record<string, string> = {
 };
 
 const lookingForIcons: Record<string, string> = {
-  casual:       '/looking%20for/Casual.png',
-  'short-term': '/looking%20for/Short%20term.png',
-  'long-term':  '/looking%20for/long-term.png',
-  'not-sure':   '/looking%20for/Not%20sure.png',
-  open:         '/looking%20for/Open.png',
+  casual:       '/looking-for/Casual.png',
+  'short-term': '/looking-for/Short-term.png',
+  'long-term':  '/looking-for/long-term.png',
+  'not-sure':   '/looking-for/Not-sure.png',
+  open:         '/looking-for/Open.png',
 };
 
 export function PlayerCardPreview() {
