@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
 interface Question {
@@ -114,15 +114,6 @@ export function LifestyleQuestions() {
     }
   };
 
-  const handleNext = () => {
-    if (currentQ < questions.length - 1) {
-      setDirection(1);
-      setCurrentQ((q) => q + 1);
-    } else if (answers[question.id]) {
-      completeStep(6);
-      navigate('/onboarding/preview');
-    }
-  };
 
   const handleSkip = () => {
     if (currentQ < questions.length - 1) {
@@ -135,82 +126,42 @@ export function LifestyleQuestions() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #F5F0FF 50%, #F0FFF8 100%)' }}
-    >
-      {/* Top bar */}
-      <div className="flex items-center px-4 sm:px-6 py-4 gap-4">
-        <motion.button
-          onClick={handleBack}
-          className="flex items-center gap-1.5 text-charcoal/60 font-body font-medium hover:text-charcoal transition-colors flex-shrink-0"
-          whileHover={{ x: -2 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <ArrowLeft size={18} />
-          <span className="text-sm">Back</span>
-        </motion.button>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
+      {/* Grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      {/* Scanlines */}
+      <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
+      {/* Corner brackets */}
+      <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-electric-mint/40 pointer-events-none" />
+      <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-electric-mint/40 pointer-events-none" />
 
-        <div className="flex-1 text-center">
-          <span className="font-display font-bold text-sm text-charcoal/50 tracking-widest uppercase">
-            Lifestyle
-          </span>
-          <div className="flex gap-1 mt-1.5 justify-center">
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div
-                key={i}
-                className="h-1.5 rounded-full"
-                style={{
-                  width: i === 6 ? 24 : 8,
-                  background: i <= 6
-                    ? 'linear-gradient(90deg, #FF6BA8, #B565FF)'
-                    : '#e5e7eb',
-                }}
-              />
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
+        <motion.button onClick={handleBack} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={18} /><span>Back</span>
+        </motion.button>
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Lifestyle</span>
+          <div className="flex gap-1">
+            {[0,1,2,3,4,5,6,7].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 6 ? 24 : 8, background: i < 6 ? '#FF6BA8' : i === 6 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>
-
-        <motion.button
-          onClick={handleNext}
-          disabled={!answers[question.id]}
-          className="flex items-center gap-1 font-body font-medium text-sm flex-shrink-0"
-          style={{
-            color: answers[question.id] ? '#FF6BA8' : 'rgba(45,49,66,0.3)',
-            cursor: answers[question.id] ? 'pointer' : 'default',
-          }}
-          whileHover={answers[question.id] ? { x: 2 } : {}}
-          whileTap={answers[question.id] ? { scale: 0.95 } : {}}
-        >
-          <span>Next</span>
-          <ArrowRight size={18} />
+        <motion.button onClick={handleSkip} className="font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
+          Skip →
         </motion.button>
       </div>
 
       {/* Question progress dots */}
-      <div className="flex justify-center gap-2 px-4 mb-4">
+      <div className="relative z-10 flex justify-center gap-2 px-4 mb-4">
         {questions.map((_, i) => (
-          <motion.div
-            key={i}
-            className="rounded-full"
-            style={{
-              width: i === currentQ ? 24 : 8,
-              height: 8,
-              background: i < currentQ
-                ? 'linear-gradient(90deg, #FF6BA8, #B565FF)'
-                : i === currentQ
-                ? question.gradient
-                : '#e5e7eb',
-              border: i === currentQ ? '2px solid black' : 'none',
-            }}
-            animate={{ width: i === currentQ ? 24 : 8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          />
+          <motion.div key={i} className="rounded-full" style={{ width: i === currentQ ? 24 : 8, height: 8, background: i < currentQ ? '#FF6BA8' : i === currentQ ? question.gradient : 'rgba(255,255,255,0.2)', border: i === currentQ ? '2px solid rgba(255,255,255,0.5)' : 'none' }} animate={{ width: i === currentQ ? 24 : 8 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }} />
         ))}
       </div>
 
       {/* Question */}
-      <div className="flex-1 flex flex-col px-4 sm:px-6">
+      <div className="relative z-10 flex-1 flex flex-col px-4 sm:px-6">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentQ}
@@ -281,11 +232,11 @@ export function LifestyleQuestions() {
                     onClick={() => handleSelect(option)}
                     className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-left relative overflow-hidden"
                     style={{
-                      background: isSelected ? color.bg : 'white',
-                      border: isSelected ? '3px solid #000' : '3px solid #000',
+                      background: isSelected ? color.bg : 'rgba(255,255,255,0.07)',
+                      border: isSelected ? `2px solid ${color.bg}` : '2px solid rgba(255,255,255,0.12)',
                       boxShadow: isSelected
-                        ? `0 0 0 2px ${color.bg}, 0 0 20px ${color.glow}, 6px 6px 0px 0px ${color.bg}`
-                        : '4px 4px 0px 0px rgba(0,0,0,0.12)',
+                        ? `0 0 0 1px ${color.bg}, 0 0 20px ${color.glow}, 5px 5px 0px 0px ${color.bg}`
+                        : 'none',
                       cursor: 'pointer',
                     }}
                     initial={{ opacity: 0, y: 15 }}
@@ -314,10 +265,7 @@ export function LifestyleQuestions() {
                       {isSelected ? '✓' : i + 1}
                     </span>
 
-                    <span
-                      className="font-display font-bold text-lg flex-1"
-                      style={{ color: isSelected ? color.text : '#2D3142' }}
-                    >
+                    <span className="font-display font-bold text-lg flex-1" style={{ color: isSelected ? color.text : 'rgba(255,255,255,0.85)' }}>
                       {option}
                     </span>
                   </motion.button>
@@ -325,45 +273,20 @@ export function LifestyleQuestions() {
               })}
             </div>
 
-            {/* Skip button */}
-            <div className="flex justify-center mt-5">
-              <button
-                onClick={handleSkip}
-                className="font-body text-sm font-medium text-charcoal/50 hover:text-charcoal/80 transition-colors px-5 py-2 rounded-xl border-2 border-charcoal/15 hover:border-charcoal/30 bg-white/60"
-              >
-                Skip this question →
-              </button>
-            </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Progress summary */}
-      <div className="px-4 sm:px-6 py-4 border-t border-black/5 bg-cream/80 backdrop-blur-sm">
+      <div className="relative z-10 px-4 sm:px-6 py-4" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 flex-wrap justify-center">
             {questions.map((q, i) => {
               const answered = answers[q.id];
               return (
-                <motion.button
-                  key={q.id}
-                  onClick={() => {
-                    setDirection(i < currentQ ? -1 : 1);
-                    setCurrentQ(i);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold"
-                  style={{
-                    background: i === currentQ
-                      ? 'linear-gradient(135deg, #FF6BA8, #B565FF)'
-                      : answered ? '#e8f5e9' : '#f5f5f5',
-                    border: '2px solid',
-                    borderColor: i === currentQ ? '#000' : answered ? '#4EFFC4' : '#e5e7eb',
-                    color: i === currentQ ? 'white' : answered ? '#2D3142' : '#9ca3af',
-                    cursor: 'pointer',
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                <motion.button key={q.id} onClick={() => { setDirection(i < currentQ ? -1 : 1); setCurrentQ(i); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold"
+                  style={{ background: i === currentQ ? 'linear-gradient(135deg, #FF6BA8, #B565FF)' : answered ? 'rgba(78,255,196,0.15)' : 'rgba(255,255,255,0.07)', border: '2px solid', borderColor: i === currentQ ? 'rgba(255,255,255,0.3)' : answered ? '#4EFFC4' : 'rgba(255,255,255,0.12)', color: i === currentQ ? '#12122A' : answered ? '#4EFFC4' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <span>{q.emoji}</span>
                   {answered && <span>✓</span>}
                 </motion.button>
@@ -372,6 +295,9 @@ export function LifestyleQuestions() {
           </div>
         </div>
       </div>
+
+      {/* Neon bottom bar */}
+      <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
     </div>
   );
 }

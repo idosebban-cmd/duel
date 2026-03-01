@@ -41,7 +41,8 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
           CHOOSE YOUR ELEMENT
         </motion.h2>
         <motion.p
-          className="font-body text-base text-charcoal/60"
+          className="font-body text-base"
+          style={{ color: 'rgba(255,255,255,0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
@@ -58,12 +59,11 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
             <motion.button
               key={el.id}
               onClick={() => onSelect(el.id)}
-              className="relative flex flex-col items-center p-4 rounded-2xl bg-white cursor-pointer select-none"
+              className="relative flex flex-col items-center p-4 rounded-2xl cursor-pointer select-none"
               style={{
-                border: isSelected ? `4px solid ${el.color}` : '3px solid #000',
-                boxShadow: isSelected
-                  ? `0 0 0 2px ${el.color}, 0 0 20px ${el.color}60, 6px 6px 0px 0px ${el.color}`
-                  : '4px 4px 0px 0px rgba(0,0,0,0.15)',
+                background: isSelected ? 'transparent' : 'rgba(255,255,255,0.07)',
+                border: isSelected ? `3px solid ${el.color}` : '2px solid rgba(255,255,255,0.14)',
+                boxShadow: isSelected ? `0 0 0 2px ${el.color}, 0 0 22px ${el.color}60, 5px 5px 0px 0px ${el.color}` : 'none',
               }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: isSelected ? 1.05 : 1 }}
@@ -93,8 +93,8 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
               <div
                 className="w-full aspect-square rounded-xl mb-3 overflow-hidden flex items-center justify-center"
                 style={{
-                  background: isSelected ? el.gradient : 'linear-gradient(135deg, #f5f5f5, #ebebeb)',
-                  border: '2px solid rgba(0,0,0,0.1)',
+                  background: isSelected ? el.gradient : 'rgba(255,255,255,0.05)',
+                  border: isSelected ? 'none' : '1px solid rgba(255,255,255,0.1)',
                 }}
               >
                 <img
@@ -104,10 +104,10 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
                 />
               </div>
 
-              <span className="font-display font-bold text-base sm:text-lg text-charcoal leading-tight">
+              <span className="font-display font-bold text-base sm:text-lg leading-tight" style={{ color: 'white' }}>
                 {el.name}
               </span>
-              <span className="font-body text-xs text-charcoal/50 mt-0.5 text-center leading-tight">
+              <span className="font-body text-xs mt-0.5 text-center leading-tight" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {el.hint}
               </span>
             </motion.button>

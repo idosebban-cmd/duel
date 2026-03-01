@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
 // Confetti particle
@@ -114,10 +114,7 @@ export function PlayerCardPreview() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col relative overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #F5F0FF 60%, #F0FFF8 100%)' }}
-    >
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
       {/* Confetti */}
       <AnimatePresence>
         {showConfetti && particles.map((p) => (
@@ -151,36 +148,31 @@ export function PlayerCardPreview() {
         ))}
       </AnimatePresence>
 
-      {/* Top bar */}
-      <div className="flex items-center px-4 sm:px-6 py-4 relative z-10">
-        <motion.button
-          onClick={() => navigate('/onboarding/lifestyle')}
-          className="flex items-center gap-1.5 text-charcoal/60 font-body font-medium hover:text-charcoal transition-colors"
-          whileHover={{ x: -2 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Edit2 size={16} />
-          <span className="text-sm">Edit</span>
-        </motion.button>
+      {/* Grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      {/* Scanlines */}
+      <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
+      {/* Corner brackets */}
+      <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-electric-mint/40 pointer-events-none" />
+      <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-electric-mint/40 pointer-events-none" />
 
-        <div className="flex-1 text-center">
-          <div className="flex gap-1 justify-center">
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div
-                key={i}
-                className="h-1.5 rounded-full"
-                style={{
-                  width: i === 7 ? 24 : 8,
-                  background: 'linear-gradient(90deg, #FF6BA8, #B565FF)',
-                }}
-              />
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
+        <motion.button onClick={() => navigate('/onboarding/lifestyle')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={18} /><span>Back</span>
+        </motion.button>
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Player Card</span>
+          <div className="flex gap-1">
+            {[0,1,2,3,4,5,6,7].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 7 ? 24 : 8, background: '#FF6BA8' }} />
             ))}
           </div>
         </div>
-        <div className="w-16" />
+        <div className="w-14 flex-shrink-0" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-32 relative z-10">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-32">
         <div className="max-w-lg mx-auto space-y-4">
           {/* Headline */}
           <motion.div
@@ -446,10 +438,7 @@ export function PlayerCardPreview() {
       </div>
 
       {/* Fixed bottom buttons */}
-      <div
-        className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-5 z-20"
-        style={{ background: 'linear-gradient(to top, #FFF8F0 70%, transparent)' }}
-      >
+      <div className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-5 z-20" style={{ background: 'linear-gradient(to top, #12122A 70%, transparent)' }}>
         <div className="max-w-lg mx-auto space-y-3">
           {/* START PLAYING button */}
           <motion.button
@@ -500,24 +489,16 @@ export function PlayerCardPreview() {
           </motion.button>
 
           {/* Edit button */}
-          <motion.button
-            onClick={() => navigate('/onboarding/avatar')}
-            className="w-full font-display font-bold text-base text-charcoal rounded-2xl py-3 px-8"
-            style={{
-              background: 'white',
-              border: '3px solid #000',
-              boxShadow: '4px 4px 0px 0px rgba(0,0,0,0.1)',
-            }}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
+          <motion.button onClick={() => navigate('/onboarding/avatar')} className="w-full font-display font-bold text-base rounded-2xl py-3 px-8"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '2px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.7)' }}
+            whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
             ✏️ Edit Profile
           </motion.button>
         </div>
       </div>
+
+      {/* Neon bottom bar (above fixed buttons) */}
+      <div className="fixed bottom-0 left-0 right-0 h-[3px] z-30 pointer-events-none" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
     </div>
   );
 }

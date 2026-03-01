@@ -123,64 +123,39 @@ export function PhotoUpload() {
   ];
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ background: 'linear-gradient(160deg, #FFF8F0 0%, #FFF0F5 60%, #F5F0FF 100%)' }}
-    >
-      {/* Top bar */}
-      <div className="flex items-center px-4 sm:px-6 py-4 gap-4">
-        <motion.button
-          onClick={() => navigate('/onboarding/basics')}
-          className="flex items-center gap-1.5 text-charcoal/60 font-body font-medium hover:text-charcoal transition-colors flex-shrink-0"
-          whileHover={{ x: -2 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <ArrowLeft size={18} />
-          <span className="text-sm">Back</span>
-        </motion.button>
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
+      {/* Grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      {/* Scanlines */}
+      <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
+      {/* Corner brackets */}
+      <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-electric-mint/40 pointer-events-none" />
+      <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-electric-mint/40 pointer-events-none" />
 
-        <div className="flex-1 text-center">
-          <span className="font-display font-bold text-sm text-charcoal/50 tracking-widest uppercase">
-            Photos
-          </span>
-          <div className="flex gap-1 mt-1.5 justify-center">
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div
-                key={i}
-                className="h-1.5 rounded-full"
-                style={{
-                  width: i === 3 ? 24 : 8,
-                  background: i <= 3
-                    ? 'linear-gradient(90deg, #FF6BA8, #B565FF)'
-                    : '#e5e7eb',
-                }}
-              />
+      {/* Top bar */}
+      <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
+        <motion.button onClick={() => navigate('/onboarding/basics')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={18} /><span>Back</span>
+        </motion.button>
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Photos</span>
+          <div className="flex gap-1">
+            {[0,1,2,3,4,5,6,7].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 3 ? 24 : 8, background: i < 3 ? '#FF6BA8' : i === 3 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>
-        <div className="w-16" />
+        <div className="w-14 flex-shrink-0" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="max-w-lg mx-auto">
           {/* Header */}
-          <motion.div
-            className="text-center mb-6"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h2
-              className="font-display font-extrabold text-3xl sm:text-4xl mb-2"
-              style={{
-                background: 'linear-gradient(135deg, #FF9F1C, #FF3D71)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
+          <motion.div className="text-center mb-6" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+            <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #FF9F1C, #FF3D71)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               ADD YOUR PHOTOS
             </h2>
-            <p className="font-body text-base text-charcoal/60">
+            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>
               Upload {MIN_PHOTOS}–{MAX_PHOTOS} photos. First one is your main pic.
             </p>
           </motion.div>
@@ -278,75 +253,38 @@ export function PhotoUpload() {
           />
 
           {/* Upload button */}
-          <motion.button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={photos.length >= MAX_PHOTOS}
-            className="mt-4 w-full py-3 rounded-2xl font-display font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              background: photos.length < MAX_PHOTOS ? 'white' : '#f5f5f5',
-              border: '3px dashed #FF6BA8',
-              color: photos.length < MAX_PHOTOS ? '#FF6BA8' : '#9ca3af',
-              cursor: photos.length < MAX_PHOTOS ? 'pointer' : 'not-allowed',
-            }}
-            whileHover={photos.length < MAX_PHOTOS ? { scale: 1.02 } : {}}
-            whileTap={photos.length < MAX_PHOTOS ? { scale: 0.98 } : {}}
-          >
+          <motion.button type="button" onClick={() => fileInputRef.current?.click()} disabled={photos.length >= MAX_PHOTOS} className="mt-4 w-full py-3 rounded-2xl font-display font-bold text-base flex items-center justify-center gap-2"
+            style={{ background: 'rgba(255,255,255,0.05)', border: `3px dashed ${photos.length < MAX_PHOTOS ? '#4EFFC4' : 'rgba(255,255,255,0.2)'}`, color: photos.length < MAX_PHOTOS ? '#4EFFC4' : 'rgba(255,255,255,0.3)', cursor: photos.length < MAX_PHOTOS ? 'pointer' : 'not-allowed' }}
+            whileHover={photos.length < MAX_PHOTOS ? { scale: 1.02 } : {}} whileTap={photos.length < MAX_PHOTOS ? { scale: 0.98 } : {}}>
             <Plus size={18} />
             {photos.length >= MAX_PHOTOS ? 'Max photos reached' : 'Add More Photos'}
           </motion.button>
 
           {/* Counter */}
           <div className="flex justify-between items-center mt-3">
-            <p className="font-body text-sm text-charcoal/50">
-              {photos.length} / {MAX_PHOTOS} photos
-            </p>
-            {photos.length < MIN_PHOTOS && (
-              <p className="font-body text-sm text-cherry-punch flex items-center gap-1">
-                <AlertCircle size={14} />
-                Add at least {MIN_PHOTOS - photos.length} more
-              </p>
-            )}
-            {photos.length >= MIN_PHOTOS && (
-              <p className="font-body text-sm text-electric-mint font-medium">✓ Ready to continue</p>
-            )}
+            <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{photos.length} / {MAX_PHOTOS} photos</p>
+            {photos.length < MIN_PHOTOS && <p className="font-body text-sm text-cherry-punch flex items-center gap-1"><AlertCircle size={14} />Add at least {MIN_PHOTOS - photos.length} more</p>}
+            {photos.length >= MIN_PHOTOS && <p className="font-body text-sm font-medium" style={{ color: '#4EFFC4' }}>✓ Ready to continue</p>}
           </div>
 
           {/* Errors */}
           <AnimatePresence>
             {errors.length > 0 && (
-              <motion.div
-                className="mt-3 p-3 rounded-xl bg-cherry-punch/10 border-2 border-cherry-punch/30"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
+              <motion.div className="mt-3 p-3 rounded-xl bg-cherry-punch/10 border-2 border-cherry-punch/30" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 {errors.map((err, i) => (
-                  <p key={i} className="text-sm text-cherry-punch font-body flex items-center gap-1">
-                    <AlertCircle size={14} />
-                    {err}
-                  </p>
+                  <p key={i} className="text-sm text-cherry-punch font-body flex items-center gap-1"><AlertCircle size={14} />{err}</p>
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Guidelines */}
-          <div className="mt-6 p-4 rounded-2xl bg-white border-3 border-black/10">
-            <p className="font-display font-bold text-sm text-charcoal/60 mb-2 flex items-center gap-2">
-              <Camera size={16} />
-              Photo Tips
-            </p>
+          {/* Tips */}
+          <div className="mt-6 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(78,255,196,0.2)' }}>
+            <p className="font-display font-bold text-sm mb-2 flex items-center gap-2" style={{ color: '#4EFFC4' }}><Camera size={16} />Photo Tips</p>
             <ul className="space-y-1">
-              {[
-                'Show your face clearly',
-                'Full body shots work great',
-                'Be yourself!',
-                'JPG, PNG or WEBP · Max 10MB each',
-              ].map((tip) => (
-                <li key={tip} className="text-xs font-body text-charcoal/50 flex items-center gap-2">
-                  <span className="text-electric-mint">✓</span>
-                  {tip}
+              {['Show your face clearly', 'Full body shots work great', 'Be yourself!', 'JPG, PNG or WEBP · Max 10MB each'].map((tip) => (
+                <li key={tip} className="text-xs font-body flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  <span style={{ color: '#4EFFC4' }}>✓</span>{tip}
                 </li>
               ))}
             </ul>
@@ -355,30 +293,17 @@ export function PhotoUpload() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="px-4 sm:px-6 py-6 border-t border-black/5 bg-cream/80 backdrop-blur-sm">
-        <motion.button
-          onClick={handleContinue}
-          disabled={!canContinue}
-          className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl text-white rounded-2xl py-4 px-8 relative overflow-hidden"
-          style={{
-            background: canContinue
-              ? 'linear-gradient(135deg, #FF9F1C 0%, #FF3D71 100%)'
-              : '#d1d5db',
-            border: '4px solid black',
-            boxShadow: canContinue ? '8px 8px 0px 0px #4EFFC4' : 'none',
-            cursor: canContinue ? 'pointer' : 'not-allowed',
-            textShadow: canContinue ? '1px 1px 0 rgba(0,0,0,0.2)' : 'none',
-          }}
-          whileHover={canContinue ? { scale: 1.02, boxShadow: '10px 10px 0px 0px #4EFFC4' } : {}}
-          whileTap={canContinue ? { scale: 0.97 } : {}}
-          transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-        >
-          {canContinue && (
-            <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
-          )}
+      <div className="relative z-10 px-4 sm:px-6 py-5" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
+        <motion.button onClick={handleContinue} disabled={!canContinue} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
+          style={{ background: canContinue ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: canContinue ? '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)' : 'none', color: canContinue ? '#12122A' : 'rgba(255,255,255,0.2)', cursor: canContinue ? 'pointer' : 'not-allowed' }}
+          whileHover={canContinue ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } as any : {}} whileTap={canContinue ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+          {canContinue && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
           Continue →
         </motion.button>
       </div>
+
+      {/* Neon bottom bar */}
+      <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
     </div>
   );
 }
@@ -475,24 +400,17 @@ function EmptySlot({
         isMain ? 'aspect-[3/4]' : 'aspect-square'
       }`}
       style={{
-        border: '3px dashed #FF6BA8',
-        background: 'rgba(255, 107, 168, 0.05)',
+        border: '2px dashed rgba(78,255,196,0.4)',
+        background: 'rgba(78,255,196,0.04)',
         cursor: onClick ? 'pointer' : 'default',
       }}
       whileHover={onClick ? { scale: 1.02, background: 'rgba(255, 107, 168, 0.1)' } : {}}
       whileTap={onClick ? { scale: 0.98 } : {}}
     >
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-        style={{ background: 'rgba(255, 107, 168, 0.15)' }}
-      >
-        <Plus size={isMain ? 22 : 16} className="text-hot-bubblegum" />
+      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: 'rgba(78,255,196,0.12)' }}>
+        <Plus size={isMain ? 22 : 16} style={{ color: '#4EFFC4' }} />
       </div>
-      {isMain && (
-        <span className="font-body text-xs text-hot-bubblegum/70 font-medium">
-          Add Photo
-        </span>
-      )}
+      {isMain && <span className="font-body text-xs font-medium" style={{ color: 'rgba(78,255,196,0.7)' }}>Add Photo</span>}
     </motion.button>
   );
 }
