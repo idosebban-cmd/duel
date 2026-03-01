@@ -7,7 +7,7 @@ type GoalOption = {
   id: string;
   label: string;
   description: string;
-  emoji: string;
+  icon: string;
   gradient: string;
   glow: string;
   border: string;
@@ -18,7 +18,7 @@ const goals: GoalOption[] = [
     id: 'casual',
     label: 'Something casual',
     description: 'Fun without strings',
-    emoji: '🍃',
+    icon: '/looking%20for/Casual.png',
     gradient: 'linear-gradient(135deg, #FF3D71, #FF6BA8)',
     glow: 'rgba(255, 61, 113, 0.4)',
     border: '#FF3D71',
@@ -27,7 +27,7 @@ const goals: GoalOption[] = [
     id: 'short-term',
     label: 'Short-term fun',
     description: "See where it goes",
-    emoji: '✨',
+    icon: '/looking%20for/Short%20term.png',
     gradient: 'linear-gradient(135deg, #FF9F1C, #FFE66D)',
     glow: 'rgba(255, 159, 28, 0.4)',
     border: '#FF9F1C',
@@ -36,7 +36,7 @@ const goals: GoalOption[] = [
     id: 'long-term',
     label: 'Long-term relationship',
     description: 'Looking for my person',
-    emoji: '💚',
+    icon: '/looking%20for/long-term.png',
     gradient: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
     glow: 'rgba(78, 255, 196, 0.4)',
     border: '#4EFFC4',
@@ -45,7 +45,7 @@ const goals: GoalOption[] = [
     id: 'not-sure',
     label: 'Not sure yet',
     description: 'Figuring it out',
-    emoji: '🌊',
+    icon: '/looking%20for/Not%20sure.png',
     gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
     glow: 'rgba(181, 101, 255, 0.4)',
     border: '#B565FF',
@@ -54,7 +54,7 @@ const goals: GoalOption[] = [
     id: 'open',
     label: 'Open to see what happens',
     description: 'No expectations',
-    emoji: '🌟',
+    icon: '/looking%20for/Open.png',
     gradient: 'linear-gradient(135deg, #FFE66D, #4EFFC4)',
     glow: 'rgba(255, 230, 109, 0.4)',
     border: '#FFE66D',
@@ -123,9 +123,9 @@ export function RelationshipGoals() {
                   transition={{ delay: index * 0.06, scale: { type: 'spring', stiffness: 400, damping: 17 } }}
                   whileHover={{ scale: isSelected ? 1.02 : 1.015 }} whileTap={{ scale: 0.98 }} aria-pressed={isSelected}>
                   {isSelected && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
-                  <span className="text-3xl flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl"
+                  <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl"
                     style={{ background: isSelected ? 'rgba(255,255,255,0.2)' : `${goal.border}18`, border: isSelected ? '2px solid rgba(255,255,255,0.3)' : `2px solid ${goal.border}30` }}>
-                    {goal.emoji}
+                    <img src={goal.icon} alt="" className="w-8 h-8 object-contain" style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.3))' }} />
                   </span>
                   <div className="flex-1 min-w-0">
                     <span className="block font-display font-bold text-lg leading-tight" style={{ color: isSelected ? '#12122A' : 'white' }}>{goal.label}</span>

@@ -7,7 +7,7 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 interface Question {
   id: 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise';
   question: string;
-  emoji: string;
+  icon: string;
   options: string[];
   gradient: string;
 }
@@ -16,42 +16,42 @@ const questions: Question[] = [
   {
     id: 'kids',
     question: 'DO YOU HAVE OR WANT KIDS?',
-    emoji: '👶',
+    icon: '/Lifestyle/Baby.png',
     options: ['Have kids', 'Want kids someday', "Don't want kids", 'Not sure yet', 'Open to partner with kids'],
     gradient: 'linear-gradient(135deg, #FF6BA8, #B565FF)',
   },
   {
     id: 'drinking',
     question: 'HOW OFTEN DO YOU DRINK?',
-    emoji: '🍹',
+    icon: '/Lifestyle/Cocktail.png',
     options: ['Never', 'Rarely', 'Socially', 'Regularly'],
     gradient: 'linear-gradient(135deg, #FF9F1C, #FFE66D)',
   },
   {
     id: 'smoking',
     question: 'DO YOU SMOKE?',
-    emoji: '🚭',
+    icon: '/Lifestyle/Smoking.png',
     options: ['Yes', 'No', 'Socially', 'Trying to quit'],
     gradient: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
   },
   {
     id: 'cannabis',
     question: 'DO YOU USE CANNABIS?',
-    emoji: '🌿',
+    icon: '/Lifestyle/Cannabis.png',
     options: ['Never', 'Occasionally', 'Regularly', 'Prefer not to say'],
     gradient: 'linear-gradient(135deg, #CAFFBF, #4EFFC4)',
   },
   {
     id: 'pets',
     question: 'HOW DO YOU FEEL ABOUT PETS?',
-    emoji: '🐾',
+    icon: '/Lifestyle/Pets.png',
     options: ['Have a dog', 'Have a cat', 'Want pets', 'Allergic to pets', 'Not interested in pets'],
     gradient: 'linear-gradient(135deg, #FF9F1C, #FF6BA8)',
   },
   {
     id: 'exercise',
     question: 'HOW OFTEN DO YOU EXERCISE?',
-    emoji: '💪',
+    icon: '/Lifestyle/Exercise.png',
     options: ['Daily', 'Few times a week', 'Occasionally', 'Rarely'],
     gradient: 'linear-gradient(135deg, #B565FF, #FF3D71)',
   },
@@ -195,13 +195,14 @@ export function LifestyleQuestions() {
                 </span>
               </div>
 
-              <motion.span
-                className="block text-5xl mb-3"
+              <motion.img
+                src={question.icon}
+                alt=""
+                className="w-16 h-16 mx-auto mb-3 object-contain"
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                {question.emoji}
-              </motion.span>
+                style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}
+              />
               <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-white drop-shadow-sm leading-tight"
                 style={{ textShadow: '2px 2px 0 rgba(0,0,0,0.15)' }}
               >
@@ -287,7 +288,7 @@ export function LifestyleQuestions() {
                 <motion.button key={q.id} onClick={() => { setDirection(i < currentQ ? -1 : 1); setCurrentQ(i); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-semibold"
                   style={{ background: i === currentQ ? 'linear-gradient(135deg, #FF6BA8, #B565FF)' : answered ? 'rgba(78,255,196,0.15)' : 'rgba(255,255,255,0.07)', border: '2px solid', borderColor: i === currentQ ? 'rgba(255,255,255,0.3)' : answered ? '#4EFFC4' : 'rgba(255,255,255,0.12)', color: i === currentQ ? '#12122A' : answered ? '#4EFFC4' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <span>{q.emoji}</span>
+                  <img src={q.icon} alt="" className="w-4 h-4 object-contain" />
                   {answered && <span>✓</span>}
                 </motion.button>
               );
