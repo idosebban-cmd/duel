@@ -4,7 +4,7 @@ import { ArrowLeft, Check } from 'lucide-react';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
 type GoalOption = {
-  id: 'casual' | 'short-term' | 'long-term' | 'not-sure' | 'open';
+  id: string;
   label: string;
   description: string;
   emoji: string;
@@ -65,13 +65,12 @@ export function RelationshipGoals() {
   const navigate = useNavigate();
   const { lookingFor, updateRelationship, completeStep } = useOnboardingStore();
 
-  const handleSelect = (id: GoalOption['id']) => {
+  const handleSelect = (id: string) => {
     updateRelationship(id);
   };
 
   const handleContinue = () => {
-    if (!lookingFor) return;
-    completeStep(5);
+    if (lookingFor.length > 0) completeStep(5);
     navigate('/onboarding/lifestyle');
   };
 
@@ -116,7 +115,7 @@ export function RelationshipGoals() {
           {/* Goal cards */}
           <div className="space-y-3">
             {goals.map((goal, index) => {
-              const isSelected = lookingFor === goal.id;
+              const isSelected = lookingFor.includes(goal.id);
               return (
                 <motion.button key={goal.id} onClick={() => handleSelect(goal.id)} className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer relative overflow-hidden text-left"
                   style={{ background: isSelected ? goal.gradient : 'rgba(255,255,255,0.07)', border: isSelected ? `2px solid ${goal.border}` : '2px solid rgba(255,255,255,0.12)', boxShadow: isSelected ? `0 0 0 1px ${goal.border}, 0 0 24px ${goal.glow}, 5px 5px 0px 0px ${goal.border}` : 'none', minHeight: 68 }}
@@ -146,10 +145,10 @@ export function RelationshipGoals() {
 
       {/* Bottom CTA */}
       <div className="relative z-10 px-4 sm:px-6 py-5" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
-        <motion.button onClick={handleContinue} disabled={!lookingFor} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
-          style={{ background: lookingFor ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: lookingFor ? '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)' : 'none', color: lookingFor ? '#12122A' : 'rgba(255,255,255,0.2)', cursor: lookingFor ? 'pointer' : 'not-allowed' }}
-          whileHover={lookingFor ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } as any : {}} whileTap={lookingFor ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
-          {lookingFor && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
+        <motion.button onClick={handleContinue} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
+          style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)', color: '#12122A', cursor: 'pointer' }}
+          whileHover={{ scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } as any} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+          <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
           Continue →
         </motion.button>
       </div>

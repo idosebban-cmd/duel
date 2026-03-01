@@ -51,8 +51,6 @@ const IMAGE_PATHS = [
   '/affiliation/Tech.png',
   '/affiliation/Travel.png',
   // Icons
-  '/icons/Celebration.png',
-  '/icons/Console remote.png',
   '/icons/Heart.png',
   '/icons/Lightning bolt.png',
   '/icons/Star.png',

@@ -150,7 +150,7 @@ export function BasicsForm() {
             <AnimatePresence>
               {currentAge !== null && currentAge >= 18 && !errors.birthday && (
                 <motion.p className="mt-2 text-sm font-body font-medium flex items-center gap-1" style={{ color: '#4EFFC4' }} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
-                  🎉 Age: {currentAge} years old
+                  ✓ Age: {currentAge} years old
                 </motion.p>
               )}
             </AnimatePresence>

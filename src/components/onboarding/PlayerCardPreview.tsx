@@ -1,33 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react';
 import { useOnboardingStore } from '../../store/onboardingStore';
-
-// Confetti particle
-interface Particle {
-  id: number;
-  x: number;
-  color: string;
-  size: number;
-  delay: number;
-  duration: number;
-  shape: 'circle' | 'square' | 'triangle';
-}
-
-const confettiColors = ['#FF6BA8', '#FFE66D', '#4EFFC4', '#B565FF', '#FF9F1C', '#00D9FF'];
-
-function createParticles(count: number): Particle[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-    size: 6 + Math.random() * 8,
-    delay: Math.random() * 2,
-    duration: 2 + Math.random() * 2,
-    shape: (['circle', 'square', 'triangle'] as const)[Math.floor(Math.random() * 3)],
-  }));
-}
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -81,8 +56,6 @@ const lookingForColors: Record<string, string> = {
 export function PlayerCardPreview() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
-  const [particles] = useState(() => createParticles(30));
-  const [showConfetti, setShowConfetti] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const btnRef = useRef<HTMLButtonElement>(null);
 
@@ -104,10 +77,6 @@ export function PlayerCardPreview() {
     exercise && { emoji: '💪', label: exercise },
   ].filter(Boolean) as { emoji: string; label: string }[];
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowConfetti(true), 600);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleStartPlaying = () => {
     navigate('/game');
@@ -115,39 +84,6 @@ export function PlayerCardPreview() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
-      {/* Confetti */}
-      <AnimatePresence>
-        {showConfetti && particles.map((p) => (
-          <motion.div
-            key={p.id}
-            className="absolute pointer-events-none z-50"
-            style={{
-              left: `${p.x}%`,
-              top: -20,
-              width: p.size,
-              height: p.size,
-              backgroundColor: p.shape !== 'triangle' ? p.color : 'transparent',
-              borderRadius: p.shape === 'circle' ? '50%' : p.shape === 'square' ? 4 : 0,
-              borderLeft: p.shape === 'triangle' ? `${p.size / 2}px solid transparent` : undefined,
-              borderRight: p.shape === 'triangle' ? `${p.size / 2}px solid transparent` : undefined,
-              borderBottom: p.shape === 'triangle' ? `${p.size}px solid ${p.color}` : undefined,
-            }}
-            animate={{
-              y: ['0vh', '110vh'],
-              rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)],
-              opacity: [1, 1, 0],
-            }}
-            transition={{
-              duration: p.duration,
-              delay: p.delay,
-              repeat: Infinity,
-              repeatDelay: 1,
-              ease: 'easeIn',
-            }}
-          />
-        ))}
-      </AnimatePresence>
-
       {/* Grid */}
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       {/* Scanlines */}
@@ -391,21 +327,26 @@ export function PlayerCardPreview() {
               )}
 
               {/* Looking for */}
-              {lookingFor && (
+              {lookingFor.length > 0 && (
                 <div>
                   <p className="font-display font-bold text-sm text-charcoal/50 mb-2 uppercase tracking-wider">
                     Looking For
                   </p>
-                  <span
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${lookingForColors[lookingFor] || '#FF6BA8'}, ${lookingForColors[lookingFor] || '#B565FF'})`,
-                      border: '2px solid #000',
-                      boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
-                    }}
-                  >
-                    💫 {lookingForLabels[lookingFor]}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {lookingFor.map((id) => (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${lookingForColors[id] || '#FF6BA8'}, ${lookingForColors[id] || '#B565FF'})`,
+                          border: '2px solid #000',
+                          boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.15)',
+                        }}
+                      >
+                        💫 {lookingForLabels[id]}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 

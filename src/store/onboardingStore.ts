@@ -23,7 +23,7 @@ export interface OnboardingState {
   favoriteGames: string[];
 
   // Relationship
-  lookingFor: 'casual' | 'short-term' | 'long-term' | 'not-sure' | 'open' | null;
+  lookingFor: string[];
 
   // Lifestyle
   kids: string | null;
@@ -51,7 +51,7 @@ interface OnboardingActions {
   updatePhotos: (photos: string[]) => void;
   updateGameTypes: (gameTypes: string[]) => void;
   updateFavoriteGames: (favoriteGames: string[]) => void;
-  updateRelationship: (lookingFor: OnboardingState['lookingFor']) => void;
+  updateRelationship: (id: string) => void;
   updateLifestyle: (field: keyof Pick<OnboardingState, 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise'>, value: string) => void;
   completeStep: (step: number) => void;
   setCurrentStep: (step: number) => void;
@@ -71,7 +71,7 @@ const initialState: OnboardingState = {
   photos: [],
   gameTypes: [],
   favoriteGames: [],
-  lookingFor: null,
+  lookingFor: [],
   kids: null,
   drinking: null,
   smoking: null,
@@ -106,7 +106,12 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 
       updateFavoriteGames: (favoriteGames) => set({ favoriteGames }),
 
-      updateRelationship: (lookingFor) => set({ lookingFor }),
+      updateRelationship: (id) =>
+        set((state) => ({
+          lookingFor: state.lookingFor.includes(id)
+            ? state.lookingFor.filter((x) => x !== id)
+            : [...state.lookingFor, id],
+        })),
 
       updateLifestyle: (field, value) =>
         set((state) => ({ ...state, [field]: value })),
