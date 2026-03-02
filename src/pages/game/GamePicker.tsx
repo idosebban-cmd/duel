@@ -43,7 +43,7 @@ export function GamePicker() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center px-4 py-12 relative overflow-y-auto"
       style={{ background: '#12122A' }}
     >
       {/* Grid bg */}
