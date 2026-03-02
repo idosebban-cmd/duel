@@ -18,6 +18,7 @@ import { DotDashSetup } from './pages/game/DotDashSetup';
 import { DotDashLobby } from './pages/game/DotDashLobby';
 import { DotDashBoard } from './pages/game/DotDashBoard';
 import { DotDashResult } from './pages/game/DotDashResult';
+import { GamePicker } from './pages/game/GamePicker';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -36,6 +37,9 @@ export default function App() {
           <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
           <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
           <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
+
+          {/* Game picker */}
+          <Route path="/play" element={<GamePicker />} />
 
           {/* Guess Who game */}
           <Route path="/game" element={<GameSetup />} />
