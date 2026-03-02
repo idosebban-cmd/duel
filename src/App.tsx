@@ -14,6 +14,10 @@ import { GameSetup } from './pages/game/GameSetup';
 import { LobbyScreen } from './pages/game/LobbyScreen';
 import { GameBoard } from './pages/game/GameBoard';
 import { GameResult } from './pages/game/GameResult';
+import { DotDashSetup } from './pages/game/DotDashSetup';
+import { DotDashLobby } from './pages/game/DotDashLobby';
+import { DotDashBoard } from './pages/game/DotDashBoard';
+import { DotDashResult } from './pages/game/DotDashResult';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -38,6 +42,12 @@ export default function App() {
           <Route path="/game/:gameId/lobby" element={<LobbyScreen />} />
           <Route path="/game/:gameId/play" element={<GameBoard />} />
           <Route path="/game/:gameId/result" element={<GameResult />} />
+
+          {/* Dot Dash – maze racing game */}
+          <Route path="/dotdash" element={<DotDashSetup />} />
+          <Route path="/dotdash/:gameId/lobby" element={<DotDashLobby />} />
+          <Route path="/dotdash/:gameId/play" element={<DotDashBoard />} />
+          <Route path="/dotdash/:gameId/result" element={<DotDashResult />} />
 
           <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
         </Routes>

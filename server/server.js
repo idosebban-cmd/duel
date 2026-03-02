@@ -4,7 +4,9 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const gamesRouter = require('./routes/games');
+const dotDashRouter = require('./routes/dotDash');
 const { setupGameHandlers } = require('./socket/gameHandlers');
+const { setupDotDashHandlers } = require('./socket/dotDashHandlers');
 
 const PORT = process.env.PORT || 3001;
 // When serving from the same origin, CLIENT_URL = self
@@ -29,7 +31,8 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // API routes
-app.use('/api/games', gamesRouter);
+app.use('/api/games',   gamesRouter);
+app.use('/api/dotdash', dotDashRouter);
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
 // Serve built frontend (../dist relative to this file)
@@ -45,6 +48,7 @@ app.get('*', (req, res) => {
 
 // Socket.io game handlers
 setupGameHandlers(io);
+setupDotDashHandlers(io);
 
 server.listen(PORT, () => {
   console.log(`🎮 Duel game server running on port ${PORT}`);
