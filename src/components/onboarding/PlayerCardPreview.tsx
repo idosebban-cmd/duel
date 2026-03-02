@@ -98,7 +98,7 @@ export function PlayerCardPreview() {
 
 
   const handleStartPlaying = () => {
-    navigate('/game');
+    navigate('/play');
   };
 
   return (
