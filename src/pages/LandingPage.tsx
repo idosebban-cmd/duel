@@ -279,7 +279,7 @@ function HeroSection({ onCta }: { onCta: () => void }) {
 function ProblemSection() {
   const cards = [
     {
-      emoji: '😬',
+      icon: '/landing-icons/Embarrassed.png',
       title: '"Hey..."',
       titleColor: '#FFE66D',
       body: '54% of dating app users feel anxious about first messages. You\'re stuck trying to be clever with strangers.',
@@ -287,7 +287,7 @@ function ProblemSection() {
       glow: 'rgba(255,107,168,0.15)',
     },
     {
-      emoji: '💀',
+      icon: '/landing-icons/Skull.png',
       title: 'Dead Chats',
       titleColor: '#FF6BA8',
       body: '69% of conversations die within days. Boring small talk kills chemistry before it starts.',
@@ -295,7 +295,7 @@ function ProblemSection() {
       glow: 'rgba(78,255,196,0.12)',
     },
     {
-      emoji: '📱',
+      icon: '/landing-icons/Mobile%20games.png',
       title: 'All Text, No Vibe',
       titleColor: '#4EFFC4',
       body: "Reading someone's bio tells you nothing. You need to experience them to know if there's a spark.",
@@ -339,7 +339,12 @@ function ProblemSection() {
                 boxShadow: `0 0 24px ${card.glow}`,
               }}
             >
-              <div className="text-5xl mb-4">{card.emoji}</div>
+              <img
+                src={card.icon}
+                alt=""
+                className="mb-4 object-contain"
+                style={{ width: 56, height: 56, filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.25))' }}
+              />
               <h3
                 className="font-display text-2xl mb-3"
                 style={{ color: card.titleColor, textShadow: `0 0 12px ${card.titleColor}55` }}
@@ -361,9 +366,9 @@ function ProblemSection() {
 
 function SolutionSection() {
   const games = [
-    { icon: '❓', name: 'Guess Who',     desc: 'Mystery & wit',      bg: 'linear-gradient(135deg, #B565FF 0%, #FF6BA8 100%)' },
-    { icon: '👾', name: 'Dot Dash',      desc: 'Quick reflexes',     bg: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)' },
-    { icon: '💬', name: 'Caption This',  desc: 'Creativity & humor', bg: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)' },
+    { icon: '/landing-icons/Trivia%20%26%20quizzes.png', name: 'Guess Who',    desc: 'Mystery & wit',      bg: 'linear-gradient(135deg, #B565FF 0%, #FF6BA8 100%)' },
+    { icon: '/landing-icons/Dot%20Dash.png',             name: 'Dot Dash',     desc: 'Quick reflexes',     bg: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)' },
+    { icon: '/landing-icons/Word%20games.png',           name: 'Caption This', desc: 'Creativity & humor', bg: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)' },
   ];
 
   const whys = [
@@ -427,10 +432,15 @@ function SolutionSection() {
               }}
             >
               <div
-                className="w-full rounded-xl flex items-center justify-center text-5xl mb-3"
+                className="w-full rounded-xl flex items-center justify-center mb-3"
                 style={{ height: 120, background: game.bg }}
               >
-                {game.icon}
+                <img
+                  src={game.icon}
+                  alt=""
+                  className="object-contain"
+                  style={{ width: 60, height: 60, filter: 'drop-shadow(0 0 6px rgba(0,0,0,0.4))' }}
+                />
               </div>
               <p className="font-display text-white text-[15px] mb-1">{game.name}</p>
               <p className="font-body text-white/50 text-xs">{game.desc}</p>
