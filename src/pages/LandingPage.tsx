@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ function Confetti() {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function LandingPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -303,15 +305,14 @@ export function LandingPage() {
             </motion.div>
 
             {/* CTA button */}
-            <motion.a
-              href="#waitlist"
+            <motion.button
+              onClick={() => navigate('/onboarding/welcome')}
               className="relative overflow-hidden w-full sm:w-auto sm:min-w-[360px] font-display text-2xl rounded-2xl py-5 px-10 cursor-pointer select-none block text-center"
               style={{
                 background: 'linear-gradient(135deg, #4EFFC4 0%, #FF6BA8 100%)',
                 border: '3px solid rgba(255,255,255,0.2)',
                 boxShadow: '0 0 36px rgba(78,255,196,0.5), 0 0 60px rgba(255,107,168,0.3), 6px 6px 0px rgba(0,0,0,0.35)',
                 color: '#0A1628',
-                textDecoration: 'none',
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -324,7 +325,7 @@ export function LandingPage() {
             >
               <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-2xl" />
               INSERT COIN →
-            </motion.a>
+            </motion.button>
 
             <motion.p
               className="mt-4 font-body text-sm"
