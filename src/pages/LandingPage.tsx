@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,157 +30,245 @@ function Divider({ color }: { color: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HERO
+// HERO — exact copy of WelcomeScreen (INSERT COIN scrolls to waitlist CTA)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const floatingIcons = [
+  { icon: '/icons/Star.png',                       x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
+  { icon: '/icons/Lightning%20bolt.png',            x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
+  { icon: '/icons/Heart.png',                      x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
+  { icon: '/icons/Trivia%20%26%20quizzes.png',     x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
+  { icon: '/icons/Active%20games.png',             x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
+  { icon: '/icons/Star.png',                       x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
+  { icon: '/icons/Lightning%20bolt.png',           x: '48%', y: '88%', size: 42, delay: 0.2, rotate: -5  },
+];
+
 function HeroSection({ onCta }: { onCta: () => void }) {
-  const pills = [
-    { icon: '🎮', label: 'Real connections', border: '#4EFFC4' },
-    { icon: '⚔️', label: 'Games first',      border: '#FF6BA8' },
-    { icon: '🚫', label: 'No cringe DMs',    border: '#B565FF' },
-  ];
+  const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-4 py-24 overflow-hidden">
-      <CrtBrackets color="#4EFFC4" size={32} inset={20} />
-
-      {/* Grid bg */}
+    <div
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: '#12122A' }}
+    >
+      {/* Grid background */}
       <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(78,255,196,1) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,1) 1px, transparent 1px)',
+            'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
         }}
       />
 
-      {/* Floating pixel decorations */}
-      {[
-        { emoji: '⭐', pos: 'top-12 left-6',    anim: { y: [0,-14,0], rotate: [0,20,0] }, dur: 4 },
-        { emoji: '❤️', pos: 'top-14 right-6',   anim: { scale: [1,1.35,1] },              dur: 2 },
-        { emoji: '🍕', pos: 'bottom-24 left-6', anim: { y: [0,-10,0] },                  dur: 3.5 },
-        { emoji: '⚡', pos: 'bottom-28 right-6',anim: { y: [0,-12,0] },                  dur: 3   },
-      ].map(({ emoji, pos, anim, dur }) => (
+      {/* Scanlines */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
+        }}
+      />
+
+      {/* Corner brackets */}
+      <div className="absolute top-5 left-5 w-10 h-10 border-t-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute top-5 right-5 w-10 h-10 border-t-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute bottom-5 left-5 w-10 h-10 border-b-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute bottom-5 right-5 w-10 h-10 border-b-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none" />
+
+      {/* Ambient glow orbs */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '20%', left: '15%', width: 320, height: 320,
+          background: 'radial-gradient(circle, rgba(181,101,255,0.10) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }}
+      />
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '20%', right: '10%', width: 280, height: 280,
+          background: 'radial-gradient(circle, rgba(255,107,168,0.10) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }}
+      />
+
+      {/* Floating icons */}
+      {floatingIcons.map((el, i) => (
         <motion.div
-          key={emoji}
-          className={`absolute text-3xl select-none pointer-events-none ${pos}`}
-          animate={anim as any}
-          transition={{ repeat: Infinity, duration: dur, ease: 'easeInOut' }}
+          key={i}
+          className="absolute select-none pointer-events-none"
+          style={{ left: el.x, top: el.y, width: el.size, height: el.size }}
+          initial={{ opacity: 0, scale: 0, rotate: el.rotate }}
+          animate={{
+            opacity: [0.45, 0.85, 0.45],
+            scale: [1, 1.18, 1],
+            y: [0, -10, 0],
+            rotate: [el.rotate, el.rotate + 6, el.rotate],
+          }}
+          transition={{
+            duration: 3 + i * 0.35,
+            repeat: Infinity,
+            delay: el.delay,
+            ease: 'easeInOut',
+          }}
         >
-          {emoji}
+          <img
+            src={el.icon}
+            alt=""
+            className="w-full h-full object-contain"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.55))' }}
+          />
         </motion.div>
       ))}
 
-      {/* Sword logo */}
+      {/* Main content */}
       <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', damping: 12, stiffness: 180 }}
-        className="text-7xl mb-4 select-none"
-        style={{ filter: 'drop-shadow(0 0 24px rgba(255,159,28,0.9))' }}
-      >
-        ⚔️
-      </motion.div>
-
-      {/* DUEL */}
-      <motion.h1
-        initial={{ opacity: 0, y: 30 }}
+        className="relative z-10 flex flex-col items-center px-6 text-center max-w-sm w-full"
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="font-display text-center leading-none mb-3"
-        style={{
-          fontSize: 'clamp(72px, 18vw, 108px)',
-          background: 'linear-gradient(180deg, #FFE66D 0%, #FF9F1C 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          filter: 'drop-shadow(0 0 30px rgba(255,230,109,0.65))',
-        }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
       >
-        DUEL
-      </motion.h1>
-
-      {/* PLAYER 1 START — blinking */}
-      <motion.p
-        className="font-display tracking-widest mb-8"
-        style={{ color: '#4EFFC4', textShadow: '0 0 14px #4EFFC4', fontSize: 18 }}
-        animate={{ opacity: [1, 1, 0, 0, 1] }}
-        transition={{ repeat: Infinity, duration: 2.4, times: [0, 0.45, 0.5, 0.95, 1] }}
-      >
-        PLAYER 1 START
-      </motion.p>
-
-      {/* Tagline */}
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="font-body text-white text-center mb-9 leading-relaxed"
-        style={{ fontSize: 'clamp(18px, 4vw, 22px)', maxWidth: 480 }}
-      >
-        Play games together.{' '}
-        <span
-          style={{
-            background: 'linear-gradient(90deg, #FF6BA8, #FF9F1C)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
+        <motion.div
+          className="mb-2"
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
         >
-          Skip the awkward texts.
-        </span>
-      </motion.p>
-
-      {/* Feature pills */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55 }}
-        className="flex flex-wrap justify-center gap-3 mb-10"
-      >
-        {pills.map(({ icon, label, border }) => (
-          <div
-            key={label}
-            className="flex items-center gap-2 px-5 py-2 rounded-pill font-body text-white text-sm"
+          <img
+            src="/logo/Logo.png"
+            alt=""
+            className="h-40 w-auto object-contain select-none mx-auto block"
+            style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
+          />
+          <h1
+            className="font-display select-none leading-none mt-2"
             style={{
-              background: 'rgba(255,255,255,0.07)',
-              border: `2px solid ${border}`,
-              boxShadow: `0 0 12px ${border}40`,
+              fontSize: '72px',
+              color: '#FFE66D',
+              textShadow:
+                '0 0 18px rgba(255,230,109,0.9), 0 0 50px rgba(255,230,109,0.35), 4px 4px 0px #FF9F1C, 7px 7px 0px rgba(0,0,0,0.6)',
+              letterSpacing: '0.06em',
             }}
           >
-            <span>{icon}</span>
-            <span>{label}</span>
-          </div>
-        ))}
+            DUEL
+          </h1>
+        </motion.div>
+
+        {/* "PLAYER 1 START" divider */}
+        <motion.div
+          className="flex items-center gap-3 w-full mb-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+        >
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(78,255,196,0.45))' }} />
+          <motion.span
+            className="font-body text-xs font-bold tracking-widest uppercase"
+            style={{ color: '#4EFFC4' }}
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            PLAYER 1 START
+          </motion.span>
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(78,255,196,0.45), transparent)' }} />
+        </motion.div>
+
+        {/* Tagline */}
+        <motion.p
+          className="font-body font-bold text-lg mb-7 leading-snug"
+          style={{ color: 'rgba(255,255,255,0.7)' }}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+        >
+          Play games together.{' '}
+          <span style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>
+            Skip the awkward texts.
+          </span>
+        </motion.p>
+
+        {/* Feature pills */}
+        <motion.div
+          className="flex gap-2 mb-9 flex-wrap justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.55 }}
+        >
+          {[
+            { icon: '/icons/Lightning%20bolt.png', text: 'Real connections', bg: '#FFE66D', fg: '#12122A' },
+            { icon: '/icons/Heart.png',           text: 'Games first',      bg: '#FF6BA8', fg: '#fff'    },
+            { icon: '/icons/Active%20games.png',  text: 'No cringe DMs',   bg: '#4EFFC4', fg: '#12122A' },
+          ].map((pill) => (
+            <span
+              key={pill.text}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-bold border-2 border-black"
+              style={{
+                backgroundColor: pill.bg,
+                color: pill.fg,
+                boxShadow: '3px 3px 0px rgba(0,0,0,0.6)',
+              }}
+            >
+              <img src={pill.icon} alt="" className="w-3.5 h-3.5 object-contain" />
+              {pill.text}
+            </span>
+          ))}
+        </motion.div>
+
+        {/* CTA — scrolls to waitlist form instead of navigating into the app */}
+        <motion.button
+          onClick={onCta}
+          className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
+          style={{
+            background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+            border: '3px solid rgba(255,255,255,0.25)',
+            boxShadow: '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)',
+            color: '#12122A',
+          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65 }}
+          whileHover={{
+            scale: 1.05,
+            boxShadow: '0 0 50px rgba(78,255,196,0.75), 6px 6px 0px rgba(0,0,0,0.4)',
+          }}
+          whileTap={{ scale: 0.97, boxShadow: '2px 2px 0px rgba(0,0,0,0.4)' }}
+        >
+          <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+          INSERT COIN →
+        </motion.button>
+
+        <motion.p
+          className="mt-4 font-body text-sm"
+          style={{ color: 'rgba(255,255,255,0.28)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.85 }}
+        >
+          Already have an account?{' '}
+          <button
+            className="font-semibold hover:underline"
+            style={{ color: '#FF6BA8' }}
+            onClick={() => navigate('/onboarding/welcome')}
+          >
+            Sign in
+          </button>
+        </motion.p>
       </motion.div>
 
-      {/* CTA */}
-      <motion.button
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.7 }}
-        whileHover={{ scale: 1.05, boxShadow: '0 0 50px rgba(255,107,168,0.85)' }}
-        whileTap={{ scale: 0.97 }}
-        onClick={onCta}
-        className="font-display text-2xl text-white rounded-pill px-14 py-5 w-full max-w-sm"
+      {/* Bottom neon bar */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-[3px]"
         style={{
-          background: 'linear-gradient(90deg, #4EFFC4, #FF6BA8)',
-          boxShadow: '0 0 24px rgba(255,107,168,0.5)',
-          border: '3px solid rgba(255,255,255,0.18)',
+          background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)',
+          boxShadow: '0 0 14px rgba(78,255,196,0.7)',
         }}
-      >
-        INSERT COIN →
-      </motion.button>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-        className="font-body text-white/30 text-sm mt-4"
-      >
-        Free to join · Launching Spring 2026
-      </motion.p>
-    </section>
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+      />
+    </div>
   );
 }
 
