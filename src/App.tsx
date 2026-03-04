@@ -28,6 +28,9 @@ function AppRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Temporary debug route */}
+        <Route path="/landing" element={<LandingPage />} />
+
         {/* Landing page */}
         <Route path="/" element={<LandingPage />} />
 
