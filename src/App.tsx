@@ -19,6 +19,7 @@ import { DotDashLobby } from './pages/game/DotDashLobby';
 import { DotDashBoard } from './pages/game/DotDashBoard';
 import { DotDashResult } from './pages/game/DotDashResult';
 import { GamePicker } from './pages/game/GamePicker';
+import { LandingPage } from './pages/LandingPage';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -27,8 +28,11 @@ export default function App() {
     <BrowserRouter>
       <AnimatePresence mode="wait">
         <Routes>
+          {/* Landing page */}
+          <Route path="/" element={<LandingPage />} />
+
           {/* Onboarding */}
-          <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
+          <Route path="/app" element={<Navigate to="/onboarding/welcome" replace />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
           <Route path="/onboarding/avatar" element={<AvatarSelection />} />
           <Route path="/onboarding/basics" element={<BasicsForm />} />
