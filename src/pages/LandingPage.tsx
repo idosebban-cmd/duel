@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 
@@ -108,6 +108,12 @@ export function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [emailError, setEmailError] = useState('');
+
+  // Clear any persisted onboarding state so stale data can't trigger redirects
+  useEffect(() => {
+    localStorage.removeItem('duel-onboarding');
+    sessionStorage.removeItem('duel-photos');
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
