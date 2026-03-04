@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { preloadImages } from './utils/preloadImages';
 import { WelcomeScreen } from './components/onboarding/WelcomeScreen';
@@ -21,45 +21,51 @@ import { DotDashResult } from './pages/game/DotDashResult';
 import { GamePicker } from './pages/game/GamePicker';
 import { LandingPage } from './pages/LandingPage';
 
-export default function App() {
+function AppRoutes() {
+  const location = useLocation();
   useEffect(() => { preloadImages(); }, []);
 
   return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Landing page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Onboarding */}
+        <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
+        <Route path="/onboarding/avatar" element={<AvatarSelection />} />
+        <Route path="/onboarding/basics" element={<BasicsForm />} />
+        <Route path="/onboarding/photos" element={<PhotoUpload />} />
+        <Route path="/onboarding/games" element={<GameSelection />} />
+        <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
+        <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
+        <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
+
+        {/* Game picker */}
+        <Route path="/play" element={<GamePicker />} />
+
+        {/* Guess Who game */}
+        <Route path="/game" element={<GameSetup />} />
+        <Route path="/game/:gameId/lobby" element={<LobbyScreen />} />
+        <Route path="/game/:gameId/play" element={<GameBoard />} />
+        <Route path="/game/:gameId/result" element={<GameResult />} />
+
+        {/* Dot Dash – maze racing game */}
+        <Route path="/dotdash" element={<DotDashSetup />} />
+        <Route path="/dotdash/:gameId/lobby" element={<DotDashLobby />} />
+        <Route path="/dotdash/:gameId/play" element={<DotDashBoard />} />
+        <Route path="/dotdash/:gameId/result" element={<DotDashResult />} />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
+export default function App() {
+  return (
     <BrowserRouter>
-      <AnimatePresence mode="wait">
-        <Routes>
-          {/* Landing page */}
-          <Route path="/" element={<LandingPage />} />
-
-          {/* Onboarding */}
-          <Route path="/app" element={<Navigate to="/onboarding/welcome" replace />} />
-          <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
-          <Route path="/onboarding/avatar" element={<AvatarSelection />} />
-          <Route path="/onboarding/basics" element={<BasicsForm />} />
-          <Route path="/onboarding/photos" element={<PhotoUpload />} />
-          <Route path="/onboarding/games" element={<GameSelection />} />
-          <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
-          <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
-          <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
-
-          {/* Game picker */}
-          <Route path="/play" element={<GamePicker />} />
-
-          {/* Guess Who game */}
-          <Route path="/game" element={<GameSetup />} />
-          <Route path="/game/:gameId/lobby" element={<LobbyScreen />} />
-          <Route path="/game/:gameId/play" element={<GameBoard />} />
-          <Route path="/game/:gameId/result" element={<GameResult />} />
-
-          {/* Dot Dash – maze racing game */}
-          <Route path="/dotdash" element={<DotDashSetup />} />
-          <Route path="/dotdash/:gameId/lobby" element={<DotDashLobby />} />
-          <Route path="/dotdash/:gameId/play" element={<DotDashBoard />} />
-          <Route path="/dotdash/:gameId/result" element={<DotDashResult />} />
-
-          <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
-        </Routes>
-      </AnimatePresence>
+      <AppRoutes />
     </BrowserRouter>
   );
 }
