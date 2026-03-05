@@ -413,8 +413,8 @@ function SolutionSection() {
           together.
         </motion.p>
 
-        {/* Game cards */}
-        <div className="flex justify-center gap-5 overflow-x-auto pb-3 mb-14 snap-x snap-mandatory">
+        {/* Game cards — 1 col mobile, 2 col tablet, 3 col desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
           {games.map((game, i) => (
             <motion.div
               key={game.name}
@@ -422,10 +422,9 @@ function SolutionSection() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              whileHover={{ scale: 1.06, y: -6 }}
-              className="flex-shrink-0 snap-center rounded-card p-4 text-center cursor-default"
+              whileHover={{ scale: 1.03, y: -4 }}
+              className="rounded-card p-4 text-center cursor-default w-full"
               style={{
-                width: 164,
                 background: 'rgba(255,255,255,0.04)',
                 border: '3px solid #4EFFC4',
                 boxShadow: '0 0 22px rgba(78,255,196,0.18)',
