@@ -20,6 +20,7 @@ import { DotDashBoard } from './pages/game/DotDashBoard';
 import { DotDashResult } from './pages/game/DotDashResult';
 import { GamePicker } from './pages/game/GamePicker';
 import { LandingPage } from './pages/LandingPage';
+import { DiscoverScreen } from './pages/DiscoverScreen';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -41,6 +42,9 @@ export default function App() {
           <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
           <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
           <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
+
+          {/* Discover / matching */}
+          <Route path="/discover" element={<DiscoverScreen />} />
 
           {/* Game picker */}
           <Route path="/play" element={<GamePicker />} />
