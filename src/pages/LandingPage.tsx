@@ -690,6 +690,7 @@ function SocialProofSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function FinalCtaSection() {
+  const navigate = useNavigate();
   const [email,  setEmail]  = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
@@ -777,6 +778,32 @@ function FinalCtaSection() {
         >
           Launching Spring 2026 in London
         </motion.p>
+
+        {/* Demo link — always visible, above the form */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+          className="mb-8"
+        >
+          <motion.button
+            onClick={() => navigate('/onboarding/welcome')}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-2 font-body font-bold text-base px-6 py-3 rounded-xl"
+            style={{
+              color: '#4EFFC4',
+              border: '2px solid rgba(78,255,196,0.4)',
+              background: 'rgba(78,255,196,0.06)',
+              boxShadow: '0 0 14px rgba(78,255,196,0.12)',
+            }}
+          >
+            <span>Try the demo</span>
+            <span style={{ fontSize: 18 }}>→</span>
+          </motion.button>
+          <p className="font-body text-white/30 text-xs mt-2">No account needed</p>
+        </motion.div>
 
         <AnimatePresence mode="wait">
           {status === 'success' ? (
