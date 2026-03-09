@@ -25,6 +25,7 @@ import { ChatScreen } from './pages/ChatScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { MatchesScreen } from './pages/MatchesScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
+import { WordBlitz } from './pages/game/WordBlitz';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -70,6 +71,10 @@ export default function App() {
           <Route path="/game/:gameId/lobby" element={<LobbyScreen />} />
           <Route path="/game/:gameId/play" element={<GameBoard />} />
           <Route path="/game/:gameId/result" element={<GameResult />} />
+
+          {/* Word Blitz */}
+          <Route path="/games/word-blitz/:matchId" element={<WordBlitz />} />
+          <Route path="/games/word-blitz" element={<WordBlitz />} />
 
           {/* Dot Dash – maze racing game */}
           <Route path="/dotdash" element={<DotDashSetup />} />

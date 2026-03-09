@@ -36,6 +36,16 @@ const GAMES: GameOption[] = [
     color: '#4EFFC4',
     icon: '🎮',
   },
+  {
+    id: 'word-blitz',
+    name: 'Word Blitz',
+    emoji: '💬',
+    description: 'Build connecting words from your letters in 3 minutes. Vocabulary & speed!',
+    route: '/games/word-blitz/demo',
+    gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
+    color: '#B565FF',
+    icon: '🔤',
+  },
 ];
 
 export function GamePicker() {
