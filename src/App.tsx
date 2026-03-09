@@ -23,6 +23,7 @@ import { LandingPage } from './pages/LandingPage';
 import { DiscoverScreen } from './pages/DiscoverScreen';
 import { ChatScreen } from './pages/ChatScreen';
 import { LoginScreen } from './pages/LoginScreen';
+import { MatchesScreen } from './pages/MatchesScreen';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -50,6 +51,9 @@ export default function App() {
 
           {/* Discover / matching */}
           <Route path="/discover" element={<DiscoverScreen />} />
+
+          {/* Matches hub */}
+          <Route path="/matches" element={<MatchesScreen />} />
 
           {/* Chat */}
           <Route path="/chat" element={<ChatScreen />} />

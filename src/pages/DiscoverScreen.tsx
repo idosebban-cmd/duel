@@ -838,7 +838,7 @@ export function DiscoverScreen() {
       )}
 
       {/* Bottom nav */}
-      <BottomNav onMatches={() => navigate('/onboarding/preview')} onProfile={() => navigate('/onboarding/preview')} />
+      <BottomNav onMatches={() => navigate('/matches')} onProfile={() => navigate('/profile')} />
 
       {/* Full profile detail view */}
       <AnimatePresence>
