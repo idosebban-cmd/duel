@@ -250,7 +250,7 @@ function HeroSection({ onCta }: { onCta: () => void }) {
           <button
             className="font-semibold hover:underline"
             style={{ color: '#FF6BA8' }}
-            onClick={() => navigate('/onboarding/welcome')}
+            onClick={() => navigate('/login')}
           >
             Sign in
           </button>

@@ -218,6 +218,7 @@ export function WelcomeScreen() {
           <button
             className="font-semibold hover:underline"
             style={{ color: '#FF6BA8' }}
+            onClick={() => navigate('/login')}
           >
             Sign in
           </button>

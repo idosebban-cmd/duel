@@ -22,6 +22,7 @@ import { GamePicker } from './pages/game/GamePicker';
 import { LandingPage } from './pages/LandingPage';
 import { DiscoverScreen } from './pages/DiscoverScreen';
 import { ChatScreen } from './pages/ChatScreen';
+import { LoginScreen } from './pages/LoginScreen';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -43,6 +44,9 @@ export default function App() {
           <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
           <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
           <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
+
+          {/* Login */}
+          <Route path="/login" element={<LoginScreen />} />
 
           {/* Discover / matching */}
           <Route path="/discover" element={<DiscoverScreen />} />
