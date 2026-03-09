@@ -21,6 +21,7 @@ import { DotDashResult } from './pages/game/DotDashResult';
 import { GamePicker } from './pages/game/GamePicker';
 import { LandingPage } from './pages/LandingPage';
 import { DiscoverScreen } from './pages/DiscoverScreen';
+import { ChatScreen } from './pages/ChatScreen';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -45,6 +46,9 @@ export default function App() {
 
           {/* Discover / matching */}
           <Route path="/discover" element={<DiscoverScreen />} />
+
+          {/* Chat */}
+          <Route path="/chat" element={<ChatScreen />} />
 
           {/* Game picker */}
           <Route path="/play" element={<GamePicker />} />

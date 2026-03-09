@@ -198,26 +198,20 @@ export function GameResult() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <div className="relative">
-            <motion.button
-              disabled
-              className="w-full py-4 rounded-2xl font-display font-extrabold text-xl"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '4px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.3)',
-                cursor: 'not-allowed',
-              }}
-            >
-              💬 Start Chatting
-            </motion.button>
-            <span
-              className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full font-display font-bold text-xs"
-              style={{ background: '#FF9F1C', border: '2px solid black', color: '#0f172a' }}
-            >
-              Coming soon
-            </span>
-          </div>
+          <motion.button
+            className="w-full py-4 rounded-2xl font-display font-extrabold text-xl"
+            style={{
+              background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+              border: '4px solid rgba(255,255,255,0.2)',
+              color: '#12122A',
+              boxShadow: '0 0 24px rgba(78,255,196,0.4), 4px 4px 0 rgba(0,0,0,0.3)',
+            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate('/chat', { state: { name: opponentName, character: opponentChar?.attributes?.type } })}
+          >
+            💬 Start Chatting
+          </motion.button>
 
           <motion.button
             className="w-full py-3 rounded-2xl font-display font-bold text-base"
