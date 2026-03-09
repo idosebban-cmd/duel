@@ -24,6 +24,7 @@ import { DiscoverScreen } from './pages/DiscoverScreen';
 import { ChatScreen } from './pages/ChatScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { MatchesScreen } from './pages/MatchesScreen';
+import { ProfileScreen } from './pages/ProfileScreen';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -54,6 +55,9 @@ export default function App() {
 
           {/* Matches hub */}
           <Route path="/matches" element={<MatchesScreen />} />
+
+          {/* Profile */}
+          <Route path="/profile" element={<ProfileScreen />} />
 
           {/* Chat */}
           <Route path="/chat" element={<ChatScreen />} />
