@@ -66,6 +66,16 @@ const GAMES: GameOption[] = [
     color: '#4EFFC4',
     icon: '⚫',
   },
+  {
+    id: 'battleship',
+    name: 'Battleship',
+    emoji: '⚓',
+    description: 'Sink their fleet. Strategy and luck.',
+    route: '/games/battleship/demo',
+    gradient: 'linear-gradient(135deg, #4AC8FF, #0055AA)',
+    color: '#4AC8FF',
+    icon: '🚢',
+  },
 ];
 
 export function GamePicker() {
