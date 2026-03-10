@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { characterImages } from '../../utils/assetMaps';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const CELL  = 44;        // px per square
@@ -26,23 +27,8 @@ interface Piece {
 interface Dest {
   row: number;
   col: number;
-  capturedId:  string | null;
-  capturedRow: number | null;
-  capturedCol: number | null;
+  capturedId: string | null;
 }
-
-// ── Asset map ────────────────────────────────────────────────────────────────
-const characterImages: Record<string, string> = {
-  dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
-  robot: '/characters/Robot.png', phoenix: '/characters/Phoenix.png',
-  bear: '/characters/Bear.png', fox: '/characters/Fox.png',
-  octopus: '/characters/Octopus.png', owl: '/characters/Owl.png',
-  wolf: '/characters/Wolf.png', unicorn: '/characters/Unicorn.png',
-  ghost: '/characters/Ghost.png', lion: '/characters/Lion.png',
-  witch: '/characters/Witch.png', knight: '/characters/Knight.png',
-  viking: '/characters/Viking.png', pixie: '/characters/Pixie.png',
-  ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
-};
 
 // ── Initial board ────────────────────────────────────────────────────────────
 function makeInitialPieces(): Piece[] {
@@ -74,7 +60,7 @@ function getJumps(ps: Piece[], piece: Piece): Dest[] {
     if (lr < 0 || lr > 7 || lc < 0 || lc > 7) continue;
     const enemy = getPieceAt(ps, er, ec);
     if (enemy && enemy.player !== piece.player && !getPieceAt(ps, lr, lc))
-      out.push({ row: lr, col: lc, capturedId: enemy.id, capturedRow: er, capturedCol: ec });
+      out.push({ row: lr, col: lc, capturedId: enemy.id });
   }
   return out;
 }
@@ -84,7 +70,7 @@ function getSimpleMoves(ps: Piece[], piece: Piece): Dest[] {
     ? [[-1,-1],[-1,1],[1,-1],[1,1]]
     : piece.player === 'player' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
   return dirs
-    .map(([dr, dc]) => ({ row: piece.row+dr, col: piece.col+dc, capturedId: null, capturedRow: null, capturedCol: null }))
+    .map(([dr, dc]) => ({ row: piece.row+dr, col: piece.col+dc, capturedId: null }))
     .filter(d => d.row >= 0 && d.row <= 7 && d.col >= 0 && d.col <= 7 && !getPieceAt(ps, d.row, d.col));
 }
 
@@ -133,11 +119,17 @@ function computeBotMoveChain(ps: Piece[]): Array<{pieceId: string; dest: Dest}> 
 
   if (mustCapture) {
     let bestChain: Array<{pieceId: string; dest: Dest}> = [];
+    const allChains: Array<Array<{pieceId: string; dest: Dest}>> = [];
     for (const piece of botPieces) {
       for (const j of getJumps(ps, piece)) {
         const chain = buildCaptureChain(ps, piece.id, j);
+        allChains.push(chain);
         if (chain.length > bestChain.length) bestChain = chain;
       }
+    }
+    // 20% chance: pick a random chain instead of the best
+    if (Math.random() < 0.2 && allChains.length > 1) {
+      return allChains[Math.floor(Math.random() * allChains.length)];
     }
     return bestChain;
   }
@@ -323,7 +315,7 @@ export function Draughts() {
   // ── Bot turn ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (turn !== 'bot' || phase !== 'playing') return;
-    const delay = 1000 + Math.random() * 900;
+    const delay = 2000 + Math.random() * 1000;
     const timer = setTimeout(() => {
       const chain = computeBotMoveChain(piecesRef.current);
       if (!chain.length) {
@@ -363,7 +355,7 @@ export function Draughts() {
   const executePlayerMove = (pieceId: string, dest: Dest) => {
     const newPieces = applyMove(pieces, pieceId, dest);
     if (dest.capturedId) setPlayerCaptures(c => c + 1);
-    setMoves(m => m + 1);
+    if (!chainJumpId) setMoves(m => m + 1);
     setPieces(newPieces);
 
     // Chain jump?
@@ -545,8 +537,9 @@ export function Draughts() {
           {Array.from({ length: 64 }).map((_, i) => {
             const row = Math.floor(i / 8), col = i % 8;
             const dark = (row + col) % 2 === 1;
-            const isValidDest = validDests.some(d => d.row === row && d.col === col);
-            const isCapture   = isValidDest && validDests.find(d => d.row === row && d.col === col)?.capturedId;
+            const matchedDest = validDests.find(d => d.row === row && d.col === col);
+            const isValidDest = !!matchedDest;
+            const isCapture   = !!matchedDest?.capturedId;
             return (
               <div key={i} onClick={() => handleCellTap(row, col)}
                 style={{
