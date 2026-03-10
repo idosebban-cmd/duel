@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
@@ -11,6 +11,7 @@ interface Profile {
   age: number;
   location: string;
   distance: string;
+  distanceKm: number;
   character: string;
   element: string;
   affiliation: string;
@@ -18,6 +19,8 @@ interface Profile {
   games: string[];
   lookingFor: string;
   willMatch: boolean;
+  duelGames: string[];
+  activityLevel: 'today' | 'week' | 'older';
   // Lifestyle
   kids: string;
   drinking: string;
@@ -26,6 +29,20 @@ interface Profile {
   pets: string;
   exercise: string;
   favoriteGames: string[];
+}
+
+interface FilterState {
+  ageMin: number;
+  ageMax: number;
+  distanceMax: number;
+  anyDistance: boolean;
+  duelGames: string[];
+  relationshipGoals: string[];
+  exercise: string;
+  smoking: string;
+  drinking: string;
+  pets: string;
+  activityLevel: 'today' | 'week' | 'anyone';
 }
 
 // ─── Image maps ───────────────────────────────────────────────────────────────
@@ -103,39 +120,103 @@ const lifestyleIcons: Record<string, string> = {
   exercise: '/Lifestyle/Exercise.png',
 };
 
+// ─── Filter constants ──────────────────────────────────────────────────────────
+
+const DUEL_GAMES = ['guess-who', 'dot-dash', 'word-blitz'];
+const DUEL_GAME_LABELS: Record<string, string> = {
+  'guess-who': 'Guess Who',
+  'dot-dash': 'Dot Dash',
+  'word-blitz': 'Word Blitz',
+};
+const RELATIONSHIP_GOALS = ['casual', 'short-term', 'long-term', 'not-sure', 'open'];
+const LIFESTYLE_OPTIONS: Array<{ key: 'exercise' | 'smoking' | 'drinking' | 'pets'; label: string; options: string[] }> = [
+  { key: 'exercise',  label: 'Exercise', options: ['Any', 'Daily', 'Often', 'Sometimes', 'Rarely'] },
+  { key: 'smoking',   label: 'Smoking',  options: ['Any', 'Never', 'Socially'] },
+  { key: 'drinking',  label: 'Drinking', options: ['Any', 'Socially', 'Often', 'Rarely', 'Never'] },
+  { key: 'pets',      label: 'Pets',     options: ['Any', 'Cat', 'Dog', 'None'] },
+];
+
+const DEFAULT_FILTERS: FilterState = {
+  ageMin: 22, ageMax: 35,
+  distanceMax: 25, anyDistance: false,
+  duelGames: ['guess-who', 'dot-dash', 'word-blitz'],
+  relationshipGoals: ['casual', 'short-term', 'long-term', 'not-sure', 'open'],
+  exercise: 'Any', smoking: 'Any', drinking: 'Any', pets: 'Any',
+  activityLevel: 'anyone',
+};
+
+function loadFilters(): FilterState {
+  try {
+    const s = localStorage.getItem('duel-discover-filters');
+    if (s) return { ...DEFAULT_FILTERS, ...JSON.parse(s) };
+  } catch {}
+  return { ...DEFAULT_FILTERS };
+}
+function saveFilters(f: FilterState) {
+  try { localStorage.setItem('duel-discover-filters', JSON.stringify(f)); } catch {}
+}
+function countActiveFilters(f: FilterState): number {
+  let n = 0;
+  if (f.ageMin !== DEFAULT_FILTERS.ageMin || f.ageMax !== DEFAULT_FILTERS.ageMax) n++;
+  if (!f.anyDistance && f.distanceMax !== DEFAULT_FILTERS.distanceMax) n++;
+  if (f.duelGames.length < 3) n++;
+  if (f.relationshipGoals.length < 5) n++;
+  if (f.exercise !== 'Any') n++;
+  if (f.smoking !== 'Any') n++;
+  if (f.drinking !== 'Any') n++;
+  if (f.pets !== 'Any') n++;
+  if (f.activityLevel !== 'anyone') n++;
+  return n;
+}
+function applyFilters(profiles: Profile[], f: FilterState): Profile[] {
+  return profiles.filter(p => {
+    if (p.age < f.ageMin || p.age > f.ageMax) return false;
+    if (!f.anyDistance && p.distanceKm > f.distanceMax) return false;
+    if (!f.duelGames.some(g => p.duelGames.includes(g))) return false;
+    if (!f.relationshipGoals.includes(p.lookingFor)) return false;
+    if (f.exercise !== 'Any' && p.exercise !== f.exercise) return false;
+    if (f.smoking !== 'Any' && p.smoking !== f.smoking) return false;
+    if (f.drinking !== 'Any' && p.drinking !== f.drinking) return false;
+    if (f.pets !== 'Any' && p.pets !== f.pets) return false;
+    if (f.activityLevel === 'today' && p.activityLevel !== 'today') return false;
+    if (f.activityLevel === 'week' && p.activityLevel === 'older') return false;
+    return true;
+  });
+}
+
 // ─── Profile data (30 fake UK profiles, ~20% willMatch) ──────────────────────
 
 const PROFILES: Profile[] = [
-  { id: 1,  name: 'Zara',    age: 26, location: 'Shoreditch',       distance: '0.8 mi', character: 'fox',     element: 'fire',     affiliation: 'art',      bio: "Muralist by day, trivia queen by night. Will destroy you at board games then buy you a pint. Looking for someone who isn't afraid to lose with dignity.",              games: ['trivia', 'drawing', 'party'],    lookingFor: 'casual',     willMatch: true,  kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Codenames'] },
-  { id: 2,  name: 'Marcus',  age: 29, location: 'Hackney',          distance: '1.2 mi', character: 'wolf',    element: 'electric', affiliation: 'music',    bio: "DJ & producer. My love language is sending you playlists and losing to you at Scrabble. I'll challenge you to word games at 2am and claim it's part of my creative process.",                     games: ['word', 'party', 'trivia'],       lookingFor: 'open',       willMatch: false, kids: "Don't want",      drinking: 'Often',    smoking: 'Socially', cannabis: 'Often',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Bananagrams'] },
-  { id: 3,  name: 'Priya',   age: 24, location: 'Dalston',          distance: '1.5 mi', character: 'unicorn', element: 'water',    affiliation: 'academia', bio: "PhD in cognitive science. I study why people make bad decisions — including mine joining a dating app. Genuinely curious about how your brain works, especially under pressure in a game.",  games: ['strategy', 'trivia', 'puzzles'], lookingFor: 'long-term',  willMatch: false, kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'Cat',  exercise: 'Sometimes', favoriteGames: ['Chess', 'Trivial Pursuit', 'Catan'] },
-  { id: 4,  name: 'Jake',    age: 27, location: 'Peckham',          distance: '2.1 mi', character: 'bear',    element: 'earth',    affiliation: 'fitness',  bio: "Personal trainer with a soft spot for terrible puns and competitive Tetris. I take games as seriously as my clients take squats. First date: something active. Second: destroy you at Tetris.",                             games: ['video', 'party', 'strategy'],    lookingFor: 'short-term', willMatch: false, kids: 'Want someday',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Daily',     favoriteGames: ['Tetris', 'FIFA'] },
-  { id: 5,  name: 'Isla',    age: 25, location: 'Brixton',          distance: '2.4 mi', character: 'pixie',   element: 'air',      affiliation: 'nature',   bio: "Plant mum and weekend wild swimmer. I play Wordle every morning and take it very seriously. If you don't send me your score, this isn't going to work out.",              games: ['word', 'puzzles', 'board'],      lookingFor: 'open',       willMatch: false, kids: 'Not sure yet',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Sometimes', pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Wordle', 'Catan', 'Bananagrams'] },
-  { id: 6,  name: 'Theo',    age: 28, location: 'Bermondsey',       distance: '2.9 mi', character: 'robot',   element: 'electric', affiliation: 'tech',     bio: "Software engineer by day, home chef by evening. I feel genuinely bad when I win at word games. I still win. Looking for someone who appreciates both good code and good pasta.",                         games: ['word', 'strategy', 'trivia'],    lookingFor: 'long-term',  willMatch: true,  kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Catan', 'Codenames'] },
-  { id: 7,  name: 'Sofia',   age: 23, location: 'Bethnal Green',    distance: '1.1 mi', character: 'mermaid', element: 'water',    affiliation: 'music',    bio: "Classically trained violinist who secretly loves rhythm games. My cat is named Beethoven. I'm a chaos gremlin at party games and deeply apologetic about it afterwards.",                games: ['party', 'trivia', 'drawing'],    lookingFor: 'casual',     willMatch: false, kids: "Don't want",      drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'Cat',  exercise: 'Sometimes', favoriteGames: ['Guitar Hero', 'Just Dance'] },
-  { id: 8,  name: 'Luca',    age: 31, location: 'Islington',        distance: '3.3 mi', character: 'lion',    element: 'fire',     affiliation: 'travel',   bio: "Architect + amateur chef. Cooking is my love language but I'll destroy you at chess first. Been to 40 countries. My ideal Sunday involves a farmers market and a board game.",                games: ['strategy', 'board', 'trivia'],   lookingFor: 'long-term',  willMatch: false, kids: 'Want someday',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Often',     favoriteGames: ['Chess', 'Monopoly', 'Ticket to Ride'] },
-  { id: 9,  name: 'Amara',   age: 26, location: 'Lewisham',         distance: '4.2 mi', character: 'phoenix', element: 'fire',     affiliation: 'art',      bio: "Fashion designer and Scrabble obsessive. I make all my own clothes and all my own moves. I'm convinced creativity and competitiveness are the same thing.",                 games: ['word', 'drawing', 'party'],      lookingFor: 'open',       willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'None', exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Pictionary'] },
-  { id: 10, name: 'Finn',    age: 27, location: 'Clapham',          distance: '3.8 mi', character: 'owl',     element: 'air',      affiliation: 'academia', bio: "History teacher who knows useless facts about everything. I will absolutely name-drop my pub quiz wins on a first date. Not sorry. If you can name three Tudor monarchs without Googling, message me.",               games: ['trivia', 'strategy', 'board'],   lookingFor: 'short-term', willMatch: false, kids: "Don't want",      drinking: 'Often',    smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Trivial Pursuit', 'Catan', 'Diplomacy'] },
-  { id: 11, name: 'Mei',     age: 24, location: 'Soho',             distance: '2.0 mi', character: 'cat',     element: 'water',    affiliation: 'art',      bio: "Tattoo artist and Mahjong champion. I drink too much matcha and win too many games. My studio is chaotic and so am I, but everything ends up looking exactly right.",                    games: ['board', 'drawing', 'party'],     lookingFor: 'casual',     willMatch: true,  kids: "Don't want",      drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Mahjong', 'Catan'] },
-  { id: 12, name: 'Ravi',    age: 29, location: 'Walthamstow',      distance: '5.1 mi', character: 'dragon',  element: 'fire',     affiliation: 'tech',     bio: "Startup founder who stress-bakes sourdough at midnight. Competitive at games, objectively terrible at chess despite owning a very nice chess set. Startup life means I'm good at losing and trying again.",                    games: ['strategy', 'video', 'trivia'],   lookingFor: 'open',       willMatch: false, kids: 'Want someday',    drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Chess (badly)', 'Among Us', 'Catan'] },
-  { id: 13, name: 'Nadia',   age: 25, location: 'Hackney Wick',     distance: '1.9 mi', character: 'witch',   element: 'earth',    affiliation: 'nature',   bio: "Herbalist, forager, and extremely petty about Wordle. I will brag about my streak. I forage mushrooms at the weekend and make my own skincare. I take both activities equally seriously.",                      games: ['word', 'puzzles', 'trivia'],     lookingFor: 'long-term',  willMatch: false, kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Sometimes', pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Wordle', 'Codenames', 'Boggle'] },
-  { id: 14, name: 'Oscar',   age: 30, location: 'Fulham',           distance: '5.6 mi', character: 'knight',  element: 'earth',    affiliation: 'fitness',  bio: "Rugby coach and podcast host. I talk too much about tactics — on the pitch and in Settlers of Catan. My teammates find me motivating. My Catan opponents find me insufferable.",      games: ['strategy', 'board', 'party'],    lookingFor: 'casual',     willMatch: false, kids: 'Want someday',    drinking: 'Often',    smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Daily',     favoriteGames: ['Catan', 'Risk', 'Ticket to Ride'] },
-  { id: 15, name: 'Yuki',    age: 23, location: 'Shoreditch',       distance: '0.6 mi', character: 'ninja',   element: 'air',      affiliation: 'cosmic',   bio: "UX designer and astrology sceptic who reads their chart every single day. I'm very fast at reaction games and very slow at making decisions about my feelings. Mercury in retrograde, obviously.",             games: ['video', 'party', 'puzzles'],     lookingFor: 'not-sure',   willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Sometimes', favoriteGames: ['Beat Saber', 'Tetris'] },
-  { id: 16, name: 'Ellie',   age: 27, location: 'Greenwich',        distance: '4.7 mi', character: 'ghost',   element: 'air',      affiliation: 'academia', bio: "Marine biologist who designs escape rooms as a hobby. I find every clue and celebrate loudly. I also annotate books in pencil and consider it a love language when someone does the same.",                       games: ['puzzles', 'trivia', 'board'],    lookingFor: 'long-term',  willMatch: false, kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Often',     favoriteGames: ['Escape room games', 'Trivial Pursuit'] },
-  { id: 17, name: 'Dean',    age: 32, location: 'Camberwell',       distance: '3.5 mi', character: 'viking',  element: 'earth',    affiliation: 'travel',   bio: "Travel writer. 60+ countries. Looking for someone to lose to me at cards in an airport lounge. I've eaten things you can't pronounce and slept in places with no wifi. Not complaining.",                 games: ['card', 'trivia', 'word'],        lookingFor: 'open',       willMatch: false, kids: "Don't want",      drinking: 'Often',    smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Poker', 'Gin Rummy', 'Cribbage'] },
-  { id: 18, name: 'Aisha',   age: 26, location: 'Tottenham',        distance: '6.3 mi', character: 'unicorn', element: 'water',    affiliation: 'music',    bio: "Songwriter and escape room enthusiast. My highs are when I solve a puzzle. My lows are when you beat me. I write songs about neither, but I'm thinking about it.",  games: ['puzzles', 'word', 'party'],      lookingFor: 'casual',     willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Wordle', 'Boggle'] },
-  { id: 19, name: 'Callum',  age: 28, location: 'Stoke Newington',  distance: '2.8 mi', character: 'fox',     element: 'electric', affiliation: 'city',     bio: "Graphic novelist and obscure board game collector. 97 games. I will make you play the worst one first to filter out the uncommitted. The good news: the good ones are really good.",       games: ['board', 'strategy', 'drawing'],  lookingFor: 'long-term',  willMatch: true,  kids: 'Want someday',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Catan', 'Root', 'Spirit Island'] },
-  { id: 20, name: 'Nour',    age: 24, location: 'Elephant & Castle', distance: '3.0 mi', character: 'mermaid', element: 'water',   affiliation: 'art',      bio: "Ceramicist and compulsive redecorator. I reorganise furniture when stressed and draw when happy. I play games the same way I make pottery: slowly, intentionally, and with intense focus.",       games: ['drawing', 'puzzles', 'word'],    lookingFor: 'not-sure',   willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Dixit'] },
-  { id: 21, name: 'Elliot',  age: 29, location: 'Whitechapel',      distance: '0.9 mi', character: 'robot',   element: 'electric', affiliation: 'tech',     bio: "Data scientist who makes memes as a coping mechanism. I have strong opinions about board game mechanics and mild opinions about everything else. I will spreadsheet our compatibility.", games: ['strategy', 'trivia', 'video'],   lookingFor: 'open',       willMatch: false, kids: "Don't want",      drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Ticket to Ride', 'Codenames'] },
-  { id: 22, name: 'Temi',    age: 25, location: 'Stockwell',        distance: '4.0 mi', character: 'lion',    element: 'fire',     affiliation: 'fitness',  bio: "Dancer and personal trainer. Competitive at games with zero chill when winning. I'll apologise for gloating and then gloat again. Looking for someone who can handle both.",                                 games: ['party', 'video', 'trivia'],      lookingFor: 'casual',     willMatch: false, kids: 'Want someday',    drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Daily',     favoriteGames: ['Just Dance', 'FIFA', 'Mario Kart'] },
-  { id: 23, name: 'Sasha',   age: 27, location: 'Clapton',          distance: '2.3 mi', character: 'owl',     element: 'earth',    affiliation: 'nature',   bio: "Wildlife photographer and Wordle champion. My photos are in two galleries and one GP waiting room. I take long walks with purpose and Wordle with obsession. In that order.",      games: ['word', 'puzzles', 'trivia'],     lookingFor: 'long-term',  willMatch: false, kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Wordle', 'Catan', 'Rummikub'] },
-  { id: 24, name: 'Alex',    age: 26, location: 'Bermondsey',       distance: '2.7 mi', character: 'phoenix', element: 'fire',     affiliation: 'city',     bio: "Barista + trained sommelier. My tongue can identify 40+ flavours but I still cheat at trivia nights (the good kind of cheating). I will absolutely judge your coffee order.",      games: ['trivia', 'board', 'word'],       lookingFor: 'open',       willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Socially', cannabis: 'Sometimes', pets: 'None', exercise: 'Sometimes', favoriteGames: ['Trivial Pursuit', 'Catan'] },
-  { id: 25, name: 'Jade',    age: 23, location: 'Hoxton',           distance: '0.5 mi', character: 'pixie',   element: 'air',      affiliation: 'art',      bio: "Illustrator who draws fan art of her friends. Will absolutely draw you as an anime character after our first game. Warning: I'm surprisingly ruthless at party games despite looking soft.",  games: ['drawing', 'party', 'word'],      lookingFor: 'casual',     willMatch: true,  kids: "Don't want",      drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Pictionary', 'Dixit', 'Telestrations'] },
-  { id: 26, name: 'Harry',   age: 30, location: 'Clapham',          distance: '4.4 mi', character: 'bear',    element: 'earth',    affiliation: 'country',  bio: "Landscape architect who moonlights as a competitive chess player. Parks and pawns are my entire personality. I've been told I'm 'surprisingly intense about things that don't matter'.",    games: ['strategy', 'board', 'trivia'],   lookingFor: 'long-term',  willMatch: false, kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Chess', 'Catan', 'Pandemic'] },
-  { id: 27, name: 'Kezia',   age: 25, location: 'Forest Gate',      distance: '5.8 mi', character: 'witch',   element: 'water',    affiliation: 'cosmic',   bio: "Astrologer and card game shark. I'll read your chart and then hustle you at Poker. In that order. I've been told my moon sign explains a lot about my card game face.",            games: ['card', 'party', 'trivia'],       lookingFor: 'not-sure',   willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Poker', 'Tarot (it counts)', 'Catan'] },
-  { id: 28, name: 'Samir',   age: 28, location: 'Kilburn',          distance: '5.2 mi', character: 'dragon',  element: 'fire',     affiliation: 'travel',   bio: "Filmmaker and terrible loser (genuinely working on it). My best dates involve dark rooms and good stories. My worst involve someone who refuses to explain why they made that move.",             games: ['trivia', 'word', 'party'],       lookingFor: 'open',       willMatch: false, kids: 'Not sure yet',    drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Trivial Pursuit', 'Codenames'] },
-  { id: 29, name: 'Rosa',    age: 24, location: 'Brixton',          distance: '2.6 mi', character: 'cat',     element: 'electric', affiliation: 'music',    bio: "Music journalist and rhythm game addict. I review concerts for a living and lose at Guitar Hero for fun. My Spotify wrapped is embarrassing and I refuse to share it.",games: ['party', 'video', 'word'],        lookingFor: 'casual',     willMatch: false, kids: "Don't want",      drinking: 'Often',    smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Guitar Hero', 'Rock Band', 'Just Dance'] },
-  { id: 30, name: 'Ben',     age: 31, location: 'Aldgate',          distance: '1.3 mi', character: 'knight',  element: 'earth',    affiliation: 'academia', bio: "Medieval historian and escape room designer. I literally build the puzzles you play. Good luck. I've never lost at one of my own rooms. I've also never told anyone who has.",          games: ['puzzles', 'strategy', 'board'],  lookingFor: 'long-term',  willMatch: true,  kids: 'Want someday',    drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Escape room games', 'Catan'] },
+  { id: 1,  name: 'Zara',   age: 26, location: 'Shoreditch',        distance: '0.8 mi', distanceKm: 1.3,  character: 'fox',     element: 'fire',     affiliation: 'art',      bio: "Muralist by day, trivia queen by night. Will destroy you at board games then buy you a pint. Looking for someone who isn't afraid to lose with dignity.",              games: ['trivia', 'drawing', 'party'],    lookingFor: 'casual',     willMatch: true,  duelGames: ['guess-who', 'word-blitz'],              activityLevel: 'today', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Codenames'] },
+  { id: 2,  name: 'Marcus', age: 29, location: 'Hackney',           distance: '1.2 mi', distanceKm: 1.9,  character: 'wolf',    element: 'electric', affiliation: 'music',    bio: "DJ & producer. My love language is sending you playlists and losing to you at Scrabble. I'll challenge you to word games at 2am and claim it's part of my creative process.",    games: ['word', 'party', 'trivia'],       lookingFor: 'open',       willMatch: false, duelGames: ['word-blitz'],                           activityLevel: 'today', kids: "Don't want",    drinking: 'Often',    smoking: 'Socially', cannabis: 'Often',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Bananagrams'] },
+  { id: 3,  name: 'Priya',  age: 24, location: 'Dalston',           distance: '1.5 mi', distanceKm: 2.4,  character: 'unicorn', element: 'water',    affiliation: 'academia', bio: "PhD in cognitive science. I study why people make bad decisions — including mine joining a dating app. Genuinely curious about how your brain works, especially under pressure in a game.",  games: ['strategy', 'trivia', 'puzzles'], lookingFor: 'long-term',  willMatch: false, duelGames: ['guess-who', 'dot-dash'],                activityLevel: 'week',  kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'Cat',  exercise: 'Sometimes', favoriteGames: ['Chess', 'Trivial Pursuit', 'Catan'] },
+  { id: 4,  name: 'Jake',   age: 27, location: 'Peckham',           distance: '2.1 mi', distanceKm: 3.4,  character: 'bear',    element: 'earth',    affiliation: 'fitness',  bio: "Personal trainer with a soft spot for terrible puns and competitive Tetris. I take games as seriously as my clients take squats. First date: something active. Second: destroy you at Tetris.", games: ['video', 'party', 'strategy'],    lookingFor: 'short-term', willMatch: false, duelGames: ['dot-dash'],                             activityLevel: 'today', kids: 'Want someday',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Daily',     favoriteGames: ['Tetris', 'FIFA'] },
+  { id: 5,  name: 'Isla',   age: 25, location: 'Brixton',           distance: '2.4 mi', distanceKm: 3.9,  character: 'pixie',   element: 'air',      affiliation: 'nature',   bio: "Plant mum and weekend wild swimmer. I play Wordle every morning and take it very seriously. If you don't send me your score, this isn't going to work out.",              games: ['word', 'puzzles', 'board'],      lookingFor: 'open',       willMatch: false, duelGames: ['word-blitz', 'dot-dash'],               activityLevel: 'week',  kids: 'Not sure yet',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Sometimes', pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Wordle', 'Catan', 'Bananagrams'] },
+  { id: 6,  name: 'Theo',   age: 28, location: 'Bermondsey',        distance: '2.9 mi', distanceKm: 4.7,  character: 'robot',   element: 'electric', affiliation: 'tech',     bio: "Software engineer by day, home chef by evening. I feel genuinely bad when I win at word games. I still win. Looking for someone who appreciates both good code and good pasta.",        games: ['word', 'strategy', 'trivia'],    lookingFor: 'long-term',  willMatch: true,  duelGames: ['word-blitz', 'guess-who'],              activityLevel: 'today', kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Catan', 'Codenames'] },
+  { id: 7,  name: 'Sofia',  age: 23, location: 'Bethnal Green',     distance: '1.1 mi', distanceKm: 1.8,  character: 'mermaid', element: 'water',    affiliation: 'music',    bio: "Classically trained violinist who secretly loves rhythm games. My cat is named Beethoven. I'm a chaos gremlin at party games and deeply apologetic about it afterwards.",             games: ['party', 'trivia', 'drawing'],    lookingFor: 'casual',     willMatch: false, duelGames: ['guess-who', 'dot-dash', 'word-blitz'],  activityLevel: 'week',  kids: "Don't want",    drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'Cat',  exercise: 'Sometimes', favoriteGames: ['Guitar Hero', 'Just Dance'] },
+  { id: 8,  name: 'Luca',   age: 31, location: 'Islington',         distance: '3.3 mi', distanceKm: 5.3,  character: 'lion',    element: 'fire',     affiliation: 'travel',   bio: "Architect + amateur chef. Cooking is my love language but I'll destroy you at chess first. Been to 40 countries. My ideal Sunday involves a farmers market and a board game.",             games: ['strategy', 'board', 'trivia'],   lookingFor: 'long-term',  willMatch: false, duelGames: ['guess-who'],                            activityLevel: 'older', kids: 'Want someday',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Often',     favoriteGames: ['Chess', 'Monopoly', 'Ticket to Ride'] },
+  { id: 9,  name: 'Amara',  age: 26, location: 'Lewisham',          distance: '4.2 mi', distanceKm: 6.8,  character: 'phoenix', element: 'fire',     affiliation: 'art',      bio: "Fashion designer and Scrabble obsessive. I make all my own clothes and all my own moves. I'm convinced creativity and competitiveness are the same thing.",                games: ['word', 'drawing', 'party'],      lookingFor: 'open',       willMatch: false, duelGames: ['word-blitz', 'guess-who'],              activityLevel: 'week',  kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'None', exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Pictionary'] },
+  { id: 10, name: 'Finn',   age: 27, location: 'Clapham',           distance: '3.8 mi', distanceKm: 6.1,  character: 'owl',     element: 'air',      affiliation: 'academia', bio: "History teacher who knows useless facts about everything. I will absolutely name-drop my pub quiz wins on a first date. Not sorry. If you can name three Tudor monarchs without Googling, message me.", games: ['trivia', 'strategy', 'board'],   lookingFor: 'short-term', willMatch: false, duelGames: ['guess-who', 'dot-dash'],                activityLevel: 'older', kids: "Don't want",    drinking: 'Often',    smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Trivial Pursuit', 'Catan', 'Diplomacy'] },
+  { id: 11, name: 'Mei',    age: 24, location: 'Soho',              distance: '2.0 mi', distanceKm: 3.2,  character: 'cat',     element: 'water',    affiliation: 'art',      bio: "Tattoo artist and Mahjong champion. I drink too much matcha and win too many games. My studio is chaotic and so am I, but everything ends up looking exactly right.",                 games: ['board', 'drawing', 'party'],     lookingFor: 'casual',     willMatch: true,  duelGames: ['dot-dash', 'word-blitz'],               activityLevel: 'today', kids: "Don't want",    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Mahjong', 'Catan'] },
+  { id: 12, name: 'Ravi',   age: 29, location: 'Walthamstow',       distance: '5.1 mi', distanceKm: 8.2,  character: 'dragon',  element: 'fire',     affiliation: 'tech',     bio: "Startup founder who stress-bakes sourdough at midnight. Competitive at games, objectively terrible at chess despite owning a very nice chess set. Startup life means I'm good at losing and trying again.", games: ['strategy', 'video', 'trivia'],   lookingFor: 'open',       willMatch: false, duelGames: ['guess-who'],                            activityLevel: 'week',  kids: 'Want someday',  drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Chess (badly)', 'Among Us', 'Catan'] },
+  { id: 13, name: 'Nadia',  age: 25, location: 'Hackney Wick',      distance: '1.9 mi', distanceKm: 3.1,  character: 'witch',   element: 'earth',    affiliation: 'nature',   bio: "Herbalist, forager, and extremely petty about Wordle. I will brag about my streak. I forage mushrooms at the weekend and make my own skincare. I take both activities equally seriously.",        games: ['word', 'puzzles', 'trivia'],     lookingFor: 'long-term',  willMatch: false, duelGames: ['word-blitz'],                           activityLevel: 'today', kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Sometimes', pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Wordle', 'Codenames', 'Boggle'] },
+  { id: 14, name: 'Oscar',  age: 30, location: 'Fulham',            distance: '5.6 mi', distanceKm: 9.0,  character: 'knight',  element: 'earth',    affiliation: 'fitness',  bio: "Rugby coach and podcast host. I talk too much about tactics — on the pitch and in Settlers of Catan. My teammates find me motivating. My Catan opponents find me insufferable.",     games: ['strategy', 'board', 'party'],    lookingFor: 'casual',     willMatch: false, duelGames: ['dot-dash', 'guess-who'],                activityLevel: 'week',  kids: 'Want someday',  drinking: 'Often',    smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Daily',     favoriteGames: ['Catan', 'Risk', 'Ticket to Ride'] },
+  { id: 15, name: 'Yuki',   age: 23, location: 'Shoreditch',        distance: '0.6 mi', distanceKm: 1.0,  character: 'ninja',   element: 'air',      affiliation: 'cosmic',   bio: "UX designer and astrology sceptic who reads their chart every single day. I'm very fast at reaction games and very slow at making decisions about my feelings. Mercury in retrograde, obviously.", games: ['video', 'party', 'puzzles'],     lookingFor: 'not-sure',   willMatch: false, duelGames: ['dot-dash', 'word-blitz', 'guess-who'],  activityLevel: 'today', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Sometimes', favoriteGames: ['Beat Saber', 'Tetris'] },
+  { id: 16, name: 'Ellie',  age: 27, location: 'Greenwich',         distance: '4.7 mi', distanceKm: 7.6,  character: 'ghost',   element: 'air',      affiliation: 'academia', bio: "Marine biologist who designs escape rooms as a hobby. I find every clue and celebrate loudly. I also annotate books in pencil and consider it a love language when someone does the same.",        games: ['puzzles', 'trivia', 'board'],    lookingFor: 'long-term',  willMatch: false, duelGames: ['guess-who', 'word-blitz'],              activityLevel: 'older', kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Often',     favoriteGames: ['Escape room games', 'Trivial Pursuit'] },
+  { id: 17, name: 'Dean',   age: 32, location: 'Camberwell',        distance: '3.5 mi', distanceKm: 5.6,  character: 'viking',  element: 'earth',    affiliation: 'travel',   bio: "Travel writer. 60+ countries. Looking for someone to lose to me at cards in an airport lounge. I've eaten things you can't pronounce and slept in places with no wifi. Not complaining.",          games: ['card', 'trivia', 'word'],        lookingFor: 'open',       willMatch: false, duelGames: ['word-blitz'],                           activityLevel: 'week',  kids: "Don't want",    drinking: 'Often',    smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Poker', 'Gin Rummy', 'Cribbage'] },
+  { id: 18, name: 'Aisha',  age: 26, location: 'Tottenham',         distance: '6.3 mi', distanceKm: 10.1, character: 'unicorn', element: 'water',    affiliation: 'music',    bio: "Songwriter and escape room enthusiast. My highs are when I solve a puzzle. My lows are when you beat me. I write songs about neither, but I'm thinking about it.",             games: ['puzzles', 'word', 'party'],      lookingFor: 'casual',     willMatch: false, duelGames: ['word-blitz', 'dot-dash'],               activityLevel: 'today', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Wordle', 'Boggle'] },
+  { id: 19, name: 'Callum', age: 28, location: 'Stoke Newington',   distance: '2.8 mi', distanceKm: 4.5,  character: 'fox',     element: 'electric', affiliation: 'city',     bio: "Graphic novelist and obscure board game collector. 97 games. I will make you play the worst one first to filter out the uncommitted. The good news: the good ones are really good.",      games: ['board', 'strategy', 'drawing'],  lookingFor: 'long-term',  willMatch: true,  duelGames: ['dot-dash', 'guess-who'],                activityLevel: 'today', kids: 'Want someday',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Catan', 'Root', 'Spirit Island'] },
+  { id: 20, name: 'Nour',   age: 24, location: 'Elephant & Castle', distance: '3.0 mi', distanceKm: 4.8,  character: 'mermaid', element: 'water',    affiliation: 'art',      bio: "Ceramicist and compulsive redecorator. I reorganise furniture when stressed and draw when happy. I play games the same way I make pottery: slowly, intentionally, and with intense focus.",    games: ['drawing', 'puzzles', 'word'],    lookingFor: 'not-sure',   willMatch: false, duelGames: ['word-blitz'],                           activityLevel: 'week',  kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Scrabble', 'Dixit'] },
+  { id: 21, name: 'Elliot', age: 29, location: 'Whitechapel',       distance: '0.9 mi', distanceKm: 1.4,  character: 'robot',   element: 'electric', affiliation: 'tech',     bio: "Data scientist who makes memes as a coping mechanism. I have strong opinions about board game mechanics and mild opinions about everything else. I will spreadsheet our compatibility.",  games: ['strategy', 'trivia', 'video'],   lookingFor: 'open',       willMatch: false, duelGames: ['dot-dash', 'word-blitz'],               activityLevel: 'older', kids: "Don't want",    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Ticket to Ride', 'Codenames'] },
+  { id: 22, name: 'Temi',   age: 25, location: 'Stockwell',         distance: '4.0 mi', distanceKm: 6.4,  character: 'lion',    element: 'fire',     affiliation: 'fitness',  bio: "Dancer and personal trainer. Competitive at games with zero chill when winning. I'll apologise for gloating and then gloat again. Looking for someone who can handle both.",                 games: ['party', 'video', 'trivia'],      lookingFor: 'casual',     willMatch: false, duelGames: ['guess-who', 'dot-dash'],                activityLevel: 'today', kids: 'Want someday',  drinking: 'Socially', smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Daily',     favoriteGames: ['Just Dance', 'FIFA', 'Mario Kart'] },
+  { id: 23, name: 'Sasha',  age: 27, location: 'Clapton',           distance: '2.3 mi', distanceKm: 3.7,  character: 'owl',     element: 'earth',    affiliation: 'nature',   bio: "Wildlife photographer and Wordle champion. My photos are in two galleries and one GP waiting room. I take long walks with purpose and Wordle with obsession. In that order.",         games: ['word', 'puzzles', 'trivia'],     lookingFor: 'long-term',  willMatch: false, duelGames: ['word-blitz'],                           activityLevel: 'week',  kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Wordle', 'Catan', 'Rummikub'] },
+  { id: 24, name: 'Alex',   age: 26, location: 'Bermondsey',        distance: '2.7 mi', distanceKm: 4.3,  character: 'phoenix', element: 'fire',     affiliation: 'city',     bio: "Barista + trained sommelier. My tongue can identify 40+ flavours but I still cheat at trivia nights (the good kind of cheating). I will absolutely judge your coffee order.",         games: ['trivia', 'board', 'word'],       lookingFor: 'open',       willMatch: false, duelGames: ['guess-who', 'word-blitz'],              activityLevel: 'today', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Socially', cannabis: 'Sometimes', pets: 'None', exercise: 'Sometimes', favoriteGames: ['Trivial Pursuit', 'Catan'] },
+  { id: 25, name: 'Jade',   age: 23, location: 'Hoxton',            distance: '0.5 mi', distanceKm: 0.8,  character: 'pixie',   element: 'air',      affiliation: 'art',      bio: "Illustrator who draws fan art of her friends. Will absolutely draw you as an anime character after our first game. Warning: I'm surprisingly ruthless at party games despite looking soft.", games: ['drawing', 'party', 'word'],      lookingFor: 'casual',     willMatch: true,  duelGames: ['word-blitz', 'guess-who'],              activityLevel: 'today', kids: "Don't want",    drinking: 'Socially', smoking: 'Never',    cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Pictionary', 'Dixit', 'Telestrations'] },
+  { id: 26, name: 'Harry',  age: 30, location: 'Clapham',           distance: '4.4 mi', distanceKm: 7.1,  character: 'bear',    element: 'earth',    affiliation: 'country',  bio: "Landscape architect who moonlights as a competitive chess player. Parks and pawns are my entire personality. I've been told I'm 'surprisingly intense about things that don't matter'.", games: ['strategy', 'board', 'trivia'],   lookingFor: 'long-term',  willMatch: false, duelGames: ['dot-dash', 'guess-who'],                activityLevel: 'older', kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'Dog',  exercise: 'Often',     favoriteGames: ['Chess', 'Catan', 'Pandemic'] },
+  { id: 27, name: 'Kezia',  age: 25, location: 'Forest Gate',       distance: '5.8 mi', distanceKm: 9.3,  character: 'witch',   element: 'water',    affiliation: 'cosmic',   bio: "Astrologer and card game shark. I'll read your chart and then hustle you at Poker. In that order. I've been told my moon sign explains a lot about my card game face.",             games: ['card', 'party', 'trivia'],       lookingFor: 'not-sure',   willMatch: false, duelGames: ['word-blitz', 'dot-dash'],               activityLevel: 'week',  kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Poker', 'Tarot (it counts)', 'Catan'] },
+  { id: 28, name: 'Samir',  age: 28, location: 'Kilburn',           distance: '5.2 mi', distanceKm: 8.4,  character: 'dragon',  element: 'fire',     affiliation: 'travel',   bio: "Filmmaker and terrible loser (genuinely working on it). My best dates involve dark rooms and good stories. My worst involve someone who refuses to explain why they made that move.",          games: ['trivia', 'word', 'party'],       lookingFor: 'open',       willMatch: false, duelGames: ['guess-who'],                            activityLevel: 'older', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Trivial Pursuit', 'Codenames'] },
+  { id: 29, name: 'Rosa',   age: 24, location: 'Brixton',           distance: '2.6 mi', distanceKm: 4.2,  character: 'cat',     element: 'electric', affiliation: 'music',    bio: "Music journalist and rhythm game addict. I review concerts for a living and lose at Guitar Hero for fun. My Spotify wrapped is embarrassing and I refuse to share it.",              games: ['party', 'video', 'word'],        lookingFor: 'casual',     willMatch: false, duelGames: ['dot-dash', 'word-blitz'],               activityLevel: 'today', kids: "Don't want",    drinking: 'Often',    smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Guitar Hero', 'Rock Band', 'Just Dance'] },
+  { id: 30, name: 'Ben',    age: 31, location: 'Aldgate',           distance: '1.3 mi', distanceKm: 2.1,  character: 'knight',  element: 'earth',    affiliation: 'academia', bio: "Medieval historian and escape room designer. I literally build the puzzles you play. Good luck. I've never lost at one of my own rooms. I've also never told anyone who has.",           games: ['puzzles', 'strategy', 'board'],  lookingFor: 'long-term',  willMatch: true,  duelGames: ['guess-who', 'dot-dash', 'word-blitz'],  activityLevel: 'week',  kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Escape room games', 'Catan'] },
 ];
 
 // ─── Profile card content (compact, for stack) ───────────────────────────────
@@ -525,6 +606,309 @@ function ProfileDetailView({
   );
 }
 
+// ─── Dual-handle range slider ─────────────────────────────────────────────────
+
+function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
+  min: number; max: number; valueMin: number; valueMax: number;
+  onChange: (min: number, max: number) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef<'min' | 'max' | null>(null);
+  const valuesRef = useRef({ valueMin, valueMax });
+  valuesRef.current = { valueMin, valueMax };
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const toPercent = (v: number) => ((v - min) / (max - min)) * 100;
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current || !trackRef.current) return;
+      e.preventDefault();
+      const rect = trackRef.current.getBoundingClientRect();
+      const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      const val = Math.round(min + pct * (max - min));
+      const { valueMin: vMin, valueMax: vMax } = valuesRef.current;
+      if (draggingRef.current === 'min') onChangeRef.current(Math.min(val, vMax - 1), vMax);
+      else onChangeRef.current(vMin, Math.max(val, vMin + 1));
+    };
+    const onUp = () => { draggingRef.current = null; };
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
+  }, [min, max]);
+
+  const minPct = toPercent(valueMin);
+  const maxPct = toPercent(valueMax);
+  const handleStyle = (pct: number, gradient: string): React.CSSProperties => ({
+    position: 'absolute', top: '50%', left: `${pct}%`,
+    width: 24, height: 24, transform: 'translate(-50%, -50%)',
+    background: gradient, borderRadius: '50%', border: '3px solid #0A1628',
+    boxShadow: `0 0 14px ${gradient.includes('4EFFC4') ? 'rgba(78,255,196,0.7)' : 'rgba(181,101,255,0.7)'}`,
+    cursor: 'grab', touchAction: 'none', zIndex: 2,
+  });
+
+  return (
+    <div ref={trackRef} style={{ position: 'relative', height: 36, userSelect: 'none' }}>
+      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
+      <div style={{ position: 'absolute', top: '50%', left: `${minPct}%`, width: `${maxPct - minPct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
+      <div style={handleStyle(minPct, 'linear-gradient(135deg, #4EFFC4, #B565FF)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'min'; }} />
+      <div style={handleStyle(maxPct, 'linear-gradient(135deg, #B565FF, #FF6BA8)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'max'; }} />
+    </div>
+  );
+}
+
+// ─── Single-handle range slider ───────────────────────────────────────────────
+
+function SingleRangeSlider({ min, max, value, onChange }: {
+  min: number; max: number; value: number; onChange: (v: number) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current || !trackRef.current) return;
+      e.preventDefault();
+      const rect = trackRef.current.getBoundingClientRect();
+      const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      onChangeRef.current(Math.round(min + pct * (max - min)));
+    };
+    const onUp = () => { draggingRef.current = false; };
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
+  }, [min, max]);
+
+  const pct = ((value - min) / (max - min)) * 100;
+  return (
+    <div ref={trackRef} style={{ position: 'relative', height: 36, userSelect: 'none' }}>
+      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
+      <div style={{ position: 'absolute', top: '50%', left: 0, width: `${pct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
+      <div
+        style={{ position: 'absolute', top: '50%', left: `${pct}%`, width: 24, height: 24, transform: 'translate(-50%, -50%)', background: 'linear-gradient(135deg, #4EFFC4, #B565FF)', borderRadius: '50%', border: '3px solid #0A1628', boxShadow: '0 0 14px rgba(78,255,196,0.7)', cursor: 'grab', touchAction: 'none' }}
+        onPointerDown={(e) => { e.preventDefault(); draggingRef.current = true; }}
+      />
+    </div>
+  );
+}
+
+// ─── Checkbox helper ──────────────────────────────────────────────────────────
+
+function CheckBox({ checked }: { checked: boolean }) {
+  return (
+    <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${checked ? '#4EFFC4' : 'rgba(255,255,255,0.22)'}`, background: checked ? 'rgba(78,255,196,0.14)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: checked ? '0 0 10px rgba(78,255,196,0.4)' : 'none', transition: 'all 0.18s' }}>
+      {checked && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="#4EFFC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+    </div>
+  );
+}
+
+// ─── Filter Modal ─────────────────────────────────────────────────────────────
+
+function FilterModal({ initialFilters, onApply, onClose }: {
+  initialFilters: FilterState;
+  onApply: (f: FilterState) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<FilterState>({ ...initialFilters });
+  const [lifestyleOpen, setLifestyleOpen] = useState(false);
+  const previewCount = useMemo(() => applyFilters(PROFILES, draft).length, [draft]);
+
+  const set = <K extends keyof FilterState>(key: K, val: FilterState[K]) =>
+    setDraft(prev => ({ ...prev, [key]: val }));
+
+  const toggleGoal = (g: string) => setDraft(prev => ({
+    ...prev,
+    relationshipGoals: prev.relationshipGoals.includes(g)
+      ? prev.relationshipGoals.filter(x => x !== g)
+      : [...prev.relationshipGoals, g],
+  }));
+  const toggleGame = (g: string) => setDraft(prev => ({
+    ...prev,
+    duelGames: prev.duelGames.includes(g)
+      ? prev.duelGames.filter(x => x !== g)
+      : [...prev.duelGames, g],
+  }));
+
+  const sectionHead = (label: string) => (
+    <span className="font-display" style={{ color: '#B565FF', fontSize: 16, textShadow: '0 0 8px rgba(181,101,255,0.4)', display: 'block', marginBottom: 4 }}>{label}</span>
+  );
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: '#0A1628' }}
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+    >
+      {/* Header */}
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <button onClick={() => setDraft({ ...DEFAULT_FILTERS })} className="font-body" style={{ fontSize: 13, fontWeight: 700, color: '#4EFFC4', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          Reset All
+        </button>
+        <h1 className="font-display" style={{ fontSize: 18, color: '#FFE66D', textShadow: '0 0 12px rgba(255,230,109,0.55)', margin: 0 }}>
+          FILTER MATCHES
+        </h1>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.45)', padding: 4 }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 4L16 16M16 4L4 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        </button>
+      </div>
+
+      {/* Scrollable body */}
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+
+        {/* ── Age Range ── */}
+        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            {sectionHead('AGE RANGE')}
+            <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>{draft.ageMin} – {draft.ageMax}</span>
+          </div>
+          <DualRangeSlider min={18} max={50} valueMin={draft.ageMin} valueMax={draft.ageMax}
+            onChange={(mn, mx) => setDraft(p => ({ ...p, ageMin: mn, ageMax: mx }))} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>18</span>
+            <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>50</span>
+          </div>
+        </section>
+
+        {/* ── Distance ── */}
+        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            {sectionHead('DISTANCE')}
+            <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>
+              {draft.anyDistance ? 'Anywhere' : `Within ${draft.distanceMax} km`}
+            </span>
+          </div>
+          {!draft.anyDistance && (
+            <>
+              <SingleRangeSlider min={1} max={50} value={draft.distanceMax} onChange={v => set('distanceMax', v)} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>1 km</span>
+                <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>50 km</span>
+              </div>
+            </>
+          )}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, cursor: 'pointer' }}
+            onClick={() => set('anyDistance', !draft.anyDistance)}>
+            <CheckBox checked={draft.anyDistance} />
+            <span className="font-body" style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Show me people anywhere</span>
+          </label>
+        </section>
+
+        {/* ── Game Preferences ── */}
+        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          {sectionHead('GAME PREFERENCES')}
+          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 16, marginTop: 2 }}>Show me people who like...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {DUEL_GAMES.map(game => (
+              <label key={game} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => toggleGame(game)}>
+                <CheckBox checked={draft.duelGames.includes(game)} />
+                <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: draft.duelGames.includes(game) ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                  {DUEL_GAME_LABELS[game]}
+                </span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Relationship Goals ── */}
+        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          {sectionHead('RELATIONSHIP GOALS')}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+            {RELATIONSHIP_GOALS.map(goal => {
+              const sel = draft.relationshipGoals.includes(goal);
+              const c = lookingForColors[goal] ?? '#4EFFC4';
+              return (
+                <motion.button key={goal} onClick={() => toggleGoal(goal)} className="font-body"
+                  style={{ padding: '8px 15px', borderRadius: 20, fontSize: 13, fontWeight: 700, border: `2px solid ${sel ? c : 'rgba(255,255,255,0.18)'}`, background: sel ? `${c}20` : 'transparent', color: sel ? c : 'rgba(255,255,255,0.4)', cursor: 'pointer', boxShadow: sel ? `0 0 14px ${c}44` : 'none', transition: 'all 0.18s' }}
+                  whileTap={{ scale: 0.93 }}>
+                  {lookingForLabels[goal]}
+                </motion.button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── Lifestyle (collapsible) ── */}
+        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <button onClick={() => setLifestyleOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <span className="font-display" style={{ color: '#B565FF', fontSize: 16, textShadow: '0 0 8px rgba(181,101,255,0.4)' }}>LIFESTYLE</span>
+            <motion.div animate={{ rotate: lifestyleOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 6.5L9 11.5L14 6.5" stroke="rgba(255,255,255,0.38)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </motion.div>
+          </button>
+          <AnimatePresence>
+            {lifestyleOpen && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: 'hidden' }}>
+                <div style={{ paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  {LIFESTYLE_OPTIONS.map(({ key, label, options }) => (
+                    <div key={key}>
+                      <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', display: 'block', marginBottom: 8 }}>{label}</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                        {options.map(opt => {
+                          const sel = draft[key] === opt;
+                          return (
+                            <button key={opt} onClick={() => set(key, opt)} className="font-body"
+                              style={{ padding: '5px 13px', borderRadius: 12, fontSize: 12, fontWeight: 700, border: `1.5px solid ${sel ? '#4EFFC4' : 'rgba(255,255,255,0.16)'}`, background: sel ? 'rgba(78,255,196,0.12)' : 'transparent', color: sel ? '#4EFFC4' : 'rgba(255,255,255,0.4)', cursor: 'pointer', boxShadow: sel ? '0 0 10px rgba(78,255,196,0.28)' : 'none', transition: 'all 0.15s' }}>
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+
+        {/* ── Activity Level ── */}
+        <section style={{ padding: '20px 20px 36px' }}>
+          {sectionHead('ACTIVITY LEVEL')}
+          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 16, marginTop: 2 }}>Show profiles that are...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {([
+              { value: 'today',  label: 'Active recently', desc: 'Online in last 24 hours' },
+              { value: 'week',   label: 'Active this week', desc: '' },
+              { value: 'anyone', label: 'Anyone',           desc: '' },
+            ] as const).map(({ value, label, desc }) => {
+              const sel = draft.activityLevel === value;
+              return (
+                <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => set('activityLevel', value)}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${sel ? '#4EFFC4' : 'rgba(255,255,255,0.22)'}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: sel ? '0 0 10px rgba(78,255,196,0.4)' : 'none', transition: 'all 0.18s' }}>
+                    {sel && <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.8)' }} />}
+                  </div>
+                  <div>
+                    <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: sel ? '#fff' : 'rgba(255,255,255,0.55)' }}>{label}</span>
+                    {desc && <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', display: 'block' }}>{desc}</span>}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      {/* Bottom action bar */}
+      <div style={{ flexShrink: 0, padding: '14px 20px', background: 'rgba(10,22,40,0.98)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <p className="font-body" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 10 }}>
+          {previewCount} profile{previewCount !== 1 ? 's' : ''} match your filters
+        </p>
+        <motion.button onClick={() => onApply(draft)} className="font-display"
+          style={{ width: '100%', padding: '15px', borderRadius: 16, fontSize: 18, background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 50%, #FF6BA8 100%)', color: '#12122A', border: '3px solid rgba(255,255,255,0.18)', boxShadow: '0 0 30px rgba(78,255,196,0.3), 4px 4px 0 rgba(0,0,0,0.35)', cursor: 'pointer' }}
+          whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.02 }}>
+          APPLY FILTERS
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Background card (static stack) ──────────────────────────────────────────
 
 function BackgroundCard({ profile, stackIndex }: { profile: Profile; stackIndex: 1 | 2 }) {
@@ -758,14 +1142,27 @@ export function DiscoverScreen() {
   const [disabled, setDisabled] = useState(false);
   const [swipeCommand, setSwipeCommand] = useState<'left' | 'right' | null>(null);
   const [expandedProfile, setExpandedProfile] = useState<Profile | null>(null);
+  const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const navigate = useNavigate();
   const { character } = useOnboardingStore();
 
-  const remaining = PROFILES.length - currentIndex;
-  const showEmpty = currentIndex >= PROFILES.length;
+  const filteredProfiles = useMemo(() => applyFilters(PROFILES, activeFilters), [activeFilters]);
+  const activeFilterCount = useMemo(() => countActiveFilters(activeFilters), [activeFilters]);
+
+  const remaining = filteredProfiles.length - currentIndex;
+  const showEmpty = currentIndex >= filteredProfiles.length;
+
+  const handleApplyFilters = (filters: FilterState) => {
+    setActiveFilters(filters);
+    saveFilters(filters);
+    setCurrentIndex(0);
+    setDisabled(false);
+    setShowFilterModal(false);
+  };
 
   const handleSwipe = (dir: 'left' | 'right') => {
-    const profile = PROFILES[currentIndex];
+    const profile = filteredProfiles[currentIndex];
     setCurrentIndex((i) => i + 1);
     setDisabled(false);
     if (dir === 'right' && profile.willMatch) {
@@ -801,8 +1198,31 @@ export function DiscoverScreen() {
         </div>
         <div className="flex items-center gap-2.5">
           {!showEmpty && (
-            <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>{remaining} nearby</span>
+            <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              {filteredProfiles.length} nearby
+            </span>
           )}
+          {/* Filter button */}
+          <motion.button
+            onClick={() => setShowFilterModal(true)}
+            className="relative flex items-center justify-center"
+            style={{ width: 36, height: 36, borderRadius: '50%', background: activeFilterCount > 0 ? 'rgba(78,255,196,0.12)' : 'rgba(255,255,255,0.06)', border: `1.5px solid ${activeFilterCount > 0 ? 'rgba(78,255,196,0.5)' : 'rgba(255,255,255,0.14)'}`, boxShadow: activeFilterCount > 0 ? '0 0 14px rgba(78,255,196,0.25)' : 'none' }}
+            whileTap={{ scale: 0.88 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <line x1="1.5" y1="3.5" x2="13.5" y2="3.5" stroke={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="1.5" y1="7.5" x2="13.5" y2="7.5" stroke={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="1.5" y1="11.5" x2="13.5" y2="11.5" stroke={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} strokeWidth="1.4" strokeLinecap="round"/>
+              <circle cx="4.5" cy="3.5" r="1.8" fill={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} />
+              <circle cx="9.5" cy="7.5" r="1.8" fill={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} />
+              <circle cx="5.5" cy="11.5" r="1.8" fill={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} />
+            </svg>
+            {activeFilterCount > 0 && (
+              <div className="absolute font-body font-bold flex items-center justify-center" style={{ top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: '#4EFFC4', color: '#12122A', fontSize: 9 }}>
+                {activeFilterCount}
+              </div>
+            )}
+          </motion.button>
           <div className="w-9 h-9 rounded-full overflow-hidden border-2 flex-shrink-0"
             style={{ borderColor: '#4EFFC4', background: '#0E0E22', boxShadow: '0 0 10px rgba(78,255,196,0.35)' }}>
             {character
@@ -819,16 +1239,16 @@ export function DiscoverScreen() {
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
         ) : (
           <div className="relative w-full" style={{ maxWidth: 340, height: 460 }}>
-            {stackDepth >= 3 && <BackgroundCard profile={PROFILES[currentIndex + 2]} stackIndex={2} />}
-            {stackDepth >= 2 && <BackgroundCard profile={PROFILES[currentIndex + 1]} stackIndex={1} />}
+            {stackDepth >= 3 && <BackgroundCard profile={filteredProfiles[currentIndex + 2]} stackIndex={2} />}
+            {stackDepth >= 2 && <BackgroundCard profile={filteredProfiles[currentIndex + 1]} stackIndex={1} />}
             <TopCard
-              key={PROFILES[currentIndex].id}
-              profile={PROFILES[currentIndex]}
+              key={filteredProfiles[currentIndex].id}
+              profile={filteredProfiles[currentIndex]}
               swipeCommand={swipeCommand}
               onCommandConsumed={() => setSwipeCommand(null)}
               onSwipeStart={() => setDisabled(true)}
               onSwipe={handleSwipe}
-              onExpand={() => !disabled && setExpandedProfile(PROFILES[currentIndex])}
+              onExpand={() => !disabled && setExpandedProfile(filteredProfiles[currentIndex])}
               disabled={disabled || expandedProfile !== null}
             />
           </div>
@@ -879,6 +1299,18 @@ export function DiscoverScreen() {
             userCharacter={character ?? 'ghost'}
             onDismiss={() => setMatchProfile(null)}
             onPlay={() => { setMatchProfile(null); navigate('/play'); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Filter modal */}
+      <AnimatePresence>
+        {showFilterModal && (
+          <FilterModal
+            key="filter-modal"
+            initialFilters={activeFilters}
+            onApply={handleApplyFilters}
+            onClose={() => setShowFilterModal(false)}
           />
         )}
       </AnimatePresence>
