@@ -27,6 +27,7 @@ import { MatchesScreen } from './pages/MatchesScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
 import { WordBlitz } from './pages/game/WordBlitz';
 import { Draughts } from './pages/game/Draughts';
+import { ConnectFour } from './pages/game/ConnectFour';
 
 export default function App() {
   useEffect(() => { preloadImages(); }, []);
@@ -80,6 +81,10 @@ export default function App() {
           {/* Draughts */}
           <Route path="/games/draughts/:matchId" element={<Draughts />} />
           <Route path="/games/draughts" element={<Draughts />} />
+
+          {/* Connect Four */}
+          <Route path="/games/connect-four/:matchId" element={<ConnectFour />} />
+          <Route path="/games/connect-four" element={<ConnectFour />} />
 
           {/* Dot Dash – maze racing game */}
           <Route path="/dotdash" element={<DotDashSetup />} />

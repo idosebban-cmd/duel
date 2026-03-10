@@ -56,6 +56,16 @@ const GAMES: GameOption[] = [
     color: '#FFE66D',
     icon: '⬛',
   },
+  {
+    id: 'connect-four',
+    name: 'Connect Four',
+    emoji: '🔴',
+    description: 'Connect 4 in a row. Strategy meets speed.',
+    route: '/games/connect-four/demo',
+    gradient: 'linear-gradient(135deg, #4EFFC4, #0099FF)',
+    color: '#4EFFC4',
+    icon: '⚫',
+  },
 ];
 
 export function GamePicker() {
