@@ -11,7 +11,8 @@ import { isValidWord, scoreWord } from '../../utils/wordList';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GRID_SIZE    = 9;          // 9×9 grid
-const CELL_PX      = 40;         // px per cell
+const CELL_PX      = 40;         // px per cell (my grid)
+const OPP_CELL_PX  = 36;         // px per cell (opponent grid – slightly smaller)
 const GAME_SECONDS = 180;        // 3 minutes
 
 // Letter pool: 21 letters with Scrabble-like distribution
@@ -483,6 +484,14 @@ export function WordBlitz() {
   const botMovesDone = useRef<Set<number>>(new Set());
   const elapsedRef   = useRef(0);
 
+  // ── Opponent grid & words (live view) ─────────────────────────────────────
+  const [oppGrid, setOppGrid]   = useState<GridCell[][]>(emptyGrid);
+  const [oppWords, setOppWords] = useState<string[]>([]);
+
+  // ── Scroll refs ────────────────────────────────────────────────────────────
+  const rootRef       = useRef<HTMLDivElement>(null);
+  const oppSectionRef = useRef<HTMLDivElement>(null);
+
   // ─── Start game ───────────────────────────────────────────────────────────
   const startGame = useCallback(() => {
     setPhase('playing');
@@ -499,6 +508,23 @@ export function WordBlitz() {
           setOppScore((s) => s + move.pts);
           setOppPopup(`${move.word} +${move.pts}`);
           setTimeout(() => setOppPopup(null), 1800);
+          // Place word visually in opp grid
+          setOppGrid((g) => {
+            const next = g.map((r) => [...r]);
+            for (let i = 0; i < move.word.length; i++) {
+              if (move.dir === 'h') {
+                next[move.row][move.col + i] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+              } else {
+                next[move.row + i][move.col] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+              }
+            }
+            return next;
+          });
+          setOppWords((ws) => {
+            // Replace any word that is a prefix of the new word (e.g. CAT→CATS→CAST)
+            const pruned = ws.filter((w) => !move.word.startsWith(w));
+            return [...pruned, move.word];
+          });
         }
       }
 
@@ -615,275 +641,425 @@ export function WordBlitz() {
       <ResultScreen
         myScore={myScore} oppScore={oppScore}
         myName={myName} myCharacter={myChar}
-        onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); }}
+        onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
         onChat={() => navigate('/chat')}
       />
     );
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A1628' }}>
+    // Root: vertically scrollable on mobile (my board = 100vh, opp board below)
+    //       side-by-side on desktop (h-screen, no scroll)
+    <div
+      ref={rootRef}
+      className="h-screen overflow-y-auto flex flex-col md:flex-row md:overflow-hidden"
+      style={{ background: '#0A1628' }}
+    >
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-10 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
       />
 
-      {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header className="flex-none flex items-center justify-between px-4 pt-3 pb-2 gap-2"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.98)' }}
-      >
-        {/* My avatar + score */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(78,255,196,0.1)', border: '2px solid rgba(78,255,196,0.35)' }}
-          >
-            <img src={characterImages[myChar]} alt="" className="w-6 h-6 object-contain" draggable={false} />
-          </div>
-          <div>
-            <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
-            <p className="font-display text-xl leading-none" style={{ color: '#4EFFC4', textShadow: '0 0 10px rgba(78,255,196,0.5)' }}>{myScore}</p>
-          </div>
-        </div>
+      {/* ══ MY BOARD — above the fold on mobile, left 60% on desktop ══ */}
+      <div className="h-screen flex-shrink-0 flex flex-col overflow-hidden md:flex-1 md:h-screen">
 
-        {/* Timer */}
-        <motion.div
-          className="font-mono text-3xl font-bold"
-          style={{ color: timerColor, textShadow: `0 0 16px ${timerGlow}` }}
-          animate={timeLeft < 30 ? { scale: [1, 1.05, 1] } : {}}
-          transition={{ duration: 0.5, repeat: Infinity }}
+        {/* ── Header ──────────────────────────────────────────────────────── */}
+        <header className="flex-none flex items-center justify-between px-4 pt-3 pb-2 gap-2"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.98)' }}
         >
-          {timerStr}
-        </motion.div>
-
-        {/* Opponent avatar + score */}
-        <div className="flex items-center gap-2">
-          <div>
-            <p className="font-body text-[10px] text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{OPPONENT.name.toUpperCase()}</p>
-            <div className="flex items-center gap-1">
-              <p className="font-display text-xl leading-none text-right" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
-              <AnimatePresence>
-                {oppPopup && (
-                  <motion.span
-                    className="font-body text-xs font-bold"
-                    style={{ color: '#FF6BA8' }}
-                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  >
-                    ↑
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(255,107,168,0.1)', border: '2px solid rgba(255,107,168,0.35)' }}
-          >
-            <img src={characterImages[OPPONENT.character]} alt="" className="w-6 h-6 object-contain" draggable={false} />
-          </div>
-        </div>
-      </header>
-
-      {/* Opponent score popup */}
-      <AnimatePresence>
-        {oppPopup && (
-          <motion.div
-            className="fixed top-16 right-4 z-30 px-3 py-1.5 rounded-lg font-body text-sm font-bold"
-            style={{ background: 'rgba(255,107,168,0.15)', border: '1.5px solid rgba(255,107,168,0.4)', color: '#FF6BA8' }}
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-          >
-            {OPPONENT.name}: {oppPopup} 🔥
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Scoring guide ─────────────────────────────────────────────────── */}
-      <div
-        className="flex-none flex items-center justify-center gap-2 px-3 py-1.5"
-        style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        {[
-          { label: '3', pts: '10', color: 'rgba(255,255,255,0.35)' },
-          { label: '4', pts: '15', color: 'rgba(255,255,255,0.5)'  },
-          { label: '5', pts: '25', color: '#FFE66D'                 },
-          { label: '6+', pts: '40', color: '#4EFFC4'               },
-        ].map(({ label, pts, color }) => (
-          <div key={label} className="flex items-center gap-1">
-            <span className="font-body text-[10px] font-bold px-1.5 py-0.5 rounded"
-              style={{ background: 'rgba(255,255,255,0.06)', color, border: `1px solid ${color}33` }}
+          {/* My avatar + score */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(78,255,196,0.1)', border: '2px solid rgba(78,255,196,0.35)' }}
             >
-              {label}
-            </span>
-            <span className="font-mono text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
-          </div>
-        ))}
-        <span className="font-body text-[10px] ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
-      </div>
-
-      {/* ── Letter pool ───────────────────────────────────────────────────── */}
-      <div
-        className="flex-none px-3 py-2.5"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}
-      >
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          {pool.length === 0 ? (
-            <div className="flex items-center justify-center w-full h-11">
-              <span className="font-body text-xs" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
-                {allUsed ? '✓ All letters placed! +50 bonus' : 'No letters left'}
-              </span>
+              <img src={characterImages[myChar]} alt="" className="w-6 h-6 object-contain" draggable={false} />
             </div>
-          ) : pool.map((pl) => (
-            <PoolTile
-              key={pl.id}
-              pl={pl}
-              selected={selectedPoolId === pl.id}
-              onClick={() => handlePoolTap(pl.id)}
-            />
+            <div>
+              <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
+              <p className="font-display text-xl leading-none" style={{ color: '#4EFFC4', textShadow: '0 0 10px rgba(78,255,196,0.5)' }}>{myScore}</p>
+            </div>
+          </div>
+
+          {/* Timer */}
+          <motion.div
+            className="font-mono text-3xl font-bold"
+            style={{ color: timerColor, textShadow: `0 0 16px ${timerGlow}` }}
+            animate={timeLeft < 30 ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 0.5, repeat: Infinity }}
+          >
+            {timerStr}
+          </motion.div>
+
+          {/* Opponent avatar + score */}
+          <div className="flex items-center gap-2">
+            <div>
+              <p className="font-body text-[10px] text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{OPPONENT.name.toUpperCase()}</p>
+              <div className="flex items-center gap-1">
+                <p className="font-display text-xl leading-none text-right" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
+                <AnimatePresence>
+                  {oppPopup && (
+                    <motion.span
+                      className="font-body text-xs font-bold"
+                      style={{ color: '#FF6BA8' }}
+                      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                    >
+                      ↑
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(255,107,168,0.1)', border: '2px solid rgba(255,107,168,0.35)' }}
+            >
+              <img src={characterImages[OPPONENT.character]} alt="" className="w-6 h-6 object-contain" draggable={false} />
+            </div>
+          </div>
+        </header>
+
+        {/* Opponent score popup */}
+        <AnimatePresence>
+          {oppPopup && (
+            <motion.div
+              className="fixed top-16 right-4 z-30 px-3 py-1.5 rounded-lg font-body text-sm font-bold"
+              style={{ background: 'rgba(255,107,168,0.15)', border: '1.5px solid rgba(255,107,168,0.4)', color: '#FF6BA8' }}
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            >
+              {OPPONENT.name}: {oppPopup} 🔥
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Scoring guide ────────────────────────────────────────────────── */}
+        <div
+          className="flex-none flex items-center justify-center gap-2 px-3 py-1.5"
+          style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          {[
+            { label: '3', pts: '10', color: 'rgba(255,255,255,0.35)' },
+            { label: '4', pts: '15', color: 'rgba(255,255,255,0.5)'  },
+            { label: '5', pts: '25', color: '#FFE66D'                 },
+            { label: '6+', pts: '40', color: '#4EFFC4'               },
+          ].map(({ label, pts, color }) => (
+            <div key={label} className="flex items-center gap-1">
+              <span className="font-body text-[10px] font-bold px-1.5 py-0.5 rounded"
+                style={{ background: 'rgba(255,255,255,0.06)', color, border: `1px solid ${color}33` }}
+              >
+                {label}
+              </span>
+              <span className="font-mono text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
+            </div>
           ))}
+          <span className="font-body text-[10px] ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
         </div>
+
+        {/* ── Letter pool ──────────────────────────────────────────────────── */}
+        <div
+          className="flex-none px-3 py-2.5"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}
+        >
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {pool.length === 0 ? (
+              <div className="flex items-center justify-center w-full h-11">
+                <span className="font-body text-xs" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
+                  {allUsed ? '✓ All letters placed! +50 bonus' : 'No letters left'}
+                </span>
+              </div>
+            ) : pool.map((pl) => (
+              <PoolTile
+                key={pl.id}
+                pl={pl}
+                selected={selectedPoolId === pl.id}
+                onClick={() => handlePoolTap(pl.id)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── My Grid ──────────────────────────────────────────────────────── */}
+        <div className="flex-1 overflow-auto flex items-start justify-center p-3" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <div className="relative">
+            <AnimatePresence>
+              {scorePopups.map((popup) => (
+                <motion.div
+                  key={popup.id}
+                  className="absolute z-20 pointer-events-none font-body text-sm font-bold whitespace-nowrap"
+                  style={{
+                    color: '#4EFFC4',
+                    left: popup.col * CELL_PX,
+                    top:  popup.row * CELL_PX - 10,
+                    textShadow: '0 0 10px rgba(78,255,196,0.8)',
+                  }}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: 1, y: -30 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.2 }}
+                >
+                  +{popup.text.split('+')[1]}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_PX}px)`,
+                gap: 2,
+                padding: 2,
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: 12,
+                border: '1.5px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              {grid.map((row, r) =>
+                row.map((cell, c) => {
+                  const key = `${r},${c}`;
+                  const isInvalid = invalidCells.has(key);
+                  const hasLetter = !!cell;
+                  const isTarget = !hasLetter && !!selectedPoolId;
+
+                  return (
+                    <motion.button
+                      key={key}
+                      onClick={() => handleCellTap(r, c)}
+                      className="flex items-center justify-center font-display text-xl select-none"
+                      style={{
+                        width: CELL_PX,
+                        height: CELL_PX,
+                        borderRadius: 6,
+                        background: hasLetter
+                          ? isInvalid ? 'rgba(255,68,68,0.15)' : '#FFF8F0'
+                          : isTarget ? 'rgba(78,255,196,0.07)' : 'rgba(255,255,255,0.03)',
+                        border: hasLetter
+                          ? `2.5px solid ${isInvalid ? '#FF4444' : '#1a1a2e'}`
+                          : isTarget ? '2px dashed rgba(78,255,196,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                        color: isInvalid ? '#FF4444' : '#1a1a2e',
+                        boxShadow: hasLetter && !isInvalid ? '0 2px 0 rgba(0,0,0,0.3)' : 'none',
+                        cursor: hasLetter || selectedPoolId ? 'pointer' : 'default',
+                      }}
+                      whileTap={hasLetter || selectedPoolId ? { scale: 0.93 } : {}}
+                      animate={isInvalid ? { x: [0, -3, 3, -3, 0] } : {}}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {cell?.letter ?? ''}
+                    </motion.button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Controls bar ─────────────────────────────────────────────────── */}
+        <div className="flex-none flex items-center gap-3 px-4 py-2.5"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.97)' }}
+        >
+          {/* Words found */}
+          <div className="flex-1 min-w-0">
+            {validWords.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {validWords.slice(-4).map((w) => {
+                  const pts = scoreWord(w);
+                  const isBig = w.length >= 6;
+                  return (
+                    <span key={w}
+                      className="font-body text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
+                      style={{
+                        background: isBig ? 'rgba(78,255,196,0.18)' : 'rgba(78,255,196,0.08)',
+                        color: isBig ? '#4EFFC4' : 'rgba(78,255,196,0.7)',
+                        border: `1px solid ${isBig ? 'rgba(78,255,196,0.45)' : 'rgba(78,255,196,0.2)'}`,
+                        boxShadow: isBig ? '0 0 8px rgba(78,255,196,0.25)' : 'none',
+                      }}
+                    >
+                      {w.toUpperCase()}
+                      <span style={{ opacity: 0.65, fontSize: '0.65rem' }}>+{pts}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                {selectedPoolId ? 'Tap a grid cell to place letter' : 'Tap a letter to start'}
+              </span>
+            )}
+          </div>
+
+          {/* Shuffle */}
+          <motion.button
+            onClick={handleShuffle}
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)' }}
+            whileTap={{ scale: 0.9, rotate: 180 }}
+            transition={{ duration: 0.3 }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M2 6h10.5M2 12h10.5M10 3l3 3-3 3M10 9l3 3-3 3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </motion.button>
+
+          {/* Clear */}
+          <motion.button
+            onClick={handleClear}
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(255,107,168,0.07)', border: '1.5px solid rgba(255,107,168,0.2)' }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 3l12 12M15 3L3 15" stroke="rgba(255,107,168,0.7)" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </motion.button>
+
+          {/* Score total */}
+          <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl"
+            style={{ background: myScore > 0 ? 'rgba(78,255,196,0.1)' : 'rgba(255,255,255,0.04)', border: `1.5px solid ${myScore > 0 ? 'rgba(78,255,196,0.3)' : 'rgba(255,255,255,0.08)'}` }}
+          >
+            <span className="font-display text-base" style={{ color: myScore > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
+              {myScore} pts
+            </span>
+          </div>
+        </div>
+
+        {/* ── Scroll cue (mobile only) ─────────────────────────────────────── */}
+        <motion.button
+          onClick={() => oppSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+          className="flex-none md:hidden w-full flex flex-col items-center py-2 gap-0.5"
+          style={{ background: 'rgba(78,255,196,0.03)', borderTop: '1px solid rgba(78,255,196,0.12)' }}
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <span className="font-body text-xs font-semibold" style={{ color: '#4EFFC4' }}>
+            They're building words too! Peek at {OPPONENT.name}'s board
+          </span>
+          <motion.span
+            className="text-base leading-none"
+            style={{ color: '#4EFFC4' }}
+            animate={{ y: [0, 5, 0] }}
+            transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            ↓
+          </motion.span>
+        </motion.button>
       </div>
 
-      {/* ── Grid ──────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto flex items-start justify-center p-3" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-        {/* Score popups (absolute over grid) */}
-        <div className="relative">
-          <AnimatePresence>
-            {scorePopups.map((popup) => (
-              <motion.div
-                key={popup.id}
-                className="absolute z-20 pointer-events-none font-body text-sm font-bold whitespace-nowrap"
-                style={{
-                  color: '#4EFFC4',
-                  left: popup.col * CELL_PX,
-                  top:  popup.row * CELL_PX - 10,
-                  textShadow: '0 0 10px rgba(78,255,196,0.8)',
-                }}
-                initial={{ opacity: 0, y: 0 }}
-                animate={{ opacity: 1, y: -30 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.2 }}
-              >
-                +{popup.text.split('+')[1]}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+      {/* ══ OPP BOARD — below the fold on mobile, right 40% on desktop ══ */}
+      <div
+        ref={oppSectionRef}
+        className="flex-shrink-0 flex flex-col border-t md:border-t-0 md:border-l md:w-[40%] md:overflow-y-auto"
+        style={{ borderColor: 'rgba(255,107,168,0.2)', background: 'rgba(8,18,34,0.99)' }}
+      >
+        {/* Opp section header */}
+        <div className="flex-none flex items-center justify-between px-4 py-3"
+          style={{ borderBottom: '1px solid rgba(255,107,168,0.12)', background: 'rgba(255,107,168,0.03)' }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(255,107,168,0.1)', border: '2px solid rgba(255,107,168,0.4)' }}
+            >
+              <img src={characterImages[OPPONENT.character]} alt="" className="w-7 h-7 object-contain" draggable={false} />
+            </div>
+            <div>
+              <p className="font-display text-sm" style={{ color: '#FF6BA8', letterSpacing: '0.1em' }}>
+                {OPPONENT.name.toUpperCase()}'S BOARD
+              </p>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6BA8', boxShadow: '0 0 4px #FF6BA8' }} />
+                <span className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Live</span>
+              </div>
+            </div>
+          </div>
 
-          {/* Grid cells */}
+          <div className="flex items-center gap-3">
+            <AnimatePresence>
+              {oppPopup && (
+                <motion.div
+                  className="font-body text-xs font-bold px-2 py-1 rounded-lg"
+                  style={{ background: 'rgba(255,107,168,0.15)', color: '#FF6BA8', border: '1px solid rgba(255,107,168,0.3)' }}
+                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                >
+                  {oppPopup} 🔥
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="text-right">
+              <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>SCORE</p>
+              <p className="font-display text-2xl leading-none" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Opp words found */}
+        {oppWords.length > 0 && (
+          <div className="flex-none flex flex-wrap gap-1.5 px-4 py-2.5"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+          >
+            {oppWords.map((w) => (
+              <span key={w}
+                className="font-body text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
+                style={{ background: 'rgba(255,107,168,0.1)', color: '#FF6BA8', border: '1px solid rgba(255,107,168,0.25)' }}
+              >
+                {w.toUpperCase()}
+                <span style={{ opacity: 0.6, fontSize: '0.6rem' }}>+{scoreWord(w)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Opp grid (read-only) */}
+        <div className="flex-1 overflow-auto flex items-start justify-center p-4" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_PX}px)`,
+              gridTemplateColumns: `repeat(${GRID_SIZE}, ${OPP_CELL_PX}px)`,
               gap: 2,
               padding: 2,
-              background: 'rgba(255,255,255,0.04)',
-              borderRadius: 12,
-              border: '1.5px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: 10,
+              border: '1.5px solid rgba(255,107,168,0.08)',
             }}
           >
-            {grid.map((row, r) =>
-              row.map((cell, c) => {
-                const key = `${r},${c}`;
-                const isInvalid = invalidCells.has(key);
-                const hasLetter = !!cell;
-                const isTarget = !hasLetter && !!selectedPoolId;
-
-                return (
-                  <motion.button
-                    key={key}
-                    onClick={() => handleCellTap(r, c)}
-                    className="flex items-center justify-center font-display text-xl select-none"
-                    style={{
-                      width: CELL_PX,
-                      height: CELL_PX,
-                      borderRadius: 6,
-                      background: hasLetter
-                        ? isInvalid ? 'rgba(255,68,68,0.15)' : '#FFF8F0'
-                        : isTarget ? 'rgba(78,255,196,0.07)' : 'rgba(255,255,255,0.03)',
-                      border: hasLetter
-                        ? `2.5px solid ${isInvalid ? '#FF4444' : '#1a1a2e'}`
-                        : isTarget ? '2px dashed rgba(78,255,196,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                      color: isInvalid ? '#FF4444' : '#1a1a2e',
-                      boxShadow: hasLetter && !isInvalid ? '0 2px 0 rgba(0,0,0,0.3)' : 'none',
-                      cursor: hasLetter || selectedPoolId ? 'pointer' : 'default',
-                    }}
-                    whileTap={hasLetter || selectedPoolId ? { scale: 0.93 } : {}}
-                    animate={isInvalid ? { x: [0, -3, 3, -3, 0] } : {}}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {cell?.letter ?? ''}
-                  </motion.button>
-                );
-              })
+            {oppGrid.map((row, r) =>
+              row.map((cell, c) => (
+                <motion.div
+                  key={`opp-${r},${c}`}
+                  className="flex items-center justify-center font-display select-none"
+                  style={{
+                    width: OPP_CELL_PX,
+                    height: OPP_CELL_PX,
+                    fontSize: '0.9rem',
+                    borderRadius: 5,
+                    background: cell ? 'rgba(255,107,168,0.12)' : 'rgba(255,255,255,0.02)',
+                    border: cell ? '2px solid rgba(255,107,168,0.32)' : '1px solid rgba(255,255,255,0.04)',
+                    color: '#FF6BA8',
+                    boxShadow: cell ? '0 1px 0 rgba(0,0,0,0.3)' : 'none',
+                  }}
+                  animate={cell ? { scale: [1.15, 1] } : {}}
+                  transition={{ duration: 0.25 }}
+                >
+                  {cell?.letter ?? ''}
+                </motion.div>
+              ))
             )}
           </div>
         </div>
-      </div>
 
-      {/* ── Controls bar ──────────────────────────────────────────────────── */}
-      <div className="flex-none flex items-center gap-3 px-4 py-2.5"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.97)' }}
-      >
-        {/* Words found */}
-        <div className="flex-1 min-w-0">
-          {validWords.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {validWords.slice(-4).map((w) => {
-                const pts = scoreWord(w);
-                const isBig = w.length >= 6;
-                return (
-                  <span key={w}
-                    className="font-body text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
-                    style={{
-                      background: isBig ? 'rgba(78,255,196,0.18)' : 'rgba(78,255,196,0.08)',
-                      color: isBig ? '#4EFFC4' : 'rgba(78,255,196,0.7)',
-                      border: `1px solid ${isBig ? 'rgba(78,255,196,0.45)' : 'rgba(78,255,196,0.2)'}`,
-                      boxShadow: isBig ? '0 0 8px rgba(78,255,196,0.25)' : 'none',
-                    }}
-                  >
-                    {w.toUpperCase()}
-                    <span style={{ opacity: 0.65, fontSize: '0.65rem' }}>+{pts}</span>
-                  </span>
-                );
-              })}
-            </div>
-          ) : (
-            <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              {selectedPoolId ? 'Tap a grid cell to place letter' : 'Tap a letter to start'}
-            </span>
-          )}
-        </div>
-
-        {/* Shuffle */}
+        {/* Scroll back up cue (mobile only) */}
         <motion.button
-          onClick={handleShuffle}
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)' }}
-          whileTap={{ scale: 0.9, rotate: 180 }}
-          transition={{ duration: 0.3 }}
+          onClick={() => rootRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="flex-none md:hidden flex flex-col items-center py-3 gap-0.5"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          animate={{ opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity }}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M2 6h10.5M2 12h10.5M10 3l3 3-3 3M10 9l3 3-3 3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <motion.span
+            className="text-base leading-none"
+            style={{ color: 'rgba(255,255,255,0.3)' }}
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+          >
+            ↑
+          </motion.span>
+          <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>Back to your board</span>
         </motion.button>
-
-        {/* Clear */}
-        <motion.button
-          onClick={handleClear}
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(255,107,168,0.07)', border: '1.5px solid rgba(255,107,168,0.2)' }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 3l12 12M15 3L3 15" stroke="rgba(255,107,168,0.7)" strokeWidth="1.8" strokeLinecap="round"/>
-          </svg>
-        </motion.button>
-
-        {/* Score total */}
-        <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl"
-          style={{ background: myScore > 0 ? 'rgba(78,255,196,0.1)' : 'rgba(255,255,255,0.04)', border: `1.5px solid ${myScore > 0 ? 'rgba(78,255,196,0.3)' : 'rgba(255,255,255,0.08)'}` }}
-        >
-          <span className="font-display text-base" style={{ color: myScore > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
-            {myScore} pts
-          </span>
-        </div>
       </div>
 
       {/* Bottom neon bar */}
