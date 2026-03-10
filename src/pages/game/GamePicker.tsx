@@ -46,6 +46,16 @@ const GAMES: GameOption[] = [
     color: '#B565FF',
     icon: '🔤',
   },
+  {
+    id: 'draughts',
+    name: 'Draughts',
+    emoji: '♟️',
+    description: 'Classic strategy. Capture all opponent pieces or block their moves to win.',
+    route: '/games/draughts/demo',
+    gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)',
+    color: '#FFE66D',
+    icon: '⬛',
+  },
 ];
 
 export function GamePicker() {
