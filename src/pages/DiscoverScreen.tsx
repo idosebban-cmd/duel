@@ -567,15 +567,31 @@ function TopCard({
   // Track pointer start for tap detection
   const pointerStart = useRef({ x: 0, y: 0 });
 
+  // Ref for pending swipe timeout – cancelled only on unmount, NOT when swipeCommand
+  // changes back to null. Without this separation the effect cleanup would fire
+  // (because swipeCommand dep changed) and clearTimeout() the onSwipe call before
+  // it ran, leaving `disabled` stuck at true forever.
+  const swipePending = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+
   // Programmatic swipe from buttons
   useEffect(() => {
     if (!swipeCommand) return;
-    onCommandConsumed();
-    const exitX = swipeCommand === 'right' ? 750 : -750;
+    onCommandConsumed();          // sets swipeCommand → null, triggers re-render
+    const dir = swipeCommand;     // capture value before state update
+    const exitX = dir === 'right' ? 750 : -750;
     animate(x, exitX, { type: 'tween', duration: 0.28, ease: [0.32, 0, 0.67, 0] });
-    const t = window.setTimeout(() => onSwipe(swipeCommand), 280);
-    return () => window.clearTimeout(t);
+    swipePending.current = window.setTimeout(() => {
+      swipePending.current = null;
+      onSwipe(dir);
+    }, 280);
+    // No cleanup here – clearing the timeout here would race with the
+    // re-render caused by onCommandConsumed() above.
   }, [swipeCommand]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cancel only on unmount (e.g. navigating away mid-animation)
+  useEffect(() => {
+    return () => { if (swipePending.current) window.clearTimeout(swipePending.current); };
+  }, []);
 
   const handleDragEnd = (_: unknown, info: { velocity: { x: number } }) => {
     const dx = x.get();
@@ -662,7 +678,10 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-6"
       style={{ background: 'rgba(0,0,0,0.88)' }}
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, pointerEvents: 'none' }}
+      transition={{ duration: 0.18 }}
       onClick={onDismiss}
     >
       <motion.div
