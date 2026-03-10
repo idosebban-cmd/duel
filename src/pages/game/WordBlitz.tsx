@@ -695,6 +695,29 @@ export function WordBlitz() {
         )}
       </AnimatePresence>
 
+      {/* ── Scoring guide ─────────────────────────────────────────────────── */}
+      <div
+        className="flex-none flex items-center justify-center gap-2 px-3 py-1.5"
+        style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        {[
+          { label: '3', pts: '10', color: 'rgba(255,255,255,0.35)' },
+          { label: '4', pts: '15', color: 'rgba(255,255,255,0.5)'  },
+          { label: '5', pts: '25', color: '#FFE66D'                 },
+          { label: '6+', pts: '40', color: '#4EFFC4'               },
+        ].map(({ label, pts, color }) => (
+          <div key={label} className="flex items-center gap-1">
+            <span className="font-body text-[10px] font-bold px-1.5 py-0.5 rounded"
+              style={{ background: 'rgba(255,255,255,0.06)', color, border: `1px solid ${color}33` }}
+            >
+              {label}
+            </span>
+            <span className="font-mono text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
+          </div>
+        ))}
+        <span className="font-body text-[10px] ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
+      </div>
+
       {/* ── Letter pool ───────────────────────────────────────────────────── */}
       <div
         className="flex-none px-3 py-2.5"
@@ -802,13 +825,24 @@ export function WordBlitz() {
         <div className="flex-1 min-w-0">
           {validWords.length > 0 ? (
             <div className="flex flex-wrap gap-1">
-              {validWords.slice(-4).map((w) => (
-                <span key={w} className="font-body text-xs px-2 py-0.5 rounded-md font-bold"
-                  style={{ background: 'rgba(78,255,196,0.12)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.25)' }}
-                >
-                  {w}
-                </span>
-              ))}
+              {validWords.slice(-4).map((w) => {
+                const pts = scoreWord(w);
+                const isBig = w.length >= 6;
+                return (
+                  <span key={w}
+                    className="font-body text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
+                    style={{
+                      background: isBig ? 'rgba(78,255,196,0.18)' : 'rgba(78,255,196,0.08)',
+                      color: isBig ? '#4EFFC4' : 'rgba(78,255,196,0.7)',
+                      border: `1px solid ${isBig ? 'rgba(78,255,196,0.45)' : 'rgba(78,255,196,0.2)'}`,
+                      boxShadow: isBig ? '0 0 8px rgba(78,255,196,0.25)' : 'none',
+                    }}
+                  >
+                    {w.toUpperCase()}
+                    <span style={{ opacity: 0.65, fontSize: '0.65rem' }}>+{pts}</span>
+                  </span>
+                );
+              })}
             </div>
           ) : (
             <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
