@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { useAuthStore } from '../../store/authStore';
+import { upsertProfile, savePhotos } from '../../lib/database';
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -75,7 +77,9 @@ const lookingForIcons: Record<string, string> = {
 export function PlayerCardPreview() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
+  const { user } = useAuthStore();
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const {
@@ -97,7 +101,18 @@ export function PlayerCardPreview() {
   ].filter(Boolean) as { icon: string; label: string }[];
 
 
-  const handleStartPlaying = () => {
+  const handleStartPlaying = async () => {
+    if (saving) return;
+    setSaving(true);
+
+    if (user) {
+      await upsertProfile(user.id, { ...store, email: user.email ?? '' });
+      if (store.photos.length > 0) {
+        await savePhotos(user.id, store.photos);
+      }
+    }
+
+    setSaving(false);
     navigate('/discover');
   };
 
@@ -413,21 +428,18 @@ export function PlayerCardPreview() {
           <motion.button
             ref={btnRef}
             onClick={handleStartPlaying}
+            disabled={saving}
             className="w-full font-display font-extrabold text-xl sm:text-2xl text-white rounded-2xl py-5 px-8 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #FF6BA8 0%, #FF3D71 100%)',
+              background: saving
+                ? 'rgba(255,255,255,0.1)'
+                : 'linear-gradient(135deg, #FF6BA8 0%, #FF3D71 100%)',
               border: '4px solid black',
-              boxShadow: '8px 8px 0px 0px #B565FF',
+              boxShadow: saving ? 'none' : '8px 8px 0px 0px #B565FF',
               textShadow: '2px 2px 0 rgba(0,0,0,0.2)',
             }}
-            whileHover={{
-              scale: 1.03,
-              boxShadow: '12px 12px 0px 0px #B565FF',
-            }}
-            whileTap={{
-              scale: 0.97,
-              boxShadow: '4px 4px 0px 0px #B565FF',
-            }}
+            whileHover={saving ? {} : { scale: 1.03, boxShadow: '12px 12px 0px 0px #B565FF' }}
+            whileTap={saving ? {} : { scale: 0.97, boxShadow: '4px 4px 0px 0px #B565FF' }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -435,10 +447,31 @@ export function PlayerCardPreview() {
             {/* Glossy overlay */}
             <span className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
 
-            <span className="flex items-center justify-center gap-2">
-              <Gamepad2 size={24} />
-              START PLAYING
-            </span>
+            <AnimatePresence mode="wait">
+              {saving ? (
+                <motion.span
+                  key="saving"
+                  className="flex items-center justify-center gap-2"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                >
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+                    style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'white', borderRadius: '50%' }}
+                  />
+                  SAVING...
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="idle"
+                  className="flex items-center justify-center gap-2"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                >
+                  <Gamepad2 size={24} />
+                  START PLAYING
+                </motion.span>
+              )}
+            </AnimatePresence>
           </motion.button>
 
           {/* Edit button */}

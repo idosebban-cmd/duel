@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
+import { getProfile, getPhotos } from '../lib/database';
+import type { UserProfile } from '../lib/database';
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
 
@@ -289,23 +293,34 @@ function BottomNav() {
 export function ProfileScreen() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
+  const { user } = useAuthStore();
 
-  // Merge store data with mock defaults
-  const name        = store.name        || MOCK.name;
-  const age         = store.age         ?? MOCK.age;
-  const location    = store.location    || MOCK.location;
-  const character   = store.character   || MOCK.character;
-  const element     = store.element     || MOCK.element;
-  const affiliation = store.affiliation || MOCK.affiliation;
-  const gameTypes   = store.gameTypes.length   ? store.gameTypes   : MOCK.gameTypes;
-  const favoriteGames = store.favoriteGames.length ? store.favoriteGames : MOCK.favoriteGames;
-  const lookingFor  = store.lookingFor.length  ? store.lookingFor  : MOCK.lookingFor;
-  const kids        = store.kids        || MOCK.kids;
-  const drinking    = store.drinking    || MOCK.drinking;
-  const smoking     = store.smoking     || MOCK.smoking;
-  const cannabis    = store.cannabis    || MOCK.cannabis;
-  const pets        = store.pets        || MOCK.pets;
-  const exercise    = store.exercise    || MOCK.exercise;
+  // DB state
+  const [dbProfile, setDbProfile] = useState<UserProfile | null>(null);
+  const [dbPhotos, setDbPhotos] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getProfile(user.id).then(({ data }) => { if (data) setDbProfile(data); });
+    getPhotos(user.id).then(setDbPhotos);
+  }, [user]);
+
+  // Merge DB → store → mock
+  const name        = dbProfile?.name        || store.name        || MOCK.name;
+  const age         = dbProfile?.age         ?? store.age         ?? MOCK.age;
+  const location    = dbProfile?.location    || store.location    || MOCK.location;
+  const character   = dbProfile?.character   || store.character   || MOCK.character;
+  const element     = dbProfile?.element     || store.element     || MOCK.element;
+  const affiliation = dbProfile?.affiliation || store.affiliation || MOCK.affiliation;
+  const gameTypes   = (dbProfile?.game_types?.length     ? dbProfile.game_types     : null) ?? (store.gameTypes.length     ? store.gameTypes     : MOCK.gameTypes);
+  const favoriteGames = (dbProfile?.favorite_games?.length ? dbProfile.favorite_games : null) ?? (store.favoriteGames.length ? store.favoriteGames : MOCK.favoriteGames);
+  const lookingFor  = (dbProfile?.looking_for?.length    ? dbProfile.looking_for    : null) ?? (store.lookingFor.length    ? store.lookingFor    : MOCK.lookingFor);
+  const kids        = dbProfile?.kids        || store.kids        || MOCK.kids;
+  const drinking    = dbProfile?.drinking    || store.drinking    || MOCK.drinking;
+  const smoking     = dbProfile?.smoking     || store.smoking     || MOCK.smoking;
+  const cannabis    = dbProfile?.cannabis    || store.cannabis    || MOCK.cannabis;
+  const pets        = dbProfile?.pets        || store.pets        || MOCK.pets;
+  const exercise    = dbProfile?.exercise    || store.exercise    || MOCK.exercise;
 
   const lifestyle = { kids, drinking, smoking, cannabis, pets, exercise };
 
@@ -320,8 +335,10 @@ export function ProfileScreen() {
     setTimeout(() => setToast(false), 2200);
   };
 
-  // Mock photos (placeholder gradients since we don't have real photos)
-  const photoSlots = [
+  // Photos: real DB photos, fall back to session photos, then mock gradients
+  const sessionPhotos = store.photos;
+  const displayPhotos = dbPhotos.length > 0 ? dbPhotos : sessionPhotos;
+  const mockPhotoSlots = [
     { gradient: 'linear-gradient(135deg, #FF6BA8 0%, #B565FF 100%)', label: '♪' },
     { gradient: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)', label: '✦' },
     { gradient: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)', label: '★' },
@@ -455,15 +472,26 @@ export function ProfileScreen() {
           <SectionCard>
             <SectionHeading label="Photos" onEdit={() => showToast('Profile editing coming soon')} />
             <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {photoSlots.map((slot, i) => (
-                <div
-                  key={i}
-                  className="flex-shrink-0 w-24 h-28 rounded-xl flex items-center justify-center text-2xl"
-                  style={{ background: slot.gradient, opacity: 0.75 }}
-                >
-                  {slot.label}
-                </div>
-              ))}
+              {displayPhotos.length > 0
+                ? displayPhotos.map((src, i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 w-24 h-28 rounded-xl overflow-hidden"
+                      style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      <img src={src} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" draggable={false} />
+                    </div>
+                  ))
+                : mockPhotoSlots.map((slot, i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 w-24 h-28 rounded-xl flex items-center justify-center text-2xl"
+                      style={{ background: slot.gradient, opacity: 0.75 }}
+                    >
+                      {slot.label}
+                    </div>
+                  ))
+              }
               {/* Add photo slot */}
               <button
                 onClick={() => showToast('Profile editing coming soon')}
@@ -675,7 +703,7 @@ export function ProfileScreen() {
 
               {/* Logout */}
               <motion.button
-                onClick={() => navigate('/login')}
+                onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-sm font-bold mt-1"
                 style={{
                   background: 'rgba(78,255,196,0.07)',

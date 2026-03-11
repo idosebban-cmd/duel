@@ -2,11 +2,14 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
+import { useAuthStore } from '../store/authStore';
+import { getDiscoverProfiles } from '../lib/database';
+import type { UserProfile } from '../lib/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Profile {
-  id: number;
+  id: string | number;
   name: string;
   age: number;
   location: string;
@@ -182,6 +185,41 @@ function applyFilters(profiles: Profile[], f: FilterState): Profile[] {
     if (f.activityLevel === 'week' && p.activityLevel === 'older') return false;
     return true;
   });
+}
+
+// ─── Convert DB profile to discover Profile ───────────────────────────────────
+
+function dbProfileToProfile(p: UserProfile): Profile {
+  const createdAt = new Date(p.created_at).getTime();
+  const now = Date.now();
+  const diffMs = now - createdAt;
+  const activityLevel: 'today' | 'week' | 'older' =
+    diffMs < 86_400_000 ? 'today' : diffMs < 604_800_000 ? 'week' : 'older';
+
+  return {
+    id:            p.id,
+    name:          p.name          ?? 'Player',
+    age:           p.age           ?? 25,
+    location:      p.location      ?? 'Nearby',
+    distance:      'Nearby',
+    distanceKm:    0,
+    character:     p.character     ?? 'ghost',
+    element:       p.element       ?? 'fire',
+    affiliation:   p.affiliation   ?? 'city',
+    bio:           p.bio           ?? '',
+    games:         p.game_types    ?? [],
+    lookingFor:    p.looking_for?.[0] ?? 'open',
+    willMatch:     false,
+    duelGames:     ['guess-who', 'dot-dash', 'word-blitz'],
+    activityLevel,
+    kids:          p.kids          ?? '',
+    drinking:      p.drinking      ?? '',
+    smoking:       p.smoking       ?? '',
+    cannabis:      p.cannabis      ?? '',
+    pets:          p.pets          ?? '',
+    exercise:      p.exercise      ?? '',
+    favoriteGames: p.favorite_games ?? [],
+  };
 }
 
 // ─── Profile data (30 fake UK profiles, ~20% willMatch) ──────────────────────
@@ -1144,10 +1182,23 @@ export function DiscoverScreen() {
   const [expandedProfile, setExpandedProfile] = useState<Profile | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
   const navigate = useNavigate();
   const { character } = useOnboardingStore();
+  const { user } = useAuthStore();
 
-  const filteredProfiles = useMemo(() => applyFilters(PROFILES, activeFilters), [activeFilters]);
+  // Load real profiles from DB; keep fake ones as fallback if DB is empty
+  useEffect(() => {
+    if (!user) return;
+    getDiscoverProfiles(user.id).then((dbProfiles) => {
+      if (dbProfiles.length > 0) {
+        setProfiles(dbProfiles.map(dbProfileToProfile));
+        setCurrentIndex(0);
+      }
+    });
+  }, [user]);
+
+  const filteredProfiles = useMemo(() => applyFilters(profiles, activeFilters), [profiles, activeFilters]);
   const activeFilterCount = useMemo(() => countActiveFilters(activeFilters), [activeFilters]);
 
   const remaining = filteredProfiles.length - currentIndex;
