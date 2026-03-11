@@ -759,7 +759,7 @@ export function ProfileScreen() {
 
               {/* Logout */}
               <motion.button
-                onClick={async () => { await supabase.auth.signOut(); navigate('/login'); }}
+                onClick={async () => { await supabase?.auth.signOut(); navigate('/login'); }}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-sm font-bold mt-1"
                 style={{
                   background: 'rgba(78,255,196,0.07)',

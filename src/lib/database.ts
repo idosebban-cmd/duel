@@ -1,4 +1,7 @@
-import { supabase } from './supabase';
+import { supabase as _supabase } from './supabase';
+// These functions are only called from auth-protected routes, so supabase is always initialized.
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const supabase = _supabase!;
 import type { OnboardingState } from '../store/onboardingStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

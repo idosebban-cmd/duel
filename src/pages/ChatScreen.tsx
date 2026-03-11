@@ -180,7 +180,7 @@ export function ChatScreen() {
 
   // Realtime: new messages + read-receipt updates + typing broadcasts
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId || !supabase) return;
 
     const channel = supabase
       .channel(`chat-${matchId}`)
@@ -213,14 +213,14 @@ export function ChatScreen() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase?.removeChannel(channel);
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, myUserId]);
 
   const broadcastTyping = useCallback(() => {
-    if (!matchId) return;
+    if (!matchId || !supabase) return;
     supabase.channel(`chat-${matchId}`).send({
       type: 'broadcast',
       event: 'typing',

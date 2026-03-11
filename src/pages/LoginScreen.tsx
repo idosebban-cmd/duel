@@ -74,6 +74,11 @@ export function LoginScreen() {
     setError(null);
     setMessage(null);
 
+    if (!supabase) {
+      setError('Demo mode: authentication is not configured.');
+      return;
+    }
+
     if (!email || !password) {
       setError('Please enter your email and password.');
       return;
@@ -95,6 +100,11 @@ export function LoginScreen() {
     if (loading) return;
     setError(null);
     setMessage(null);
+
+    if (!supabase) {
+      setError('Demo mode: authentication is not configured.');
+      return;
+    }
 
     if (!email || !password) {
       setError('Please enter your email and password.');
@@ -120,6 +130,10 @@ export function LoginScreen() {
   };
 
   const handleForgotPassword = async () => {
+    if (!supabase) {
+      setError('Demo mode: authentication is not configured.');
+      return;
+    }
     if (!email) {
       setError('Enter your email above first.');
       return;

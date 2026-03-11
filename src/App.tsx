@@ -42,6 +42,11 @@ export default function App() {
   useEffect(() => {
     preloadImages();
 
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
