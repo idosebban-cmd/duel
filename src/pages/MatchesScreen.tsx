@@ -320,7 +320,14 @@ export function MatchesScreen() {
   const newMatches    = matches.filter((m) =>  isNew(m));
   const olderMatches  = matches.filter((m) => !isNew(m));
 
-  const handleTap = (matchId: string) => navigate('/play', { state: { matchId } });
+  const handleTap = (m: Match) => {
+    const hasPlayed = !!localStorage.getItem(`first_game_played_${m.id}`);
+    if (hasPlayed) {
+      navigate('/chat', { state: { matchId: m.id, name: m.name, character: m.character } });
+    } else {
+      navigate('/play', { state: { matchId: m.id } });
+    }
+  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A1628' }}>
@@ -383,7 +390,7 @@ export function MatchesScreen() {
                 <SectionLabel label="New" />
                 {newMatches.map((m, i) => (
                   <motion.div key={m.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06, duration: 0.25 }}>
-                    <MatchCard match={m} isNew={true} onTap={() => handleTap(m.id)} />
+                    <MatchCard match={m} isNew={true} onTap={() => handleTap(m)} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -394,7 +401,7 @@ export function MatchesScreen() {
                 <SectionLabel label="Matches" />
                 {olderMatches.map((m, i) => (
                   <motion.div key={m.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: newMatches.length * 0.06 + i * 0.06, duration: 0.25 }}>
-                    <MatchCard match={m} isNew={false} onTap={() => handleTap(m.id)} />
+                    <MatchCard match={m} isNew={false} onTap={() => handleTap(m)} />
                   </motion.div>
                 ))}
               </motion.div>

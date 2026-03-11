@@ -62,7 +62,7 @@ export function GameResult() {
     const redirectTimer = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
       localStorage.removeItem('pending_match_id');
-      navigate('/chat', { state: { name: opponentName, character: opponentChar?.attributes?.type } });
+      navigate('/chat', { state: { matchId, name: opponentName, character: opponentChar?.attributes?.type } });
     }, 3000);
 
     return () => {
@@ -271,7 +271,11 @@ export function GameResult() {
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => navigate('/chat', { state: { name: opponentName, character: opponentChar?.attributes?.type } })}
+              onClick={() => {
+                const mId = localStorage.getItem('pending_match_id');
+                if (mId) localStorage.removeItem('pending_match_id');
+                navigate('/chat', { state: { matchId: mId, name: opponentName, character: opponentChar?.attributes?.type } });
+              }}
             >
               💬 Start Chatting
             </motion.button>

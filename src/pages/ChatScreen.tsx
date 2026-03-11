@@ -1,23 +1,21 @@
-import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
+import { getMessages, sendMessage, markMessagesRead } from '../lib/database';
+import type { DbMessage } from '../lib/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ChatState {
-  name: string;
+  matchId?: string;
+  name?: string;
   avatar?: string;
   character?: string;
 }
 
-interface Message {
-  id: number;
-  from: 'them' | 'me';
-  text: string;
-  time: string;
-}
-
-// ─── Character image map ───────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -31,22 +29,8 @@ const characterImages: Record<string, string> = {
   ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
 };
 
-// ─── Mock conversation ────────────────────────────────────────────────────────
-
-function buildConversation(_theirName: string): Message[] {
-  return [
-    { id: 1,  from: 'them', text: `Hey! That was such a fun game 😄`,                          time: '14:02' },
-    { id: 2,  from: 'me',   text: `Right?? I can't believe I got that last one`,                time: '14:03' },
-    { id: 3,  from: 'them', text: `Haha you were on fire 🔥 I had no idea who your character was`, time: '14:03' },
-    { id: 4,  from: 'me',   text: `Lucky guess honestly. I was convinced it was the Dragon`,    time: '14:04' },
-    { id: 5,  from: 'them', text: `Okay that's fair, I do give off Dragon energy apparently 😂`, time: '14:04' },
-    { id: 6,  from: 'me',   text: `Very much so. Want to go again? Or maybe something different?`, time: '14:06' },
-    { id: 7,  from: 'them', text: `Definitely down for another round... or we could grab coffee sometime? ☕`, time: '14:07' },
-    { id: 8,  from: 'me',   text: `I'd love that actually`,                                     time: '14:08' },
-    { id: 9,  from: 'them', text: `How about Saturday? There's a great place in Shoreditch`,    time: '14:09' },
-    { id: 10, from: 'me',   text: `Saturday works! 2pm?`,                                       time: '14:09' },
-    { id: 11, from: 'them', text: `Perfect. It's a date 🎮☕`,                                   time: '14:10' },
-  ] as Message[];
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 // ─── Avatar bubble ─────────────────────────────────────────────────────────────
@@ -72,8 +56,12 @@ function AvatarBubble({ src, size = 32 }: { src?: string; size?: number }) {
 
 // ─── Message bubble ────────────────────────────────────────────────────────────
 
-function MessageBubble({ msg, theirAvatar }: { msg: Message; theirAvatar?: string }) {
-  const isMe = msg.from === 'me';
+function MessageBubble({ msg, myUserId, theirAvatar }: {
+  msg: DbMessage;
+  myUserId: string;
+  theirAvatar?: string;
+}) {
+  const isMe = msg.sender_id === myUserId;
 
   return (
     <motion.div
@@ -82,7 +70,6 @@ function MessageBubble({ msg, theirAvatar }: { msg: Message; theirAvatar?: strin
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
-      {/* Their avatar */}
       {!isMe && <AvatarBubble src={theirAvatar} size={30} />}
 
       <div className={`flex flex-col gap-0.5 max-w-[72%] ${isMe ? 'items-end' : 'items-start'}`}>
@@ -102,15 +89,52 @@ function MessageBubble({ msg, theirAvatar }: { msg: Message; theirAvatar?: strin
             boxShadow: '0 2px 12px rgba(78,255,196,0.1)',
           }}
         >
-          {msg.text}
+          {msg.content}
         </div>
         <span className="font-body text-xs px-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          {msg.time}
+          {formatTime(msg.created_at)}
+          {isMe && (
+            <span className="ml-1" style={{ color: msg.read ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
+              {msg.read ? ' ✓✓' : ' ✓'}
+            </span>
+          )}
         </span>
       </div>
 
-      {/* My spacer */}
       {isMe && <div style={{ width: 30 }} />}
+    </motion.div>
+  );
+}
+
+// ─── Typing indicator ──────────────────────────────────────────────────────────
+
+function TypingIndicator({ theirAvatar }: { theirAvatar?: string }) {
+  return (
+    <motion.div
+      className="flex items-end gap-2"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 6 }}
+    >
+      <AvatarBubble src={theirAvatar} size={30} />
+      <div
+        className="px-4 py-3 rounded-2xl flex gap-1 items-center"
+        style={{
+          background: 'linear-gradient(135deg, rgba(78,255,196,0.18) 0%, rgba(78,200,255,0.18) 100%)',
+          border: '1px solid rgba(78,255,196,0.3)',
+          borderBottomLeftRadius: 4,
+        }}
+      >
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: 'rgba(78,255,196,0.7)' }}
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
+          />
+        ))}
+      </div>
     </motion.div>
   );
 }
@@ -120,19 +144,116 @@ function MessageBubble({ msg, theirAvatar }: { msg: Message; theirAvatar?: strin
 export function ChatScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuthStore();
+  const myUserId = user?.id ?? '';
 
-  const state = (location.state ?? {}) as Partial<ChatState>;
+  const state = (location.state ?? {}) as ChatState;
+  const matchId = state.matchId ?? localStorage.getItem('pending_match_id') ?? null;
   const theirName = state.name ?? 'Match';
   const theirAvatar = state.avatar ?? (state.character ? characterImages[state.character] : undefined);
 
-  const messages = buildConversation(theirName);
+  const [messages, setMessages] = useState<DbMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Scroll to bottom on mount
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Scroll to bottom whenever messages or typing state changes
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, []);
+  }, [messages, isTyping]);
+
+  // Load message history
+  useEffect(() => {
+    if (!matchId) { setLoading(false); return; }
+    getMessages(matchId).then((msgs) => {
+      setMessages(msgs);
+      setLoading(false);
+    });
+    if (myUserId) markMessagesRead(matchId, myUserId);
+  }, [matchId, myUserId]);
+
+  // Realtime: new messages + read-receipt updates + typing broadcasts
+  useEffect(() => {
+    if (!matchId) return;
+
+    const channel = supabase
+      .channel(`chat-${matchId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const msg = payload.new as DbMessage;
+          setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
+          if (msg.sender_id !== myUserId && myUserId) {
+            markMessagesRead(matchId, myUserId);
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const updated = payload.new as DbMessage;
+          setMessages((prev) => prev.map((m) => m.id === updated.id ? updated : m));
+        },
+      )
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload?.userId !== myUserId) {
+          setIsTyping(true);
+          if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+          typingTimerRef.current = setTimeout(() => setIsTyping(false), 2500);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, myUserId]);
+
+  const broadcastTyping = useCallback(() => {
+    if (!matchId) return;
+    supabase.channel(`chat-${matchId}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { userId: myUserId },
+    });
+  }, [matchId, myUserId]);
+
+  const handleSend = async () => {
+    if (!input.trim() || !matchId || !myUserId || sending) return;
+    const content = input.trim();
+    setInput('');
+    setSending(true);
+    const msg = await sendMessage(matchId, myUserId, content);
+    if (msg) {
+      setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
+    }
+    setSending(false);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    broadcastTyping();
+  };
+
+  const canSend = !!input.trim() && !!matchId && !!myUserId;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
@@ -151,7 +272,6 @@ export function ChatScreen() {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        {/* Back */}
         <motion.button
           onClick={() => navigate(-1)}
           className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
@@ -163,17 +283,14 @@ export function ChatScreen() {
           </svg>
         </motion.button>
 
-        {/* Their avatar */}
         <div className="relative flex-shrink-0">
           <AvatarBubble src={theirAvatar} size={40} />
-          {/* Online dot */}
           <div
             className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
             style={{ background: '#4EFFC4', borderColor: '#12122A' }}
           />
         </div>
 
-        {/* Name + status */}
         <div className="flex-1 min-w-0">
           <h1
             className="font-display text-xl leading-none truncate"
@@ -181,14 +298,13 @@ export function ChatScreen() {
           >
             {theirName}
           </h1>
-          <p className="font-body text-xs mt-0.5" style={{ color: 'rgba(78,255,196,0.7)' }}>
-            Active now
+          <p className="font-body text-xs mt-0.5" style={{ color: isTyping ? '#4EFFC4' : 'rgba(78,255,196,0.5)' }}>
+            {isTyping ? 'typing...' : 'Active now'}
           </p>
         </div>
 
-        {/* Game button */}
         <motion.button
-          onClick={() => navigate('/play')}
+          onClick={() => navigate('/play', { state: { matchId } })}
           className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-body font-bold text-xs"
           style={{
             background: 'rgba(78,255,196,0.1)',
@@ -208,20 +324,13 @@ export function ChatScreen() {
         </motion.button>
       </header>
 
-      {/* Date divider */}
-      <div className="flex items-center gap-3 px-6 py-3 flex-none">
-        <div className="flex-1" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-        <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>Today</span>
-        <div className="flex-1" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-      </div>
-
       {/* Messages */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 flex flex-col gap-3 pb-3"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {/* Matched badge at top */}
+        {/* Match badge */}
         <motion.div
           className="flex flex-col items-center gap-2 py-4"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -239,20 +348,66 @@ export function ChatScreen() {
           </div>
         </motion.div>
 
-        {/* Message bubbles with staggered entrance */}
-        {messages.map((msg, i) => (
-          <motion.div
-            key={msg.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 + i * 0.06, type: 'spring', stiffness: 400, damping: 32 }}
-          >
-            <MessageBubble msg={msg} theirAvatar={theirAvatar} />
-          </motion.div>
+        {/* Loading dots */}
+        {loading && (
+          <div className="flex justify-center py-4">
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: 'rgba(78,255,196,0.4)' }}
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No matchId */}
+        {!matchId && !loading && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center px-4">
+            <p className="font-display text-base" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Play a game first to unlock chat!
+            </p>
+            <motion.button
+              onClick={() => navigate('/matches')}
+              className="px-6 py-2 rounded-xl font-display font-bold text-sm"
+              style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.35)', color: '#4EFFC4' }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Go to Matches
+            </motion.button>
+          </div>
+        )}
+
+        {/* Message list */}
+        {!loading && messages.map((msg) => (
+          <MessageBubble key={msg.id} msg={msg} myUserId={myUserId} theirAvatar={theirAvatar} />
         ))}
+
+        {/* Empty state */}
+        {!loading && matchId && messages.length === 0 && (
+          <motion.div
+            className="text-center py-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              No messages yet. Say hi! 👋
+            </p>
+          </motion.div>
+        )}
+
+        {/* Typing indicator */}
+        <AnimatePresence>
+          {isTyping && <TypingIndicator key="typing" theirAvatar={theirAvatar} />}
+        </AnimatePresence>
       </div>
 
-      {/* Input area */}
+      {/* Input */}
       <div
         className="flex-none px-4 py-3"
         style={{
@@ -262,28 +417,39 @@ export function ChatScreen() {
         }}
       >
         <div className="flex items-center gap-2">
-          <div
-            className="flex-1 flex items-center px-4 py-2.5 rounded-2xl font-body text-sm"
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={matchId ? `Message ${theirName}...` : 'Play a game to unlock chat'}
+            disabled={!matchId || !myUserId}
+            className="flex-1 px-4 py-2.5 rounded-2xl font-body text-sm outline-none"
             style={{
               background: 'rgba(255,255,255,0.04)',
-              border: '1.5px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.25)',
+              border: `1.5px solid ${input ? 'rgba(78,255,196,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              color: 'rgba(255,255,255,0.92)',
+              caretColor: '#4EFFC4',
             }}
-          >
-            Message {theirName}...
-          </div>
-          <div
+          />
+          <motion.button
+            onClick={handleSend}
+            disabled={!canSend || sending}
             className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(78,255,196,0.08)', border: '1.5px solid rgba(78,255,196,0.2)' }}
+            style={{
+              background: canSend ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)' : 'rgba(78,255,196,0.08)',
+              border: `1.5px solid ${canSend ? '#4EFFC4' : 'rgba(78,255,196,0.2)'}`,
+              opacity: sending ? 0.6 : 1,
+            }}
+            whileTap={canSend ? { scale: 0.88 } : {}}
+            whileHover={canSend ? { scale: 1.08 } : {}}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M14 8L2 2L5 8L2 14L14 8Z" fill="rgba(78,255,196,0.3)" />
+              <path d="M14 8L2 2L5 8L2 14L14 8Z" fill={canSend ? '#12122A' : 'rgba(78,255,196,0.3)'} />
             </svg>
-          </div>
+          </motion.button>
         </div>
-        <p className="text-center font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          Chat functionality coming soon
-        </p>
       </div>
     </div>
   );

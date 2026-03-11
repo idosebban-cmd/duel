@@ -166,6 +166,66 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
     .filter((x): x is MatchWithProfile => x !== null);
 }
 
+// ─── Messages ─────────────────────────────────────────────────────────────────
+//
+// Required Supabase setup (run once in SQL editor):
+//
+//   CREATE TABLE messages (
+//     id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//     match_id   UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+//     sender_id  UUID NOT NULL REFERENCES auth.users(id),
+//     content    TEXT NOT NULL,
+//     created_at TIMESTAMPTZ DEFAULT now(),
+//     read       BOOLEAN DEFAULT false
+//   );
+//   ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+//   CREATE POLICY "match members can access messages"
+//     ON messages FOR ALL
+//     USING (match_id IN (
+//       SELECT id FROM matches WHERE user1_id = auth.uid() OR user2_id = auth.uid()
+//     ));
+//   ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+
+export interface DbMessage {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+}
+
+export async function getMessages(matchId: string): Promise<DbMessage[]> {
+  const { data } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('match_id', matchId)
+    .order('created_at', { ascending: true });
+  return (data as DbMessage[]) ?? [];
+}
+
+export async function sendMessage(
+  matchId: string,
+  senderId: string,
+  content: string,
+): Promise<DbMessage | null> {
+  const { data } = await supabase
+    .from('messages')
+    .insert({ match_id: matchId, sender_id: senderId, content, read: false })
+    .select()
+    .maybeSingle();
+  return data as DbMessage | null;
+}
+
+export async function markMessagesRead(matchId: string, userId: string): Promise<void> {
+  await supabase
+    .from('messages')
+    .update({ read: true })
+    .eq('match_id', matchId)
+    .neq('sender_id', userId)
+    .eq('read', false);
+}
+
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
 async function uploadPhotoToStorage(
