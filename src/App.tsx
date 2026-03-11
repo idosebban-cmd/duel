@@ -2,6 +2,10 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { preloadImages } from './utils/preloadImages';
+import { supabase } from './lib/supabase';
+import { useAuthStore } from './store/authStore';
+import { useOnboardingStore } from './store/onboardingStore';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { WelcomeScreen } from './components/onboarding/WelcomeScreen';
 import { AvatarSelection } from './components/onboarding/AvatarSelection';
 import { BasicsForm } from './components/onboarding/BasicsForm';
@@ -31,7 +35,30 @@ import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
 
 export default function App() {
-  useEffect(() => { preloadImages(); }, []);
+  const { setUser, setSession, setLoading } = useAuthStore();
+  const { setUserId } = useOnboardingStore();
+
+  useEffect(() => {
+    preloadImages();
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setUserId(session?.user?.id ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setUserId(session?.user?.id ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser, setSession, setLoading, setUserId]);
 
   return (
     <BrowserRouter>
@@ -40,7 +67,7 @@ export default function App() {
           {/* Landing page */}
           <Route path="/landing" element={<LandingPage />} />
 
-          {/* Onboarding */}
+          {/* Onboarding (public — accessible after sign up) */}
           <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
           <Route path="/onboarding/avatar" element={<AvatarSelection />} />
@@ -54,48 +81,40 @@ export default function App() {
           {/* Login */}
           <Route path="/login" element={<LoginScreen />} />
 
-          {/* Discover / matching */}
-          <Route path="/discover" element={<DiscoverScreen />} />
-
-          {/* Matches hub */}
-          <Route path="/matches" element={<MatchesScreen />} />
-
-          {/* Profile */}
-          <Route path="/profile" element={<ProfileScreen />} />
-
-          {/* Chat */}
-          <Route path="/chat" element={<ChatScreen />} />
-
-          {/* Game picker */}
-          <Route path="/play" element={<GamePicker />} />
+          {/* Protected routes */}
+          <Route path="/discover" element={<ProtectedRoute><DiscoverScreen /></ProtectedRoute>} />
+          <Route path="/matches" element={<ProtectedRoute><MatchesScreen /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><ChatScreen /></ProtectedRoute>} />
+          <Route path="/play" element={<ProtectedRoute><GamePicker /></ProtectedRoute>} />
 
           {/* Guess Who game */}
-          <Route path="/game" element={<GameSetup />} />
-          <Route path="/game/:gameId/lobby" element={<LobbyScreen />} />
-          <Route path="/game/:gameId/play" element={<GameBoard />} />
-          <Route path="/game/:gameId/result" element={<GameResult />} />
+          <Route path="/game" element={<ProtectedRoute><GameSetup /></ProtectedRoute>} />
+          <Route path="/game/:gameId/lobby" element={<ProtectedRoute><LobbyScreen /></ProtectedRoute>} />
+          <Route path="/game/:gameId/play" element={<ProtectedRoute><GameBoard /></ProtectedRoute>} />
+          <Route path="/game/:gameId/result" element={<ProtectedRoute><GameResult /></ProtectedRoute>} />
 
           {/* Word Blitz */}
-          <Route path="/games/word-blitz/:matchId" element={<WordBlitz />} />
-          <Route path="/games/word-blitz" element={<WordBlitz />} />
+          <Route path="/games/word-blitz/:matchId" element={<ProtectedRoute><WordBlitz /></ProtectedRoute>} />
+          <Route path="/games/word-blitz" element={<ProtectedRoute><WordBlitz /></ProtectedRoute>} />
 
           {/* Draughts */}
-          <Route path="/games/draughts/:matchId" element={<Draughts />} />
-          <Route path="/games/draughts" element={<Draughts />} />
+          <Route path="/games/draughts/:matchId" element={<ProtectedRoute><Draughts /></ProtectedRoute>} />
+          <Route path="/games/draughts" element={<ProtectedRoute><Draughts /></ProtectedRoute>} />
 
           {/* Connect Four */}
-          <Route path="/games/connect-four/:matchId" element={<ConnectFour />} />
-          <Route path="/games/connect-four" element={<ConnectFour />} />
+          <Route path="/games/connect-four/:matchId" element={<ProtectedRoute><ConnectFour /></ProtectedRoute>} />
+          <Route path="/games/connect-four" element={<ProtectedRoute><ConnectFour /></ProtectedRoute>} />
 
           {/* Battleship */}
-          <Route path="/games/battleship/:matchId" element={<Battleship />} />
-          <Route path="/games/battleship" element={<Battleship />} />
+          <Route path="/games/battleship/:matchId" element={<ProtectedRoute><Battleship /></ProtectedRoute>} />
+          <Route path="/games/battleship" element={<ProtectedRoute><Battleship /></ProtectedRoute>} />
 
-          {/* Dot Dash – maze racing game */}
-          <Route path="/dotdash" element={<DotDashSetup />} />
-          <Route path="/dotdash/:gameId/lobby" element={<DotDashLobby />} />
-          <Route path="/dotdash/:gameId/play" element={<DotDashBoard />} />
-          <Route path="/dotdash/:gameId/result" element={<DotDashResult />} />
+          {/* Dot Dash */}
+          <Route path="/dotdash" element={<ProtectedRoute><DotDashSetup /></ProtectedRoute>} />
+          <Route path="/dotdash/:gameId/lobby" element={<ProtectedRoute><DotDashLobby /></ProtectedRoute>} />
+          <Route path="/dotdash/:gameId/play" element={<ProtectedRoute><DotDashBoard /></ProtectedRoute>} />
+          <Route path="/dotdash/:gameId/result" element={<ProtectedRoute><DotDashResult /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
         </Routes>

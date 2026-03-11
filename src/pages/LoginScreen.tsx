@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingStore } from '../store/onboardingStore';
+import { supabase } from '../lib/supabase';
 
-// ─── CRT corner brackets (copied from landing style) ─────────────────────────
+// ─── CRT corner brackets ──────────────────────────────────────────────────────
 
 function CrtBrackets() {
   const corner = 'absolute w-6 h-6 pointer-events-none';
@@ -18,7 +18,7 @@ function CrtBrackets() {
   );
 }
 
-// ─── Floating background icons ─────────────────────────────────────────────────
+// ─── Floating background icons ────────────────────────────────────────────────
 
 const FLOATING = [
   { src: '/icons/Star.png',           size: 28, x: '8%',  y: '12%', dur: 7.2, delay: 0 },
@@ -29,18 +29,7 @@ const FLOATING = [
   { src: '/icons/Heart.png',          size: 16, x: '92%', y: '82%', dur: 5.5, delay: 3 },
 ];
 
-// ─── Mock profiles for auto-login ─────────────────────────────────────────────
-
-const MOCK_AVATARS = [
-  { character: 'fox',     element: 'fire',    affiliation: 'art'      },
-  { character: 'unicorn', element: 'water',   affiliation: 'academia' },
-  { character: 'robot',   element: 'electric', affiliation: 'tech'   },
-  { character: 'phoenix', element: 'fire',    affiliation: 'city'     },
-  { character: 'wolf',    element: 'electric', affiliation: 'music'  },
-  { character: 'pixie',   element: 'air',     affiliation: 'art'      },
-];
-
-// ─── Eye icon for show/hide password ──────────────────────────────────────────
+// ─── Eye icon ─────────────────────────────────────────────────────────────────
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -61,35 +50,16 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export function LoginScreen() {
   const navigate = useNavigate();
-  const store = useOnboardingStore();
 
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
-
-  const handleSignIn = async () => {
-    if (loading) return;
-
-    // Demo: populate store with a mock profile so the discover screen has data
-    const avatar = MOCK_AVATARS[Math.floor(Math.random() * MOCK_AVATARS.length)];
-    store.updateAvatar(avatar.character, avatar.element, avatar.affiliation);
-    store.updateBasics({
-      name: 'Alex',
-      birthday: '1997-06-15',
-      age: 27,
-      gender: 'man',
-      interestedIn: 'everyone',
-      location: 'London',
-    });
-
-    setLoading(true);
-    // Brief pause for effect, then navigate
-    await new Promise((r) => setTimeout(r, 900));
-    navigate('/discover');
-  };
 
   const inputStyle = (focused: boolean) => ({
     background: 'rgba(255,255,255,0.04)',
@@ -98,6 +68,74 @@ export function LoginScreen() {
     boxShadow: focused ? '0 0 16px rgba(78,255,196,0.2), inset 0 0 8px rgba(78,255,196,0.04)' : 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
   });
+
+  const handleSignIn = async () => {
+    if (loading) return;
+    setError(null);
+    setMessage(null);
+
+    if (!email || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+
+    setLoading(true);
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    navigate('/discover');
+  };
+
+  const handleSignUp = async () => {
+    if (loading) return;
+    setError(null);
+    setMessage(null);
+
+    if (!email || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
+    const { error: authError } = await supabase.auth.signUp({ email, password });
+    setLoading(false);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    // If email confirmation is disabled in Supabase, the user is immediately signed in
+    // and onAuthStateChange in App.tsx will handle the session. Navigate to onboarding.
+    navigate('/onboarding/welcome');
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Enter your email above first.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(email);
+    setLoading(false);
+    if (authError) {
+      setError(authError.message);
+    } else {
+      setMessage('Password reset email sent — check your inbox.');
+    }
+  };
+
+  const handleSubmit = mode === 'signin' ? handleSignIn : handleSignUp;
 
   return (
     <div
@@ -141,9 +179,8 @@ export function LoginScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 260, damping: 24 }}
       >
-        {/* ─── Header ─────────────────────────────────────────────────────── */}
+        {/* ─── Header ────────────────────────────────────────────────────── */}
         <div className="text-center mb-8">
-          {/* Logo */}
           <motion.div
             className="font-display text-6xl leading-none mb-1"
             style={{
@@ -168,10 +205,9 @@ export function LoginScreen() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            Welcome Back
+            {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
           </motion.p>
 
-          {/* PLAYER 1 START blinker */}
           <motion.p
             className="font-display text-sm tracking-widest mt-2"
             style={{ color: '#4EFFC4', textShadow: '0 0 10px rgba(78,255,196,0.7)' }}
@@ -180,6 +216,27 @@ export function LoginScreen() {
           >
             PLAYER 1 START
           </motion.p>
+        </div>
+
+        {/* ─── Mode tabs ──────────────────────────────────────────────────── */}
+        <div
+          className="flex rounded-xl mb-4 p-1"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(78,255,196,0.1)' }}
+        >
+          {(['signin', 'signup'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => { setMode(tab); setError(null); setMessage(null); }}
+              className="flex-1 py-2 rounded-lg font-display text-sm transition-all"
+              style={{
+                background: mode === tab ? 'rgba(78,255,196,0.15)' : 'transparent',
+                color: mode === tab ? '#4EFFC4' : 'rgba(255,255,255,0.4)',
+                boxShadow: mode === tab ? '0 0 12px rgba(78,255,196,0.2)' : 'none',
+              }}
+            >
+              {tab === 'signin' ? 'SIGN IN' : 'SIGN UP'}
+            </button>
+          ))}
         </div>
 
         {/* ─── Form card ──────────────────────────────────────────────────── */}
@@ -205,6 +262,7 @@ export function LoginScreen() {
               onChange={(e) => setEmail(e.target.value)}
               onFocus={() => setEmailFocused(true)}
               onBlur={() => setEmailFocused(false)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               placeholder="player1@email.com"
               autoComplete="email"
               className="w-full px-4 py-3 rounded-xl font-body text-sm outline-none placeholder:opacity-30"
@@ -224,8 +282,9 @@ export function LoginScreen() {
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setPassFocused(true)}
                 onBlur={() => setPassFocused(false)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="••••••••"
-                autoComplete="current-password"
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 className="w-full px-4 py-3 pr-12 rounded-xl font-body text-sm outline-none placeholder:opacity-40"
                 style={inputStyle(passFocused)}
               />
@@ -240,20 +299,41 @@ export function LoginScreen() {
             </div>
           </div>
 
-          {/* Forgot password */}
-          <div className="text-right -mt-1">
-            <button
-              className="font-body text-xs hover:underline transition-opacity hover:opacity-100"
-              style={{ color: '#4EFFC4', opacity: 0.7 }}
-              onClick={() => {/* demo — no action */}}
-            >
-              Forgot password?
-            </button>
-          </div>
+          {/* Forgot password (sign in only) */}
+          {mode === 'signin' && (
+            <div className="text-right -mt-1">
+              <button
+                className="font-body text-xs hover:underline transition-opacity hover:opacity-100"
+                style={{ color: '#4EFFC4', opacity: 0.7 }}
+                onClick={handleForgotPassword}
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
-          {/* Sign in button */}
+          {/* Error / success message */}
+          <AnimatePresence>
+            {(error || message) && (
+              <motion.p
+                className="font-body text-xs text-center px-2 py-2 rounded-lg"
+                style={{
+                  background: error ? 'rgba(255,107,108,0.1)' : 'rgba(78,255,196,0.1)',
+                  color: error ? '#FF6B6C' : '#4EFFC4',
+                  border: `1px solid ${error ? 'rgba(255,107,108,0.3)' : 'rgba(78,255,196,0.3)'}`,
+                }}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                {error ?? message}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {/* Submit button */}
           <motion.button
-            onClick={handleSignIn}
+            onClick={handleSubmit}
             disabled={loading}
             className="w-full py-4 rounded-xl font-display text-xl relative overflow-hidden"
             style={{
@@ -282,11 +362,11 @@ export function LoginScreen() {
                     transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
                     style={{ display: 'inline-block', width: 18, height: 18, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'rgba(255,255,255,0.6)', borderRadius: '50%' }}
                   />
-                  SIGNING IN...
+                  {mode === 'signin' ? 'SIGNING IN...' : 'CREATING...'}
                 </motion.span>
               ) : (
                 <motion.span key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  SIGN IN →
+                  {mode === 'signin' ? 'SIGN IN →' : 'CREATE ACCOUNT →'}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -301,14 +381,29 @@ export function LoginScreen() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          Don't have an account?{' '}
-          <button
-            className="font-bold hover:underline"
-            style={{ color: '#FF6BA8' }}
-            onClick={() => navigate('/onboarding/welcome')}
-          >
-            Create one
-          </button>
+          {mode === 'signin' ? (
+            <>
+              Don't have an account?{' '}
+              <button
+                className="font-bold hover:underline"
+                style={{ color: '#FF6BA8' }}
+                onClick={() => { setMode('signup'); setError(null); setMessage(null); }}
+              >
+                Sign up
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                className="font-bold hover:underline"
+                style={{ color: '#FF6BA8' }}
+                onClick={() => { setMode('signin'); setError(null); setMessage(null); }}
+              >
+                Sign in
+              </button>
+            </>
+          )}
         </motion.p>
       </motion.div>
 

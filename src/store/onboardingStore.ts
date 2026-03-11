@@ -11,6 +11,9 @@ const loadSessionPhotos = (): string[] => {
 };
 
 export interface OnboardingState {
+  // Auth
+  userId: string | null;
+
   // Avatar
   character: string | null;
   element: string | null;
@@ -48,6 +51,7 @@ export interface OnboardingState {
 }
 
 interface OnboardingActions {
+  setUserId: (userId: string | null) => void;
   updateAvatar: (character: string, element: string, affiliation: string) => void;
   updateBasics: (data: {
     name: string;
@@ -68,6 +72,7 @@ interface OnboardingActions {
 }
 
 const initialState: OnboardingState = {
+  userId: null,
   character: null,
   element: null,
   affiliation: null,
@@ -95,6 +100,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
   persist(
     (set) => ({
       ...initialState,
+
+      setUserId: (userId) => set({ userId }),
 
       updateAvatar: (character, element, affiliation) =>
         set({ character, element, affiliation }),
