@@ -1,7 +1,7 @@
 /**
  * Game Picker – choose which game to play (Guess Who or Dot Dash)
  */
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 interface GameOption {
@@ -80,6 +80,15 @@ const GAMES: GameOption[] = [
 
 export function GamePicker() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const matchId = (location.state as { matchId?: string } | null)?.matchId;
+
+  const handleGameSelect = (route: string) => {
+    if (matchId) {
+      localStorage.setItem('pending_match_id', matchId);
+    }
+    navigate(route);
+  };
 
   return (
     <div
@@ -136,7 +145,7 @@ export function GamePicker() {
           {GAMES.map((game, idx) => (
             <motion.button
               key={game.id}
-              onClick={() => navigate(game.route)}
+              onClick={() => handleGameSelect(game.route)}
               className="group relative rounded-3xl p-6 text-left overflow-hidden transition-all"
               style={{
                 background: 'rgba(255,255,255,0.05)',

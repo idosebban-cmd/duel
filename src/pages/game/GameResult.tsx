@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/gameStore';
@@ -30,6 +30,23 @@ export function GameResult() {
 
   const didWin = payload?.winner === myId;
 
+  // Compute character info early (needed by auto-redirect useEffect)
+  const gameState = store.gameState;
+  const player1SecretId = payload?.player1SecretId ?? '';
+  const player2SecretId = payload?.player2SecretId ?? '';
+  const characters = payload?.characters ?? [];
+  const actualMySecretId = gameState?.me.secretCharacterId ?? player1SecretId;
+  const actualOpponentSecretId = gameState?.opponent
+    ? (actualMySecretId === player1SecretId ? player2SecretId : player1SecretId)
+    : player2SecretId;
+  const opponentChar = characters.find((c) => c.id === actualOpponentSecretId);
+  const opponentName = gameState?.opponent.name ?? 'Opponent';
+
+  // Detect first game with this match
+  const matchId = localStorage.getItem('pending_match_id');
+  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+  const [showChatUnlock, setShowChatUnlock] = useState(false);
+
   // Redirect to home if no payload
   useEffect(() => {
     if (!payload) {
@@ -37,25 +54,32 @@ export function GameResult() {
     }
   }, [payload, navigate]);
 
+  // Auto-redirect to chat after 3s for first game with this match
+  useEffect(() => {
+    if (!payload || !isFirstGame || !matchId) return;
+
+    const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
+    const redirectTimer = setTimeout(() => {
+      localStorage.setItem(`first_game_played_${matchId}`, 'true');
+      localStorage.removeItem('pending_match_id');
+      navigate('/chat', { state: { name: opponentName, character: opponentChar?.attributes?.type } });
+    }, 3000);
+
+    return () => {
+      clearTimeout(unlockTimer);
+      clearTimeout(redirectTimer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload, isFirstGame, matchId]);
+
   if (!payload) return null;
 
-  const { characters, player1SecretId, player2SecretId, winner, forfeit } = payload;
-
-  // The server sends player1SecretId and player2SecretId
-  // We need to figure out which one is "mine" from the store's gameState
-  const gameState = store.gameState;
-  const actualMySecretId = gameState?.me.secretCharacterId ?? player1SecretId;
-  const actualOpponentSecretId = gameState?.opponent
-    ? (actualMySecretId === player1SecretId ? player2SecretId : player1SecretId)
-    : player2SecretId;
+  const { winner, forfeit } = payload;
 
   const myChar = characters.find((c) => c.id === actualMySecretId);
-  const opponentChar = characters.find((c) => c.id === actualOpponentSecretId);
   const guessedChar = payload.guessedCharacterId
     ? characters.find((c) => c.id === payload.guessedCharacterId)
     : null;
-
-  const opponentName = gameState?.opponent.name ?? 'Opponent';
 
   return (
     <div
@@ -198,20 +222,60 @@ export function GameResult() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
         >
-          <motion.button
-            className="w-full py-4 rounded-2xl font-display font-extrabold text-xl"
-            style={{
-              background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
-              border: '4px solid rgba(255,255,255,0.2)',
-              color: '#12122A',
-              boxShadow: '0 0 24px rgba(78,255,196,0.4), 4px 4px 0 rgba(0,0,0,0.3)',
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/chat', { state: { name: opponentName, character: opponentChar?.attributes?.type } })}
-          >
-            💬 Start Chatting
-          </motion.button>
+          {isFirstGame ? (
+            /* First game: auto-redirect banner */
+            <motion.div
+              className="w-full py-4 rounded-2xl text-center"
+              style={{
+                background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+                border: '4px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 0 24px rgba(78,255,196,0.4)',
+              }}
+            >
+              {showChatUnlock ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <p className="font-display font-extrabold text-lg" style={{ color: '#12122A' }}>
+                    Chat unlocked! Opening chat...
+                  </p>
+                  <div className="flex gap-1 mt-1">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: '#12122A' }}
+                        animate={{ opacity: [0.3, 1, 0.3] }}
+                        transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              ) : (
+                <p className="font-display font-extrabold text-xl" style={{ color: '#12122A' }}>
+                  💬 Game over!
+                </p>
+              )}
+            </motion.div>
+          ) : (
+            /* Subsequent games: normal button */
+            <motion.button
+              className="w-full py-4 rounded-2xl font-display font-extrabold text-xl"
+              style={{
+                background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+                border: '4px solid rgba(255,255,255,0.2)',
+                color: '#12122A',
+                boxShadow: '0 0 24px rgba(78,255,196,0.4), 4px 4px 0 rgba(0,0,0,0.3)',
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/chat', { state: { name: opponentName, character: opponentChar?.attributes?.type } })}
+            >
+              💬 Start Chatting
+            </motion.button>
+          )}
 
           <motion.button
             className="w-full py-3 rounded-2xl font-display font-bold text-base"
