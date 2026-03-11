@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getDiscoverProfiles } from '../lib/database';
+import { getDiscoverProfiles, recordSwipe } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1216,7 +1216,18 @@ export function DiscoverScreen() {
     const profile = filteredProfiles[currentIndex];
     setCurrentIndex((i) => i + 1);
     setDisabled(false);
-    if (dir === 'right' && profile.willMatch) {
+
+    if (user && typeof profile.id === 'string') {
+      // Real DB profile — record swipe and check for match
+      if (dir === 'right') {
+        recordSwipe(user.id, profile.id, 'like').then(({ matched }) => {
+          if (matched) window.setTimeout(() => setMatchProfile(profile), 100);
+        });
+      } else {
+        recordSwipe(user.id, profile.id, 'pass');
+      }
+    } else if (dir === 'right' && profile.willMatch) {
+      // Fallback for fake seed profiles
       window.setTimeout(() => setMatchProfile(profile), 100);
     }
   };

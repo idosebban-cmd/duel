@@ -81,6 +81,53 @@ create trigger profiles_updated_at
   before update on profiles
   for each row execute procedure update_updated_at();
 
+-- ─── Swipes table ────────────────────────────────────────────────────────────
+create table if not exists swipes (
+  id         uuid        default gen_random_uuid() primary key,
+  user_id    uuid        references profiles(id) on delete cascade not null,
+  target_id  uuid        references profiles(id) on delete cascade not null,
+  action     text        check (action in ('like', 'pass')) not null,
+  created_at timestamptz default now(),
+  unique(user_id, target_id)
+);
+
+alter table swipes enable row level security;
+
+-- Only owner can read/write their own swipes
+create policy "Users can view their own swipes"
+  on swipes for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own swipes"
+  on swipes for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own swipes"
+  on swipes for update
+  using (auth.uid() = user_id);
+
+-- ─── Matches table ────────────────────────────────────────────────────────────
+-- user1_id < user2_id enforced by insert logic so each pair has one row
+create table if not exists matches (
+  id            uuid        default gen_random_uuid() primary key,
+  user1_id      uuid        references profiles(id) on delete cascade not null,
+  user2_id      uuid        references profiles(id) on delete cascade not null,
+  matched_at    timestamptz default now(),
+  game_selected text,
+  unique(user1_id, user2_id)
+);
+
+alter table matches enable row level security;
+
+-- Both matched users can read the match row
+create policy "Matched users can view their matches"
+  on matches for select
+  using (auth.uid() = user1_id or auth.uid() = user2_id);
+
+create policy "Users can insert matches"
+  on matches for insert
+  with check (auth.uid() = user1_id or auth.uid() = user2_id);
+
 -- ─── Storage bucket ───────────────────────────────────────────────────────────
 -- Run these in the Supabase Dashboard → Storage → New Bucket:
 --   Name: "photos"
