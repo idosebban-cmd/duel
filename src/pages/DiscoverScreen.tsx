@@ -5,6 +5,7 @@ import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { getDiscoverProfiles, recordSwipe } from '../lib/database';
 import type { UserProfile } from '../lib/database';
+import type { UserPrompt } from '../store/onboardingStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +33,12 @@ interface Profile {
   pets: string;
   exercise: string;
   favoriteGames: string[];
+  prompts?: UserPrompt[];
 }
+
+const PROMPT_CATEGORY_COLORS: Record<string, string> = {
+  games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
+};
 
 interface FilterState {
   ageMin: number;
@@ -219,8 +225,104 @@ function dbProfileToProfile(p: UserProfile): Profile {
     pets:          p.pets          ?? '',
     exercise:      p.exercise      ?? '',
     favoriteGames: p.favorite_games ?? [],
+    prompts: [],
   };
 }
+
+// ─── Prompt data for fake profiles ───────────────────────────────────────────
+
+const PROFILE_PROMPTS: Record<number, UserPrompt[]> = {
+  1:  [{ id:1,  category:'games',       icon:'🎮', question:"I'll always beat you at...",                   answer:"Pictionary. I see the world in images — you never stood a chance." },
+       { id:26, category:'fun',         icon:'🎲', question:"My guilty pleasure is...",                     answer:"Judging other people's wrong trivia answers out loud. Silently. Then loudly." },
+       { id:36, category:'personality', icon:'💭', question:"On a Sunday you'll find me...",                answer:"Hunting for the best graffiti to borrow inspiration from. It's research." }],
+  2:  [{ id:9,  category:'games',       icon:'🎮', question:"My go-to move in any game is...",              answer:"Put on the right track mid-match to throw your concentration completely." },
+       { id:24, category:'fun',         icon:'🎲', question:"Something I'll never shut up about...",        answer:"Why vinyl actually sounds better. Come fight me with a Bluetooth speaker." },
+       { id:38, category:'personality', icon:'💭', question:"I geek out over...",                           answer:"The precise feeling when a set peaks and the room loses its mind at 2am." }],
+  3:  [{ id:10, category:'games',       icon:'🎮', question:"I'd describe my gaming style as...",           answer:"Methodical, intentional, and backed by peer-reviewed decision theory." },
+       { id:23, category:'fun',         icon:'🎲', question:"My hot take that gets people riled up...",     answer:"The trolley problem is actually fun. Name the time and I'll bring the whiteboard." },
+       { id:48, category:'personality', icon:'💭', question:"You'll know we vibe if...",                    answer:"You think overthinking is a love language. Bonus if you cite your sources." }],
+  4:  [{ id:1,  category:'games',       icon:'🎮', question:"I'm weirdly competitive about...",             answer:"Tetris. My personal best is 112 lines and I need you to know that." },
+       { id:21, category:'fun',         icon:'🎲', question:"My most useless skill is...",                  answer:"Estimating exact weights by touch. Bodyweight barbells, bags of rice, people." },
+       { id:36, category:'personality', icon:'💭', question:"On a Sunday you'll find me...",                answer:"At the gym at 7am, or horizontal on the sofa until noon. No in between." }],
+  5:  [{ id:2,  category:'games',       icon:'🎮', question:"The game I'll always beat you at is...",       answer:"Wordle in 2 tries. It's not luck. Don't ask me to explain it." },
+       { id:25, category:'fun',         icon:'🎲', question:"The hill I'll die on is...",                   answer:"Birds deserve more respect than dogs get. Unpopular. Correct." },
+       { id:36, category:'personality', icon:'💭', question:"On a Sunday you'll find me...",                answer:"In a cold river with no phone and absolutely zero regrets." }],
+  6:  [{ id:4,  category:'games',       icon:'🎮', question:"My secret gaming talent is...",                answer:"Knowing the win probability of every move before I make it. It's a curse." },
+       { id:27, category:'fun',         icon:'🎲', question:"I'm secretly a nerd about...",                 answer:"Pasta shapes and which sauce geometrically suits each one. It matters." },
+       { id:41, category:'personality', icon:'💭', question:"I'm looking for someone who can...",           answer:"Appreciate a good compiler error joke. Or at least pretend convincingly." }],
+  7:  [{ id:13, category:'games',       icon:'🎮', question:"The game I'm terrible at but love anyway...",  answer:"Guitar Hero. I studied violin for 12 years. My fingers disagree completely." },
+       { id:31, category:'fun',         icon:'🎲', question:"My party trick is...",                         answer:"Naming any classical piece within 3 notes. Horrifyingly useful at parties." },
+       { id:46, category:'personality', icon:'💭', question:"My chaotic energy comes out when...",          answer:"It's 2am and someone says 'just one more game'. This is when I transform." }],
+  8:  [{ id:10, category:'games',       icon:'🎮', question:"I'd describe my gaming style as...",           answer:"Chess brain, pasta heart. Strategic until I smell something delicious." },
+       { id:24, category:'fun',         icon:'🎲', question:"Something I'll never shut up about...",        answer:"The Fibonacci sequence in architecture. It's literally everywhere. LOOK." },
+       { id:37, category:'personality', icon:'💭', question:"My perfect day includes...",                   answer:"A chaotic farmers market, a cooking disaster, and winning the board game anyway." }],
+  9:  [{ id:2,  category:'games',       icon:'🎮', question:"The game I'll always beat you at is...",       answer:"Scrabble. I design words for a living. You're playing on my turf." },
+       { id:35, category:'fun',         icon:'🎲', question:"My weirdest flex is...",                       answer:"I once made a runway look out of bubble wrap and a stapler. It got applause." },
+       { id:38, category:'personality', icon:'💭', question:"I geek out over...",                           answer:"Where fashion and architecture overlap. They're both about habitable space." }],
+  10: [{ id:1,  category:'games',       icon:'🎮', question:"I'm weirdly competitive about...",             answer:"Pub quiz. My team has an unbroken win streak. I'm not allowed to mention it." },
+       { id:21, category:'fun',         icon:'🎲', question:"My most useless skill is...",                  answer:"Every Tudor monarch in order with dates. At will. I am so sorry." },
+       { id:47, category:'personality', icon:'💭', question:"I'm at my best when...",                       answer:"Explaining why the Magna Carta still applies today. Yes, today. Sit down." }],
+  11: [{ id:11, category:'games',       icon:'🎮', question:"The game that best represents me is...",       answer:"Mahjong. Slow build, deceptive patterns, devastating finale. That's the vibe." },
+       { id:29, category:'fun',         icon:'🎲', question:"My unpopular opinion is...",                   answer:"Instant ramen is genuinely an art form if you approach it with respect." },
+       { id:36, category:'personality', icon:'💭', question:"On a Sunday you'll find me...",                answer:"In my studio making things that unsettle me slightly. That's how I know it's working." }],
+  12: [{ id:3,  category:'games',       icon:'🎮', question:"My most embarrassing game rage quit moment...", answer:"Threw a chess clock across the room. Full throw. Still lost." },
+       { id:27, category:'fun',         icon:'🎲', question:"I'm secretly a nerd about...",                 answer:"Sourdough hydration ratios at 2am. 78% is the answer. Don't @ me." },
+       { id:46, category:'personality', icon:'💭', question:"My chaotic energy comes out when...",          answer:"Someone tells a startup to 'move fast and break things'. I have questions." }],
+  13: [{ id:2,  category:'games',       icon:'🎮', question:"The game I'll always beat you at is...",       answer:"Boggle. My forager vocabulary has unusual words. They all count." },
+       { id:23, category:'fun',         icon:'🎲', question:"My hot take that gets people riled up...",     answer:"Wordle is more epistemically valid than astrology. Marginally." },
+       { id:45, category:'personality', icon:'💭', question:"I value people who...",                        answer:"Know the difference between a good mushroom and a bad one. Practically important." }],
+  14: [{ id:20, category:'games',       icon:'🎮', question:"I take this game way too seriously...",        answer:"Catan. I've been called insufferable. By referees. Twice." },
+       { id:24, category:'fun',         icon:'🎲', question:"Something I'll never shut up about...",        answer:"Man-marking as an art form. It's chess on grass. Fight me." },
+       { id:41, category:'personality', icon:'💭', question:"I'm looking for someone who can...",           answer:"Keep up with me on the pitch and the board. One of those is optional." }],
+  15: [{ id:6,  category:'games',       icon:'🎮', question:"I once stayed up until 3am playing...",        answer:"Beat Saber while blaming Mercury retrograde for my score. It was valid." },
+       { id:29, category:'fun',         icon:'🎲', question:"My unpopular opinion is...",                   answer:"UX design and astrology both predict human behaviour. One just has better data." },
+       { id:37, category:'personality', icon:'💭', question:"My perfect day includes...",                   answer:"Designing something beautiful, then abandoning it to read my chart until 1am." }],
+  16: [{ id:9,  category:'games',       icon:'🎮', question:"My go-to move in any game is...",              answer:"Find the underlying pattern before anyone else has even read the rules." },
+       { id:30, category:'fun',         icon:'🎲', question:"I have an irrational fear of...",              answer:"Escape rooms with under 10 minutes left. It's not irrational. It's visceral." },
+       { id:38, category:'personality', icon:'💭', question:"I geek out over...",                           answer:"Deep sea creatures. They're basically aliens we've already found. LOOK AT THEM." }],
+  17: [{ id:12, category:'games',       icon:'🎮', question:"If I could only play one game forever...",     answer:"Poker. In an airport. Preferably with someone who doesn't speak my language." },
+       { id:35, category:'fun',         icon:'🎲', question:"My weirdest flex is...",                       answer:"I've eaten fermented shark and won the resulting bet. Iceland changed me." },
+       { id:36, category:'personality', icon:'💭', question:"On a Sunday you'll find me...",                answer:"Recovering from somewhere extraordinary or planning the next one. No in between." }],
+  18: [{ id:5,  category:'games',       icon:'🎮', question:"The last game that made me laugh was...",      answer:"Codenames when the clue was so abstract it looped back to genius." },
+       { id:34, category:'fun',         icon:'🎲', question:"Something that always cheers me up...",        answer:"Solving an escape room clue by complete accident and pretending I meant to." },
+       { id:37, category:'personality', icon:'💭', question:"My perfect day includes...",                   answer:"Writing something honest, then losing myself completely in a puzzle room." }],
+  19: [{ id:8,  category:'games',       icon:'🎮', question:"The one game I refuse to play is...",          answer:"Uno. I've seen friendships end. I've seen tables flip. Never again." },
+       { id:27, category:'fun',         icon:'🎲', question:"I'm secretly a nerd about...",                 answer:"Why Eurogames are mechanically superior. I have a 47-page Google Doc." },
+       { id:42, category:'personality', icon:'💭', question:"The way to my heart is...",                    answer:"Know at least two games that aren't Monopoly. That's literally the bar." }],
+  20: [{ id:10, category:'games',       icon:'🎮', question:"I'd describe my gaming style as...",           answer:"Slow, deliberate, deeply intentional. And somehow still winning. Somehow." },
+       { id:21, category:'fun',         icon:'🎲', question:"My most useless skill is...",                  answer:"Identifying clay type purely by feel and smell. Useless. Accurate." },
+       { id:36, category:'personality', icon:'💭', question:"On a Sunday you'll find me...",                answer:"In the studio making something with my hands and a very specific kind of silence." }],
+  21: [{ id:4,  category:'games',       icon:'🎮', question:"My secret gaming talent is...",                answer:"I built a spreadsheet to track my win rates across 14 games. It's 68%." },
+       { id:23, category:'fun',         icon:'🎲', question:"My hot take that gets people riled up...",     answer:"BoardGameGeek ratings are basically statistically significant vibes." },
+       { id:47, category:'personality', icon:'💭', question:"I'm at my best when...",                       answer:"There's a complex problem, good data, and a reasonable amount of snacks." }],
+  22: [{ id:17, category:'games',       icon:'🎮', question:"My signature victory dance is...",             answer:"The one I choreographed specifically for winning. It has levels." },
+       { id:32, category:'fun',         icon:'🎲', question:"I'm worse than everyone at...",                answer:"Hiding how happy I am when I win. My face betrays me completely." },
+       { id:48, category:'personality', icon:'💭', question:"You'll know we vibe if...",                    answer:"You can keep up. No guarantees that's possible, but I'm rooting for you." }],
+  23: [{ id:2,  category:'games',       icon:'🎮', question:"The game I'll always beat you at is...",       answer:"Wordle. My streak is not a topic for discussion. I will not elaborate." },
+       { id:21, category:'fun',         icon:'🎲', question:"My most useless skill is...",                  answer:"Staying completely still for 20 minutes waiting for the right moment. It transfers." },
+       { id:38, category:'personality', icon:'💭', question:"I geek out over...",                           answer:"The geometry of spider webs at golden hour. It's maths and it's perfect." }],
+  24: [{ id:1,  category:'games',       icon:'🎮', question:"I'm weirdly competitive about...",             answer:"Trivia nights. I have a system. The system is ethically ambiguous." },
+       { id:26, category:'fun',         icon:'🎲', question:"My guilty pleasure is...",                     answer:"Smelling wine, naming the vintage in my head, then lying about the price." },
+       { id:42, category:'personality', icon:'💭', question:"The way to my heart is...",                    answer:"Order something I haven't made before. Tell me why. Mean it." }],
+  25: [{ id:51, category:'playful',     icon:'🔥', question:"Bet you can't beat me at...",                  answer:"Pictionary. I have a structural advantage and zero intention of being fair." },
+       { id:31, category:'fun',         icon:'🎲', question:"My party trick is...",                         answer:"Anyone's face in 30 seconds. Includes you. Especially you." },
+       { id:22, category:'fun',         icon:'🎲', question:"I'm the type of person who...",                answer:"Draws fan art of people I've just met. It's affectionate. Mostly." }],
+  26: [{ id:20, category:'games',       icon:'🎮', question:"I take this game way too seriously...",        answer:"Chess. I've studied seven openings. The Sicilian and I have an understanding." },
+       { id:25, category:'fun',         icon:'🎲', question:"The hill I'll die on is...",                   answer:"Parks are the greatest public infrastructure ever built. They're perfect." },
+       { id:47, category:'personality', icon:'💭', question:"I'm at my best when...",                       answer:"There's a board game, something cold to drink, and genuinely no time pressure." }],
+  27: [{ id:11, category:'games',       icon:'🎮', question:"The game that best represents me is...",       answer:"Poker. I never show my hand. In games or in life. You'll figure it out eventually." },
+       { id:23, category:'fun',         icon:'🎲', question:"My hot take that gets people riled up...",     answer:"Your rising sign tells you more than your sun sign. I'll read yours if you're scared." },
+       { id:41, category:'personality', icon:'💭', question:"I'm looking for someone who can...",           answer:"Appreciate that chaos can be deeply, beautifully organised. Like a natal chart." }],
+  28: [{ id:3,  category:'games',       icon:'🎮', question:"My most embarrassing game rage quit moment...", answer:"Walked out of a chess game mid-match. Twice. One of them was on camera." },
+       { id:27, category:'fun',         icon:'🎲', question:"I'm secretly a nerd about...",                 answer:"Narrative structure in absolutely everything. Including board games. Especially board games." },
+       { id:40, category:'personality', icon:'💭', question:"My idea of a good time is...",                 answer:"Dark room, interesting person, no one checking their phone. All three required." }],
+  29: [{ id:13, category:'games',       icon:'🎮', question:"The game I'm terrible at but love anyway...",  answer:"Guitar Hero. My reviews of real concerts are better than my scores. Not the same skill." },
+       { id:24, category:'fun',         icon:'🎲', question:"Something I'll never shut up about...",        answer:"Why the second album is always the most interesting. Always. I will argue this." },
+       { id:48, category:'personality', icon:'💭', question:"You'll know we vibe if...",                    answer:"You have actual opinions about music you'd genuinely defend in an argument." }],
+  30: [{ id:2,  category:'games',       icon:'🎮', question:"The game I'll always beat you at is...",       answer:"Any escape room I didn't design myself. And honestly probably those too." },
+       { id:35, category:'fun',         icon:'🎲', question:"My weirdest flex is...",                       answer:"I've never not solved one of my own puzzles. My beta testers tell a different story." },
+       { id:41, category:'personality', icon:'💭', question:"I'm looking for someone who can...",           answer:"Spot a deliberate red herring and then choose to follow it anyway. That's the energy." }],
+};
 
 // ─── Profile data (30 fake UK profiles, ~20% willMatch) ──────────────────────
 
@@ -255,7 +357,7 @@ const PROFILES: Profile[] = [
   { id: 28, name: 'Samir',  age: 28, location: 'Kilburn',           distance: '5.2 mi', distanceKm: 8.4,  character: 'dragon',  element: 'fire',     affiliation: 'travel',   bio: "Filmmaker and terrible loser (genuinely working on it). My best dates involve dark rooms and good stories. My worst involve someone who refuses to explain why they made that move.",          games: ['trivia', 'word', 'party'],       lookingFor: 'open',       willMatch: false, duelGames: ['guess-who'],                            activityLevel: 'older', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Trivial Pursuit', 'Codenames'] },
   { id: 29, name: 'Rosa',   age: 24, location: 'Brixton',           distance: '2.6 mi', distanceKm: 4.2,  character: 'cat',     element: 'electric', affiliation: 'music',    bio: "Music journalist and rhythm game addict. I review concerts for a living and lose at Guitar Hero for fun. My Spotify wrapped is embarrassing and I refuse to share it.",              games: ['party', 'video', 'word'],        lookingFor: 'casual',     willMatch: false, duelGames: ['dot-dash', 'word-blitz'],               activityLevel: 'today', kids: "Don't want",    drinking: 'Often',    smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Guitar Hero', 'Rock Band', 'Just Dance'] },
   { id: 30, name: 'Ben',    age: 31, location: 'Aldgate',           distance: '1.3 mi', distanceKm: 2.1,  character: 'knight',  element: 'earth',    affiliation: 'academia', bio: "Medieval historian and escape room designer. I literally build the puzzles you play. Good luck. I've never lost at one of my own rooms. I've also never told anyone who has.",           games: ['puzzles', 'strategy', 'board'],  lookingFor: 'long-term',  willMatch: true,  duelGames: ['guess-who', 'dot-dash', 'word-blitz'],  activityLevel: 'week',  kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Escape room games', 'Catan'] },
-];
+].map(p => ({ ...p, prompts: PROFILE_PROMPTS[p.id as number] ?? [] }));
 
 // ─── Profile card content (compact, for stack) ───────────────────────────────
 
@@ -321,6 +423,25 @@ function ProfileCard({ profile }: { profile: Profile }) {
         >
           {profile.bio}
         </p>
+        {/* Prompt preview */}
+        {profile.prompts && profile.prompts.length > 0 && (() => {
+          const p = profile.prompts[0];
+          const color = PROMPT_CATEGORY_COLORS[p.category] ?? '#4EFFC4';
+          return (
+            <div
+              className="rounded-lg px-2.5 py-2"
+              style={{ background: `${color}10`, border: `1.5px solid ${color}40` }}
+            >
+              <p className="font-body text-[10px] mb-0.5" style={{ color: `${color}99` }}>{p.question}</p>
+              <p
+                className="font-body text-xs leading-snug overflow-hidden"
+                style={{ color: 'rgba(255,255,255,0.8)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
+              >
+                {p.answer}
+              </p>
+            </div>
+          );
+        })()}
         <div className="flex items-center gap-1.5">
           {profile.games.slice(0, 3).map((game) => (
             <div
@@ -537,6 +658,38 @@ function ProfileDetailView({
             {profile.bio}
           </p>
         </div>
+
+        {/* Prompts */}
+        {profile.prompts && profile.prompts.length > 0 && (
+          <div className="px-5 pt-5">
+            <Divider />
+            <h2 className="font-display text-lg mb-4" style={{ color: '#00F5FF', textShadow: '0 0 10px rgba(0,245,255,0.4)' }}>
+              GET TO KNOW ME
+            </h2>
+            <div className="flex flex-col gap-3">
+              {profile.prompts.map((p) => {
+                const color = PROMPT_CATEGORY_COLORS[p.category] ?? '#4EFFC4';
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-xl p-4"
+                    style={{
+                      background: '#0A0A1E',
+                      border: `2px solid ${color}`,
+                      boxShadow: `0 0 12px ${color}20, 3px 3px 0 rgba(0,0,0,0.4)`,
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{p.icon}</span>
+                      <p className="font-body text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>{p.question}</p>
+                    </div>
+                    <p className="font-display text-base leading-snug" style={{ color: '#FFFFFF' }}>{p.answer}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Stats / The Basics */}
         <div className="px-5 pt-5">

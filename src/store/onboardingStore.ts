@@ -10,6 +10,14 @@ const loadSessionPhotos = (): string[] => {
   }
 };
 
+export interface UserPrompt {
+  id: number;
+  category: 'games' | 'fun' | 'personality' | 'playful';
+  icon: string;
+  question: string;
+  answer: string;
+}
+
 export interface OnboardingState {
   // Auth
   userId: string | null;
@@ -45,6 +53,9 @@ export interface OnboardingState {
   pets: string | null;
   exercise: string | null;
 
+  // Prompts
+  userPrompts: UserPrompt[];
+
   // Navigation
   currentStep: number;
   completedSteps: number[];
@@ -66,6 +77,7 @@ interface OnboardingActions {
   updateFavoriteGames: (favoriteGames: string[]) => void;
   updateRelationship: (id: string) => void;
   updateLifestyle: (field: keyof Pick<OnboardingState, 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise'>, value: string) => void;
+  updatePrompts: (prompts: UserPrompt[]) => void;
   completeStep: (step: number) => void;
   setCurrentStep: (step: number) => void;
   reset: () => void;
@@ -92,6 +104,7 @@ const initialState: OnboardingState = {
   cannabis: null,
   pets: null,
   exercise: null,
+  userPrompts: [],
   currentStep: 0,
   completedSteps: [],
 };
@@ -138,6 +151,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
       updateLifestyle: (field, value) =>
         set((state) => ({ ...state, [field]: value })),
 
+      updatePrompts: (prompts) => set({ userPrompts: prompts }),
+
       completeStep: (step) =>
         set((state) => ({
           completedSteps: state.completedSteps.includes(step)
@@ -154,7 +169,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
-      version: 1,
+      version: 2,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -182,5 +197,6 @@ export const STEPS = [
   { id: 4, path: '/onboarding/games', label: 'Games' },
   { id: 5, path: '/onboarding/relationship-goals', label: 'Goals' },
   { id: 6, path: '/onboarding/lifestyle', label: 'Lifestyle' },
-  { id: 7, path: '/onboarding/preview', label: 'Preview' },
+  { id: 7, path: '/onboarding/prompts', label: 'Prompts' },
+  { id: 8, path: '/onboarding/preview', label: 'Preview' },
 ] as const;

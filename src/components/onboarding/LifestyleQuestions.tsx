@@ -100,7 +100,7 @@ export function LifestyleQuestions() {
       setCurrentQ((q) => q + 1);
     } else {
       completeStep(6);
-      navigate('/onboarding/preview');
+      navigate('/onboarding/prompts');
     }
     setIsSelecting(false);
   };
@@ -121,7 +121,7 @@ export function LifestyleQuestions() {
       setCurrentQ((q) => q + 1);
     } else {
       completeStep(6);
-      navigate('/onboarding/preview');
+      navigate('/onboarding/prompts');
     }
   };
 

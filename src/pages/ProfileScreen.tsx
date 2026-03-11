@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { getProfile, getPhotos } from '../lib/database';
 import type { UserProfile } from '../lib/database';
+import type { UserPrompt } from '../store/onboardingStore';
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
 
@@ -86,6 +87,44 @@ const goalColors: Record<string, string> = {
   'not-sure': '#B565FF',
   'open': '#FFE66D',
 };
+
+const CATEGORY_COLORS: Record<string, string> = {
+  games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
+};
+
+const MOCK_PROMPTS: UserPrompt[] = [
+  { id: 1, category: 'games', icon: '🎮', question: "I'm weirdly competitive about...", answer: "Monopoly. I will bankrupt you with a smile on my face. 😈" },
+  { id: 21, category: 'fun', icon: '🎲', question: "My most useless skill is...", answer: "I can beatbox the Mario theme song backwards." },
+  { id: 36, category: 'personality', icon: '💭', question: "I'm the type of person who...", answer: "Always forgets why I walked into a room but remembers your coffee order forever." },
+];
+
+// ─── Prompt card ──────────────────────────────────────────────────────────────
+
+function PromptCard({ prompt }: { prompt: UserPrompt }) {
+  const color = CATEGORY_COLORS[prompt.category] ?? '#4EFFC4';
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl p-4 relative overflow-hidden"
+      style={{
+        background: '#0A1628',
+        border: `2px solid ${color}`,
+        boxShadow: `0 0 14px ${color}25, 3px 3px 0 rgba(0,0,0,0.4)`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg">{prompt.icon}</span>
+        <p className="font-body text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          {prompt.question}
+        </p>
+      </div>
+      <p className="font-display text-base leading-snug" style={{ color: '#FFFFFF' }}>
+        {prompt.answer}
+      </p>
+    </motion.div>
+  );
+}
 
 // ─── Mock defaults (shown when store fields are blank) ────────────────────────
 
@@ -321,6 +360,7 @@ export function ProfileScreen() {
   const cannabis    = dbProfile?.cannabis    || store.cannabis    || MOCK.cannabis;
   const pets        = dbProfile?.pets        || store.pets        || MOCK.pets;
   const exercise    = dbProfile?.exercise    || store.exercise    || MOCK.exercise;
+  const prompts     = store.userPrompts.length > 0 ? store.userPrompts : MOCK_PROMPTS;
 
   const lifestyle = { kids, drinking, smoking, cannabis, pets, exercise };
 
@@ -521,11 +561,27 @@ export function ProfileScreen() {
           </SectionCard>
         </motion.div>
 
-        {/* ── Avatar ──────────────────────────────────────────────────── */}
+        {/* ── Prompts ──────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16 }}
+        >
+          <SectionCard>
+            <SectionHeading label="Get To Know Me" onEdit={() => showToast('Profile editing coming soon')} />
+            <div className="flex flex-col gap-3">
+              {prompts.map((p) => (
+                <PromptCard key={p.id} prompt={p} />
+              ))}
+            </div>
+          </SectionCard>
+        </motion.div>
+
+        {/* ── Avatar ──────────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
         >
           <SectionCard>
             <SectionHeading label="Avatar" onEdit={() => showToast('Profile editing coming soon')} />
