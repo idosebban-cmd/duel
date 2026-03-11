@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shuffle, Pencil, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useOnboardingStore, type UserPrompt } from '../../store/onboardingStore';
 
 // ─── Prompt library ───────────────────────────────────────────────────────────
@@ -306,7 +306,6 @@ export function PromptsSelection() {
   };
 
   const handleSurpriseMe = () => {
-    const categories = ['games', 'fun', 'personality', 'playful'] as const;
     const picked: Omit<UserPrompt, 'answer'>[] = [];
     const shuffled = [...ALL_PROMPTS].sort(() => Math.random() - 0.5);
     const usedCategories = new Set<string>();
