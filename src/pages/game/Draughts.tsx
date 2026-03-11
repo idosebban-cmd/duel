@@ -236,10 +236,10 @@ function SetupScreen({ playerChar, onDone }: { playerChar: string; onDone: () =>
 }
 
 // ── Result screen ────────────────────────────────────────────────────────────
-function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings, onRematch, onBack }:{
+function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings, onRematch, onBack, onChat }:{
   result: 'player_wins' | 'bot_wins';
   playerCaptures: number; botCaptures: number; moves: number; playerKings: number;
-  onRematch: () => void; onBack: () => void;
+  onRematch: () => void; onBack: () => void; onChat: () => void;
 }) {
   const won = result === 'player_wins';
   return (
@@ -277,8 +277,13 @@ function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings,
         </div>
 
         {/* Buttons */}
-        <motion.button onClick={onRematch} className="w-full py-4 rounded-2xl font-display text-xl mb-3"
-          style={{ background: 'linear-gradient(135deg,#4EFFC4,#B565FF)', color: '#12122A', border: '3px solid rgba(255,255,255,0.2)', boxShadow: '0 0 24px rgba(78,255,196,0.4),4px 4px 0 rgba(0,0,0,0.35)' }}
+        <motion.button onClick={onChat} className="w-full py-4 rounded-2xl font-display text-xl mb-3"
+          style={{ background: 'linear-gradient(135deg,#00F5FF,#FF006E)', color: '#12122A', border: '3px solid rgba(255,255,255,0.2)', boxShadow: '0 0 28px rgba(0,245,255,0.45),4px 4px 0 rgba(0,0,0,0.35)' }}
+          whileTap={{ scale: 0.97 }}>
+          START CHATTING →
+        </motion.button>
+        <motion.button onClick={onRematch} className="w-full py-3 rounded-2xl font-display text-base mb-2"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
           whileTap={{ scale: 0.97 }}>
           REMATCH ↺
         </motion.button>
@@ -459,6 +464,10 @@ export function Draughts() {
             playerKings={playerKings}
             onRematch={handleRematch}
             onBack={() => navigate('/play')}
+            onChat={() => {
+              const mId = localStorage.getItem('pending_match_id');
+              navigate('/chat', mId ? { state: { matchId: mId } } : undefined);
+            }}
           />
         )}
       </AnimatePresence>

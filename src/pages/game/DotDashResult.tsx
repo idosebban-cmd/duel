@@ -45,7 +45,7 @@ export function DotDashResult() {
     const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
     const redirectTimer = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
-      localStorage.removeItem('pending_match_id');
+      // Keep pending_match_id so subsequent games can still reach chat
       navigate('/chat', { state: { matchId, name: oppName } });
     }, 3000);
 
@@ -248,12 +248,10 @@ export function DotDashResult() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
-                const mId = localStorage.getItem('pending_match_id');
-                if (mId) localStorage.removeItem('pending_match_id');
-                navigate('/chat', { state: { matchId: mId, name: opp.name } });
+                navigate('/chat', { state: { matchId, name: opp.name } });
               }}
             >
-              💬 Start Chatting
+              START CHATTING →
             </motion.button>
           )}
 
