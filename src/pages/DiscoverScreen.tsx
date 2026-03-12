@@ -1330,6 +1330,7 @@ function BottomNav({ onProfile, onMatches }: { onProfile: () => void; onMatches:
 export function DiscoverScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchProfile, setMatchProfile] = useState<Profile | null>(null);
+  const [fakeMatchId, setFakeMatchId] = useState<string | null>(null);
   const [disabled, setDisabled] = useState(false);
   const [swipeCommand, setSwipeCommand] = useState<'left' | 'right' | null>(null);
   const [expandedProfile, setExpandedProfile] = useState<Profile | null>(null);
@@ -1378,15 +1379,24 @@ export function DiscoverScreen() {
       // Real DB profile — record swipe and check for match
       if (dir === 'right') {
         recordSwipe(user.id, profile.id, 'like')
-          .then(({ matched }) => {
-            if (matched) window.setTimeout(() => setMatchProfile(profile), 100);
+          .then(({ matched, matchId: realMatchId }) => {
+            if (matched) {
+              if (realMatchId) {
+                setFakeMatchId(realMatchId);
+                localStorage.setItem('pending_match_id', realMatchId);
+              }
+              window.setTimeout(() => setMatchProfile(profile), 100);
+            }
           })
           .catch(() => {/* swipe lost — non-critical */});
       } else {
         recordSwipe(user.id, profile.id, 'pass').catch(() => {});
       }
     } else if (dir === 'right' && profile.willMatch) {
-      // Fallback for fake seed profiles
+      // Fallback for fake seed profiles – generate a local matchId so chat/games work
+      const fakeId = crypto.randomUUID();
+      setFakeMatchId(fakeId);
+      localStorage.setItem('pending_match_id', fakeId);
       window.setTimeout(() => setMatchProfile(profile), 100);
     }
   };
@@ -1519,7 +1529,10 @@ export function DiscoverScreen() {
             matchProfile={matchProfile}
             userCharacter={character ?? 'ghost'}
             onDismiss={() => setMatchProfile(null)}
-            onPlay={() => { setMatchProfile(null); navigate('/play'); }}
+            onPlay={() => {
+              setMatchProfile(null);
+              navigate('/play', fakeMatchId ? { state: { matchId: fakeMatchId } } : undefined);
+            }}
           />
         )}
       </AnimatePresence>
