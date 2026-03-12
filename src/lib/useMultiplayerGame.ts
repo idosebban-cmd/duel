@@ -96,7 +96,7 @@ export function useMultiplayerGame<S>({
         const match = await getMatchById(matchId);
         if (!match || cancelled) return;
 
-        const oppId = match.user1_id === myUserId ? match.user2_id : match.user1_id;
+        const oppId = match.user_a === myUserId ? match.user_b : match.user_a;
         if (!cancelled) setOpponentId(oppId);
 
         // 2. Create or join the game

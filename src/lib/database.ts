@@ -28,6 +28,8 @@ export interface UserProfile {
   cannabis: string | null;
   pets: string | null;
   exercise: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 }
 
@@ -104,6 +106,95 @@ export async function getDiscoverProfiles(userId: string): Promise<UserProfile[]
   }
 }
 
+// ─── Enhanced Discovery (with filters) ───────────────────────────────────────
+
+export interface DiscoveryFilters {
+  minAge?: number;
+  maxAge?: number;
+  gender?: string;
+  maxDistance?: number;
+}
+
+export async function getDiscoveryUsers(
+  currentUserId: string,
+  filters: DiscoveryFilters = {},
+): Promise<UserProfile[]> {
+  try {
+    // Get users already swiped on
+    const { data: swiped } = await supabase
+      .from('swipes')
+      .select('target_id')
+      .eq('user_id', currentUserId);
+
+    const swipedIds = new Set<string>(
+      swiped?.map((s: { target_id: string }) => s.target_id) ?? [],
+    );
+
+    // Build query — only complete profiles (must have name, age, character)
+    let query = supabase
+      .from('profiles')
+      .select('*')
+      .neq('id', currentUserId)
+      .not('name', 'is', null)
+      .not('age', 'is', null)
+      .not('character', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    // Apply age filters
+    if (filters.minAge) query = query.gte('age', filters.minAge);
+    if (filters.maxAge) query = query.lte('age', filters.maxAge);
+    // Apply gender filter
+    if (filters.gender) query = query.eq('gender', filters.gender);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Client-side filtering: exclude already-swiped
+    return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
+  } catch {
+    return [];
+  }
+}
+
+// ─── Location ────────────────────────────────────────────────────────────────
+
+export async function updateUserLocation(
+  userId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  try {
+    await supabase
+      .from('profiles')
+      .update({ latitude, longitude })
+      .eq('id', userId);
+  } catch {
+    // Non-critical — location is best-effort
+  }
+}
+
+// ─── Distance calculation (Haversine) ────────────────────────────────────────
+
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 // ─── Swipes + Matching ────────────────────────────────────────────────────────
 
 export async function recordSwipe(
@@ -132,7 +223,7 @@ export async function recordSwipe(
 
     const { data: match } = await supabase
       .from('matches')
-      .upsert({ user1_id: user1Id, user2_id: user2Id }, { onConflict: 'user1_id,user2_id' })
+      .upsert({ user_a: user1Id, user_b: user2Id }, { onConflict: 'user_a,user_b' })
       .select('id')
       .maybeSingle();
 
@@ -154,16 +245,16 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
   try {
     const { data: rows } = await supabase
       .from('matches')
-      .select('id, user1_id, user2_id, matched_at')
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .select('id, user_a, user_b, matched_at')
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
       .order('matched_at', { ascending: false });
 
     if (!rows?.length) return [];
 
-    type MatchRow = { id: string; user1_id: string; user2_id: string; matched_at: string };
+    type MatchRow = { id: string; user_a: string; user_b: string; matched_at: string };
     const matchRows = rows as MatchRow[];
 
-    const partnerIds = matchRows.map((m) => (m.user1_id === userId ? m.user2_id : m.user1_id));
+    const partnerIds = matchRows.map((m) => (m.user_a === userId ? m.user_b : m.user_a));
 
     const { data: partners } = await supabase
       .from('profiles')
@@ -176,7 +267,7 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
 
     return matchRows
       .map((m) => {
-        const partnerId = m.user1_id === userId ? m.user2_id : m.user1_id;
+        const partnerId = m.user_a === userId ? m.user_b : m.user_a;
         const partner = byId.get(partnerId);
         if (!partner) return null;
         return { matchId: m.id, matchedAt: m.matched_at, partner };
@@ -203,7 +294,7 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
 //   CREATE POLICY "match members can access messages"
 //     ON messages FOR ALL
 //     USING (match_id IN (
-//       SELECT id FROM matches WHERE user1_id = auth.uid() OR user2_id = auth.uid()
+//       SELECT id FROM matches WHERE user_a = auth.uid() OR user_b = auth.uid()
 //     ));
 //   ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 
@@ -327,14 +418,14 @@ export interface GameRow {
 }
 
 /** Returns the match row so games can derive opponentId. */
-export async function getMatchById(matchId: string): Promise<{ user1_id: string; user2_id: string } | null> {
+export async function getMatchById(matchId: string): Promise<{ user_a: string; user_b: string } | null> {
   try {
     const { data } = await supabase
       .from('matches')
-      .select('user1_id, user2_id')
+      .select('user_a, user_b')
       .eq('id', matchId)
       .maybeSingle();
-    return data as { user1_id: string; user2_id: string } | null;
+    return data as { user_a: string; user_b: string } | null;
   } catch {
     return null;
   }

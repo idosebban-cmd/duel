@@ -3,9 +3,10 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getDiscoverProfiles, recordSwipe } from '../lib/database';
+import { getDiscoverProfiles, getDiscoveryUsers, getProfile, getPhotos, recordSwipe, calculateDistance } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
+import { checkProfileCompleteness } from '../utils/profileValidation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -195,20 +196,41 @@ function applyFilters(profiles: Profile[], f: FilterState): Profile[] {
 
 // ─── Convert DB profile to discover Profile ───────────────────────────────────
 
-function dbProfileToProfile(p: UserProfile): Profile {
+function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): Profile {
   const createdAt = new Date(p.created_at).getTime();
   const now = Date.now();
   const diffMs = now - createdAt;
   const activityLevel: 'today' | 'week' | 'older' =
     diffMs < 86_400_000 ? 'today' : diffMs < 604_800_000 ? 'week' : 'older';
 
+  // Calculate distance if both users have location data
+  let distanceKm = 0;
+  let distanceLabel = 'Nearby';
+  if (
+    currentUser?.latitude != null &&
+    currentUser?.longitude != null &&
+    p.latitude != null &&
+    p.longitude != null
+  ) {
+    distanceKm = calculateDistance(
+      currentUser.latitude,
+      currentUser.longitude,
+      p.latitude,
+      p.longitude,
+    );
+    distanceLabel =
+      distanceKm < 1
+        ? `${Math.round(distanceKm * 1000)}m`
+        : `${distanceKm.toFixed(1)} km`;
+  }
+
   return {
     id:            p.id,
     name:          p.name          ?? 'Player',
     age:           p.age           ?? 25,
     location:      p.location      ?? 'Nearby',
-    distance:      'Nearby',
-    distanceKm:    0,
+    distance:      distanceLabel,
+    distanceKm,
     character:     p.character     ?? 'ghost',
     element:       p.element       ?? 'fire',
     affiliation:   p.affiliation   ?? 'city',
@@ -1327,6 +1349,92 @@ function BottomNav({ onProfile, onMatches }: { onProfile: () => void; onMatches:
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
+// ─── Incomplete profile modal ─────────────────────────────────────────────────
+
+function IncompleteProfileModal({
+  missingFields,
+  percentage,
+  onGoToProfile,
+}: {
+  missingFields: string[];
+  percentage: number;
+  onGoToProfile: () => void;
+}) {
+  return (
+    <div className="flex-1 flex items-center justify-center px-6">
+      <motion.div
+        className="w-full max-w-sm rounded-2xl p-6 text-center"
+        style={{
+          background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)',
+          border: '2px solid rgba(255,159,28,0.3)',
+          boxShadow: '0 0 40px rgba(255,159,28,0.1)',
+        }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+      >
+        <motion.div
+          className="font-display text-3xl mb-2"
+          style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.6)' }}
+        >
+          COMPLETE YOUR PROFILE
+        </motion.div>
+        <p className="font-body text-sm mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          You need to finish your profile before discovering matches
+        </p>
+
+        {/* Progress bar */}
+        <div className="w-full h-2 rounded-full mb-4" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <motion.div
+            className="h-full rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, #FF9F1C, #FFE66D)',
+              boxShadow: '0 0 8px rgba(255,159,28,0.4)',
+            }}
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        </div>
+
+        <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          Still missing:
+        </p>
+        <div className="flex flex-wrap gap-1.5 justify-center mb-6">
+          {missingFields.map((field) => (
+            <span
+              key={field}
+              className="font-body text-xs px-2.5 py-1 rounded-lg"
+              style={{
+                background: 'rgba(255,159,28,0.1)',
+                color: '#FF9F1C',
+                border: '1px solid rgba(255,159,28,0.25)',
+              }}
+            >
+              {field}
+            </span>
+          ))}
+        </div>
+
+        <motion.button
+          onClick={onGoToProfile}
+          className="w-full py-4 rounded-xl font-display text-lg"
+          style={{
+            background: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)',
+            color: '#12122A',
+            boxShadow: '0 0 20px rgba(255,159,28,0.35), 4px 4px 0 rgba(0,0,0,0.3)',
+            border: '3px solid rgba(255,255,255,0.2)',
+          }}
+          whileTap={{ scale: 0.97 }}
+        >
+          GO TO PROFILE
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
+
 export function DiscoverScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchProfile, setMatchProfile] = useState<Profile | null>(null);
@@ -1337,24 +1445,72 @@ export function DiscoverScreen() {
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [completenessPercentage, setCompletenessPercentage] = useState(0);
   const navigate = useNavigate();
   const { character } = useOnboardingStore();
   const { user } = useAuthStore();
 
+  // Check profile completeness on mount
+  useEffect(() => {
+    if (!user) return;
+
+    const checkProfile = async () => {
+      const { data: profile } = await getProfile(user.id);
+      if (!profile) return;
+
+      const photos = await getPhotos(user.id);
+      const completeness = checkProfileCompleteness({
+        ...profile,
+        avatar_url: photos.length > 0 ? photos[0] : null,
+        photos,
+      });
+
+      if (!completeness.isComplete) {
+        setShowIncompleteModal(true);
+        setMissingFields(completeness.missing);
+        setCompletenessPercentage(completeness.percentage);
+      }
+    };
+
+    checkProfile();
+  }, [user]);
+
   // Load real profiles from DB; keep fake ones as fallback if DB is empty
   useEffect(() => {
     if (!user) return;
-    getDiscoverProfiles(user.id)
-      .then((dbProfiles) => {
+
+    const loadProfiles = async () => {
+      try {
+        // Get current user profile for distance calculation
+        const { data: currentProfile } = await getProfile(user.id);
+
+        // Try enhanced discovery first
+        const dbProfiles = await getDiscoveryUsers(user.id, {
+          minAge: activeFilters.ageMin,
+          maxAge: activeFilters.ageMax,
+        });
+
         if (dbProfiles.length > 0) {
-          setProfiles(dbProfiles.map(dbProfileToProfile));
+          setProfiles(dbProfiles.map((p) => dbProfileToProfile(p, currentProfile)));
           setCurrentIndex(0);
+        } else {
+          // Fall back to basic discovery
+          const basicProfiles = await getDiscoverProfiles(user.id);
+          if (basicProfiles.length > 0) {
+            setProfiles(basicProfiles.map((p) => dbProfileToProfile(p, currentProfile)));
+            setCurrentIndex(0);
+          }
+          // If still no profiles, keep seed profiles as fallback
         }
-      })
-      .catch(() => {
+      } catch {
         // Keep showing seed profiles — DB unavailable
-      });
-  }, [user]);
+      }
+    };
+
+    loadProfiles();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredProfiles = useMemo(() => applyFilters(profiles, activeFilters), [profiles, activeFilters]);
   const activeFilterCount = useMemo(() => countActiveFilters(activeFilters), [activeFilters]);
@@ -1464,7 +1620,17 @@ export function DiscoverScreen() {
         </div>
       </header>
 
+      {/* Incomplete profile blocker */}
+      {showIncompleteModal && (
+        <IncompleteProfileModal
+          missingFields={missingFields}
+          percentage={completenessPercentage}
+          onGoToProfile={() => navigate('/profile')}
+        />
+      )}
+
       {/* Card stack */}
+      {!showIncompleteModal && (
       <div className="flex-1 flex items-center justify-center px-5 overflow-hidden">
         {showEmpty ? (
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
@@ -1486,8 +1652,10 @@ export function DiscoverScreen() {
         )}
       </div>
 
+      )}
+
       {/* Action buttons */}
-      {!showEmpty && (
+      {!showEmpty && !showIncompleteModal && (
         <div className="flex-none flex items-center justify-center gap-10 py-3">
           <motion.button onClick={() => executeButtonSwipe('left')} disabled={disabled}
             className="w-16 h-16 rounded-full flex items-center justify-center"
