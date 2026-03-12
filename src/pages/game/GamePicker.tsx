@@ -41,7 +41,7 @@ const GAMES: GameOption[] = [
     name: 'Word Blitz',
     emoji: '💬',
     description: 'Build connecting words from your letters in 3 minutes. Vocabulary & speed!',
-    route: '/games/word-blitz/demo',
+    route: '/games/word-blitz',
     gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
     color: '#B565FF',
     icon: '🔤',
@@ -51,7 +51,7 @@ const GAMES: GameOption[] = [
     name: 'Draughts',
     emoji: '♟️',
     description: 'Classic strategy. Capture all opponent pieces or block their moves to win.',
-    route: '/games/draughts/demo',
+    route: '/games/draughts',
     gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)',
     color: '#FFE66D',
     icon: '⬛',
@@ -61,7 +61,7 @@ const GAMES: GameOption[] = [
     name: 'Connect Four',
     emoji: '🔴',
     description: 'Connect 4 in a row. Strategy meets speed.',
-    route: '/games/connect-four/demo',
+    route: '/games/connect-four',
     gradient: 'linear-gradient(135deg, #4EFFC4, #0099FF)',
     color: '#4EFFC4',
     icon: '⚫',
@@ -71,7 +71,7 @@ const GAMES: GameOption[] = [
     name: 'Battleship',
     emoji: '⚓',
     description: 'Sink their fleet. Strategy and luck.',
-    route: '/games/battleship/demo',
+    route: '/games/battleship',
     gradient: 'linear-gradient(135deg, #4AC8FF, #0055AA)',
     color: '#4AC8FF',
     icon: '🚢',
@@ -85,9 +85,12 @@ export function GamePicker() {
 
   const handleGameSelect = (route: string) => {
     if (matchId) {
+      // Route to matchId-specific game for multiplayer; keep localStorage as fallback
       localStorage.setItem('pending_match_id', matchId);
+      navigate(`${route}/${matchId}`);
+    } else {
+      navigate(route);
     }
-    navigate(route);
   };
 
   return (

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import type { DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Camera, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, X, Camera, AlertCircle } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
 const MAX_PHOTOS = 5;

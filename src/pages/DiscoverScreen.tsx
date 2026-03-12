@@ -1343,12 +1343,16 @@ export function DiscoverScreen() {
   // Load real profiles from DB; keep fake ones as fallback if DB is empty
   useEffect(() => {
     if (!user) return;
-    getDiscoverProfiles(user.id).then((dbProfiles) => {
-      if (dbProfiles.length > 0) {
-        setProfiles(dbProfiles.map(dbProfileToProfile));
-        setCurrentIndex(0);
-      }
-    });
+    getDiscoverProfiles(user.id)
+      .then((dbProfiles) => {
+        if (dbProfiles.length > 0) {
+          setProfiles(dbProfiles.map(dbProfileToProfile));
+          setCurrentIndex(0);
+        }
+      })
+      .catch(() => {
+        // Keep showing seed profiles — DB unavailable
+      });
   }, [user]);
 
   const filteredProfiles = useMemo(() => applyFilters(profiles, activeFilters), [profiles, activeFilters]);
@@ -1373,11 +1377,13 @@ export function DiscoverScreen() {
     if (user && typeof profile.id === 'string') {
       // Real DB profile — record swipe and check for match
       if (dir === 'right') {
-        recordSwipe(user.id, profile.id, 'like').then(({ matched }) => {
-          if (matched) window.setTimeout(() => setMatchProfile(profile), 100);
-        });
+        recordSwipe(user.id, profile.id, 'like')
+          .then(({ matched }) => {
+            if (matched) window.setTimeout(() => setMatchProfile(profile), 100);
+          })
+          .catch(() => {/* swipe lost — non-critical */});
       } else {
-        recordSwipe(user.id, profile.id, 'pass');
+        recordSwipe(user.id, profile.id, 'pass').catch(() => {});
       }
     } else if (dir === 'right' && profile.willMatch) {
       // Fallback for fake seed profiles

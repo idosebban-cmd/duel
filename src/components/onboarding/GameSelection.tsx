@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
 interface GameType {

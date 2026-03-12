@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from '../ui/Icons';
 import { useOnboardingStore, type UserPrompt } from '../../store/onboardingStore';
 
 // ─── Prompt library ───────────────────────────────────────────────────────────

@@ -3,9 +3,32 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
+import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+
+// ── Multiplayer state shape ────────────────────────────────────────────────────
+// phase hierarchy: 'placing_p1' → 'placing_p2' → 'battle' → 'result'
+// current_turn in DB: p1_id during placing_p1, p2_id during placing_p2,
+//   then alternates during battle.
+interface BsState {
+  phase: 'placing_p1' | 'placing_p2' | 'battle' | 'result';
+  p1Ships: ShipState[] | null;
+  p1Grid: (string | null)[][] | null;
+  p2Ships: ShipState[] | null;
+  p2Grid: (string | null)[][] | null;
+  p1Shots: ('hit' | 'miss' | null)[][];
+  p2Shots: ('hit' | 'miss' | null)[][];
+}
+const emptyShots = (): ('hit'|'miss'|null)[][] =>
+  Array.from({ length: GRID }, () => Array(GRID).fill(null));
+const makeInitialBsState = (): BsState => ({
+  phase: 'placing_p1',
+  p1Ships: null, p1Grid: null,
+  p2Ships: null, p2Grid: null,
+  p1Shots: emptyShots(), p2Shots: emptyShots(),
+});
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const GRID    = 10;
@@ -330,8 +353,22 @@ function ResultScreen({ result, myShots, playerSunk, onRematch, onBack, onChat }
 // ── Main component ─────────────────────────────────────────────────────────────
 export function Battleship() {
   const navigate   = useNavigate();
+  const params     = useParams<{ matchId?: string }>();
   const { character } = useOnboardingStore();
   const playerChar = character ?? 'ghost';
+
+  const matchId      = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
+  const isMultiplayer = !!matchId && matchId !== 'demo';
+
+  const mp = useMultiplayerGame<BsState>({
+    matchId: matchId ?? '',
+    gameType: 'battleship',
+    initialState: makeInitialBsState(),
+    enabled: isMultiplayer,
+  });
+  const myRole = mp.myRole;
+  // Shorthand: am I p1?
+  const isP1 = myRole === 'player1';
 
   // ── Phase ────────────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('placement');
@@ -417,6 +454,36 @@ export function Battleship() {
 
   const handleReady = () => {
     if (!allPlaced) return;
+
+    if (isMultiplayer) {
+      // Save my fleet to the DB; transition phase based on my role
+      const gs = mp.gameState;
+      const myPlacingPhase: BsState['phase'] = isP1 ? 'placing_p1' : 'placing_p2';
+      if (!gs || gs.phase !== myPlacingPhase) return; // not my placement turn
+      const nextPhase: BsState['phase'] = isP1 ? 'placing_p2' : 'battle';
+      const newState: BsState = {
+        ...gs,
+        phase: nextPhase,
+        ...(isP1
+          ? { p1Ships: myShips, p1Grid: myGrid as (string|null)[][] }
+          : { p2Ships: myShips, p2Grid: myGrid as (string|null)[][] }),
+      };
+      mp.submitMove({ type: 'place' }, newState, null);
+      // Locally transition to "waiting for opponent to place" or battle
+      if (!isP1) {
+        // I'm player2 and just placed — battle can start
+        const oppGrid = gs.p1Grid as Grid ?? makeGrid();
+        const oppShips = gs.p1Ships ?? [];
+        setBotGrid(oppGrid); setBotShips(oppShips);
+        botGridRef.current = oppGrid; botShipsRef.current = oppShips;
+        setPhase('battle'); setTurn('bot'); // p1 fires first in battle
+      } else {
+        // I'm player1 — wait for p2 to place
+        setPhase('placement'); // stays on placement screen (poll will advance it)
+      }
+      return;
+    }
+
     const { grid, ships } = randomFleet();
     setBotGrid(grid); setBotShips(ships);
     botGridRef.current  = grid;
@@ -434,6 +501,7 @@ export function Battleship() {
 
   const handleFire = () => {
     if (!selectedCell || turn !== 'player') return;
+    if (isMultiplayer && !mp.isMyTurn) return;
     const [row, col] = selectedCell;
     if (myShots[row][col]) return;
 
@@ -458,7 +526,24 @@ export function Battleship() {
       showMsg(res === 'hit' ? 'HIT! 🔥' : 'MISS!');
     }
 
-    if (newShips.every(s => s.hits >= s.length)) {
+    const won = newShips.every(s => s.hits >= s.length);
+
+    if (isMultiplayer) {
+      const gs = mp.gameState!;
+      const newState: BsState = {
+        ...gs,
+        ...(isP1
+          ? { p1Shots: newShots as BsState['p1Shots'], p2Ships: newShips }
+          : { p2Shots: newShots as BsState['p2Shots'], p1Ships: newShips }),
+      };
+      mp.submitMove({ type: 'fire', row, col }, newState, won ? myRole : null);
+      setTurn('bot'); // waiting for opponent
+      setBotThinking(true);
+      if (won) { setTimeout(() => { setResult('player_wins'); setPhase('result'); }, 900); }
+      return;
+    }
+
+    if (won) {
       setTimeout(() => { setResult('player_wins'); setPhase('result'); }, 900);
       return;
     }
@@ -471,9 +556,9 @@ export function Battleship() {
     setTimeout(() => setBattleMsg(null), 1600);
   }
 
-  // ── Bot fires ─────────────────────────────────────────────────────────────
+  // ── Bot fires (solo only) ─────────────────────────────────────────────────
   useEffect(() => {
-    if (turn !== 'bot' || phase !== 'battle') return;
+    if (turn !== 'bot' || phase !== 'battle' || isMultiplayer) return;
     const delay = 2200 + Math.random() * 900;
     const timer = setTimeout(() => {
       const [row, col] = botPickCell(botAIRef.current, theirShotsRef.current);
@@ -500,6 +585,67 @@ export function Battleship() {
     }, delay);
     return () => clearTimeout(timer);
   }, [turn, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Multiplayer: sync DB state ────────────────────────────────────────────
+  const prevBsUpdatedAt = useRef<string | undefined>();
+  useEffect(() => {
+    if (!isMultiplayer || mp.loading || !mp.gameState) return;
+    const gs = mp.gameState;
+    const myPlacingPhase: BsState['phase'] = isP1 ? 'placing_p1' : 'placing_p2';
+    // Set initial turn based on who needs to place
+    if (gs.phase === myPlacingPhase || gs.phase === (isP1 ? 'placing_p2' : 'placing_p1')) {
+      setPhase('placement');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.loading]);
+
+  useEffect(() => {
+    if (!isMultiplayer || !mp.gameRow || !mp.gameState) return;
+    if (mp.gameRow.updated_at === prevBsUpdatedAt.current) return;
+    prevBsUpdatedAt.current = mp.gameRow.updated_at;
+    const gs = mp.gameState;
+
+    // Game over
+    if (mp.gameRow.winner && phase !== 'result') {
+      setResult(mp.gameRow.winner === myRole ? 'player_wins' : 'bot_wins');
+      setPhase('result');
+      return;
+    }
+
+    // Opponent finished placing — I can now start battle
+    const theirPlacingPhase: BsState['phase'] = isP1 ? 'placing_p2' : 'placing_p1';
+    if (gs.phase === 'battle' && phase === 'placement') {
+      // Both placed, battle starts
+      const oppGrid = (isP1 ? gs.p2Grid : gs.p1Grid) as Grid ?? makeGrid();
+      const oppShips = (isP1 ? gs.p2Ships : gs.p1Ships) ?? [];
+      setBotGrid(oppGrid); setBotShips(oppShips);
+      botGridRef.current = oppGrid; botShipsRef.current = oppShips;
+      setPhase('battle');
+      // p1 fires first
+      setTurn(mp.isMyTurn ? 'player' : 'bot');
+      setBotThinking(!mp.isMyTurn);
+      return;
+    }
+    // Opponent still placing — show waiting state
+    if (gs.phase === theirPlacingPhase && phase === 'placement') {
+      // We're already on placement screen, just poll
+      return;
+    }
+
+    // Battle: opponent fired at me
+    if (gs.phase === 'battle' && mp.isMyTurn && phase === 'battle') {
+      // Update their shots (firing at my grid) and my ships' damage
+      const theirNewShots = (isP1 ? gs.p2Shots : gs.p1Shots) as Shots;
+      const myNewShips    = (isP1 ? gs.p1Ships : gs.p2Ships) ?? myShips;
+      setTheirShots(theirNewShots);
+      theirShotsRef.current = theirNewShots;
+      setMyShips(myNewShips);
+      myShipsRef.current = myNewShips;
+      setBotThinking(false);
+      setTurn('player');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
   // ── Rematch ───────────────────────────────────────────────────────────────
   const handleRematch = () => {
@@ -538,8 +684,7 @@ export function Battleship() {
             result={result} myShots={myShots} playerSunk={playerSunkCount}
             onRematch={handleRematch} onBack={() => navigate('/play')}
             onChat={() => {
-              const mId = localStorage.getItem('pending_match_id');
-              navigate('/chat', mId ? { state: { matchId: mId } } : undefined);
+              navigate('/chat', matchId ? { state: { matchId } } : undefined);
             }}
           />
         )}

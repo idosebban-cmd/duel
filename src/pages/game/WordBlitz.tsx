@@ -643,8 +643,7 @@ export function WordBlitz() {
         myName={myName} myCharacter={myChar}
         onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
         onChat={() => {
-          const mId = localStorage.getItem('pending_match_id');
-          navigate('/chat', mId ? { state: { matchId: mId } } : undefined);
+          navigate('/chat', matchId ? { state: { matchId } } : undefined);
         }}
       />
     );

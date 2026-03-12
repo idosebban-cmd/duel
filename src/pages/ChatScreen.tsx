@@ -61,7 +61,7 @@ function MessageBubble({ msg, myUserId, theirAvatar }: {
   myUserId: string;
   theirAvatar?: string;
 }) {
-  const isMe = msg.sender_id === myUserId;
+  const isMe = msg.sender === myUserId;
 
   return (
     <motion.div
@@ -94,8 +94,8 @@ function MessageBubble({ msg, myUserId, theirAvatar }: {
         <span className="font-body text-xs px-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
           {formatTime(msg.created_at)}
           {isMe && (
-            <span className="ml-1" style={{ color: msg.read ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
-              {msg.read ? ' ✓✓' : ' ✓'}
+            <span className="ml-1" style={{ color: msg.delivered ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
+              {msg.delivered ? ' ✓✓' : ' ✓'}
             </span>
           )}
         </span>
@@ -186,18 +186,18 @@ export function ChatScreen() {
       .channel(`chat-${matchId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${matchId}` },
         (payload) => {
           const msg = payload.new as DbMessage;
           setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
-          if (msg.sender_id !== myUserId && myUserId) {
+          if (msg.sender !== myUserId && myUserId) {
             markMessagesRead(matchId, myUserId);
           }
         },
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `room_id=eq.${matchId}` },
         (payload) => {
           const updated = payload.new as DbMessage;
           setMessages((prev) => prev.map((m) => m.id === updated.id ? updated : m));
@@ -365,11 +365,11 @@ export function ChatScreen() {
           </div>
         )}
 
-        {/* No matchId */}
+        {/* No matchId – navigated here directly without context */}
         {!matchId && !loading && (
           <div className="flex flex-col items-center gap-3 py-8 text-center px-4">
             <p className="font-display text-base" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Play a game first to unlock chat!
+              Open a chat from your matches list.
             </p>
             <motion.button
               onClick={() => navigate('/matches')}
@@ -423,7 +423,7 @@ export function ChatScreen() {
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={matchId ? `Message ${theirName}...` : 'Play a game to unlock chat'}
+            placeholder={matchId ? `Message ${theirName}...` : 'Select a match to chat'}
             disabled={!matchId || !myUserId}
             className="flex-1 px-4 py-2.5 rounded-2xl font-body text-sm outline-none"
             style={{

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
 type GoalOption = {

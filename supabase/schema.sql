@@ -128,6 +128,77 @@ create policy "Users can insert matches"
   on matches for insert
   with check (auth.uid() = user1_id or auth.uid() = user2_id);
 
+-- ─── Messages table (supplemental) ───────────────────────────────────────────
+-- The messages table already exists with columns: id, created_at, room_id,
+-- sender, content, delivered, metadata.
+-- Run these if not already present:
+
+-- create index if not exists messages_room_created_idx on messages (room_id, created_at desc);
+-- alter publication supabase_realtime add table messages;
+
+-- ─── Games table ──────────────────────────────────────────────────────────────
+-- Tracks one game session per match + game_type combination.
+-- player1_id < player2_id (enforced by createOrJoinGame) for deterministic ordering.
+create table if not exists games (
+  id           uuid        default gen_random_uuid() primary key,
+  match_id     uuid        not null references matches(id) on delete cascade,
+  game_type    text        not null,
+  player1_id   uuid        not null references auth.users(id),
+  player2_id   uuid        not null references auth.users(id),
+  state        jsonb       not null default '{}',
+  current_turn uuid        references auth.users(id),
+  winner       text,       -- 'player1' | 'player2' | 'draw' | null
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now()
+);
+
+create index if not exists games_match_game on games (match_id, game_type);
+
+alter table games enable row level security;
+
+create policy "Match members can select games"
+  on games for select
+  using (match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid()));
+
+create policy "Match members can insert games"
+  on games for insert
+  with check (match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid()));
+
+create policy "Match members can update games"
+  on games for update
+  using (match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid()));
+
+create trigger games_updated_at
+  before update on games
+  for each row execute procedure update_updated_at();
+
+-- ─── Moves table ──────────────────────────────────────────────────────────────
+-- Append-only log of every move for replay / audit.
+create table if not exists moves (
+  id         uuid        default gen_random_uuid() primary key,
+  game_id    uuid        not null references games(id) on delete cascade,
+  player_id  uuid        not null references auth.users(id),
+  move_data  jsonb       not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists moves_game_id on moves (game_id, created_at);
+
+alter table moves enable row level security;
+
+create policy "Match members can select moves"
+  on moves for select
+  using (
+    game_id in (
+      select g.id from games g
+      where g.match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid())
+    )
+  );
+
+create policy "Players can insert their own moves"
+  on moves for insert
+  with check (auth.uid() = player_id);
+
 -- ─── Storage bucket ───────────────────────────────────────────────────────────
 -- Run these in the Supabase Dashboard → Storage → New Bucket:
 --   Name: "photos"

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Swords } from 'lucide-react';
+import { Swords } from '../../components/ui/Icons';
 import { connectSocket, disconnectSocket } from '../../lib/socket';
 import { useGameStore } from '../../store/gameStore';
 import { CountdownScreen } from '../../components/game/CountdownScreen';

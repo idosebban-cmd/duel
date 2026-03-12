@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { useAuthStore } from '../../store/authStore';
 import { upsertProfile, savePhotos } from '../../lib/database';

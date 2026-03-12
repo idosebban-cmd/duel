@@ -3,9 +3,30 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
+import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+
+// ── Multiplayer piece serialisation ──────────────────────────────────────────
+// DB stores player as 'p1'|'p2'; locally we use 'player'|'bot'
+interface DbPiece { id: string; row: number; col: number; player: 'p1'|'p2'; isKing: boolean; }
+interface DraughtsState { pieces: DbPiece[]; moveCount: number; }
+
+function piecesToDb(ps: Piece[], role: 'player1'|'player2'): DbPiece[] {
+  const mine: 'p1'|'p2' = role === 'player1' ? 'p1' : 'p2';
+  const theirs: 'p1'|'p2' = role === 'player1' ? 'p2' : 'p1';
+  return ps.map(p => ({ id: p.id, row: p.row, col: p.col, isKing: p.isKing,
+    player: p.player === 'player' ? mine : theirs }));
+}
+function piecesFromDb(db: DbPiece[], role: 'player1'|'player2'): Piece[] {
+  const mine: 'p1'|'p2' = role === 'player1' ? 'p1' : 'p2';
+  return db.map(p => ({ id: p.id, row: p.row, col: p.col, isKing: p.isKing,
+    player: p.player === mine ? 'player' : 'bot' }));
+}
+function makeInitialDbPieces(role: 'player1'|'player2'): DbPiece[] {
+  return piecesToDb(makeInitialPieces(), role);
+}
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const CELL  = 44;        // px per square
@@ -299,8 +320,21 @@ function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings,
 // ── Main component ───────────────────────────────────────────────────────────
 export function Draughts() {
   const navigate    = useNavigate();
+  const params      = useParams<{ matchId?: string }>();
   const { character } = useOnboardingStore();
   const playerChar  = character ?? 'ghost';
+
+  const matchId      = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
+  const isMultiplayer = !!matchId && matchId !== 'demo';
+
+  // myRole will be known once the hook resolves; initialState is placeholder
+  const mp = useMultiplayerGame<DraughtsState>({
+    matchId: matchId ?? '',
+    gameType: 'draughts',
+    initialState: { pieces: makeInitialDbPieces('player1'), moveCount: 0 },
+    enabled: isMultiplayer,
+  });
+  const myRole = mp.myRole;
 
   const [phase,          setPhase]          = useState<Phase>('setup');
   const [pieces,         setPieces]         = useState<Piece[]>(() => makeInitialPieces());
@@ -317,9 +351,9 @@ export function Draughts() {
   const piecesRef = useRef(pieces);
   piecesRef.current = pieces;
 
-  // ── Bot turn ──────────────────────────────────────────────────────────────
+  // ── Bot turn (solo only) ──────────────────────────────────────────────────
   useEffect(() => {
-    if (turn !== 'bot' || phase !== 'playing') return;
+    if (turn !== 'bot' || phase !== 'playing' || isMultiplayer) return;
     const delay = 2000 + Math.random() * 1000;
     const timer = setTimeout(() => {
       const chain = computeBotMoveChain(piecesRef.current);
@@ -386,12 +420,32 @@ export function Draughts() {
     setSelectedId(null);
     setValidDests([]);
     setChainJumpId(null);
+
+    if (isMultiplayer) {
+      // Save full piece state to DB after the complete move (chain done)
+      const dbPieces = piecesToDb(newPieces, myRole);
+      const newMoves = moves + (chainJumpId ? 0 : 1);
+      let winner: string | null = null;
+      if (!newPieces.some(p => p.player === 'bot')) winner = myRole;
+      else if (!newPieces.filter(p => p.player === 'bot').some(p =>
+        getValidDests(newPieces, p, hasAnyJump(newPieces, 'bot')).length > 0
+      )) winner = myRole;
+      mp.submitMove(
+        { pieceId, dest },
+        { pieces: dbPieces, moveCount: newMoves },
+        winner,
+      );
+      setTurn('bot'); // show "waiting" UI
+      return;
+    }
+
     setTurn('bot');
   };
 
   // ── Cell tap handler ──────────────────────────────────────────────────────
   const handleCellTap = (row: number, col: number) => {
     if (turn !== 'player' || phase !== 'playing') return;
+    if (isMultiplayer && !mp.isMyTurn) return;
 
     if (chainJumpId) {
       const d = validDests.find(d => d.row === row && d.col === col);
@@ -415,6 +469,41 @@ export function Draughts() {
 
     setSelectedId(null); setValidDests([]);
   };
+
+  // ── Multiplayer: sync DB state ────────────────────────────────────────────
+  const prevDrUpdatedAt = useRef<string | undefined>();
+  useEffect(() => {
+    if (!isMultiplayer || mp.loading || !mp.gameState) return;
+    const local = piecesFromDb(mp.gameState.pieces, myRole);
+    piecesRef.current = local;
+    setPieces(local);
+    setMoves(mp.gameState.moveCount);
+    setTurn(mp.isMyTurn ? 'player' : 'bot');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.loading]);
+
+  useEffect(() => {
+    if (!isMultiplayer || !mp.gameRow || !mp.gameState) return;
+    if (mp.gameRow.updated_at === prevDrUpdatedAt.current) return;
+    prevDrUpdatedAt.current = mp.gameRow.updated_at;
+
+    if (mp.gameRow.winner && phase !== 'result') {
+      setResult(mp.gameRow.winner === myRole ? 'player_wins' : 'bot_wins');
+      setPhase('result');
+      return;
+    }
+    if (mp.isMyTurn && phase === 'playing') {
+      // Apply opponent's full piece state
+      const local = piecesFromDb(mp.gameState.pieces, myRole);
+      piecesRef.current = local;
+      setPieces(local);
+      setSelectedId(null);
+      setValidDests([]);
+      setChainJumpId(null);
+      setTurn('player');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
   // ── Rematch ───────────────────────────────────────────────────────────────
   const handleRematch = () => {
@@ -465,8 +554,7 @@ export function Draughts() {
             onRematch={handleRematch}
             onBack={() => navigate('/play')}
             onChat={() => {
-              const mId = localStorage.getItem('pending_match_id');
-              navigate('/chat', mId ? { state: { matchId: mId } } : undefined);
+              navigate('/chat', matchId ? { state: { matchId } } : undefined);
             }}
           />
         )}

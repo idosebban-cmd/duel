@@ -218,7 +218,7 @@ function Toast({ visible, message }: { visible: boolean; message: string }) {
 
 // ─── Delete modal ─────────────────────────────────────────────────────────────
 
-function DeleteModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function DeleteModal({ visible, onClose, onDelete }: { visible: boolean; onClose: () => void; onDelete: () => void }) {
   return (
     <AnimatePresence>
       {visible && (
@@ -259,7 +259,7 @@ function DeleteModal({ visible, onClose }: { visible: boolean; onClose: () => vo
                 Cancel
               </button>
               <button
-                onClick={onClose}
+                onClick={onDelete}
                 className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
                 style={{ background: 'rgba(255,107,168,0.15)', color: '#FF6BA8', border: '1.5px solid rgba(255,107,168,0.3)' }}
               >
@@ -360,6 +360,7 @@ export function ProfileScreen() {
   const cannabis    = dbProfile?.cannabis    || store.cannabis    || MOCK.cannabis;
   const pets        = dbProfile?.pets        || store.pets        || MOCK.pets;
   const exercise    = dbProfile?.exercise    || store.exercise    || MOCK.exercise;
+  const bio         = dbProfile?.bio         || store.bio         || MOCK.bio;
   const prompts     = store.userPrompts.length > 0 ? store.userPrompts : MOCK_PROMPTS;
 
   const lifestyle = { kids, drinking, smoking, cannabis, pets, exercise };
@@ -398,7 +399,14 @@ export function ProfileScreen() {
       <Toast visible={toast} message={toastMsg} />
 
       {/* Delete modal */}
-      <DeleteModal visible={deleteOpen} onClose={() => setDeleteOpen(false)} />
+      <DeleteModal
+        visible={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDelete={async () => {
+          await supabase?.auth.signOut();
+          navigate('/login');
+        }}
+      />
 
       {/* Header */}
       <header
@@ -556,7 +564,7 @@ export function ProfileScreen() {
           <SectionCard>
             <SectionHeading label="About" onEdit={() => showToast('Profile editing coming soon')} />
             <p className="font-body text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              {MOCK.bio}
+              {bio}
             </p>
           </SectionCard>
         </motion.div>

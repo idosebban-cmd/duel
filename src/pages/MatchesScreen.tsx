@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getMatches } from '../lib/database';
-import type { MatchWithProfile } from '../lib/database';
+import { getMatches, getLastMessages } from '../lib/database';
+import type { MatchWithProfile, LastMessageInfo } from '../lib/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,6 +16,7 @@ interface Match {
   element: string;
   affiliation: string;
   matchedAt: string;
+  lastMessage?: LastMessageInfo;
 }
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
@@ -153,25 +154,46 @@ function MatchCard({ match, onTap, isNew }: { match: Match; onTap: () => void; i
             {cap(match.element)} {cap(match.affiliation)} {cap(match.character)}
           </span>
         </div>
-        {isNew
+        {isNew && !match.lastMessage
           ? <span className="font-body text-xs font-bold" style={{ color: '#4EFFC4' }}>✨ New match! Pick a game to play</span>
+          : match.lastMessage
+            ? (
+              <span
+                className="font-body text-xs truncate max-w-[180px] block"
+                style={{ color: match.lastMessage.unread > 0 ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
+                         fontWeight: match.lastMessage.unread > 0 ? 600 : 400 }}
+              >
+                {match.lastMessage.content}
+              </span>
+            )
           : <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Matched {timeAgo(match.matchedAt)}</span>
         }
       </div>
 
-      {/* Time */}
+      {/* Time + unread */}
       <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
         <span className="font-body text-xs" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
-          {timeAgo(match.matchedAt)}
+          {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
         </span>
-        {isNew && (
+        {match.lastMessage && match.lastMessage.unread > 0 ? (
+          <motion.div
+            className="min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+            style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.7)' }}
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <span className="font-body text-[10px] font-bold" style={{ color: '#12122A' }}>
+              {match.lastMessage.unread > 9 ? '9+' : match.lastMessage.unread}
+            </span>
+          </motion.div>
+        ) : isNew && !match.lastMessage ? (
           <motion.div
             className="w-2.5 h-2.5 rounded-full"
             style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.7)' }}
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           />
-        )}
+        ) : null}
       </div>
     </motion.button>
   );
@@ -306,13 +328,33 @@ export function MatchesScreen() {
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    getMatches(user.id).then((rows) => {
-      setMatches(rows.map(rowFromMatch));
-      setLoading(false);
-    });
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const rows = await getMatches(user.id);
+        if (cancelled) return;
+        const matchList = rows.map(rowFromMatch);
+        setMatches(matchList);
+        setLoading(false);
+
+        if (matchList.length > 0) {
+          const lm = await getLastMessages(matchList.map((m) => m.id), user.id);
+          if (!cancelled) setMatches((prev) => prev.map((m) => ({ ...m, lastMessage: lm.get(m.id) })));
+        }
+      } catch {
+        if (!cancelled) {
+          setError('Could not load matches. Check your connection.');
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [user]);
 
   const isNew = (m: Match) => Date.now() - new Date(m.matchedAt).getTime() < NEW_THRESHOLD_MS;
@@ -321,8 +363,8 @@ export function MatchesScreen() {
   const olderMatches  = matches.filter((m) => !isNew(m));
 
   const handleTap = (m: Match) => {
-    const hasPlayed = !!localStorage.getItem(`first_game_played_${m.id}`);
-    if (hasPlayed) {
+    // If they've exchanged messages, go straight to chat; otherwise pick a game
+    if (m.lastMessage) {
       navigate('/chat', { state: { matchId: m.id, name: m.name, character: m.character } });
     } else {
       navigate('/play', { state: { matchId: m.id } });
@@ -380,6 +422,18 @@ export function MatchesScreen() {
         {loading ? (
           <div>
             {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center gap-3 py-12 px-8 text-center">
+            <p className="font-body text-sm" style={{ color: 'rgba(255,107,168,0.8)' }}>{error}</p>
+            <motion.button
+              onClick={() => { setError(null); setLoading(true); }}
+              className="px-5 py-2 rounded-xl font-display text-sm"
+              style={{ background: 'rgba(255,107,168,0.1)', border: '1.5px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Retry
+            </motion.button>
           </div>
         ) : matches.length === 0 ? (
           <EmptyState />

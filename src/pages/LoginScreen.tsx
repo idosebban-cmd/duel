@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 
 // ─── CRT corner brackets ──────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export function LoginScreen() {
   const navigate = useNavigate();
+  const { setUser, setSession } = useAuthStore();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -116,7 +118,7 @@ export function LoginScreen() {
     }
 
     setLoading(true);
-    const { error: authError } = await supabase.auth.signUp({ email, password });
+    const { data, error: authError } = await supabase.auth.signUp({ email, password });
     setLoading(false);
 
     if (authError) {
@@ -124,9 +126,15 @@ export function LoginScreen() {
       return;
     }
 
-    // If email confirmation is disabled in Supabase, the user is immediately signed in
-    // and onAuthStateChange in App.tsx will handle the session. Navigate to onboarding.
-    navigate('/onboarding/welcome');
+    if (data.session) {
+      // Email confirmation disabled — session available immediately
+      setSession(data.session);
+      setUser(data.session.user);
+      navigate('/onboarding/welcome');
+    } else {
+      // Email confirmation required — inform user
+      setError('Check your email to confirm your account, then sign in.');
+    }
   };
 
   const handleForgotPassword = async () => {

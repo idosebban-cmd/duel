@@ -3,9 +3,29 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
+import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+
+// ── Multiplayer board helpers ─────────────────────────────────────────────────
+// DB stores numbers: 0=empty, 1=player1, 2=player2
+type DbBoard = number[][];
+const makeDbBoard = (): DbBoard =>
+  Array.from({ length: COLS }, () => Array(ROWS).fill(0));
+function dbBoardToLocal(db: DbBoard, role: 'player1' | 'player2'): Board {
+  const mine = role === 'player1' ? 1 : 2;
+  return db.map(col => col.map(v => v === 0 ? null : v === mine ? 'player' : 'bot'));
+}
+function localBoardToDb(board: Board, role: 'player1' | 'player2'): DbBoard {
+  const mine = role === 'player1' ? 1 : 2;
+  const theirs = role === 'player1' ? 2 : 1;
+  return board.map(col => col.map(v => v === null ? 0 : v === 'player' ? mine : theirs));
+}
+function boardMoveCount(db: DbBoard): number {
+  return db.reduce((sum, col) => sum + col.filter(v => v !== 0).length, 0);
+}
+interface CF4State { board: DbBoard; moveCount: number; }
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const COLS    = 7;
@@ -230,8 +250,21 @@ function ResultScreen({ result, moves, onRematch, onBack, onChat }: {
 // ── Main component ────────────────────────────────────────────────────────────
 export function ConnectFour() {
   const navigate   = useNavigate();
+  const params     = useParams<{ matchId?: string }>();
   const { character } = useOnboardingStore();
   const playerChar = character ?? 'ghost';
+
+  // matchId from route param or localStorage (set by GamePicker)
+  const matchId = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
+  const isMultiplayer = !!matchId && matchId !== 'demo';
+
+  const mp = useMultiplayerGame<CF4State>({
+    matchId: matchId ?? '',
+    gameType: 'connect-four',
+    initialState: { board: makeDbBoard(), moveCount: 0 },
+    enabled: isMultiplayer,
+  });
+  const myRole = mp.myRole;
 
   const [phase,      setPhase]      = useState<Phase>('setup');
   const [board,      setBoard]      = useState<Board>(makeBoard);
@@ -281,18 +314,32 @@ export function ConnectFour() {
   // ── Player tap handler ────────────────────────────────────────────────────
   const handleColumnTap = (col: number) => {
     if (turn !== 'player' || phase !== 'playing' || winCells) return;
+    if (isMultiplayer && !mp.isMyTurn) return;
     if (getDropRow(boardRef.current, col) === -1) {
       setShakeCol(col);
       setTimeout(() => setShakeCol(null), 450);
       return;
     }
     const outcome = executeDrop(col, 'player');
+    // After executeDrop, boardRef.current holds the new board
+    if (isMultiplayer) {
+      const dbBoard = localBoardToDb(boardRef.current, myRole);
+      const mc = boardMoveCount(dbBoard);
+      let winner: string | null = null;
+      if (outcome === 'end') {
+        if (checkWin(boardRef.current, 'player')) winner = myRole;
+        else if (isBoardFull(boardRef.current)) winner = 'draw';
+      }
+      mp.submitMove({ column: col }, { board: dbBoard, moveCount: mc }, winner);
+      setTurn('bot'); // show "waiting" UI; actual bot AI is gated below
+      return;
+    }
     if (outcome === 'ok') setTurn('bot');
   };
 
-  // ── Bot turn ──────────────────────────────────────────────────────────────
+  // ── Bot turn (solo only) ──────────────────────────────────────────────────
   useEffect(() => {
-    if (turn !== 'bot' || phase !== 'playing' || winCells) return;
+    if (turn !== 'bot' || phase !== 'playing' || winCells || isMultiplayer) return;
     const delay = 2000 + Math.random() * 1000;
     const timer = setTimeout(() => {
       const col = getBotCol(boardRef.current);
@@ -301,7 +348,68 @@ export function ConnectFour() {
       if (outcome === 'ok') setTurn('player');
     }, delay);
     return () => clearTimeout(timer);
-  }, [turn, phase, winCells, executeDrop]);
+  }, [turn, phase, winCells, executeDrop, isMultiplayer]);
+
+  // ── Multiplayer: sync state from DB ──────────────────────────────────────
+  const prevUpdatedAtRef = useRef<string | undefined>();
+  // Load initial state once game row arrives
+  useEffect(() => {
+    if (!isMultiplayer || mp.loading || !mp.gameState) return;
+    const db = mp.gameState.board;
+    const local = dbBoardToLocal(db, myRole);
+    boardRef.current = local;
+    setBoard(local);
+    const rebuiltDiscs: PlacedDisc[] = [];
+    local.forEach((col, c) =>
+      col.forEach((cell, r) => {
+        if (cell) rebuiltDiscs.push({ id: `mp-${c}-${r}`, col: c, row: r, player: cell });
+      }),
+    );
+    setDiscs(rebuiltDiscs);
+    setMoveCount(mp.gameState.moveCount);
+    setTurn(mp.isMyTurn ? 'player' : 'bot');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.loading]);
+
+  // React to DB state changes (opponent moved or game ended)
+  useEffect(() => {
+    if (!isMultiplayer || !mp.gameRow || !mp.gameState) return;
+    if (mp.gameRow.updated_at === prevUpdatedAtRef.current) return;
+    prevUpdatedAtRef.current = mp.gameRow.updated_at;
+
+    // Game ended (winner set by opponent or by me)
+    if (mp.gameRow.winner && phase !== 'result') {
+      const iWon = mp.gameRow.winner === myRole || mp.gameRow.winner === 'draw';
+      setResult(
+        mp.gameRow.winner === 'draw' ? 'draw'
+          : mp.gameRow.winner === myRole ? 'player_wins'
+          : 'bot_wins',
+      );
+      if (mp.gameRow.winner !== 'draw' && !iWon) {
+        // need to show their winning disc first; slight delay
+      }
+      setPhase('result');
+      return;
+    }
+
+    // It's now my turn → opponent just moved, apply their disc
+    if (mp.isMyTurn && phase === 'playing') {
+      const dbBoard = mp.gameState.board;
+      const localBoard = boardRef.current;
+      for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS; r++) {
+          if (dbBoard[c][r] !== 0 && localBoard[c][r] === null) {
+            const outcome = executeDrop(c, 'bot');
+            if (outcome === 'ok') setTurn('player');
+            return;
+          }
+        }
+      }
+      // If no diff found (e.g. initial load), just set turn
+      setTurn('player');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
   // ── Rematch ───────────────────────────────────────────────────────────────
   const handleRematch = () => {
@@ -344,8 +452,7 @@ export function ConnectFour() {
             onRematch={handleRematch}
             onBack={() => navigate('/play')}
             onChat={() => {
-              const mId = localStorage.getItem('pending_match_id');
-              navigate('/chat', mId ? { state: { matchId: mId } } : undefined);
+              navigate('/chat', matchId ? { state: { matchId } } : undefined);
             }}
           />
         )}
@@ -373,13 +480,15 @@ export function ConnectFour() {
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
                 className="font-display text-xs"
                 style={{ color: turn === 'player' ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
-                {phase === 'playing' ? (turn === 'player' ? 'YOUR TURN' : 'THEIR TURN') : 'CONNECT FOUR'}
+                {phase === 'playing'
+              ? turn === 'player' ? 'YOUR TURN' : (isMultiplayer ? 'WAITING…' : 'THEIR TURN')
+              : 'CONNECT FOUR'}
               </motion.div>
             </AnimatePresence>
             {turn === 'bot' && phase === 'playing' && (
               <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.1, repeat: Infinity }}
                 className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
-                thinking…
+                {isMultiplayer ? 'waiting…' : 'thinking…'}
               </motion.div>
             )}
             <div className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>

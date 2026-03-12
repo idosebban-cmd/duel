@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle } from './Icons';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

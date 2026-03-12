@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle } from '../ui/Icons';
 import { CharacterCard } from './CharacterCard';
 import type { Character } from '../../types/game';
 
