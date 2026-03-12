@@ -363,12 +363,7 @@ export function MatchesScreen() {
   const olderMatches  = matches.filter((m) => !isNew(m));
 
   const handleTap = (m: Match) => {
-    // If they've exchanged messages, go straight to chat; otherwise pick a game
-    if (m.lastMessage) {
-      navigate('/chat', { state: { matchId: m.id, name: m.name, character: m.character } });
-    } else {
-      navigate('/play', { state: { matchId: m.id } });
-    }
+    navigate('/chat', { state: { matchId: m.id, name: m.name, character: m.character } });
   };
 
   return (
