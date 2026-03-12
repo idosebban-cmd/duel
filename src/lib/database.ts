@@ -28,6 +28,8 @@ export interface UserProfile {
   cannabis: string | null;
   pets: string | null;
   exercise: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 }
 
@@ -102,6 +104,95 @@ export async function getDiscoverProfiles(userId: string): Promise<UserProfile[]
   } catch {
     return [];
   }
+}
+
+// ─── Enhanced Discovery (with filters) ───────────────────────────────────────
+
+export interface DiscoveryFilters {
+  minAge?: number;
+  maxAge?: number;
+  gender?: string;
+  maxDistance?: number;
+}
+
+export async function getDiscoveryUsers(
+  currentUserId: string,
+  filters: DiscoveryFilters = {},
+): Promise<UserProfile[]> {
+  try {
+    // Get users already swiped on
+    const { data: swiped } = await supabase
+      .from('swipes')
+      .select('target_id')
+      .eq('user_id', currentUserId);
+
+    const swipedIds = new Set<string>(
+      swiped?.map((s: { target_id: string }) => s.target_id) ?? [],
+    );
+
+    // Build query — only complete profiles (must have name, age, character)
+    let query = supabase
+      .from('profiles')
+      .select('*')
+      .neq('id', currentUserId)
+      .not('name', 'is', null)
+      .not('age', 'is', null)
+      .not('character', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    // Apply age filters
+    if (filters.minAge) query = query.gte('age', filters.minAge);
+    if (filters.maxAge) query = query.lte('age', filters.maxAge);
+    // Apply gender filter
+    if (filters.gender) query = query.eq('gender', filters.gender);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Client-side filtering: exclude already-swiped
+    return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
+  } catch {
+    return [];
+  }
+}
+
+// ─── Location ────────────────────────────────────────────────────────────────
+
+export async function updateUserLocation(
+  userId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  try {
+    await supabase
+      .from('profiles')
+      .update({ latitude, longitude })
+      .eq('id', userId);
+  } catch {
+    // Non-critical — location is best-effort
+  }
+}
+
+// ─── Distance calculation (Haversine) ────────────────────────────────────────
+
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 // ─── Swipes + Matching ────────────────────────────────────────────────────────

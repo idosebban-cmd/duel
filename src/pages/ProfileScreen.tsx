@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getProfile, getPhotos } from '../lib/database';
+import { getProfile, getPhotos, savePhotos } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
+import { checkProfileCompleteness } from '../utils/profileValidation';
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
 
@@ -337,12 +338,60 @@ export function ProfileScreen() {
   // DB state
   const [dbProfile, setDbProfile] = useState<UserProfile | null>(null);
   const [dbPhotos, setDbPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
     getProfile(user.id).then(({ data }) => { if (data) setDbProfile(data); });
     getPhotos(user.id).then(setDbPhotos);
   }, [user]);
+
+  // Profile completeness
+  const completeness = dbProfile
+    ? checkProfileCompleteness({
+        ...dbProfile,
+        avatar_url: dbPhotos.length > 0 ? dbPhotos[0] : null,
+        photos: dbPhotos,
+      })
+    : null;
+
+  // Photo upload handler
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image must be under 5MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const newPhotos = [...dbPhotos, base64];
+        await savePhotos(user.id, newPhotos);
+        const refreshed = await getPhotos(user.id);
+        setDbPhotos(refreshed);
+        showToast('Photo uploaded!');
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      showToast('Failed to upload photo');
+    } finally {
+      setUploading(false);
+      // Reset file input so the same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Merge DB → store → mock
   const name        = dbProfile?.name        || store.name        || MOCK.name;
@@ -511,6 +560,53 @@ export function ProfileScreen() {
           </div>
         </motion.div>
 
+        {/* ── Profile completeness ──────────────────────────────────────── */}
+        {completeness && !completeness.isComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06 }}
+          >
+            <SectionCard>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-display text-sm" style={{ color: '#FFE66D' }}>
+                  Complete Your Profile
+                </span>
+                <span className="font-body text-xs font-bold" style={{ color: '#4EFFC4' }}>
+                  {completeness.percentage}%
+                </span>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full h-2 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{
+                    background: 'linear-gradient(90deg, #4EFFC4, #B565FF)',
+                    boxShadow: '0 0 8px rgba(78,255,196,0.4)',
+                  }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completeness.percentage}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                />
+              </div>
+              <p className="font-body text-xs mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Missing:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {completeness.missing.map((field) => (
+                  <span
+                    key={field}
+                    className="font-body text-xs px-2 py-1 rounded-lg"
+                    style={{ background: 'rgba(255,159,28,0.1)', color: '#FF9F1C', border: '1px solid rgba(255,159,28,0.25)' }}
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            </SectionCard>
+          </motion.div>
+        )}
+
         {/* ── Photo carousel ───────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -541,15 +637,35 @@ export function ProfileScreen() {
                   ))
               }
               {/* Add photo slot */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                disabled={uploading}
+              />
               <button
-                onClick={() => showToast('Profile editing coming soon')}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
                 className="flex-shrink-0 w-24 h-28 rounded-xl flex flex-col items-center justify-center gap-1"
-                style={{ border: '2px dashed rgba(255,255,255,0.15)', background: 'transparent' }}
+                style={{ border: '2px dashed rgba(255,255,255,0.15)', background: 'transparent', opacity: uploading ? 0.5 : 1 }}
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 4v12M4 10h12" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-                <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>Add</span>
+                {uploading ? (
+                  <motion.div
+                    className="w-5 h-5 rounded-full border-2 border-t-transparent"
+                    style={{ borderColor: 'rgba(78,255,196,0.5)', borderTopColor: 'transparent' }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                  />
+                ) : (
+                  <>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 4v12M4 10h12" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>Add</span>
+                  </>
+                )}
               </button>
             </div>
           </SectionCard>

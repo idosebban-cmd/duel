@@ -21,9 +21,14 @@ create table if not exists profiles (
   cannabis     text,
   pets         text,
   exercise     text,
+  latitude     decimal(10, 8),
+  longitude    decimal(11, 8),
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
+
+-- Add location index for proximity queries
+create index if not exists profiles_location_idx on profiles (latitude, longitude);
 
 -- ─── Photos table ─────────────────────────────────────────────────────────────
 create table if not exists photos (
@@ -93,10 +98,10 @@ create table if not exists swipes (
 
 alter table swipes enable row level security;
 
--- Only owner can read/write their own swipes
+-- Owner can read their own swipes; users can also check if someone swiped on them (for match detection)
 create policy "Users can view their own swipes"
   on swipes for select
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id or auth.uid() = target_id);
 
 create policy "Users can insert their own swipes"
   on swipes for insert
