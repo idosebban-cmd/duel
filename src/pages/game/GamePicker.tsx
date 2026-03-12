@@ -7,74 +7,67 @@ import { motion } from 'framer-motion';
 interface GameOption {
   id: string;
   name: string;
-  emoji: string;
+  imgSrc: string;
   description: string;
   route: string;
   gradient: string;
   color: string;
-  icon: string;
 }
 
 const GAMES: GameOption[] = [
   {
     id: 'guess-who',
     name: 'Guess Who?',
-    emoji: '🕵️',
+    imgSrc: '/landing-icons/Ghost.png',
     description: 'Ask questions to deduce your opponent\'s secret character. Quick deduction game.',
     route: '/game',
     gradient: 'linear-gradient(135deg, #FF6BA8, #B565FF)',
     color: '#FF6BA8',
-    icon: '❓',
   },
   {
     id: 'dot-dash',
     name: 'Dot Dash',
-    emoji: '🕹️',
+    imgSrc: '/landing-icons/Dot%20Dash.png',
     description: 'Race through a maze collecting dots while avoiding ghosts. Real-time action!',
     route: '/dotdash',
     gradient: 'linear-gradient(135deg, #4EFFC4, #FFE66D)',
     color: '#4EFFC4',
-    icon: '🎮',
   },
   {
     id: 'word-blitz',
     name: 'Word Blitz',
-    emoji: '💬',
+    imgSrc: '/game-icons/Word%20games.png',
     description: 'Build connecting words from your letters in 3 minutes. Vocabulary & speed!',
     route: '/games/word-blitz',
     gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
     color: '#B565FF',
-    icon: '🔤',
   },
   {
     id: 'draughts',
     name: 'Draughts',
-    emoji: '♟️',
+    imgSrc: '/game-icons/Strategy.png',
     description: 'Classic strategy. Capture all opponent pieces or block their moves to win.',
     route: '/games/draughts',
     gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)',
     color: '#FFE66D',
-    icon: '⬛',
   },
   {
     id: 'connect-four',
     name: 'Connect Four',
-    emoji: '🔴',
+    imgSrc: '/game-icons/Boardgames.png',
     description: 'Connect 4 in a row. Strategy meets speed.',
     route: '/games/connect-four',
     gradient: 'linear-gradient(135deg, #4EFFC4, #0099FF)',
     color: '#4EFFC4',
-    icon: '⚫',
   },
   {
     id: 'battleship',
     name: 'Battleship',
-    emoji: '⚓',
+    imgSrc: '/game-icons/Competative%20games.png',
     description: 'Sink their fleet. Strategy and luck.',
     route: '/games/battleship',
     gradient: 'linear-gradient(135deg, #4AC8FF, #0055AA)',
     color: '#4AC8FF',
-    icon: '🚢',
   },
 ];
 
@@ -175,19 +168,16 @@ export function GamePicker() {
               {/* Content */}
               <div className="relative flex flex-col h-full gap-4">
                 {/* Icon + name */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="text-4xl">{game.emoji}</div>
-                    <h2 className="font-display font-extrabold text-2xl text-white">
-                      {game.name}
-                    </h2>
-                  </div>
-                  <div
-                    className="text-2xl opacity-60 group-hover:opacity-100 transition-opacity"
-                    style={{ color: game.color }}
-                  >
-                    {game.icon}
-                  </div>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={game.imgSrc}
+                    alt={game.name}
+                    className="w-12 h-12 object-contain flex-shrink-0"
+                    draggable={false}
+                  />
+                  <h2 className="font-display font-extrabold text-2xl text-white">
+                    {game.name}
+                  </h2>
                 </div>
 
                 {/* Description */}
