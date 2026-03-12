@@ -351,7 +351,7 @@ export function ConnectFour() {
   }, [turn, phase, winCells, executeDrop, isMultiplayer]);
 
   // ── Multiplayer: sync state from DB ──────────────────────────────────────
-  const prevUpdatedAtRef = useRef<string | undefined>();
+  const prevUpdatedAtRef = useRef<string | undefined>(undefined);
   // Load initial state once game row arrives
   useEffect(() => {
     if (!isMultiplayer || mp.loading || !mp.gameState) return;

@@ -471,7 +471,7 @@ export function Draughts() {
   };
 
   // ── Multiplayer: sync DB state ────────────────────────────────────────────
-  const prevDrUpdatedAt = useRef<string | undefined>();
+  const prevDrUpdatedAt = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!isMultiplayer || mp.loading || !mp.gameState) return;
     const local = piecesFromDb(mp.gameState.pieces, myRole);

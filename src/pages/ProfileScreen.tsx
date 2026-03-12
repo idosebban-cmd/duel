@@ -360,7 +360,7 @@ export function ProfileScreen() {
   const cannabis    = dbProfile?.cannabis    || store.cannabis    || MOCK.cannabis;
   const pets        = dbProfile?.pets        || store.pets        || MOCK.pets;
   const exercise    = dbProfile?.exercise    || store.exercise    || MOCK.exercise;
-  const bio         = dbProfile?.bio         || store.bio         || MOCK.bio;
+  const bio         = dbProfile?.bio         || MOCK.bio;
   const prompts     = store.userPrompts.length > 0 ? store.userPrompts : MOCK_PROMPTS;
 
   const lifestyle = { kids, drinking, smoking, cannabis, pets, exercise };

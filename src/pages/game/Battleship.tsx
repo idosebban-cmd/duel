@@ -587,7 +587,7 @@ export function Battleship() {
   }, [turn, phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Multiplayer: sync DB state ────────────────────────────────────────────
-  const prevBsUpdatedAt = useRef<string | undefined>();
+  const prevBsUpdatedAt = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!isMultiplayer || mp.loading || !mp.gameState) return;
     const gs = mp.gameState;
