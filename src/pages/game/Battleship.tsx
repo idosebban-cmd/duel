@@ -684,6 +684,7 @@ export function Battleship() {
             result={result} myShots={myShots} playerSunk={playerSunkCount}
             onRematch={handleRematch} onBack={() => navigate('/play')}
             onChat={() => {
+              if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
               navigate('/chat', matchId ? { state: { matchId } } : undefined);
             }}
           />
