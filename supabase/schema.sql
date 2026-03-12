@@ -112,14 +112,14 @@ create policy "Users can update their own swipes"
   using (auth.uid() = user_id);
 
 -- ─── Matches table ────────────────────────────────────────────────────────────
--- user1_id < user2_id enforced by insert logic so each pair has one row
+-- user_a < user_b enforced by insert logic so each pair has one row
 create table if not exists matches (
   id            uuid        default gen_random_uuid() primary key,
-  user1_id      uuid        references profiles(id) on delete cascade not null,
-  user2_id      uuid        references profiles(id) on delete cascade not null,
+  user_a      uuid        references profiles(id) on delete cascade not null,
+  user_b      uuid        references profiles(id) on delete cascade not null,
   matched_at    timestamptz default now(),
   game_selected text,
-  unique(user1_id, user2_id)
+  unique(user_a, user_b)
 );
 
 alter table matches enable row level security;
@@ -127,11 +127,11 @@ alter table matches enable row level security;
 -- Both matched users can read the match row
 create policy "Matched users can view their matches"
   on matches for select
-  using (auth.uid() = user1_id or auth.uid() = user2_id);
+  using (auth.uid() = user_a or auth.uid() = user_b);
 
 create policy "Users can insert matches"
   on matches for insert
-  with check (auth.uid() = user1_id or auth.uid() = user2_id);
+  with check (auth.uid() = user_a or auth.uid() = user_b);
 
 -- ─── Messages table (supplemental) ───────────────────────────────────────────
 -- The messages table already exists with columns: id, created_at, room_id,
@@ -163,15 +163,15 @@ alter table games enable row level security;
 
 create policy "Match members can select games"
   on games for select
-  using (match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid()));
+  using (match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
 
 create policy "Match members can insert games"
   on games for insert
-  with check (match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid()));
+  with check (match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
 
 create policy "Match members can update games"
   on games for update
-  using (match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid()));
+  using (match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
 
 create trigger games_updated_at
   before update on games
@@ -196,7 +196,7 @@ create policy "Match members can select moves"
   using (
     game_id in (
       select g.id from games g
-      where g.match_id in (select id from matches where user1_id = auth.uid() or user2_id = auth.uid())
+      where g.match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid())
     )
   );
 

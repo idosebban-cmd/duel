@@ -223,7 +223,7 @@ export async function recordSwipe(
 
     const { data: match } = await supabase
       .from('matches')
-      .upsert({ user1_id: user1Id, user2_id: user2Id }, { onConflict: 'user1_id,user2_id' })
+      .upsert({ user_a: user1Id, user_b: user2Id }, { onConflict: 'user_a,user_b' })
       .select('id')
       .maybeSingle();
 
@@ -245,16 +245,16 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
   try {
     const { data: rows } = await supabase
       .from('matches')
-      .select('id, user1_id, user2_id, matched_at')
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .select('id, user_a, user_b, matched_at')
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
       .order('matched_at', { ascending: false });
 
     if (!rows?.length) return [];
 
-    type MatchRow = { id: string; user1_id: string; user2_id: string; matched_at: string };
+    type MatchRow = { id: string; user_a: string; user_b: string; matched_at: string };
     const matchRows = rows as MatchRow[];
 
-    const partnerIds = matchRows.map((m) => (m.user1_id === userId ? m.user2_id : m.user1_id));
+    const partnerIds = matchRows.map((m) => (m.user_a === userId ? m.user_b : m.user_a));
 
     const { data: partners } = await supabase
       .from('profiles')
@@ -267,7 +267,7 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
 
     return matchRows
       .map((m) => {
-        const partnerId = m.user1_id === userId ? m.user2_id : m.user1_id;
+        const partnerId = m.user_a === userId ? m.user_b : m.user_a;
         const partner = byId.get(partnerId);
         if (!partner) return null;
         return { matchId: m.id, matchedAt: m.matched_at, partner };
@@ -294,7 +294,7 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
 //   CREATE POLICY "match members can access messages"
 //     ON messages FOR ALL
 //     USING (match_id IN (
-//       SELECT id FROM matches WHERE user1_id = auth.uid() OR user2_id = auth.uid()
+//       SELECT id FROM matches WHERE user_a = auth.uid() OR user_b = auth.uid()
 //     ));
 //   ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 
@@ -418,14 +418,14 @@ export interface GameRow {
 }
 
 /** Returns the match row so games can derive opponentId. */
-export async function getMatchById(matchId: string): Promise<{ user1_id: string; user2_id: string } | null> {
+export async function getMatchById(matchId: string): Promise<{ user_a: string; user_b: string } | null> {
   try {
     const { data } = await supabase
       .from('matches')
-      .select('user1_id, user2_id')
+      .select('user_a, user_b')
       .eq('id', matchId)
       .maybeSingle();
-    return data as { user1_id: string; user2_id: string } | null;
+    return data as { user_a: string; user_b: string } | null;
   } catch {
     return null;
   }
