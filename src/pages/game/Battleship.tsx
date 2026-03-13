@@ -358,14 +358,15 @@ export function Battleship() {
   const playerChar = character ?? 'ghost';
 
   const matchId      = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
-  const isMultiplayer = !!matchId && matchId !== 'demo';
+  const matchIdLooksMultiplayer = !!matchId && matchId !== 'demo';
 
   const mp = useMultiplayerGame<BsState>({
     matchId: matchId ?? '',
     gameType: 'battleship',
     initialState: makeInitialBsState(),
-    enabled: isMultiplayer,
+    enabled: matchIdLooksMultiplayer,
   });
+  const isMultiplayer = matchIdLooksMultiplayer && !mp.fallbackToBotMode;
   const myRole = mp.myRole;
   // Shorthand: am I p1?
   const isP1 = myRole === 'player1';
