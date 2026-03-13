@@ -345,7 +345,7 @@ export function ProfileScreen() {
     if (!user) return;
     getProfile(user.id).then(({ data }) => { if (data) setDbProfile(data); });
     getPhotos(user.id).then(setDbPhotos);
-  }, [user]);
+  }, [user?.id]);
 
   // Profile completeness
   const completeness = dbProfile
