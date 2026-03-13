@@ -86,6 +86,11 @@ export function GamePicker() {
     }
   };
 
+  const handleDemoPlay = (route: string) => {
+    localStorage.removeItem('pending_match_id');
+    navigate(`${route}/demo`);
+  };
+
   return (
     <div
       className="min-h-screen flex flex-col items-center px-4 py-12 relative overflow-y-auto"
@@ -185,15 +190,25 @@ export function GamePicker() {
                   {game.description}
                 </p>
 
-                {/* Play button */}
-                <motion.div
-                  className="flex items-center gap-2 font-display font-bold text-sm uppercase tracking-wide mt-auto"
-                  style={{ color: game.color }}
-                  whileHover={{ x: 4 }}
-                >
-                  <span>Play</span>
-                  <span>→</span>
-                </motion.div>
+                {/* Play buttons */}
+                <div className="flex items-center gap-4 mt-auto">
+                  <motion.div
+                    className="flex items-center gap-2 font-display font-bold text-sm uppercase tracking-wide"
+                    style={{ color: game.color }}
+                    whileHover={{ x: 4 }}
+                  >
+                    <span>Play</span>
+                    <span>→</span>
+                  </motion.div>
+                  <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); handleDemoPlay(game.route); }}
+                    className="font-body text-xs uppercase tracking-wide cursor-pointer hover:opacity-100 transition-opacity"
+                    style={{ color: 'rgba(255,255,255,0.35)', opacity: 0.7 }}
+                  >
+                    Test vs Bot
+                  </span>
+                </div>
               </div>
 
               {/* Border glow on hover */}
