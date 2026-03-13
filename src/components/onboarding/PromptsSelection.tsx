@@ -329,7 +329,7 @@ export function PromptsSelection() {
   const handleContinue = () => {
     if (selected.length > 0) {
       updatePrompts(selected);
-      completeStep(7);
+      completeStep(8);
     }
     navigate('/onboarding/preview');
   };
@@ -351,7 +351,7 @@ export function PromptsSelection() {
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3 flex-none">
         <motion.button
-          onClick={() => navigate('/onboarding/lifestyle')}
+          onClick={() => navigate('/onboarding/bio')}
           className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.55)' }}
           whileHover={{ x: -2 }}
@@ -366,16 +366,16 @@ export function PromptsSelection() {
             Personality
           </span>
           <div className="flex gap-1">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
               <div
                 key={i}
                 className="h-1.5 rounded-full"
                 style={{
-                  width: i === 7 ? 24 : 8,
+                  width: i === 8 ? 24 : 8,
                   background:
-                    i < 7
+                    i < 8
                       ? '#FF6BA8'
-                      : i === 7
+                      : i === 8
                       ? 'linear-gradient(90deg, #00F5FF, #FF006E)'
                       : 'rgba(255,255,255,0.15)',
                 }}

@@ -13,6 +13,7 @@ import { PhotoUpload } from './components/onboarding/PhotoUpload';
 import { GameSelection } from './components/onboarding/GameSelection';
 import { RelationshipGoals } from './components/onboarding/RelationshipGoals';
 import { LifestyleQuestions } from './components/onboarding/LifestyleQuestions';
+import { BioStep } from './components/onboarding/BioStep';
 import { PlayerCardPreview } from './components/onboarding/PlayerCardPreview';
 import { PromptsSelection } from './components/onboarding/PromptsSelection';
 import { GameSetup } from './pages/game/GameSetup';
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="/onboarding/games" element={<GameSelection />} />
           <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
           <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
+          <Route path="/onboarding/bio" element={<BioStep />} />
           <Route path="/onboarding/prompts" element={<PromptsSelection />} />
           <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
 

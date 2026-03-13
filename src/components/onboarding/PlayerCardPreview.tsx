@@ -128,14 +128,14 @@ export function PlayerCardPreview() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/lifestyle')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+        <motion.button onClick={() => navigate('/onboarding/prompts')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
           <ArrowLeft size={18} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Player Card</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7].map((i) => (
-              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 7 ? 24 : 8, background: '#FF6BA8' }} />
+            {[0,1,2,3,4,5,6,7,8].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 8 ? 24 : 8, background: '#FF6BA8' }} />
             ))}
           </div>
         </div>

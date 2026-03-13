@@ -35,6 +35,9 @@ export interface OnboardingState {
   interestedIn: 'men' | 'women' | 'everyone' | null;
   location: string;
 
+  // Bio
+  bio: string;
+
   // Photos
   photos: string[]; // base64 data URLs for persistence
 
@@ -72,6 +75,7 @@ interface OnboardingActions {
     interestedIn: 'men' | 'women' | 'everyone';
     location: string;
   }) => void;
+  updateBio: (bio: string) => void;
   updatePhotos: (photos: string[]) => void;
   updateGameTypes: (gameTypes: string[]) => void;
   updateFavoriteGames: (favoriteGames: string[]) => void;
@@ -94,6 +98,7 @@ const initialState: OnboardingState = {
   gender: null,
   interestedIn: null,
   location: '',
+  bio: '',
   photos: loadSessionPhotos(),
   gameTypes: [],
   favoriteGames: [],
@@ -128,6 +133,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
           interestedIn: data.interestedIn,
           location: data.location,
         }),
+
+      updateBio: (bio) => set({ bio }),
 
       updatePhotos: (photos) => {
         try {
@@ -197,6 +204,7 @@ export const STEPS = [
   { id: 4, path: '/onboarding/games', label: 'Games' },
   { id: 5, path: '/onboarding/relationship-goals', label: 'Goals' },
   { id: 6, path: '/onboarding/lifestyle', label: 'Lifestyle' },
-  { id: 7, path: '/onboarding/prompts', label: 'Prompts' },
-  { id: 8, path: '/onboarding/preview', label: 'Preview' },
+  { id: 7, path: '/onboarding/bio', label: 'Bio' },
+  { id: 8, path: '/onboarding/prompts', label: 'Prompts' },
+  { id: 9, path: '/onboarding/preview', label: 'Preview' },
 ] as const;
