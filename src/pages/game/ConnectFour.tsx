@@ -256,14 +256,16 @@ export function ConnectFour() {
 
   // matchId from route param or localStorage (set by GamePicker)
   const matchId = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
-  const isMultiplayer = !!matchId && matchId !== 'demo';
+  const matchIdLooksMultiplayer = !!matchId && matchId !== 'demo';
 
   const mp = useMultiplayerGame<CF4State>({
     matchId: matchId ?? '',
     gameType: 'connect-four',
     initialState: { board: makeDbBoard(), moveCount: 0 },
-    enabled: isMultiplayer,
+    enabled: matchIdLooksMultiplayer,
   });
+  // If the match wasn't found in DB (fake/seed profile), fall back to bot mode
+  const isMultiplayer = matchIdLooksMultiplayer && !mp.fallbackToBotMode;
   const myRole = mp.myRole;
 
   const [phase,      setPhase]      = useState<Phase>('setup');

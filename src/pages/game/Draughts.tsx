@@ -325,15 +325,16 @@ export function Draughts() {
   const playerChar  = character ?? 'ghost';
 
   const matchId      = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
-  const isMultiplayer = !!matchId && matchId !== 'demo';
+  const matchIdLooksMultiplayer = !!matchId && matchId !== 'demo';
 
   // myRole will be known once the hook resolves; initialState is placeholder
   const mp = useMultiplayerGame<DraughtsState>({
     matchId: matchId ?? '',
     gameType: 'draughts',
     initialState: { pieces: makeInitialDbPieces('player1'), moveCount: 0 },
-    enabled: isMultiplayer,
+    enabled: matchIdLooksMultiplayer,
   });
+  const isMultiplayer = matchIdLooksMultiplayer && !mp.fallbackToBotMode;
   const myRole = mp.myRole;
 
   const [phase,          setPhase]          = useState<Phase>('setup');

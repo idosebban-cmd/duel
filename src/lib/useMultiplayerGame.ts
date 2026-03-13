@@ -41,6 +41,8 @@ export interface MultiplayerGame<S> {
   winner: string | null;
   /** True while the initial game row is being created/fetched */
   loading: boolean;
+  /** True when the match was not found in the DB — game should use bot mode */
+  fallbackToBotMode: boolean;
   /**
    * Optimistically update local state then persist to DB.
    * @param moveData  logged to the moves table for audit / replay
@@ -76,6 +78,7 @@ export function useMultiplayerGame<S>({
   const [gameRow, setGameRow] = useState<GameRow | null>(null);
   const [opponentId, setOpponentId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [fallbackToBotMode, setFallbackToBotMode] = useState(false);
 
   // Stable ref so effects always see the latest row without re-subscribing
   const gameRowRef = useRef<GameRow | null>(null);
@@ -94,7 +97,12 @@ export function useMultiplayerGame<S>({
       try {
         // 1. Resolve opponent from the match row
         const match = await getMatchById(matchId);
-        if (!match || cancelled) return;
+        if (cancelled) return;
+        if (!match) {
+          // Match not found in DB — likely a fake/seed profile match
+          setFallbackToBotMode(true);
+          return;
+        }
 
         const oppId = match.user_a === myUserId ? match.user_b : match.user_a;
         if (!cancelled) setOpponentId(oppId);
@@ -186,7 +194,7 @@ export function useMultiplayerGame<S>({
   );
 
   // ── No-op return when disabled ───────────────────────────────────────────
-  if (!enabled) {
+  if (!enabled || fallbackToBotMode) {
     return {
       gameId: null,
       gameRow: null,
@@ -196,6 +204,7 @@ export function useMultiplayerGame<S>({
       opponentId: '',
       winner: null,
       loading: false,
+      fallbackToBotMode,
       submitMove: () => {},
     };
   }
@@ -209,6 +218,7 @@ export function useMultiplayerGame<S>({
     opponentId,
     winner: gameRow?.winner ?? null,
     loading,
+    fallbackToBotMode: false,
     submitMove,
   };
 }
