@@ -61,6 +61,7 @@ export async function upsertProfile(
         smoking:        data.smoking   || null,
         cannabis:       data.cannabis  || null,
         pets:           data.pets      || null,
+        bio:            data.bio       || null,
         exercise:       data.exercise  || null,
       },
       { onConflict: 'id' },

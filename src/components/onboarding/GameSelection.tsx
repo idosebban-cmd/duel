@@ -100,7 +100,7 @@ export function GameSelection() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Games</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7].map((i) => (
+            {[0,1,2,3,4,5,6,7,8].map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 4 ? 24 : 8, background: i < 4 ? '#FF6BA8' : i === 4 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
