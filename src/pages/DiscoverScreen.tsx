@@ -1475,7 +1475,7 @@ export function DiscoverScreen() {
     };
 
     checkProfile();
-  }, [user]);
+  }, [user?.id]);
 
   // Load real profiles from DB; keep fake ones as fallback if DB is empty
   useEffect(() => {
@@ -1510,7 +1510,7 @@ export function DiscoverScreen() {
     };
 
     loadProfiles();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const filteredProfiles = useMemo(() => applyFilters(profiles, activeFilters), [profiles, activeFilters]);
   const activeFilterCount = useMemo(() => countActiveFilters(activeFilters), [activeFilters]);
