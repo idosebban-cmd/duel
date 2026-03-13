@@ -355,7 +355,7 @@ export function MatchesScreen() {
     })();
 
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user?.id]);
 
   const isNew = (m: Match) => Date.now() - new Date(m.matchedAt).getTime() < NEW_THRESHOLD_MS;
 
