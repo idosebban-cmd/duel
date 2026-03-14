@@ -17,6 +17,7 @@ interface Match {
   affiliation: string;
   matchedAt: string;
   lastMessage?: LastMessageInfo;
+  intent?: 'romance' | 'play' | 'both';
 }
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ function rowFromMatch(m: MatchWithProfile): Match {
     element:     m.partner.element     ?? 'fire',
     affiliation: m.partner.affiliation ?? 'city',
     matchedAt:   m.matchedAt,
+    intent:      (m.partner.intent as 'romance' | 'play' | 'both') ?? undefined,
   };
 }
 
@@ -145,6 +147,18 @@ function MatchCard({ match, onTap, isNew }: { match: Match; onTap: () => void; i
           <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
           </span>
+          {match.intent && (
+            <span
+              className="font-body text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{
+                color: match.intent === 'play' ? '#00F5FF' : match.intent === 'romance' ? '#FF6BA8' : '#B565FF',
+                background: match.intent === 'play' ? 'rgba(0,245,255,0.12)' : match.intent === 'romance' ? 'rgba(255,107,168,0.12)' : 'rgba(181,101,255,0.12)',
+                border: `1px solid ${match.intent === 'play' ? 'rgba(0,245,255,0.25)' : match.intent === 'romance' ? 'rgba(255,107,168,0.25)' : 'rgba(181,101,255,0.25)'}`,
+              }}
+            >
+              {match.intent === 'play' ? '🎮' : match.intent === 'romance' ? '💜' : '✨'}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1 mb-1">
           {affiliationImages[match.affiliation] && (
@@ -155,7 +169,9 @@ function MatchCard({ match, onTap, isNew }: { match: Match; onTap: () => void; i
           </span>
         </div>
         {isNew && !match.lastMessage
-          ? <span className="font-body text-xs font-bold" style={{ color: '#4EFFC4' }}>✨ New match! Pick a game to play</span>
+          ? <span className="font-body text-xs font-bold" style={{ color: '#4EFFC4' }}>
+              {match.intent === 'romance' ? '💬 New match! Say hello' : '✨ New match! Pick a game to play'}
+            </span>
           : match.lastMessage
             ? (
               <span
