@@ -28,6 +28,7 @@ export interface UserProfile {
   cannabis: string | null;
   pets: string | null;
   exercise: string | null;
+  intent: string | null;
   latitude: number | null;
   longitude: number | null;
   created_at: string;
@@ -63,6 +64,7 @@ export async function upsertProfile(
         pets:           data.pets      || null,
         bio:            data.bio       || null,
         exercise:       data.exercise  || null,
+        intent:         data.intent    || 'romance',
       },
       { onConflict: 'id' },
     );
