@@ -35,6 +35,7 @@ interface Profile {
   exercise: string;
   favoriteGames: string[];
   prompts?: UserPrompt[];
+  intent?: 'romance' | 'play' | 'both';
 }
 
 const PROMPT_CATEGORY_COLORS: Record<string, string> = {
@@ -248,6 +249,7 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
     exercise:      p.exercise      ?? '',
     favoriteGames: p.favorite_games ?? [],
     prompts: [],
+    intent: (p.intent as 'romance' | 'play' | 'both') ?? undefined,
   };
 }
 
@@ -403,6 +405,18 @@ function ProfileCard({ profile }: { profile: Profile }) {
           draggable={false}
           style={{ padding: '10px', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}
         />
+        {profile.intent && (
+          <div
+            className="absolute top-3 left-3 px-2.5 py-1 rounded-full font-body text-xs font-bold"
+            style={{
+              background: 'rgba(0,0,0,0.65)',
+              color: profile.intent === 'play' ? '#00F5FF' : profile.intent === 'romance' ? '#FF6BA8' : '#B565FF',
+              border: `1px solid ${profile.intent === 'play' ? 'rgba(0,245,255,0.35)' : profile.intent === 'romance' ? 'rgba(255,107,168,0.35)' : 'rgba(181,101,255,0.35)'}`,
+            }}
+          >
+            {profile.intent === 'play' ? '🎮 Just Play' : profile.intent === 'romance' ? '💜 Romance' : '✨ Both'}
+          </div>
+        )}
         <div
           className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-body text-xs font-bold"
           style={{ background: 'rgba(0,0,0,0.65)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.35)' }}
@@ -1268,8 +1282,8 @@ function EmptyState({ onReset }: { onReset: () => void }) {
 
 // ─── Match modal ──────────────────────────────────────────────────────────────
 
-function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
-  matchProfile: Profile; userCharacter: string; onDismiss: () => void; onPlay: () => void;
+function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay, onChat, callerIntent }: {
+  matchProfile: Profile; userCharacter: string; onDismiss: () => void; onPlay: () => void; onChat: () => void; callerIntent?: 'romance' | 'play' | 'both';
 }) {
   return (
     <motion.div
@@ -1313,12 +1327,42 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
             <img src={characterImages[matchProfile.character] ?? '/characters/Ghost.png'} alt={matchProfile.name} className="w-full h-full object-contain p-2" draggable={false} />
           </motion.div>
         </div>
-        <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
-          style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(78,255,196,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
-          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-          PLAY NOW ▶
-        </motion.button>
-        <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        {/* Intent-aware CTAs */}
+        {callerIntent === 'romance' ? (
+          <>
+            <motion.button onClick={onChat} className="w-full py-4 rounded-xl font-display text-xl mb-3"
+              style={{ background: 'linear-gradient(135deg, #FF6BA8 0%, #B565FF 100%)', color: '#fff', boxShadow: '0 0 24px rgba(255,107,168,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              SEND A MESSAGE 💬
+            </motion.button>
+            <button onClick={onPlay} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Or play a game first
+            </button>
+          </>
+        ) : callerIntent === 'play' ? (
+          <>
+            <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
+              style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #00F5FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(0,245,255,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              PLAY NOW 🎮
+            </motion.button>
+            <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Maybe Later
+            </button>
+          </>
+        ) : (
+          <>
+            <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
+              style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(78,255,196,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              PLAY NOW ▶
+            </motion.button>
+            <button onClick={onChat} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Or send a message
+            </button>
+          </>
+        )}
+        <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-sm mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
           Maybe Later
         </button>
       </motion.div>
@@ -1445,6 +1489,7 @@ export function DiscoverScreen() {
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
+  const [userIntent, setUserIntent] = useState<'romance' | 'play' | 'both'>('romance');
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [completenessPercentage, setCompletenessPercentage] = useState(0);
@@ -1488,6 +1533,7 @@ export function DiscoverScreen() {
 
         // Try enhanced discovery first
         const callerIntent = (currentProfile?.intent as 'romance' | 'play' | 'both') ?? 'romance';
+        setUserIntent(callerIntent);
         const dbProfiles = await getDiscoveryUsers(user.id, {
           minAge: activeFilters.ageMin,
           maxAge: activeFilters.ageMax,
@@ -1698,10 +1744,15 @@ export function DiscoverScreen() {
           <MatchModal
             matchProfile={matchProfile}
             userCharacter={character ?? 'ghost'}
+            callerIntent={userIntent}
             onDismiss={() => setMatchProfile(null)}
             onPlay={() => {
               setMatchProfile(null);
               navigate('/play', fakeMatchId ? { state: { matchId: fakeMatchId } } : undefined);
+            }}
+            onChat={() => {
+              setMatchProfile(null);
+              navigate('/chat', fakeMatchId ? { state: { matchId: fakeMatchId, name: matchProfile.name, character: matchProfile.character } } : undefined);
             }}
           />
         )}
