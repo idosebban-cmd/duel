@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getProfile, getPhotos, savePhotos } from '../lib/database';
+import { getProfile, getPhotos, savePhotos, updateProfileField } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
@@ -412,12 +412,15 @@ export function ProfileScreen() {
   const bio         = dbProfile?.bio         || MOCK.bio;
   const prompts     = store.userPrompts.length > 0 ? store.userPrompts : MOCK_PROMPTS;
 
+  const intent    = (dbProfile?.intent as 'romance' | 'play' | 'both') ?? store.intent ?? 'romance';
+
   const lifestyle = { kids, drinking, smoking, cannabis, pets, exercise };
 
   // Toast state
   const [toast, setToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [showIntentModal, setShowIntentModal] = useState(false);
 
   const showToast = (msg = 'Profile editing coming soon') => {
     setToastMsg(msg);
@@ -456,6 +459,71 @@ export function ProfileScreen() {
           navigate('/login');
         }}
       />
+
+      {/* Intent edit modal */}
+      <AnimatePresence>
+        {showIntentModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowIntentModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>I'm Here To…</h2>
+              <div className="flex flex-col gap-2.5">
+                {([
+                  { value: 'play' as const, emoji: '🎮', label: 'Just Play', desc: 'Find gaming partners — no strings', color: '#00F5FF' },
+                  { value: 'romance' as const, emoji: '💜', label: 'Find Romance', desc: 'Looking for a real connection', color: '#FF6BA8' },
+                  { value: 'both' as const, emoji: '✨', label: 'Both', desc: 'Open to games and romance', color: '#B565FF' },
+                ]).map((opt) => (
+                  <button
+                    key={opt.value}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-left w-full transition-all"
+                    style={{
+                      background: intent === opt.value ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                      border: `2px solid ${intent === opt.value ? `${opt.color}60` : 'rgba(255,255,255,0.08)'}`,
+                    }}
+                    onClick={async () => {
+                      if (user && opt.value !== intent) {
+                        const { error } = await updateProfileField(user.id, 'intent', opt.value);
+                        if (!error) {
+                          setDbProfile((prev) => prev ? { ...prev, intent: opt.value } : prev);
+                          showToast('Intent updated!');
+                        } else {
+                          showToast('Failed to update — try again');
+                        }
+                      }
+                      setShowIntentModal(false);
+                    }}
+                  >
+                    <span className="text-2xl">{opt.emoji}</span>
+                    <div>
+                      <p className="font-body text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
+                      <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{opt.desc}</p>
+                    </div>
+                    {intent === opt.value && (
+                      <span className="ml-auto text-base" style={{ color: opt.color }}>✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowIntentModal(false)}
+                className="w-full mt-4 py-2 font-body text-sm font-bold rounded-lg"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <header
@@ -815,6 +883,39 @@ export function ProfileScreen() {
                   </div>
                 );
               })}
+            </div>
+          </SectionCard>
+        </motion.div>
+
+        {/* ── Intent (Just Play / Romance / Both) ────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.26 }}
+        >
+          <SectionCard>
+            <SectionHeading label="I'm Here To" onEdit={() => setShowIntentModal(true)} />
+            <div
+              className="flex items-center gap-3 px-3 py-3 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <span className="text-xl">
+                {intent === 'play' ? '🎮' : intent === 'romance' ? '💜' : '✨'}
+              </span>
+              <div>
+                <p className="font-body text-sm font-bold" style={{
+                  color: intent === 'play' ? '#00F5FF' : intent === 'romance' ? '#FF6BA8' : '#B565FF',
+                }}>
+                  {intent === 'play' ? 'Just Play' : intent === 'romance' ? 'Find Romance' : 'Both — Play & Romance'}
+                </p>
+                <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  {intent === 'play'
+                    ? 'Looking for gaming partners — no pressure'
+                    : intent === 'romance'
+                    ? 'Looking for a real connection'
+                    : 'Open to games and romance'}
+                </p>
+              </div>
             </div>
           </SectionCard>
         </motion.div>
