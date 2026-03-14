@@ -74,6 +74,23 @@ export async function upsertProfile(
   }
 }
 
+/** Update a single profile field (e.g. intent). */
+export async function updateProfileField(
+  userId: string,
+  field: string,
+  value: unknown,
+): Promise<{ error: Error | null }> {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ [field]: value })
+      .eq('id', userId);
+    return { error: error as Error | null };
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
 export async function getProfile(userId: string): Promise<{ data: UserProfile | null; error: Error | null }> {
   try {
     const { data, error } = await supabase
