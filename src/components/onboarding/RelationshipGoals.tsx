@@ -1,7 +1,9 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { ENABLE_JUST_PLAY } from '../../lib/featureFlags';
 
 type GoalOption = {
   id: string;
@@ -61,18 +63,63 @@ const goals: GoalOption[] = [
   },
 ];
 
+// ─── Intent options (Just Play feature) ──────────────────────────────────────
+
+type IntentOption = {
+  value: 'romance' | 'play' | 'both';
+  emoji: string;
+  label: string;
+  description: string;
+  gradient: string;
+  glow: string;
+  border: string;
+};
+
+const intentOptions: IntentOption[] = [
+  {
+    value: 'romance',
+    emoji: '\u2764\uFE0F',
+    label: 'Here for Romance',
+    description: 'Find your match the classic way',
+    gradient: 'linear-gradient(135deg, #ff4e6a, #ff8fa3)',
+    glow: 'rgba(255, 78, 106, 0.4)',
+    border: '#ff4e6a',
+  },
+  {
+    value: 'play',
+    emoji: '\uD83C\uDFAE',
+    label: 'Just Want to Play',
+    description: 'Skip the romance, find gaming partners',
+    gradient: 'linear-gradient(135deg, #00d4ff, #0066ff)',
+    glow: 'rgba(0, 212, 255, 0.4)',
+    border: '#00d4ff',
+  },
+  {
+    value: 'both',
+    emoji: '\u2728',
+    label: 'Open to Both',
+    description: 'Romance, games, or whatever happens',
+    gradient: 'linear-gradient(135deg, #ffd700, #9b59b6)',
+    glow: 'rgba(255, 215, 0, 0.4)',
+    border: '#ffd700',
+  },
+];
+
 export function RelationshipGoals() {
   const navigate = useNavigate();
-  const { lookingFor, updateRelationship, completeStep } = useOnboardingStore();
+  const { lookingFor, updateRelationship, intent, setIntent, completeStep } = useOnboardingStore();
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleSelect = (id: string) => {
     updateRelationship(id);
   };
 
   const handleContinue = () => {
-    if (lookingFor.length > 0) completeStep(5);
+    if (lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play')) completeStep(5);
     navigate('/onboarding/lifestyle');
   };
+
+  const showGoals = !ENABLE_JUST_PLAY || intent !== 'play';
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
@@ -112,34 +159,156 @@ export function RelationshipGoals() {
             <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Be honest — no judgment</p>
           </motion.div>
 
-          {/* Goal cards */}
-          <div className="space-y-3">
-            {goals.map((goal, index) => {
-              const isSelected = lookingFor.includes(goal.id);
-              return (
-                <motion.button key={goal.id} onClick={() => handleSelect(goal.id)} className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer relative overflow-hidden text-left"
-                  style={{ background: isSelected ? goal.gradient : 'rgba(255,255,255,0.07)', border: isSelected ? `2px solid ${goal.border}` : '2px solid rgba(255,255,255,0.12)', boxShadow: isSelected ? `0 0 0 1px ${goal.border}, 0 0 24px ${goal.glow}, 5px 5px 0px 0px ${goal.border}` : 'none', minHeight: 68 }}
-                  initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0, scale: isSelected ? 1.02 : 1 }}
-                  transition={{ delay: index * 0.06, scale: { type: 'spring', stiffness: 400, damping: 17 } }}
-                  whileHover={{ scale: isSelected ? 1.02 : 1.015 }} whileTap={{ scale: 0.98 }} aria-pressed={isSelected}>
-                  {isSelected && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
-                  <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl"
-                    style={{ background: isSelected ? 'rgba(255,255,255,0.2)' : `${goal.border}18`, border: isSelected ? '2px solid rgba(255,255,255,0.3)' : `2px solid ${goal.border}30` }}>
-                    <img src={goal.icon} alt="" className="w-8 h-8 object-contain" style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.3))' }} />
+          {/* ── Intent picker (Just Play feature) ───────────────────────────── */}
+          {ENABLE_JUST_PLAY && (
+            <motion.div className="mb-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="space-y-3">
+                {intentOptions.map((opt, index) => {
+                  const isSelected = intent === opt.value;
+                  return (
+                    <motion.button
+                      key={opt.value}
+                      onClick={() => setIntent(opt.value)}
+                      className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer relative overflow-hidden text-left"
+                      style={{
+                        background: isSelected ? opt.gradient : 'rgba(255,255,255,0.07)',
+                        border: isSelected ? `2px solid ${opt.border}` : '2px solid rgba(255,255,255,0.12)',
+                        boxShadow: isSelected ? `0 0 0 1px ${opt.border}, 0 0 24px ${opt.glow}, 5px 5px 0px 0px ${opt.border}` : 'none',
+                        minHeight: 68,
+                      }}
+                      initial={{ opacity: 0, x: -30 }}
+                      animate={{ opacity: 1, x: 0, scale: isSelected ? 1.02 : 1 }}
+                      transition={{ delay: index * 0.06, scale: { type: 'spring', stiffness: 400, damping: 17 } }}
+                      whileHover={{ scale: isSelected ? 1.02 : 1.015 }}
+                      whileTap={{ scale: 0.98 }}
+                      aria-pressed={isSelected}
+                    >
+                      {isSelected && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
+                      <span
+                        className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl text-2xl"
+                        style={{
+                          background: isSelected ? 'rgba(255,255,255,0.2)' : `${opt.border}18`,
+                          border: isSelected ? '2px solid rgba(255,255,255,0.3)' : `2px solid ${opt.border}30`,
+                        }}
+                      >
+                        {opt.emoji}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block font-display font-bold text-lg leading-tight" style={{ color: isSelected ? '#12122A' : 'white' }}>
+                          {opt.label}
+                        </span>
+                        <span className="block font-body text-sm" style={{ color: isSelected ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)' }}>
+                          {opt.description}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <motion.div
+                          className="flex-shrink-0 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                        >
+                          <Check size={18} className="text-white" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* "How does Just Play work?" tooltip trigger */}
+              <div className="relative mt-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowTooltip((v) => !v)}
+                  className="font-body text-xs font-medium tracking-wide flex items-center gap-1.5 transition-colors"
+                  style={{ color: 'rgba(0,212,255,0.7)' }}
+                >
+                  <span
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                    style={{ border: '1.5px solid rgba(0,212,255,0.5)', color: 'rgba(0,212,255,0.8)' }}
+                  >
+                    ?
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <span className="block font-display font-bold text-lg leading-tight" style={{ color: isSelected ? '#12122A' : 'white' }}>{goal.label}</span>
-                    <span className="block font-body text-sm" style={{ color: isSelected ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)' }}>{goal.description}</span>
-                  </div>
-                  {isSelected && (
-                    <motion.div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center" initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 20 }}>
-                      <Check size={18} className="text-white" />
+                  How does "Just Play" work?
+                </button>
+
+                <AnimatePresence>
+                  {showTooltip && (
+                    <motion.div
+                      className="absolute top-8 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm rounded-xl px-5 py-4 z-20"
+                      style={{
+                        background: 'rgba(10, 22, 40, 0.97)',
+                        border: '1.5px solid rgba(0, 212, 255, 0.35)',
+                        boxShadow: '0 0 24px rgba(0,212,255,0.15)',
+                      }}
+                      initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {/* Arrow */}
+                      <div
+                        className="absolute -top-[7px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45"
+                        style={{ background: 'rgba(10, 22, 40, 0.97)', border: '1.5px solid rgba(0,212,255,0.35)', borderRight: 'none', borderBottom: 'none' }}
+                      />
+                      <p className="font-body text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                        <strong style={{ color: '#00d4ff' }}>Just Play</strong> matches you with anyone else who picked "Just Play" or "Open to Both" — with <strong style={{ color: '#00d4ff' }}>no filters</strong> on age, gender, or distance. It's all about finding people to game with, nothing else.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowTooltip(false)}
+                        className="mt-2 font-body text-xs font-medium"
+                        style={{ color: 'rgba(0,212,255,0.6)' }}
+                      >
+                        Got it
+                      </button>
                     </motion.div>
                   )}
-                </motion.button>
-              );
-            })}
-          </div>
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Relationship goals (hidden for play-only intent) ────────── */}
+          {showGoals && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+              {ENABLE_JUST_PLAY && (
+                <div className="mb-4">
+                  <p className="font-body text-sm font-medium text-center" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    What kind of relationship are you looking for?
+                  </p>
+                </div>
+              )}
+              <div className="space-y-3">
+                {goals.map((goal, index) => {
+                  const isSelected = lookingFor.includes(goal.id);
+                  return (
+                    <motion.button key={goal.id} onClick={() => handleSelect(goal.id)} className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer relative overflow-hidden text-left"
+                      style={{ background: isSelected ? goal.gradient : 'rgba(255,255,255,0.07)', border: isSelected ? `2px solid ${goal.border}` : '2px solid rgba(255,255,255,0.12)', boxShadow: isSelected ? `0 0 0 1px ${goal.border}, 0 0 24px ${goal.glow}, 5px 5px 0px 0px ${goal.border}` : 'none', minHeight: 68 }}
+                      initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0, scale: isSelected ? 1.02 : 1 }}
+                      transition={{ delay: index * 0.06, scale: { type: 'spring', stiffness: 400, damping: 17 } }}
+                      whileHover={{ scale: isSelected ? 1.02 : 1.015 }} whileTap={{ scale: 0.98 }} aria-pressed={isSelected}>
+                      {isSelected && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
+                      <span className="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-xl"
+                        style={{ background: isSelected ? 'rgba(255,255,255,0.2)' : `${goal.border}18`, border: isSelected ? '2px solid rgba(255,255,255,0.3)' : `2px solid ${goal.border}30` }}>
+                        <img src={goal.icon} alt="" className="w-8 h-8 object-contain" style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.3))' }} />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block font-display font-bold text-lg leading-tight" style={{ color: isSelected ? '#12122A' : 'white' }}>{goal.label}</span>
+                        <span className="block font-body text-sm" style={{ color: isSelected ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)' }}>{goal.description}</span>
+                      </div>
+                      {isSelected && (
+                        <motion.div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center" initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 20 }}>
+                          <Check size={18} className="text-white" />
+                        </motion.div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 

@@ -28,6 +28,7 @@ export interface UserProfile {
   cannabis: string | null;
   pets: string | null;
   exercise: string | null;
+  intent: string | null;
   latitude: number | null;
   longitude: number | null;
   created_at: string;
@@ -63,6 +64,7 @@ export async function upsertProfile(
         pets:           data.pets      || null,
         bio:            data.bio       || null,
         exercise:       data.exercise  || null,
+        intent:         data.intent    || 'romance',
       },
       { onConflict: 'id' },
     );
@@ -114,6 +116,8 @@ export interface DiscoveryFilters {
   maxAge?: number;
   gender?: string;
   maxDistance?: number;
+  /** Current user's intent — drives "Just Play" matching behaviour. */
+  callerIntent?: 'romance' | 'play' | 'both';
 }
 
 export async function getDiscoveryUsers(
@@ -131,6 +135,9 @@ export async function getDiscoveryUsers(
       swiped?.map((s: { target_id: string }) => s.target_id) ?? [],
     );
 
+    const callerIntent = filters.callerIntent ?? 'romance';
+    const isPlayOnly = callerIntent === 'play';
+
     // Build query — only complete profiles (must have name, age, character)
     let query = supabase
       .from('profiles')
@@ -142,11 +149,24 @@ export async function getDiscoveryUsers(
       .order('created_at', { ascending: false })
       .limit(100);
 
-    // Apply age filters
-    if (filters.minAge) query = query.gte('age', filters.minAge);
-    if (filters.maxAge) query = query.lte('age', filters.maxAge);
-    // Apply gender filter
-    if (filters.gender) query = query.eq('gender', filters.gender);
+    // ── Intent-based filtering ─────────────────────────────────────────────
+    // "play"    → show only 'play' or 'both' users (no age/gender/distance)
+    // "romance" → show only 'romance' or 'both' users (apply normal filters)
+    // "both"    → show everyone (apply normal filters)
+    if (isPlayOnly) {
+      query = query.in('intent', ['play', 'both']);
+      // No age/gender/distance filters for play-only mode
+    } else if (callerIntent === 'romance') {
+      query = query.in('intent', ['romance', 'both']);
+      if (filters.minAge) query = query.gte('age', filters.minAge);
+      if (filters.maxAge) query = query.lte('age', filters.maxAge);
+      if (filters.gender) query = query.eq('gender', filters.gender);
+    } else {
+      // "both" — see everyone, still respect personal filters
+      if (filters.minAge) query = query.gte('age', filters.minAge);
+      if (filters.maxAge) query = query.lte('age', filters.maxAge);
+      if (filters.gender) query = query.eq('gender', filters.gender);
+    }
 
     const { data, error } = await query;
     if (error) throw error;

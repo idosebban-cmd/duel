@@ -21,6 +21,7 @@ create table if not exists profiles (
   cannabis     text,
   pets         text,
   exercise     text,
+  intent       text        default 'romance' check (intent in ('romance', 'play', 'both')),
   latitude     decimal(10, 8),
   longitude    decimal(11, 8),
   created_at   timestamptz default now(),

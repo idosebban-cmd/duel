@@ -45,6 +45,9 @@ export interface OnboardingState {
   gameTypes: string[];
   favoriteGames: string[];
 
+  // Intent (Just Play feature)
+  intent: 'romance' | 'play' | 'both';
+
   // Relationship
   lookingFor: string[];
 
@@ -79,6 +82,7 @@ interface OnboardingActions {
   updatePhotos: (photos: string[]) => void;
   updateGameTypes: (gameTypes: string[]) => void;
   updateFavoriteGames: (favoriteGames: string[]) => void;
+  setIntent: (intent: 'romance' | 'play' | 'both') => void;
   updateRelationship: (id: string) => void;
   updateLifestyle: (field: keyof Pick<OnboardingState, 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise'>, value: string) => void;
   updatePrompts: (prompts: UserPrompt[]) => void;
@@ -102,6 +106,7 @@ const initialState: OnboardingState = {
   photos: loadSessionPhotos(),
   gameTypes: [],
   favoriteGames: [],
+  intent: 'romance',
   lookingFor: [],
   kids: null,
   drinking: null,
@@ -148,6 +153,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 
       updateFavoriteGames: (favoriteGames) => set({ favoriteGames }),
 
+      setIntent: (intent) => set({ intent }),
+
       updateRelationship: (id) =>
         set((state) => ({
           lookingFor: state.lookingFor.includes(id)
@@ -176,7 +183,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
-      version: 2,
+      version: 3,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -184,6 +191,10 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
           s.lookingFor = s.lookingFor ? [s.lookingFor] : [];
         } else if (!Array.isArray(s.lookingFor)) {
           s.lookingFor = [];
+        }
+        // v2 → v3: add intent field (default to 'romance' for existing users)
+        if (!s.intent) {
+          s.intent = 'romance';
         }
         return s;
       },
