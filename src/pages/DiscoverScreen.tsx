@@ -1487,9 +1487,11 @@ export function DiscoverScreen() {
         const { data: currentProfile } = await getProfile(user.id);
 
         // Try enhanced discovery first
+        const callerIntent = (currentProfile?.intent as 'romance' | 'play' | 'both') ?? 'romance';
         const dbProfiles = await getDiscoveryUsers(user.id, {
           minAge: activeFilters.ageMin,
           maxAge: activeFilters.ageMax,
+          callerIntent,
         });
 
         if (dbProfiles.length > 0) {
