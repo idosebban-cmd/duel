@@ -1319,7 +1319,7 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
             <img src={characterImages[userCharacter] ?? '/characters/Ghost.png'} alt="you" className="w-full h-full object-contain p-2" draggable={false} />
           </motion.div>
           <motion.div animate={{ scale: [1, 1.25, 1] }} transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}>
-            <img src="/icons/Heart.png" alt="" className="w-9 h-9 object-contain" draggable={false} style={{ filter: 'drop-shadow(0 0 10px rgba(255,107,168,0.8))' }} />
+            <img src="/game-icons/Competative%20games.png" alt="" className="w-9 h-9 object-contain" draggable={false} style={{ filter: 'drop-shadow(0 0 10px rgba(78,255,196,0.8))' }} />
           </motion.div>
           <motion.div className="w-24 h-24 rounded-full overflow-hidden border-4 flex-shrink-0"
             style={{ borderColor: '#FF6BA8', boxShadow: '0 0 20px rgba(255,107,168,0.5)', background: '#0E0E22' }}
