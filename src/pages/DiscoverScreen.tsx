@@ -1466,7 +1466,8 @@ export function DiscoverScreen() {
   const [completenessPercentage, setCompletenessPercentage] = useState(0);
   const navigate = useNavigate();
   const { character } = useOnboardingStore();
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
+  const emailConfirmed = !!session;
 
   // Check profile completeness on mount
   useEffect(() => {
@@ -1545,6 +1546,7 @@ export function DiscoverScreen() {
   };
 
   const handleSwipe = (dir: 'left' | 'right') => {
+    if (!emailConfirmed) return;
     const profile = filteredProfiles[currentIndex];
     setCurrentIndex((i) => i + 1);
     setDisabled(false);
@@ -1576,7 +1578,7 @@ export function DiscoverScreen() {
   };
 
   const executeButtonSwipe = (dir: 'left' | 'right') => {
-    if (disabled || showEmpty) return;
+    if (!emailConfirmed || disabled || showEmpty) return;
     setDisabled(true);
     setSwipeCommand(dir);
   };
@@ -1638,6 +1640,25 @@ export function DiscoverScreen() {
         </div>
       </header>
 
+      {/* Email confirmation banner */}
+      {!emailConfirmed && (
+        <div
+          className="flex-none flex items-center gap-3 mx-5 mb-2 px-4 py-3 rounded-xl font-body text-sm"
+          style={{
+            background: 'rgba(255,230,109,0.08)',
+            border: '1.5px solid rgba(255,230,109,0.3)',
+            color: '#FFE66D',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="9" cy="9" r="8" stroke="#FFE66D" strokeWidth="1.5" />
+            <path d="M9 5v4" stroke="#FFE66D" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="9" cy="12.5" r="0.75" fill="#FFE66D" />
+          </svg>
+          <span>Please confirm your email to start swiping. Check your inbox.</span>
+        </div>
+      )}
+
       {/* Incomplete profile blocker */}
       {showIncompleteModal && (
         <IncompleteProfileModal
@@ -1664,7 +1685,7 @@ export function DiscoverScreen() {
               onSwipeStart={() => setDisabled(true)}
               onSwipe={handleSwipe}
               onExpand={() => !disabled && setExpandedProfile(filteredProfiles[currentIndex])}
-              disabled={disabled || expandedProfile !== null}
+              disabled={!emailConfirmed || disabled || expandedProfile !== null}
             />
           </div>
         )}
