@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getMatches, getLastMessages } from '../lib/database';
+import { getMatches, getLastMessages, hasCompletedGame } from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo } from '../lib/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -378,8 +378,14 @@ export function MatchesScreen() {
   const newMatches    = matches.filter((m) =>  isNew(m));
   const olderMatches  = matches.filter((m) => !isNew(m));
 
-  const handleTap = (m: Match) => {
-    navigate('/chat', { state: { matchId: m.id, name: m.name, character: m.character } });
+  const handleTap = async (m: Match) => {
+    const completed = await hasCompletedGame(m.id);
+    if (completed) {
+      navigate('/chat', { state: { matchId: m.id, name: m.name, character: m.character } });
+    } else {
+      localStorage.setItem('pending_match_id', m.id);
+      navigate('/play', { state: { matchId: m.id } });
+    }
   };
 
   return (
