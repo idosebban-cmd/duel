@@ -93,11 +93,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
 };
 
-const MOCK_PROMPTS: UserPrompt[] = [
-  { id: 1, category: 'games', icon: '🎮', question: "I'm weirdly competitive about...", answer: "Monopoly. I will bankrupt you with a smile on my face. 😈" },
-  { id: 21, category: 'fun', icon: '🎲', question: "My most useless skill is...", answer: "I can beatbox the Mario theme song backwards." },
-  { id: 36, category: 'personality', icon: '💭', question: "I'm the type of person who...", answer: "Always forgets why I walked into a room but remembers your coffee order forever." },
-];
 
 // ─── Prompt card ──────────────────────────────────────────────────────────────
 
@@ -127,25 +122,12 @@ function PromptCard({ prompt }: { prompt: UserPrompt }) {
   );
 }
 
-// ─── Mock defaults (shown when store fields are blank) ────────────────────────
+// ─── Placeholder text for empty fields ────────────────────────────────────────
 
-const MOCK = {
-  name: 'Alex',
-  age: 29,
-  location: 'Hackney, London',
-  bio: "DJ & producer. My love language is sending playlists and losing to you at Scrabble. Probably crying at a film I've seen six times.",
-  character: 'fox',
-  element: 'fire',
-  affiliation: 'music',
-  gameTypes: ['trivia', 'party', 'word', 'strategy', 'drawing'],
-  favoriteGames: ['Guess Who', 'Dot Dash'],
-  lookingFor: ['open'],
-  kids: 'Want kids someday',
-  drinking: 'Socially',
-  smoking: 'No',
-  cannabis: 'Occasionally',
-  pets: 'Have a cat',
-  exercise: 'Few times a week',
+const PLACEHOLDER = {
+  name: 'Add your name',
+  location: 'Add your location',
+  bio: 'Add your bio',
 };
 
 // ─── Shared section card ──────────────────────────────────────────────────────
@@ -393,24 +375,24 @@ export function ProfileScreen() {
     }
   };
 
-  // Merge DB → store → mock
-  const name        = dbProfile?.name        || store.name        || MOCK.name;
-  const age         = dbProfile?.age         ?? store.age         ?? MOCK.age;
-  const location    = dbProfile?.location    || store.location    || MOCK.location;
-  const character   = dbProfile?.character   || store.character   || MOCK.character;
-  const element     = dbProfile?.element     || store.element     || MOCK.element;
-  const affiliation = dbProfile?.affiliation || store.affiliation || MOCK.affiliation;
-  const gameTypes   = (dbProfile?.game_types?.length     ? dbProfile.game_types     : null) ?? (store.gameTypes.length     ? store.gameTypes     : MOCK.gameTypes);
-  const favoriteGames = (dbProfile?.favorite_games?.length ? dbProfile.favorite_games : null) ?? (store.favoriteGames.length ? store.favoriteGames : MOCK.favoriteGames);
-  const lookingFor  = (dbProfile?.looking_for?.length    ? dbProfile.looking_for    : null) ?? (store.lookingFor.length    ? store.lookingFor    : MOCK.lookingFor);
-  const kids        = dbProfile?.kids        || store.kids        || MOCK.kids;
-  const drinking    = dbProfile?.drinking    || store.drinking    || MOCK.drinking;
-  const smoking     = dbProfile?.smoking     || store.smoking     || MOCK.smoking;
-  const cannabis    = dbProfile?.cannabis    || store.cannabis    || MOCK.cannabis;
-  const pets        = dbProfile?.pets        || store.pets        || MOCK.pets;
-  const exercise    = dbProfile?.exercise    || store.exercise    || MOCK.exercise;
-  const bio         = dbProfile?.bio         || MOCK.bio;
-  const prompts     = store.userPrompts.length > 0 ? store.userPrompts : MOCK_PROMPTS;
+  // Merge DB → store → null (no mock fallbacks)
+  const name        = dbProfile?.name        || store.name        || '';
+  const age         = dbProfile?.age         ?? store.age         ?? null;
+  const location    = dbProfile?.location    || store.location    || '';
+  const character   = dbProfile?.character   || store.character   || null;
+  const element     = dbProfile?.element     || store.element     || null;
+  const affiliation = dbProfile?.affiliation || store.affiliation || null;
+  const gameTypes   = (dbProfile?.game_types?.length     ? dbProfile.game_types     : null) ?? (store.gameTypes.length     ? store.gameTypes     : []);
+  const favoriteGames = (dbProfile?.favorite_games?.length ? dbProfile.favorite_games : null) ?? (store.favoriteGames.length ? store.favoriteGames : []);
+  const lookingFor  = (dbProfile?.looking_for?.length    ? dbProfile.looking_for    : null) ?? (store.lookingFor.length    ? store.lookingFor    : []);
+  const kids        = dbProfile?.kids        || store.kids        || null;
+  const drinking    = dbProfile?.drinking    || store.drinking    || null;
+  const smoking     = dbProfile?.smoking     || store.smoking     || null;
+  const cannabis    = dbProfile?.cannabis    || store.cannabis    || null;
+  const pets        = dbProfile?.pets        || store.pets        || null;
+  const exercise    = dbProfile?.exercise    || store.exercise    || null;
+  const bio         = dbProfile?.bio         || store.bio         || '';
+  const prompts     = store.userPrompts.length > 0 ? store.userPrompts : [];
 
   const intent    = (dbProfile?.intent as 'romance' | 'play' | 'both') ?? store.intent ?? 'romance';
 
@@ -428,14 +410,9 @@ export function ProfileScreen() {
     setTimeout(() => setToast(false), 2200);
   };
 
-  // Photos: real DB photos, fall back to session photos, then mock gradients
+  // Photos: real DB photos, fall back to session photos
   const sessionPhotos = store.photos;
   const displayPhotos = dbPhotos.length > 0 ? dbPhotos : sessionPhotos;
-  const mockPhotoSlots = [
-    { gradient: 'linear-gradient(135deg, #FF6BA8 0%, #B565FF 100%)', label: '♪' },
-    { gradient: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)', label: '✦' },
-    { gradient: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)', label: '★' },
-  ];
 
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -578,21 +555,27 @@ export function ProfileScreen() {
                 boxShadow: '0 0 30px rgba(78,255,196,0.2), inset 0 0 20px rgba(78,255,196,0.05)',
               }}
             >
-              <img
-                src={characterImages[character]}
-                alt={character}
-                className="w-20 h-20 object-contain"
-                draggable={false}
-              />
+              {character && characterImages[character] ? (
+                <img
+                  src={characterImages[character]}
+                  alt={character}
+                  className="w-20 h-20 object-contain"
+                  draggable={false}
+                />
+              ) : (
+                <span className="font-body text-3xl" style={{ color: 'rgba(255,255,255,0.2)' }}>?</span>
+              )}
             </div>
 
             {/* Element badge */}
-            <div
-              className="absolute bottom-0 right-0 w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ background: '#0A1628', border: '2px solid rgba(255,255,255,0.15)' }}
-            >
-              <img src={elementImages[element]} alt={element} className="w-6 h-6 object-contain" draggable={false} />
-            </div>
+            {element && elementImages[element] && (
+              <div
+                className="absolute bottom-0 right-0 w-9 h-9 rounded-full flex items-center justify-center"
+                style={{ background: '#0A1628', border: '2px solid rgba(255,255,255,0.15)' }}
+              >
+                <img src={elementImages[element]} alt={element} className="w-6 h-6 object-contain" draggable={false} />
+              </div>
+            )}
 
             {/* Edit avatar button */}
             <button
@@ -608,23 +591,31 @@ export function ProfileScreen() {
 
           {/* Name + age */}
           <div className="text-center">
-            <p className="font-display text-2xl" style={{ color: 'rgba(255,255,255,0.95)' }}>
-              {name}, {age}
+            <p className="font-display text-2xl" style={{ color: name ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)' }}>
+              {name || PLACEHOLDER.name}{age != null ? `, ${age}` : ''}
             </p>
             <p className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
                 <circle cx="6" cy="4.5" r="1.2" fill="currentColor"/>
               </svg>
-              {location}
+              {location || PLACEHOLDER.location}
             </p>
             {/* Avatar tag */}
-            <div className="flex items-center justify-center gap-1.5 mt-2">
-              <img src={affiliationImages[affiliation]} alt="" className="w-4 h-4 object-contain" draggable={false} />
-              <span className="font-body text-xs" style={{ color: 'rgba(78,255,196,0.7)' }}>
-                {cap(element)} {cap(affiliation)} {cap(character)}
-              </span>
-            </div>
+            {character && element && affiliation ? (
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                {affiliationImages[affiliation] && (
+                  <img src={affiliationImages[affiliation]} alt="" className="w-4 h-4 object-contain" draggable={false} />
+                )}
+                <span className="font-body text-xs" style={{ color: 'rgba(78,255,196,0.7)' }}>
+                  {cap(element)} {cap(affiliation)} {cap(character)}
+                </span>
+              </div>
+            ) : (
+              <p className="font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                No avatar selected
+              </p>
+            )}
           </div>
         </motion.div>
 
@@ -694,15 +685,14 @@ export function ProfileScreen() {
                       <img src={src} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" draggable={false} />
                     </div>
                   ))
-                : mockPhotoSlots.map((slot, i) => (
+                : (
                     <div
-                      key={i}
-                      className="flex-shrink-0 w-24 h-28 rounded-xl flex items-center justify-center text-2xl"
-                      style={{ background: slot.gradient, opacity: 0.75 }}
+                      className="flex-shrink-0 w-24 h-28 rounded-xl flex items-center justify-center"
+                      style={{ border: '1.5px dashed rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.02)' }}
                     >
-                      {slot.label}
+                      <span className="font-body text-xs text-center px-1" style={{ color: 'rgba(255,255,255,0.2)' }}>No photos yet</span>
                     </div>
-                  ))
+                  )
               }
               {/* Add photo slot */}
               <input
@@ -747,8 +737,8 @@ export function ProfileScreen() {
         >
           <SectionCard>
             <SectionHeading label="About" onEdit={() => showToast('Profile editing coming soon')} />
-            <p className="font-body text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              {bio}
+            <p className="font-body text-sm leading-relaxed" style={{ color: bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)' }}>
+              {bio || PLACEHOLDER.bio}
             </p>
           </SectionCard>
         </motion.div>
@@ -761,11 +751,17 @@ export function ProfileScreen() {
         >
           <SectionCard>
             <SectionHeading label="Get To Know Me" onEdit={() => showToast('Profile editing coming soon')} />
-            <div className="flex flex-col gap-3">
-              {prompts.map((p) => (
-                <PromptCard key={p.id} prompt={p} />
-              ))}
-            </div>
+            {prompts.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {prompts.map((p) => (
+                  <PromptCard key={p.id} prompt={p} />
+                ))}
+              </div>
+            ) : (
+              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                No prompts added yet
+              </p>
+            )}
           </SectionCard>
         </motion.div>
 
@@ -779,19 +775,27 @@ export function ProfileScreen() {
             <SectionHeading label="Avatar" onEdit={() => showToast('Profile editing coming soon')} />
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Character', img: characterImages[character], name: cap(character) },
-                { label: 'Element',   img: elementImages[element],     name: cap(element) },
-                { label: 'World',     img: affiliationImages[affiliation], name: cap(affiliation) },
+                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null },
+                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null },
+                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null },
               ].map((item) => (
                 <div
                   key={item.label}
                   className="flex flex-col items-center gap-1.5 py-3 rounded-xl"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <img src={item.img} alt={item.name} className="w-10 h-10 object-contain" draggable={false} />
+                  {item.img ? (
+                    <img src={item.img} alt={item.name ?? ''} className="w-10 h-10 object-contain" draggable={false} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
+                    </div>
+                  )}
                   <div className="text-center">
                     <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
-                    <p className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.8)' }}>{item.name}</p>
+                    <p className="font-body text-xs font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
+                      {item.name ?? 'Not set'}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -819,22 +823,28 @@ export function ProfileScreen() {
           <SectionCard>
             <SectionHeading label="Loves to Play" onEdit={() => showToast('Profile editing coming soon')} />
             {/* Game type chips */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {gameTypes.map((g) => (
-                <div
-                  key={g}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-                >
-                  {gameTypeIcons[g] && (
-                    <img src={gameTypeIcons[g]} alt="" className="w-4 h-4 object-contain" draggable={false} />
-                  )}
-                  <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                    {gameTypeLabels[g] || g}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {gameTypes.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {gameTypes.map((g) => (
+                  <div
+                    key={g}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    {gameTypeIcons[g] && (
+                      <img src={gameTypeIcons[g]} alt="" className="w-4 h-4 object-contain" draggable={false} />
+                    )}
+                    <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      {gameTypeLabels[g] || g}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="font-body text-sm mb-3" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                No game types selected
+              </p>
+            )}
             {/* Favourite games */}
             {favoriteGames.length > 0 && (
               <>
@@ -866,24 +876,30 @@ export function ProfileScreen() {
         >
           <SectionCard>
             <SectionHeading label="Looking For" onEdit={() => showToast('Profile editing coming soon')} />
-            <div className="flex flex-wrap gap-2">
-              {lookingFor.map((id) => {
-                const color = goalColors[id] || '#4EFFC4';
-                return (
-                  <div
-                    key={id}
-                    className="px-3 py-2 rounded-lg font-body text-sm font-bold"
-                    style={{
-                      color,
-                      background: `${color}18`,
-                      border: `1.5px solid ${color}40`,
-                    }}
-                  >
-                    {goalLabels[id] || id}
-                  </div>
-                );
-              })}
-            </div>
+            {lookingFor.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {lookingFor.map((id) => {
+                  const color = goalColors[id] || '#4EFFC4';
+                  return (
+                    <div
+                      key={id}
+                      className="px-3 py-2 rounded-lg font-body text-sm font-bold"
+                      style={{
+                        color,
+                        background: `${color}18`,
+                        border: `1.5px solid ${color}40`,
+                      }}
+                    >
+                      {goalLabels[id] || id}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                Not set
+              </p>
+            )}
           </SectionCard>
         </motion.div>
 
@@ -929,7 +945,7 @@ export function ProfileScreen() {
           <SectionCard>
             <SectionHeading label="Lifestyle" onEdit={() => showToast('Profile editing coming soon')} />
             <div className="grid grid-cols-2 gap-2">
-              {(Object.entries(lifestyle) as [keyof typeof lifestyle, string][]).map(([key, val]) => (
+              {(Object.entries(lifestyle) as [keyof typeof lifestyle, string | null][]).map(([key, val]) => (
                 <div
                   key={key}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
@@ -940,8 +956,8 @@ export function ProfileScreen() {
                     <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
                       {lifestyleLabels[key]}
                     </p>
-                    <p className="font-body text-xs font-bold truncate" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                      {val}
+                    <p className="font-body text-xs font-bold truncate" style={{ color: val ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.2)' }}>
+                      {val ?? 'Not set'}
                     </p>
                   </div>
                 </div>

@@ -5,33 +5,19 @@ export interface ProfileCompleteness {
 }
 
 export function checkProfileCompleteness(profile: any): ProfileCompleteness {
-  const required = [
-    'name',
-    'avatar_url',
-    'bio',
-    'age',
-    'location',
-    'gender',
-    'looking_for',
-    'prompts',
+  const checks: { label: string; ok: boolean }[] = [
+    { label: 'Name', ok: !!profile?.name },
+    { label: 'Profile photo', ok: !!profile?.avatar_url || (profile?.photos?.length ?? 0) > 0 },
+    { label: 'Bio (min 20 chars)', ok: !!profile?.bio && profile.bio.length >= 20 },
+    { label: 'Age', ok: !!profile?.age },
+    { label: 'Location', ok: !!profile?.location },
+    { label: 'Gender', ok: !!profile?.gender },
+    { label: "What you're looking for", ok: (profile?.looking_for?.length ?? 0) > 0 },
+    { label: 'Character avatar', ok: !!profile?.character },
   ];
 
-  const missing: string[] = [];
-
-  if (!profile?.name) missing.push('Name');
-  if (!profile?.avatar_url && (!profile?.photos || profile.photos.length === 0))
-    missing.push('Profile photo');
-  if (!profile?.bio || profile.bio.length < 20) missing.push('Bio (min 20 chars)');
-  if (!profile?.age) missing.push('Age');
-  if (!profile?.location) missing.push('Location');
-  if (!profile?.gender) missing.push('Gender');
-  if (!profile?.looking_for || profile.looking_for.length === 0)
-    missing.push("What you're looking for");
-  if (!profile?.character) missing.push('Character avatar');
-
-  const percentage = Math.round(
-    ((required.length - missing.length) / required.length) * 100,
-  );
+  const missing = checks.filter((c) => !c.ok).map((c) => c.label);
+  const percentage = Math.round(((checks.length - missing.length) / checks.length) * 100);
 
   return {
     isComplete: missing.length === 0,
