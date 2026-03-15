@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { useAuthStore } from '../../store/authStore';
 import { upsertProfile, savePhotos } from '../../lib/database';
+import { supabase } from '../../lib/supabase';
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -81,6 +82,7 @@ export function PlayerCardPreview() {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const emailConfirmed = !!session;
@@ -107,12 +109,37 @@ export function PlayerCardPreview() {
   const saveAndNavigate = async () => {
     if (saving) return;
     setSaving(true);
+    setSaveError(null);
 
-    if (user) {
-      await upsertProfile(user.id, { ...store, email: user.email ?? '' });
-      if (store.photos.length > 0) {
-        await savePhotos(user.id, store.photos);
-      }
+    if (!user) {
+      console.warn('[Onboarding] No user found — waiting for auth');
+      setSaving(false);
+      setPendingSave(true);
+      return;
+    }
+
+    // Verify we have a valid Supabase session before saving
+    const { data: sessionData } = await supabase?.auth.getSession() ?? { data: { session: null } };
+    if (!sessionData.session) {
+      console.error('[Onboarding] No active Supabase session — cannot save');
+      setSaveError('No active session. Please check your email confirmation and try again.');
+      setSaving(false);
+      return;
+    }
+
+    console.log('[Onboarding] Saving profile for user:', user.id);
+    const { error } = await upsertProfile(user.id, { ...store, email: user.email ?? '' });
+    if (error) {
+      console.error('[Onboarding] upsertProfile failed:', error);
+      setSaveError(`Failed to save profile: ${error.message}. Tap to retry.`);
+      setSaving(false);
+      return;
+    }
+    console.log('[Onboarding] Profile saved successfully');
+
+    if (store.photos.length > 0) {
+      await savePhotos(user.id, store.photos);
+      console.log('[Onboarding] Photos saved');
     }
 
     setSaving(false);
@@ -464,6 +491,27 @@ export function PlayerCardPreview() {
                   style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,230,109,0.3)', borderTopColor: '#FFE66D', borderRadius: '50%', flexShrink: 0 }}
                 />
                 <span>Please confirm your email to continue. Check your inbox.</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Save error banner */}
+          <AnimatePresence>
+            {saveError && (
+              <motion.div
+                className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm cursor-pointer"
+                style={{
+                  background: 'rgba(255,107,168,0.1)',
+                  border: '1.5px solid rgba(255,107,168,0.35)',
+                  color: '#FF6BA8',
+                }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                onClick={() => { setSaveError(null); saveAndNavigate(); }}
+              >
+                <span>⚠</span>
+                <span>{saveError}</span>
               </motion.div>
             )}
           </AnimatePresence>
