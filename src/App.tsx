@@ -74,18 +74,20 @@ export default function App() {
           {/* Landing page */}
           <Route path="/landing" element={<LandingPage />} />
 
-          {/* Onboarding (public — accessible after sign up) */}
+          {/* Welcome screen (public — entry point) */}
           <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
-          <Route path="/onboarding/avatar" element={<AvatarSelection />} />
-          <Route path="/onboarding/basics" element={<BasicsForm />} />
-          <Route path="/onboarding/photos" element={<PhotoUpload />} />
-          <Route path="/onboarding/games" element={<GameSelection />} />
-          <Route path="/onboarding/relationship-goals" element={<RelationshipGoals />} />
-          <Route path="/onboarding/lifestyle" element={<LifestyleQuestions />} />
-          <Route path="/onboarding/bio" element={<BioStep />} />
-          <Route path="/onboarding/prompts" element={<PromptsSelection />} />
-          <Route path="/onboarding/preview" element={<PlayerCardPreview />} />
+
+          {/* Onboarding (protected — requires sign-up first) */}
+          <Route path="/onboarding/avatar" element={<ProtectedRoute><AvatarSelection /></ProtectedRoute>} />
+          <Route path="/onboarding/basics" element={<ProtectedRoute><BasicsForm /></ProtectedRoute>} />
+          <Route path="/onboarding/photos" element={<ProtectedRoute><PhotoUpload /></ProtectedRoute>} />
+          <Route path="/onboarding/games" element={<ProtectedRoute><GameSelection /></ProtectedRoute>} />
+          <Route path="/onboarding/relationship-goals" element={<ProtectedRoute><RelationshipGoals /></ProtectedRoute>} />
+          <Route path="/onboarding/lifestyle" element={<ProtectedRoute><LifestyleQuestions /></ProtectedRoute>} />
+          <Route path="/onboarding/bio" element={<ProtectedRoute><BioStep /></ProtectedRoute>} />
+          <Route path="/onboarding/prompts" element={<ProtectedRoute><PromptsSelection /></ProtectedRoute>} />
+          <Route path="/onboarding/preview" element={<ProtectedRoute><PlayerCardPreview /></ProtectedRoute>} />
 
           {/* Login */}
           <Route path="/login" element={<LoginScreen />} />

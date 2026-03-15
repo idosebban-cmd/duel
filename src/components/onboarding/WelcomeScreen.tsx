@@ -186,7 +186,7 @@ export function WelcomeScreen() {
 
         {/* CTA */}
         <motion.button
-          onClick={() => navigate('/onboarding/avatar')}
+          onClick={() => navigate('/login?mode=signup')}
           className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
           style={{
             background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
@@ -214,13 +214,13 @@ export function WelcomeScreen() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.85 }}
         >
-          Already have an account?{' '}
+          Already playing?{' '}
           <button
             className="font-semibold hover:underline"
             style={{ color: '#FF6BA8' }}
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login?mode=signin')}
           >
-            Sign in
+            Log in
           </button>
         </motion.p>
       </motion.div>
