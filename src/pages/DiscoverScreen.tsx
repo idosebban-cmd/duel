@@ -1282,8 +1282,8 @@ function EmptyState({ onReset }: { onReset: () => void }) {
 
 // ─── Match modal ──────────────────────────────────────────────────────────────
 
-function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay, onChat, callerIntent }: {
-  matchProfile: Profile; userCharacter: string; onDismiss: () => void; onPlay: () => void; onChat: () => void; callerIntent?: 'romance' | 'play' | 'both';
+function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
+  matchProfile: Profile; userCharacter: string; onDismiss: () => void; onPlay: () => void;
 }) {
   return (
     <motion.div
@@ -1327,41 +1327,12 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay, onChat, ca
             <img src={characterImages[matchProfile.character] ?? '/characters/Ghost.png'} alt={matchProfile.name} className="w-full h-full object-contain p-2" draggable={false} />
           </motion.div>
         </div>
-        {/* Intent-aware CTAs */}
-        {callerIntent === 'romance' ? (
-          <>
-            <motion.button onClick={onChat} className="w-full py-4 rounded-xl font-display text-xl mb-3"
-              style={{ background: 'linear-gradient(135deg, #FF6BA8 0%, #B565FF 100%)', color: '#fff', boxShadow: '0 0 24px rgba(255,107,168,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              SEND A MESSAGE 💬
-            </motion.button>
-            <button onClick={onPlay} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Or play a game first
-            </button>
-          </>
-        ) : callerIntent === 'play' ? (
-          <>
-            <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
-              style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #00F5FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(0,245,255,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              PLAY NOW 🎮
-            </motion.button>
-            <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              Maybe Later
-            </button>
-          </>
-        ) : (
-          <>
-            <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
-              style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(78,255,196,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              PLAY NOW ▶
-            </motion.button>
-            <button onClick={onChat} className="w-full py-2 font-body font-bold text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Or send a message
-            </button>
-          </>
-        )}
+        {/* Always require a game before chat */}
+        <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
+          style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #00F5FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(0,245,255,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
+          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          LET'S PLAY 🎮
+        </motion.button>
         <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-sm mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
           Maybe Later
         </button>
@@ -1744,15 +1715,10 @@ export function DiscoverScreen() {
           <MatchModal
             matchProfile={matchProfile}
             userCharacter={character ?? 'ghost'}
-            callerIntent={userIntent}
             onDismiss={() => setMatchProfile(null)}
             onPlay={() => {
               setMatchProfile(null);
               navigate('/play', fakeMatchId ? { state: { matchId: fakeMatchId } } : undefined);
-            }}
-            onChat={() => {
-              setMatchProfile(null);
-              navigate('/chat', fakeMatchId ? { state: { matchId: fakeMatchId, name: matchProfile.name, character: matchProfile.character } } : undefined);
             }}
           />
         )}

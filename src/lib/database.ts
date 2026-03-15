@@ -514,6 +514,24 @@ export async function createOrJoinGame(
   }
 }
 
+/**
+ * Returns true if at least one game for this match has been completed (winner set).
+ * Falls back to the localStorage flag for bot/fake matches.
+ */
+export async function hasCompletedGame(matchId: string): Promise<boolean> {
+  if (localStorage.getItem(`first_game_played_${matchId}`)) return true;
+  try {
+    const { count } = await supabase
+      .from('games')
+      .select('id', { count: 'exact', head: true })
+      .eq('match_id', matchId)
+      .not('winner', 'is', null);
+    return (count ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function getGame(gameId: string): Promise<GameRow | null> {
   try {
     const { data } = await supabase
