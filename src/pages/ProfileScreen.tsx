@@ -76,6 +76,7 @@ const lifestyleLabels: Record<string, string> = {
 };
 
 const goalLabels: Record<string, string> = {
+  'casual': 'Something casual',
   'short-term': 'Short-term fun',
   'long-term': 'Long-term relationship',
   'not-sure': 'Not sure yet',
@@ -83,11 +84,91 @@ const goalLabels: Record<string, string> = {
 };
 
 const goalColors: Record<string, string> = {
+  'casual': '#FF6BA8',
   'short-term': '#FF9F1C',
   'long-term': '#4EFFC4',
   'not-sure': '#B565FF',
   'open': '#FFE66D',
 };
+
+// ─── Option sets (matching onboarding) ───────────────────────────────────────
+
+const LIFESTYLE_OPTIONS: Record<string, string[]> = {
+  kids: ['Have kids', 'Want kids someday', "Don't want kids", 'Not sure yet', 'Open to partner with kids'],
+  drinking: ['Never', 'Rarely', 'Socially', 'Regularly'],
+  smoking: ['Yes', 'No', 'Socially', 'Trying to quit'],
+  cannabis: ['Never', 'Occasionally', 'Regularly', 'Prefer not to say'],
+  pets: ['Have a dog', 'Have a cat', 'Want pets', 'Allergic to pets', 'Not interested in pets'],
+  exercise: ['Daily', 'Few times a week', 'Occasionally', 'Rarely'],
+};
+
+const GENDER_OPTIONS = [
+  { id: 'woman', label: 'Woman', color: '#FF6BA8' },
+  { id: 'man', label: 'Man', color: '#4EFFC4' },
+  { id: 'non-binary', label: 'Non-binary', color: '#B565FF' },
+];
+
+const INTERESTED_IN_OPTIONS = [
+  { id: 'men', label: 'Men', color: '#00D9FF' },
+  { id: 'women', label: 'Women', color: '#FF6BA8' },
+  { id: 'everyone', label: 'Everyone', color: '#B565FF' },
+];
+
+const GOAL_OPTIONS = [
+  { id: 'casual', label: 'Something casual', color: '#FF6BA8' },
+  { id: 'short-term', label: 'Short-term fun', color: '#FF9F1C' },
+  { id: 'long-term', label: 'Long-term relationship', color: '#4EFFC4' },
+  { id: 'not-sure', label: 'Not sure yet', color: '#B565FF' },
+  { id: 'open', label: 'Open to see what happens', color: '#FFE66D' },
+];
+
+const ALL_GAME_TYPES = [
+  'trivia', 'puzzles', 'drawing', 'word', 'board', 'video',
+  'card', 'competitive', 'coop', 'party', 'strategy', 'rpg', 'active', 'mobile',
+];
+
+const PROMPT_POOL: { id: number; category: 'games' | 'fun' | 'personality' | 'playful'; icon: string; question: string }[] = [
+  { id: 1, category: 'games', icon: '🎮', question: "I'm weirdly competitive about..." },
+  { id: 2, category: 'games', icon: '🎮', question: "The game I'll always beat you at is..." },
+  { id: 3, category: 'games', icon: '🎮', question: "My most embarrassing game rage quit moment..." },
+  { id: 4, category: 'games', icon: '🎮', question: "My secret gaming talent is..." },
+  { id: 5, category: 'games', icon: '🎮', question: "The last game that made me laugh was..." },
+  { id: 6, category: 'games', icon: '🎮', question: "I once stayed up until 3am playing..." },
+  { id: 7, category: 'games', icon: '🎮', question: "My childhood game obsession was..." },
+  { id: 8, category: 'games', icon: '🎮', question: "The one game I refuse to play is..." },
+  { id: 9, category: 'games', icon: '🎮', question: "My go-to move in any game is..." },
+  { id: 10, category: 'games', icon: '🎮', question: "I'd describe my gaming style as..." },
+  { id: 11, category: 'games', icon: '🎮', question: "The game that best represents me is..." },
+  { id: 12, category: 'games', icon: '🎮', question: "If I could only play one game forever..." },
+  { id: 13, category: 'games', icon: '🎮', question: "The game I'm terrible at but love anyway..." },
+  { id: 14, category: 'games', icon: '🎮', question: "My board game night essential is..." },
+  { id: 15, category: 'games', icon: '🎮', question: "I'd challenge you to..." },
+  { id: 21, category: 'fun', icon: '🎲', question: "My most useless skill is..." },
+  { id: 22, category: 'fun', icon: '🎲', question: "I'm the type of person who..." },
+  { id: 23, category: 'fun', icon: '🎲', question: "My hot take that gets people riled up..." },
+  { id: 24, category: 'fun', icon: '🎲', question: "Something I'll never shut up about..." },
+  { id: 25, category: 'fun', icon: '🎲', question: "The hill I'll die on is..." },
+  { id: 26, category: 'fun', icon: '🎲', question: "My guilty pleasure is..." },
+  { id: 27, category: 'fun', icon: '🎲', question: "I'm secretly a nerd about..." },
+  { id: 28, category: 'fun', icon: '🎲', question: "The last thing that made me LOL..." },
+  { id: 29, category: 'fun', icon: '🎲', question: "My unpopular opinion is..." },
+  { id: 30, category: 'fun', icon: '🎲', question: "I have an irrational fear of..." },
+  { id: 36, category: 'personality', icon: '💭', question: "On a Sunday you'll find me..." },
+  { id: 37, category: 'personality', icon: '💭', question: "My perfect day includes..." },
+  { id: 38, category: 'personality', icon: '💭', question: "I geek out over..." },
+  { id: 39, category: 'personality', icon: '💭', question: "Don't invite me to this because..." },
+  { id: 40, category: 'personality', icon: '💭', question: "My idea of a good time is..." },
+  { id: 41, category: 'personality', icon: '💭', question: "I'm looking for someone who can..." },
+  { id: 42, category: 'personality', icon: '💭', question: "The way to my heart is..." },
+  { id: 43, category: 'personality', icon: '💭', question: "Green flags I look for..." },
+  { id: 44, category: 'personality', icon: '💭', question: "My love language is..." },
+  { id: 45, category: 'personality', icon: '💭', question: "I value people who..." },
+  { id: 51, category: 'playful', icon: '🔥', question: "Bet you can't beat me at..." },
+  { id: 52, category: 'playful', icon: '🔥', question: "Think you can handle..." },
+  { id: 53, category: 'playful', icon: '🔥', question: "I dare you to..." },
+  { id: 54, category: 'playful', icon: '🔥', question: "Try and guess my..." },
+  { id: 55, category: 'playful', icon: '🔥', question: "If you can make me laugh with..." },
+];
 
 const CATEGORY_COLORS: Record<string, string> = {
   games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
@@ -404,10 +485,56 @@ export function ProfileScreen() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [showIntentModal, setShowIntentModal] = useState(false);
 
-  const showToast = (msg = 'Profile editing coming soon') => {
+  // Edit modal state
+  const [editModal, setEditModal] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [editArray, setEditArray] = useState<string[]>([]);
+  const [editFavGames, setEditFavGames] = useState<string[]>([]);
+  const [newFavGame, setNewFavGame] = useState('');
+  const [saving, setSaving] = useState(false);
+  // Prompts editor state
+  const [promptStep, setPromptStep] = useState<'list' | 'pick' | 'answer'>('list');
+  const [pickedPrompt, setPickedPrompt] = useState<typeof PROMPT_POOL[number] | null>(null);
+  const [promptAnswer, setPromptAnswer] = useState('');
+
+  const showToast = (msg = 'Saved!') => {
     setToastMsg(msg);
     setToast(true);
     setTimeout(() => setToast(false), 2200);
+  };
+
+  // Save a single field to DB + update local state
+  const saveField = async (field: string, value: unknown): Promise<boolean> => {
+    if (!user) return false;
+    setSaving(true);
+    const { error } = await updateProfileField(user.id, field, value);
+    setSaving(false);
+    if (error) {
+      showToast('Failed to save — try again');
+      return false;
+    }
+    setDbProfile((prev) => prev ? { ...prev, [field]: value } as UserProfile : prev);
+    return true;
+  };
+
+  // Open helpers
+  const openTextEdit = (modal: string, currentValue: string) => {
+    setEditText(currentValue);
+    setEditModal(modal);
+  };
+  const openArrayEdit = (modal: string, currentValue: string[]) => {
+    setEditArray([...currentValue]);
+    setEditModal(modal);
+  };
+
+  // Age calculation from birthday
+  const calcAge = (birthday: string): number => {
+    const birth = new Date(birthday);
+    const today = new Date();
+    let a = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) a--;
+    return a;
   };
 
   // Photos: real DB photos, fall back to session photos
@@ -432,8 +559,22 @@ export function ProfileScreen() {
         visible={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         onDelete={async () => {
+          if (user && supabase) {
+            // Delete photos from storage
+            try {
+              const { data: files } = await supabase.storage.from('photos').list(user.id);
+              if (files?.length) {
+                await supabase.storage.from('photos').remove(files.map((f) => `${user.id}/${f.name}`));
+              }
+            } catch { /* best effort */ }
+            // Delete photo records, profile, swipes, matches
+            await supabase.from('photos').delete().eq('user_id', user.id);
+            await supabase.from('swipes').delete().eq('user_id', user.id);
+            await supabase.from('profiles').delete().eq('id', user.id);
+          }
           await supabase?.auth.signOut();
-          navigate('/login');
+          store.reset();
+          navigate('/');
         }}
       />
 
@@ -497,6 +638,633 @@ export function ProfileScreen() {
               >
                 Cancel
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Text edit modal (name / bio / location) ────────────────────── */}
+      <AnimatePresence>
+        {(editModal === 'name' || editModal === 'bio' || editModal === 'location') && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>
+                {editModal === 'name' ? 'Edit Name' : editModal === 'bio' ? 'Edit Bio' : 'Edit Location'}
+              </h2>
+              {editModal === 'bio' ? (
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  className="w-full rounded-xl px-4 py-3 font-body text-sm resize-none"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
+                  placeholder="Tell people about yourself..."
+                  autoFocus
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  maxLength={editModal === 'name' ? 50 : 100}
+                  className="w-full rounded-xl px-4 py-3 font-body text-sm"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
+                  placeholder={editModal === 'name' ? 'Your name' : 'City, Country'}
+                  autoFocus
+                />
+              )}
+              {editModal === 'bio' && (
+                <p className="font-body text-xs mt-2" style={{ color: editText.length < 20 ? '#FF9F1C' : 'rgba(255,255,255,0.3)' }}>
+                  {editText.length}/500 {editText.length < 20 ? '(min 20 characters)' : ''}
+                </p>
+              )}
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setEditModal(null)}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={saving || (editModal === 'bio' && editText.length > 0 && editText.length < 20) || !editText.trim()}
+                  onClick={async () => {
+                    const field = editModal!;
+                    const ok = await saveField(field, editText.trim());
+                    if (ok) {
+                      showToast(`${field.charAt(0).toUpperCase() + field.slice(1)} updated!`);
+                      setEditModal(null);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{
+                    background: 'rgba(78,255,196,0.15)',
+                    border: '1.5px solid rgba(78,255,196,0.3)',
+                    color: '#4EFFC4',
+                    opacity: (saving || (editModal === 'bio' && editText.length > 0 && editText.length < 20) || !editText.trim()) ? 0.4 : 1,
+                  }}
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Lifestyle edit modal ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {editModal === 'lifestyle' && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5 max-h-[80vh] overflow-y-auto"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>Edit Lifestyle</h2>
+              <div className="flex flex-col gap-4">
+                {(Object.entries(LIFESTYLE_OPTIONS) as [string, string[]][]).map(([field, options]) => {
+                  const currentVal = lifestyle[field as keyof typeof lifestyle];
+                  return (
+                    <div key={field}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <img src={lifestyleIcons[field]} alt="" className="w-4 h-4 object-contain" />
+                        <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                          {lifestyleLabels[field]}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {options.map((opt) => (
+                          <button
+                            key={opt}
+                            className="px-3 py-1.5 rounded-lg font-body text-xs transition-all"
+                            style={{
+                              background: currentVal === opt ? 'rgba(78,255,196,0.15)' : 'rgba(255,255,255,0.04)',
+                              border: `1.5px solid ${currentVal === opt ? 'rgba(78,255,196,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                              color: currentVal === opt ? '#4EFFC4' : 'rgba(255,255,255,0.5)',
+                            }}
+                            onClick={async () => {
+                              const ok = await saveField(field, opt);
+                              if (ok) showToast(`${lifestyleLabels[field]} updated!`);
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setEditModal(null)}
+                className="w-full mt-5 py-2.5 font-body text-sm font-bold rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+              >
+                Done
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Gender / Interested In edit modal ─────────────────────────── */}
+      <AnimatePresence>
+        {(editModal === 'gender' || editModal === 'interested_in') && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>
+                {editModal === 'gender' ? 'I am a…' : 'Interested in…'}
+              </h2>
+              <div className="flex flex-col gap-2.5">
+                {(editModal === 'gender' ? GENDER_OPTIONS : INTERESTED_IN_OPTIONS).map((opt) => {
+                  const current = editModal === 'gender'
+                    ? (dbProfile?.gender || store.gender || null)
+                    : (dbProfile?.interested_in || store.interestedIn || null);
+                  const isSelected = current === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      className="flex items-center justify-between px-4 py-3.5 rounded-xl text-left w-full transition-all"
+                      style={{
+                        background: isSelected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                        border: `2px solid ${isSelected ? `${opt.color}60` : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                      onClick={async () => {
+                        const ok = await saveField(editModal!, opt.id);
+                        if (ok) {
+                          showToast(`${editModal === 'gender' ? 'Gender' : 'Interested in'} updated!`);
+                          setEditModal(null);
+                        }
+                      }}
+                    >
+                      <span className="font-body text-sm font-bold" style={{ color: isSelected ? opt.color : 'rgba(255,255,255,0.7)' }}>
+                        {opt.label}
+                      </span>
+                      {isSelected && <span style={{ color: opt.color }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setEditModal(null)}
+                className="w-full mt-4 py-2 font-body text-sm font-bold rounded-lg"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Birthday edit modal ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {editModal === 'birthday' && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>Edit Birthday</h2>
+              <input
+                type="date"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 font-body text-sm"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none', colorScheme: 'dark' }}
+              />
+              {editText && (
+                <p className="font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Age: {calcAge(editText)}
+                </p>
+              )}
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setEditModal(null)}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={saving || !editText}
+                  onClick={async () => {
+                    const newAge = calcAge(editText);
+                    if (newAge < 18) { showToast('Must be 18 or older'); return; }
+                    const ok1 = await saveField('birthday', editText);
+                    if (ok1) {
+                      await saveField('age', newAge);
+                      showToast('Birthday updated!');
+                      setEditModal(null);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{
+                    background: 'rgba(78,255,196,0.15)',
+                    border: '1.5px solid rgba(78,255,196,0.3)',
+                    color: '#4EFFC4',
+                    opacity: (saving || !editText) ? 0.4 : 1,
+                  }}
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Avatar edit modal (character / element / affiliation) ──────── */}
+      <AnimatePresence>
+        {(editModal === 'character' || editModal === 'element' || editModal === 'affiliation') && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5 max-h-[80vh] overflow-y-auto"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>
+                {editModal === 'character' ? 'Choose Character' : editModal === 'element' ? 'Choose Element' : 'Choose World'}
+              </h2>
+              <div className={`grid gap-2 ${editModal === 'character' ? 'grid-cols-3' : editModal === 'element' ? 'grid-cols-3' : 'grid-cols-3'}`}>
+                {Object.entries(
+                  editModal === 'character' ? characterImages : editModal === 'element' ? elementImages : affiliationImages
+                ).map(([id, img]) => {
+                  const current = editModal === 'character' ? character : editModal === 'element' ? element : affiliation;
+                  const isSelected = current === id;
+                  return (
+                    <button
+                      key={id}
+                      className="flex flex-col items-center gap-1 py-3 rounded-xl transition-all"
+                      style={{
+                        background: isSelected ? 'rgba(78,255,196,0.12)' : 'rgba(255,255,255,0.04)',
+                        border: `2px solid ${isSelected ? 'rgba(78,255,196,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                      onClick={async () => {
+                        const ok = await saveField(editModal!, id);
+                        if (ok) {
+                          showToast(`${cap(editModal!)} updated!`);
+                          setEditModal(null);
+                        }
+                      }}
+                    >
+                      <img src={img} alt={id} className="w-10 h-10 object-contain" draggable={false} />
+                      <span className="font-body text-[10px] font-bold" style={{ color: isSelected ? '#4EFFC4' : 'rgba(255,255,255,0.6)' }}>
+                        {cap(id)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setEditModal(null)}
+                className="w-full mt-4 py-2.5 font-body text-sm font-bold rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Games edit modal (gameTypes + favoriteGames) ──────────────── */}
+      <AnimatePresence>
+        {editModal === 'games' && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5 max-h-[80vh] overflow-y-auto"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-3" style={{ color: '#FFE66D' }}>Game Types</h2>
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {ALL_GAME_TYPES.map((g) => {
+                  const selected = editArray.includes(g);
+                  return (
+                    <button
+                      key={g}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-body text-xs transition-all"
+                      style={{
+                        background: selected ? 'rgba(78,255,196,0.15)' : 'rgba(255,255,255,0.04)',
+                        border: `1.5px solid ${selected ? 'rgba(78,255,196,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                        color: selected ? '#4EFFC4' : 'rgba(255,255,255,0.5)',
+                      }}
+                      onClick={() => {
+                        setEditArray((prev) =>
+                          prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
+                        );
+                      }}
+                    >
+                      {gameTypeIcons[g] && <img src={gameTypeIcons[g]} alt="" className="w-3.5 h-3.5 object-contain" />}
+                      {gameTypeLabels[g] || g}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <h2 className="font-display text-lg mb-2" style={{ color: '#FFE66D' }}>Favourite Games</h2>
+              <div className="flex flex-col gap-1.5 mb-3">
+                {editFavGames.map((g, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <span className="font-body text-sm flex-1" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
+                    <button onClick={() => setEditFavGames((prev) => prev.filter((_, j) => j !== i))}
+                      style={{ color: 'rgba(255,107,168,0.7)' }} className="text-sm font-bold px-1">✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={newFavGame}
+                  onChange={(e) => setNewFavGame(e.target.value)}
+                  placeholder="Add a game…"
+                  className="flex-1 rounded-lg px-3 py-2 font-body text-sm"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newFavGame.trim()) {
+                      setEditFavGames((prev) => [...prev, newFavGame.trim()]);
+                      setNewFavGame('');
+                    }
+                  }}
+                />
+                <button
+                  disabled={!newFavGame.trim()}
+                  onClick={() => { setEditFavGames((prev) => [...prev, newFavGame.trim()]); setNewFavGame(''); }}
+                  className="px-3 py-2 rounded-lg font-body text-xs font-bold"
+                  style={{ background: 'rgba(78,255,196,0.1)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.25)', opacity: newFavGame.trim() ? 1 : 0.4 }}
+                >
+                  Add
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setEditModal(null)}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+                  Cancel
+                </button>
+                <button
+                  disabled={saving}
+                  onClick={async () => {
+                    const ok1 = await saveField('game_types', editArray);
+                    const ok2 = await saveField('favorite_games', editFavGames);
+                    if (ok1 && ok2) {
+                      showToast('Games updated!');
+                      setEditModal(null);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.3)', color: '#4EFFC4', opacity: saving ? 0.4 : 1 }}>
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Looking For edit modal (multi-select) ─────────────────────── */}
+      <AnimatePresence>
+        {editModal === 'looking_for' && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>Looking For</h2>
+              <div className="flex flex-col gap-2.5">
+                {GOAL_OPTIONS.map((opt) => {
+                  const selected = editArray.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      className="flex items-center justify-between px-4 py-3 rounded-xl text-left w-full transition-all"
+                      style={{
+                        background: selected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                        border: `2px solid ${selected ? `${opt.color}60` : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                      onClick={() => {
+                        setEditArray((prev) =>
+                          prev.includes(opt.id) ? prev.filter((x) => x !== opt.id) : [...prev, opt.id]
+                        );
+                      }}
+                    >
+                      <span className="font-body text-sm font-bold" style={{ color: selected ? opt.color : 'rgba(255,255,255,0.6)' }}>
+                        {opt.label}
+                      </span>
+                      {selected && <span style={{ color: opt.color }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3 mt-4">
+                <button onClick={() => setEditModal(null)}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+                  Cancel
+                </button>
+                <button
+                  disabled={saving || editArray.length === 0}
+                  onClick={async () => {
+                    const ok = await saveField('looking_for', editArray);
+                    if (ok) { showToast('Updated!'); setEditModal(null); }
+                  }}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.3)', color: '#4EFFC4', opacity: (saving || editArray.length === 0) ? 0.4 : 1 }}>
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Prompts edit modal ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {editModal === 'prompts' && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => { setEditModal(null); setPromptStep('list'); }}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5 max-h-[80vh] overflow-y-auto"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {promptStep === 'list' && (
+                <>
+                  <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>Your Prompts</h2>
+                  {prompts.length > 0 ? (
+                    <div className="flex flex-col gap-2.5 mb-4">
+                      {prompts.map((p) => (
+                        <div key={p.id} className="rounded-xl p-3 relative"
+                          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          <button
+                            onClick={() => {
+                              const updated = prompts.filter((x) => x.id !== p.id);
+                              store.updatePrompts(updated);
+                              showToast('Prompt removed');
+                            }}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(255,107,168,0.15)', color: '#FF6BA8' }}
+                          >
+                            <span className="text-xs font-bold">✕</span>
+                          </button>
+                          <p className="font-body text-[11px] mb-1 pr-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            {p.icon} {p.question}
+                          </p>
+                          <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{p.answer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="font-body text-sm mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>No prompts yet</p>
+                  )}
+                  {prompts.length < 5 && (
+                    <button
+                      onClick={() => setPromptStep('pick')}
+                      className="w-full py-2.5 rounded-xl font-body text-sm font-bold mb-3"
+                      style={{ background: 'rgba(78,255,196,0.1)', border: '1.5px solid rgba(78,255,196,0.25)', color: '#4EFFC4' }}
+                    >
+                      + Add Prompt
+                    </button>
+                  )}
+                  <button onClick={() => { setEditModal(null); setPromptStep('list'); }}
+                    className="w-full py-2 font-body text-sm font-bold rounded-lg"
+                    style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    Done
+                  </button>
+                </>
+              )}
+              {promptStep === 'pick' && (
+                <>
+                  <h2 className="font-display text-xl mb-3" style={{ color: '#FFE66D' }}>Pick a Prompt</h2>
+                  <div className="flex flex-col gap-1.5 mb-3">
+                    {PROMPT_POOL
+                      .filter((p) => !prompts.some((e) => e.id === p.id))
+                      .map((p) => {
+                        const color = CATEGORY_COLORS[p.category] ?? '#4EFFC4';
+                        return (
+                          <button
+                            key={p.id}
+                            className="text-left px-3 py-2.5 rounded-lg transition-all"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                            onClick={() => { setPickedPrompt(p); setPromptAnswer(''); setPromptStep('answer'); }}
+                          >
+                            <span className="font-body text-xs" style={{ color }}>{p.icon} {p.question}</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                  <button onClick={() => setPromptStep('list')}
+                    className="w-full py-2 font-body text-sm font-bold rounded-lg"
+                    style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    Back
+                  </button>
+                </>
+              )}
+              {promptStep === 'answer' && pickedPrompt && (
+                <>
+                  <h2 className="font-display text-lg mb-2" style={{ color: '#FFE66D' }}>
+                    {pickedPrompt.icon} {pickedPrompt.question}
+                  </h2>
+                  <textarea
+                    value={promptAnswer}
+                    onChange={(e) => setPromptAnswer(e.target.value)}
+                    rows={3}
+                    maxLength={200}
+                    className="w-full rounded-xl px-4 py-3 font-body text-sm resize-none mb-1"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
+                    placeholder="Your answer…"
+                    autoFocus
+                  />
+                  <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{promptAnswer.length}/200</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setPromptStep('pick')}
+                      className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+                      Back
+                    </button>
+                    <button
+                      disabled={!promptAnswer.trim()}
+                      onClick={() => {
+                        const newPrompt: UserPrompt = {
+                          id: pickedPrompt.id,
+                          category: pickedPrompt.category,
+                          icon: pickedPrompt.icon,
+                          question: pickedPrompt.question,
+                          answer: promptAnswer.trim(),
+                        };
+                        store.updatePrompts([...prompts, newPrompt]);
+                        showToast('Prompt added!');
+                        setPromptStep('list');
+                      }}
+                      className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                      style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.3)', color: '#4EFFC4', opacity: promptAnswer.trim() ? 1 : 0.4 }}>
+                      Add
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -579,7 +1347,7 @@ export function ProfileScreen() {
 
             {/* Edit avatar button */}
             <button
-              onClick={() => showToast('Profile editing coming soon')}
+              onClick={() => setEditModal('character')}
               className="absolute -bottom-1 left-0 w-8 h-8 rounded-full flex items-center justify-center"
               style={{ background: 'rgba(78,255,196,0.15)', border: '2px solid rgba(78,255,196,0.35)' }}
             >
@@ -591,16 +1359,16 @@ export function ProfileScreen() {
 
           {/* Name + age */}
           <div className="text-center">
-            <p className="font-display text-2xl" style={{ color: name ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)' }}>
+            <button onClick={() => openTextEdit('name', name)} className="font-display text-2xl" style={{ color: name ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {name || PLACEHOLDER.name}{age != null ? `, ${age}` : ''}
-            </p>
-            <p className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            </button>
+            <button onClick={() => openTextEdit('location', location)} className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
                 <circle cx="6" cy="4.5" r="1.2" fill="currentColor"/>
               </svg>
               {location || PLACEHOLDER.location}
-            </p>
+            </button>
             {/* Avatar tag */}
             {character && element && affiliation ? (
               <div className="flex items-center justify-center gap-1.5 mt-2">
@@ -666,6 +1434,53 @@ export function ProfileScreen() {
           </motion.div>
         )}
 
+        {/* ── Basics (gender, interested in, birthday) ──────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.07 }}
+        >
+          <SectionCard>
+            <SectionHeading label="Basics" />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                {
+                  label: 'Gender',
+                  value: dbProfile?.gender || store.gender || null,
+                  display: dbProfile?.gender ? cap(dbProfile.gender) : store.gender ? cap(store.gender) : null,
+                  onEdit: () => setEditModal('gender'),
+                },
+                {
+                  label: 'Interested in',
+                  value: dbProfile?.interested_in || store.interestedIn || null,
+                  display: dbProfile?.interested_in ? cap(dbProfile.interested_in) : store.interestedIn ? cap(store.interestedIn) : null,
+                  onEdit: () => setEditModal('interested_in'),
+                },
+                {
+                  label: 'Birthday',
+                  value: dbProfile?.birthday || store.birthday || null,
+                  display: (dbProfile?.birthday || store.birthday)
+                    ? new Date(dbProfile?.birthday || store.birthday || '').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : null,
+                  onEdit: () => openTextEdit('birthday', dbProfile?.birthday || store.birthday || ''),
+                },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.onEdit}
+                  className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
+                  <p className="font-body text-xs font-bold" style={{ color: item.display ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}>
+                    {item.display ?? 'Not set'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </motion.div>
+
         {/* ── Photo carousel ───────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -673,16 +1488,67 @@ export function ProfileScreen() {
           transition={{ delay: 0.08 }}
         >
           <SectionCard>
-            <SectionHeading label="Photos" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="Photos" />
             <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {displayPhotos.length > 0
                 ? displayPhotos.map((src, i) => (
                     <div
                       key={i}
-                      className="flex-shrink-0 w-24 h-28 rounded-xl overflow-hidden"
+                      className="flex-shrink-0 w-24 h-28 rounded-xl overflow-hidden relative group"
                       style={{ border: '1px solid rgba(255,255,255,0.1)' }}
                     >
                       <img src={src} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" draggable={false} />
+                      {/* Delete button */}
+                      <button
+                        onClick={async () => {
+                          if (!user) return;
+                          const updated = displayPhotos.filter((_, j) => j !== i);
+                          await savePhotos(user.id, updated);
+                          const refreshed = await getPhotos(user.id);
+                          setDbPhotos(refreshed);
+                          showToast('Photo removed');
+                        }}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ background: 'rgba(0,0,0,0.7)', color: '#FF6BA8', fontSize: '10px', fontWeight: 'bold' }}
+                      >
+                        ✕
+                      </button>
+                      {/* Reorder arrows */}
+                      <div className="absolute bottom-1 left-1 right-1 flex justify-between">
+                        {i > 0 && (
+                          <button
+                            onClick={async () => {
+                              if (!user) return;
+                              const arr = [...displayPhotos];
+                              [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                              await savePhotos(user.id, arr);
+                              const refreshed = await getPhotos(user.id);
+                              setDbPhotos(refreshed);
+                            }}
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px' }}
+                          >
+                            ◀
+                          </button>
+                        )}
+                        <div />
+                        {i < displayPhotos.length - 1 && (
+                          <button
+                            onClick={async () => {
+                              if (!user) return;
+                              const arr = [...displayPhotos];
+                              [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                              await savePhotos(user.id, arr);
+                              const refreshed = await getPhotos(user.id);
+                              setDbPhotos(refreshed);
+                            }}
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px' }}
+                          >
+                            ▶
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))
                 : (
@@ -736,7 +1602,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.12 }}
         >
           <SectionCard>
-            <SectionHeading label="About" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="About" onEdit={() => openTextEdit('bio', bio)} />
             <p className="font-body text-sm leading-relaxed" style={{ color: bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)' }}>
               {bio || PLACEHOLDER.bio}
             </p>
@@ -750,7 +1616,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.16 }}
         >
           <SectionCard>
-            <SectionHeading label="Get To Know Me" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="Get To Know Me" onEdit={() => { setPromptStep('list'); setEditModal('prompts'); }} />
             {prompts.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {prompts.map((p) => (
@@ -772,7 +1638,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.2 }}
         >
           <SectionCard>
-            <SectionHeading label="Avatar" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="Avatar" onEdit={() => setEditModal('character')} />
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null },
@@ -801,7 +1667,7 @@ export function ProfileScreen() {
               ))}
             </div>
             <button
-              onClick={() => showToast('Profile editing coming soon')}
+              onClick={() => setEditModal('character')}
               className="w-full mt-3 py-2.5 rounded-xl font-body text-sm font-bold"
               style={{
                 background: 'rgba(78,255,196,0.07)',
@@ -821,7 +1687,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.2 }}
         >
           <SectionCard>
-            <SectionHeading label="Loves to Play" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="Loves to Play" onEdit={() => { setEditArray([...gameTypes]); setEditFavGames([...favoriteGames]); setNewFavGame(''); setEditModal('games'); }} />
             {/* Game type chips */}
             {gameTypes.length > 0 ? (
               <div className="flex flex-wrap gap-2 mb-3">
@@ -875,7 +1741,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.24 }}
         >
           <SectionCard>
-            <SectionHeading label="Looking For" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="Looking For" onEdit={() => { openArrayEdit('looking_for', lookingFor); }} />
             {lookingFor.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {lookingFor.map((id) => {
@@ -943,7 +1809,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.28 }}
         >
           <SectionCard>
-            <SectionHeading label="Lifestyle" onEdit={() => showToast('Profile editing coming soon')} />
+            <SectionHeading label="Lifestyle" onEdit={() => setEditModal('lifestyle')} />
             <div className="grid grid-cols-2 gap-2">
               {(Object.entries(lifestyle) as [keyof typeof lifestyle, string | null][]).map(([key, val]) => (
                 <div
