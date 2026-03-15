@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 
@@ -51,9 +51,11 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export function LoginScreen() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setUser, setSession } = useAuthStore();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -130,7 +132,7 @@ export function LoginScreen() {
       // Email confirmation disabled — session available immediately
       setSession(data.session);
       setUser(data.session.user);
-      navigate('/onboarding/welcome');
+      navigate('/onboarding/avatar');
     } else {
       // Email confirmation required — inform user
       setError('Check your email to confirm your account, then sign in.');
