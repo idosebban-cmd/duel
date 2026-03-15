@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from '../ui/Icons';
@@ -77,10 +77,13 @@ const lookingForIcons: Record<string, string> = {
 export function PlayerCardPreview() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
   const [photoIndex, setPhotoIndex] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+
+  const emailConfirmed = !!session;
 
   const {
     character, element, affiliation,
@@ -101,7 +104,7 @@ export function PlayerCardPreview() {
   ].filter(Boolean) as { icon: string; label: string }[];
 
 
-  const handleStartPlaying = async () => {
+  const saveAndNavigate = async () => {
     if (saving) return;
     setSaving(true);
 
@@ -113,7 +116,24 @@ export function PlayerCardPreview() {
     }
 
     setSaving(false);
+    setPendingSave(false);
     navigate('/discover');
+  };
+
+  // Auto-save when session arrives while waiting for confirmation
+  useEffect(() => {
+    if (pendingSave && session) {
+      saveAndNavigate();
+    }
+  }, [session, pendingSave]);
+
+  const handleStartPlaying = () => {
+    if (saving) return;
+    if (!emailConfirmed) {
+      setPendingSave(true);
+      return;
+    }
+    saveAndNavigate();
   };
 
   return (
@@ -424,6 +444,30 @@ export function PlayerCardPreview() {
       {/* Fixed bottom buttons */}
       <div className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-5 z-20" style={{ background: 'linear-gradient(to top, #12122A 70%, transparent)' }}>
         <div className="max-w-lg mx-auto space-y-3">
+          {/* Email confirmation prompt */}
+          <AnimatePresence>
+            {pendingSave && !emailConfirmed && (
+              <motion.div
+                className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm"
+                style={{
+                  background: 'rgba(255,230,109,0.1)',
+                  border: '1.5px solid rgba(255,230,109,0.35)',
+                  color: '#FFE66D',
+                }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                  style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,230,109,0.3)', borderTopColor: '#FFE66D', borderRadius: '50%', flexShrink: 0 }}
+                />
+                <span>Please confirm your email to continue. Check your inbox.</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* START PLAYING button */}
           <motion.button
             ref={btnRef}

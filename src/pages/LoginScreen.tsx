@@ -132,10 +132,14 @@ export function LoginScreen() {
       // Email confirmation disabled — session available immediately
       setSession(data.session);
       setUser(data.session.user);
+    } else if (data.user) {
+      // Email confirmation required — store user so onboarding can proceed
+      setUser(data.user);
+    }
+
+    // Navigate into onboarding regardless — all steps are local-only until final save
+    if (data.user) {
       navigate('/onboarding/avatar');
-    } else {
-      // Email confirmation required — inform user
-      setError('Check your email to confirm your account, then sign in.');
     }
   };
 
