@@ -1460,7 +1460,7 @@ export function DiscoverScreen() {
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
-  const [userIntent, setUserIntent] = useState<'romance' | 'play' | 'both'>('romance');
+
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [completenessPercentage, setCompletenessPercentage] = useState(0);
@@ -1504,7 +1504,6 @@ export function DiscoverScreen() {
 
         // Try enhanced discovery first
         const callerIntent = (currentProfile?.intent as 'romance' | 'play' | 'both') ?? 'romance';
-        setUserIntent(callerIntent);
         const dbProfiles = await getDiscoveryUsers(user.id, {
           minAge: activeFilters.ageMin,
           maxAge: activeFilters.ageMax,

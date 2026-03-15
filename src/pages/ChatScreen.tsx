@@ -161,15 +161,11 @@ export function ChatScreen() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [chatUnlocked, setChatUnlocked] = useState(false);
-
   // Gate: redirect to game picker if no game has been completed for this match
   useEffect(() => {
     if (!matchId) return;
     hasCompletedGame(matchId).then((done) => {
-      if (done) {
-        setChatUnlocked(true);
-      } else {
+      if (!done) {
         localStorage.setItem('pending_match_id', matchId);
         navigate('/play', { state: { matchId }, replace: true });
       }
