@@ -306,10 +306,7 @@ function EmptyState() {
         animate={{ y: [0, -6, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-          <path d="M36 60L10 36C10 24.5 18 16 28 16C32 16 36 18 36 18L34 28H38L40 20C42 17 44 16 44 16C54 16 62 24.5 62 36L36 60Z" fill="rgba(255,107,168,0.2)" stroke="rgba(255,107,168,0.4)" strokeWidth="2"/>
-          <path d="M36 18L34 28H38L36 18Z" fill="rgba(255,255,255,0.15)"/>
-        </svg>
+        <img src="/icons/Heart.png" alt="Heart" className="w-[72px] h-[72px] object-contain" draggable={false} />
       </motion.div>
       <div>
         <p className="font-display text-2xl mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>No matches yet</p>

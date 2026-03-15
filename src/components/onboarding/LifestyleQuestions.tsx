@@ -272,6 +272,24 @@ export function LifestyleQuestions() {
                   </motion.button>
                 );
               })}
+              <motion.button
+                onClick={handleSkip}
+                className="w-full flex items-center justify-center px-5 py-3 rounded-2xl text-center"
+                style={{
+                  background: 'transparent',
+                  border: '2px dashed rgba(255,255,255,0.15)',
+                  cursor: 'pointer',
+                }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: question.options.length * 0.05 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Prefer not to say
+                </span>
+              </motion.button>
             </div>
 
           </motion.div>
