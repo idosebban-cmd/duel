@@ -768,6 +768,20 @@ export function ProfileScreen() {
                             {opt}
                           </button>
                         ))}
+                        <button
+                          className="px-3 py-1.5 rounded-lg font-body text-xs transition-all"
+                          style={{
+                            background: currentVal === null ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+                            border: `1.5px solid ${currentVal === null ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                            color: currentVal === null ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)',
+                          }}
+                          onClick={async () => {
+                            const ok = await saveField(field, null);
+                            if (ok) showToast(`${lifestyleLabels[field]} cleared`);
+                          }}
+                        >
+                          Prefer not to say
+                        </button>
                       </div>
                     </div>
                   );
@@ -1442,7 +1456,7 @@ export function ProfileScreen() {
         >
           <SectionCard>
             <SectionHeading label="Basics" />
-            <div className="grid grid-cols-3 gap-2">
+            <div className={`grid gap-2 ${intent === 'play' ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {[
                 {
                   label: 'Gender',
@@ -1450,12 +1464,12 @@ export function ProfileScreen() {
                   display: dbProfile?.gender ? cap(dbProfile.gender) : store.gender ? cap(store.gender) : null,
                   onEdit: () => setEditModal('gender'),
                 },
-                {
+                ...(intent !== 'play' ? [{
                   label: 'Interested in',
                   value: dbProfile?.interested_in || store.interestedIn || null,
                   display: dbProfile?.interested_in ? cap(dbProfile.interested_in) : store.interestedIn ? cap(store.interestedIn) : null,
                   onEdit: () => setEditModal('interested_in'),
-                },
+                }] : []),
                 {
                   label: 'Birthday',
                   value: dbProfile?.birthday || store.birthday || null,
@@ -1641,12 +1655,13 @@ export function ProfileScreen() {
             <SectionHeading label="Avatar" onEdit={() => setEditModal('character')} />
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null },
-                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null },
-                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null },
+                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null, modal: 'character' as const },
+                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null, modal: 'element' as const },
+                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null, modal: 'affiliation' as const },
               ].map((item) => (
-                <div
+                <button
                   key={item.label}
+                  onClick={() => setEditModal(item.modal)}
                   className="flex flex-col items-center gap-1.5 py-3 rounded-xl"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
@@ -1663,7 +1678,7 @@ export function ProfileScreen() {
                       {item.name ?? 'Not set'}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
             <button
@@ -1734,7 +1749,8 @@ export function ProfileScreen() {
           </SectionCard>
         </motion.div>
 
-        {/* ── Relationship goal ────────────────────────────────────────── */}
+        {/* ── Relationship goal (hidden for play-only) ────────────────── */}
+        {intent !== 'play' && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1768,6 +1784,7 @@ export function ProfileScreen() {
             )}
           </SectionCard>
         </motion.div>
+        )}
 
         {/* ── Intent (Just Play / Romance / Both) ────────────────────── */}
         <motion.div
