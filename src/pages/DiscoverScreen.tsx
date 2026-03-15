@@ -478,8 +478,9 @@ function ProfileCard({ profile }: { profile: Profile }) {
             </div>
           );
         })()}
+        {profile.games.filter((g) => gameTypeIcons[g]).length > 0 && (
         <div className="flex items-center gap-1.5">
-          {profile.games.slice(0, 3).map((game) => (
+          {profile.games.filter((g) => gameTypeIcons[g]).slice(0, 3).map((game) => (
             <div
               key={game}
               className="w-6 h-6 rounded-md flex items-center justify-center"
@@ -489,6 +490,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
             </div>
           ))}
         </div>
+        )}
         <div className="mt-auto">
           <span
             className="font-body text-xs font-bold px-2.5 py-1 rounded-full"
@@ -751,8 +753,9 @@ function ProfileDetailView({
           </h2>
 
           {/* Game type icons */}
+          {profile.games.filter((g) => gameTypeIcons[g]).length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {profile.games.map((game) => (
+            {profile.games.filter((g) => gameTypeIcons[g]).map((game) => (
               <div
                 key={game}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-xl"
@@ -760,11 +763,12 @@ function ProfileDetailView({
               >
                 <img src={gameTypeIcons[game]} alt={game} className="w-8 h-8 object-contain" draggable={false} />
                 <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {gameTypeLabels[game]}
+                  {gameTypeLabels[game] ?? game}
                 </span>
               </div>
             ))}
           </div>
+          )}
 
           {/* Favourite games */}
           {profile.favoriteGames.length > 0 && (
