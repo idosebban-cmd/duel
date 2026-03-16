@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getDiscoverProfiles, getDiscoveryUsers, getProfile, getPhotos, recordSwipe, calculateDistance } from '../lib/database';
+import { getDiscoverProfiles, getDiscoveryUsers, getProfile, getPhotos, recordSwipe, calculateDistance, updateProfileField } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
@@ -34,6 +34,7 @@ interface Profile {
   pets: string;
   exercise: string;
   favoriteGames: string[];
+  gender: string;
   prompts?: UserPrompt[];
   intent?: 'romance' | 'play' | 'both';
 }
@@ -47,6 +48,7 @@ interface FilterState {
   ageMax: number;
   distanceMax: number;
   anyDistance: boolean;
+  gender: 'men' | 'women' | 'everyone';
   duelGames: string[];
   relationshipGoals: string[];
   exercise: string;
@@ -54,6 +56,13 @@ interface FilterState {
   drinking: string;
   pets: string;
   activityLevel: 'today' | 'week' | 'anyone';
+}
+
+/** Maps interested_in preference to the DB gender column value for querying. */
+function interestedInToGenderFilter(interestedIn: string): string | undefined {
+  if (interestedIn === 'men') return 'man';
+  if (interestedIn === 'women') return 'woman';
+  return undefined; // 'everyone' → no gender filter
 }
 
 // ─── Image maps ───────────────────────────────────────────────────────────────
@@ -150,17 +159,29 @@ const LIFESTYLE_OPTIONS: Array<{ key: 'exercise' | 'smoking' | 'drinking' | 'pet
 const DEFAULT_FILTERS: FilterState = {
   ageMin: 22, ageMax: 35,
   distanceMax: 25, anyDistance: false,
+  gender: 'everyone',
   duelGames: ['guess-who', 'dot-dash', 'word-blitz'],
   relationshipGoals: ['casual', 'short-term', 'long-term', 'not-sure', 'open'],
   exercise: 'Any', smoking: 'Any', drinking: 'Any', pets: 'Any',
   activityLevel: 'anyone',
 };
 
-function loadFilters(): FilterState {
+function loadFilters(profile?: UserProfile | null): FilterState {
   try {
     const s = localStorage.getItem('duel-discover-filters');
     if (s) return { ...DEFAULT_FILTERS, ...JSON.parse(s) };
   } catch {}
+  // No localStorage — pre-populate from profile preferences if available
+  if (profile) {
+    return {
+      ...DEFAULT_FILTERS,
+      ageMin: profile.preferred_age_min ?? DEFAULT_FILTERS.ageMin,
+      ageMax: profile.preferred_age_max ?? DEFAULT_FILTERS.ageMax,
+      distanceMax: profile.preferred_distance ?? DEFAULT_FILTERS.distanceMax,
+      anyDistance: profile.preferred_distance === null,
+      gender: (profile.interested_in as FilterState['gender']) ?? DEFAULT_FILTERS.gender,
+    };
+  }
   return { ...DEFAULT_FILTERS };
 }
 function saveFilters(f: FilterState) {
@@ -170,6 +191,7 @@ function countActiveFilters(f: FilterState): number {
   let n = 0;
   if (f.ageMin !== DEFAULT_FILTERS.ageMin || f.ageMax !== DEFAULT_FILTERS.ageMax) n++;
   if (!f.anyDistance && f.distanceMax !== DEFAULT_FILTERS.distanceMax) n++;
+  if (f.gender !== 'everyone') n++;
   if (f.duelGames.length < 3) n++;
   if (f.relationshipGoals.length < 5) n++;
   if (f.exercise !== 'Any') n++;
@@ -183,6 +205,10 @@ function applyFilters(profiles: Profile[], f: FilterState): Profile[] {
   return profiles.filter(p => {
     if (p.age < f.ageMin || p.age > f.ageMax) return false;
     if (!f.anyDistance && p.distanceKm > f.distanceMax) return false;
+    if (f.gender !== 'everyone') {
+      const wantGender = interestedInToGenderFilter(f.gender);
+      if (wantGender && p.gender !== wantGender) return false;
+    }
     if (!f.duelGames.some(g => p.duelGames.includes(g))) return false;
     if (!f.relationshipGoals.includes(p.lookingFor)) return false;
     if (f.exercise !== 'Any' && p.exercise !== f.exercise) return false;
@@ -248,6 +274,7 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
     pets:          p.pets          ?? '',
     exercise:      p.exercise      ?? '',
     favoriteGames: p.favorite_games ?? [],
+    gender: p.gender ?? '',
     prompts: [],
     intent: (p.intent as 'romance' | 'play' | 'both') ?? undefined,
   };
@@ -381,7 +408,7 @@ const PROFILES: Profile[] = [
   { id: 28, name: 'Samir',  age: 28, location: 'Kilburn',           distance: '5.2 mi', distanceKm: 8.4,  character: 'dragon',  element: 'fire',     affiliation: 'travel',   bio: "Filmmaker and terrible loser (genuinely working on it). My best dates involve dark rooms and good stories. My worst involve someone who refuses to explain why they made that move.",          games: ['trivia', 'word', 'party'],       lookingFor: 'open',       willMatch: false, duelGames: ['guess-who'],                            activityLevel: 'older', kids: 'Not sure yet',  drinking: 'Socially', smoking: 'Socially', cannabis: 'Never',     pets: 'None', exercise: 'Rarely',    favoriteGames: ['Trivial Pursuit', 'Codenames'], intent: 'romance' },
   { id: 29, name: 'Rosa',   age: 24, location: 'Brixton',           distance: '2.6 mi', distanceKm: 4.2,  character: 'cat',     element: 'electric', affiliation: 'music',    bio: "Music journalist and rhythm game addict. I review concerts for a living and lose at Guitar Hero for fun. My Spotify wrapped is embarrassing and I refuse to share it.",              games: ['party', 'video', 'word'],        lookingFor: 'casual',     willMatch: false, duelGames: ['dot-dash', 'word-blitz'],               activityLevel: 'today', kids: "Don't want",    drinking: 'Often',    smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Guitar Hero', 'Rock Band', 'Just Dance'], intent: 'play' },
   { id: 30, name: 'Ben',    age: 31, location: 'Aldgate',           distance: '1.3 mi', distanceKm: 2.1,  character: 'knight',  element: 'earth',    affiliation: 'academia', bio: "Medieval historian and escape room designer. I literally build the puzzles you play. Good luck. I've never lost at one of my own rooms. I've also never told anyone who has.",           games: ['puzzles', 'strategy', 'board'],  lookingFor: 'long-term',  willMatch: true,  duelGames: ['guess-who', 'dot-dash', 'word-blitz'],  activityLevel: 'week',  kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Escape room games', 'Catan'], intent: 'both' },
-].map(p => ({ ...p, prompts: PROFILE_PROMPTS[p.id as number] ?? [] })) as Profile[];
+].map(p => ({ ...p, gender: '', prompts: PROFILE_PROMPTS[p.id as number] ?? [] })) as Profile[];
 
 // ─── Profile card content (compact, for stack) ───────────────────────────────
 
@@ -1030,6 +1057,24 @@ function FilterModal({ initialFilters, onApply, onClose }: {
           </label>
         </section>
 
+        {/* ── Show Me (Gender) ── */}
+        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          {sectionHead('SHOW ME')}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            {(['men', 'women', 'everyone'] as const).map(opt => {
+              const sel = draft.gender === opt;
+              const c = opt === 'men' ? '#00D9FF' : opt === 'women' ? '#FF6BA8' : '#B565FF';
+              return (
+                <motion.button key={opt} onClick={() => set('gender', opt)} className="font-display"
+                  style={{ flex: 1, padding: '10px 0', borderRadius: 20, fontSize: 14, fontWeight: 700, border: `2px solid ${sel ? c : 'rgba(255,255,255,0.18)'}`, background: sel ? `${c}20` : 'transparent', color: sel ? c : 'rgba(255,255,255,0.4)', cursor: 'pointer', boxShadow: sel ? `0 0 14px ${c}44` : 'none', transition: 'all 0.18s', textTransform: 'capitalize' }}
+                  whileTap={{ scale: 0.93 }}>
+                  {opt === 'everyone' ? 'Everyone' : opt === 'men' ? 'Men' : 'Women'}
+                </motion.button>
+              );
+            })}
+          </div>
+        </section>
+
         {/* ── Game Preferences ── */}
         <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           {sectionHead('GAME PREFERENCES')}
@@ -1504,14 +1549,23 @@ export function DiscoverScreen() {
 
     const loadProfiles = async () => {
       try {
-        // Get current user profile for distance calculation
+        // Get current user profile for distance calculation + preference pre-population
         const { data: currentProfile } = await getProfile(user.id);
+
+        // Pre-populate filters from profile if no localStorage override exists
+        if (!localStorage.getItem('duel-discover-filters') && currentProfile) {
+          const profileFilters = loadFilters(currentProfile);
+          setActiveFilters(profileFilters);
+        }
+
+        const filters = activeFilters;
 
         // Try enhanced discovery first
         const callerIntent = (currentProfile?.intent as 'romance' | 'play' | 'both') ?? 'romance';
         const dbProfiles = await getDiscoveryUsers(user.id, {
-          minAge: activeFilters.ageMin,
-          maxAge: activeFilters.ageMax,
+          minAge: filters.ageMin,
+          maxAge: filters.ageMax,
+          gender: interestedInToGenderFilter(filters.gender),
           callerIntent,
         });
 
@@ -1547,6 +1601,14 @@ export function DiscoverScreen() {
     setCurrentIndex(0);
     setDisabled(false);
     setShowFilterModal(false);
+
+    // Persist preference fields back to profile DB
+    if (user) {
+      updateProfileField(user.id, 'preferred_age_min', filters.ageMin);
+      updateProfileField(user.id, 'preferred_age_max', filters.ageMax);
+      updateProfileField(user.id, 'preferred_distance', filters.anyDistance ? null : filters.distanceMax);
+      updateProfileField(user.id, 'interested_in', filters.gender);
+    }
   };
 
   const handleSwipe = (dir: 'left' | 'right') => {
