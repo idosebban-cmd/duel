@@ -247,15 +247,23 @@ export async function recordSwipe(
 
     if (error || action === 'pass') return { matched: false };
 
-    const { data: mutual } = await supabase
-      .from('swipes')
-      .select('id')
-      .eq('user_id', targetId)
-      .eq('target_id', userId)
-      .eq('action', 'like')
-      .maybeSingle();
+    // Bot profiles never swipe back, so simulate a 25% match rate
+    const BOT_PREFIX = 'a0000000-0000-0000-0000-00000000';
+    const isBot = targetId.startsWith(BOT_PREFIX);
 
-    if (!mutual) return { matched: false };
+    if (!isBot) {
+      const { data: mutual } = await supabase
+        .from('swipes')
+        .select('id')
+        .eq('user_id', targetId)
+        .eq('target_id', userId)
+        .eq('action', 'like')
+        .maybeSingle();
+
+      if (!mutual) return { matched: false };
+    } else if (Math.random() >= 0.25) {
+      return { matched: false };
+    }
 
     const [user1Id, user2Id] = userId < targetId ? [userId, targetId] : [targetId, userId];
 
