@@ -181,8 +181,8 @@ export function PlayerCardPreview() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Player Card</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8].map((i) => (
-              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 8 ? 24 : 8, background: '#FF6BA8' }} />
+            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 9 ? 24 : 8, background: '#FF6BA8' }} />
             ))}
           </div>
         </div>

@@ -116,7 +116,7 @@ export function RelationshipGoals() {
 
   const handleContinue = () => {
     if (lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play')) completeStep(5);
-    navigate('/onboarding/lifestyle');
+    navigate('/onboarding/preferences');
   };
 
   const showGoals = !ENABLE_JUST_PLAY || intent !== 'play';
@@ -139,7 +139,7 @@ export function RelationshipGoals() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Goals</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8].map((i) => (
+            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 5 ? 24 : 8, background: i < 5 ? '#FF6BA8' : i === 5 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
