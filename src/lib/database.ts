@@ -260,11 +260,15 @@ export async function recordSwipe(
   const isBot = targetId.startsWith(BOT_PREFIX);
 
   // Attempt to record the swipe (non-blocking for bots)
-  const swipeResult = await supabase
-    .from('swipes')
-    .upsert({ user_id: userId, target_id: targetId, action }, { onConflict: 'user_id,target_id' })
-    .then(({ error }) => !error)
-    .catch(() => false);
+  let swipeResult = false;
+  try {
+    const { error } = await supabase
+      .from('swipes')
+      .upsert({ user_id: userId, target_id: targetId, action }, { onConflict: 'user_id,target_id' });
+    swipeResult = !error;
+  } catch {
+    swipeResult = false;
+  }
 
   if (!isBot) {
     // Real user: need successful swipe record + mutual like check
