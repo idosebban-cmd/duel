@@ -51,6 +51,11 @@ export interface OnboardingState {
   // Relationship
   lookingFor: string[];
 
+  // Preferences
+  preferredAgeMin: number;
+  preferredAgeMax: number;
+  preferredDistance: number | null; // null = anywhere
+
   // Lifestyle
   kids: string | null;
   drinking: string | null;
@@ -84,6 +89,7 @@ interface OnboardingActions {
   updateFavoriteGames: (favoriteGames: string[]) => void;
   setIntent: (intent: 'romance' | 'play' | 'both') => void;
   updateRelationship: (id: string) => void;
+  updatePreferences: (data: { preferredAgeMin: number; preferredAgeMax: number; preferredDistance: number | null }) => void;
   updateLifestyle: (field: keyof Pick<OnboardingState, 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise'>, value: string) => void;
   updatePrompts: (prompts: UserPrompt[]) => void;
   completeStep: (step: number) => void;
@@ -108,6 +114,9 @@ const initialState: OnboardingState = {
   favoriteGames: [],
   intent: 'romance',
   lookingFor: [],
+  preferredAgeMin: 18,
+  preferredAgeMax: 65,
+  preferredDistance: null,
   kids: null,
   drinking: null,
   smoking: null,
@@ -155,6 +164,13 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 
       setIntent: (intent) => set({ intent }),
 
+      updatePreferences: (data) =>
+        set({
+          preferredAgeMin: data.preferredAgeMin,
+          preferredAgeMax: data.preferredAgeMax,
+          preferredDistance: data.preferredDistance,
+        }),
+
       updateRelationship: (id) =>
         set((state) => ({
           lookingFor: state.lookingFor.includes(id)
@@ -183,7 +199,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
-      version: 3,
+      version: 4,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -196,6 +212,12 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         if (!s.intent) {
           s.intent = 'romance';
         }
+        // v3 → v4: add preference fields + step index shift
+        if (s.preferredAgeMin === undefined) s.preferredAgeMin = 18;
+        if (s.preferredAgeMax === undefined) s.preferredAgeMax = 65;
+        if (s.preferredDistance === undefined) s.preferredDistance = null;
+        // Reset completedSteps because indices shifted
+        s.completedSteps = [];
         return s;
       },
       partialize: (state) => {
@@ -214,8 +236,9 @@ export const STEPS = [
   { id: 3, path: '/onboarding/photos', label: 'Photos' },
   { id: 4, path: '/onboarding/games', label: 'Games' },
   { id: 5, path: '/onboarding/relationship-goals', label: 'Goals' },
-  { id: 6, path: '/onboarding/lifestyle', label: 'Lifestyle' },
-  { id: 7, path: '/onboarding/bio', label: 'Bio' },
-  { id: 8, path: '/onboarding/prompts', label: 'Prompts' },
-  { id: 9, path: '/onboarding/preview', label: 'Preview' },
+  { id: 6, path: '/onboarding/preferences', label: 'Preferences' },
+  { id: 7, path: '/onboarding/lifestyle', label: 'Lifestyle' },
+  { id: 8, path: '/onboarding/bio', label: 'Bio' },
+  { id: 9, path: '/onboarding/prompts', label: 'Prompts' },
+  { id: 10, path: '/onboarding/preview', label: 'Preview' },
 ] as const;

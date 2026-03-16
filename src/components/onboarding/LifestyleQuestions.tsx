@@ -99,7 +99,7 @@ export function LifestyleQuestions() {
       setDirection(1);
       setCurrentQ((q) => q + 1);
     } else {
-      completeStep(6);
+      completeStep(7);
       navigate('/onboarding/bio');
     }
     setIsSelecting(false);
@@ -110,7 +110,7 @@ export function LifestyleQuestions() {
       setDirection(-1);
       setCurrentQ((q) => q - 1);
     } else {
-      navigate('/onboarding/relationship-goals');
+      navigate('/onboarding/preferences');
     }
   };
 
@@ -120,7 +120,7 @@ export function LifestyleQuestions() {
       setDirection(1);
       setCurrentQ((q) => q + 1);
     } else {
-      completeStep(6);
+      completeStep(7);
       navigate('/onboarding/bio');
     }
   };
@@ -143,8 +143,8 @@ export function LifestyleQuestions() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Lifestyle</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8].map((i) => (
-              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 6 ? 24 : 8, background: i < 6 ? '#FF6BA8' : i === 6 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
+            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 7 ? 24 : 8, background: i < 7 ? '#FF6BA8' : i === 7 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>

@@ -80,7 +80,7 @@ export function AvatarSelection() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Avatar · {subSteps[subStep]}</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8].map((i) => (
+            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
               <div key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === 1 ? 24 : 8, background: i < 1 ? '#FF6BA8' : i === 1 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>

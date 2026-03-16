@@ -329,7 +329,7 @@ export function PromptsSelection() {
   const handleContinue = () => {
     if (selected.length > 0) {
       updatePrompts(selected);
-      completeStep(8);
+      completeStep(9);
     }
     navigate('/onboarding/preview');
   };

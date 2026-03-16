@@ -29,6 +29,9 @@ export interface UserProfile {
   pets: string | null;
   exercise: string | null;
   intent: string | null;
+  preferred_age_min: number | null;
+  preferred_age_max: number | null;
+  preferred_distance: number | null;
   latitude: number | null;
   longitude: number | null;
   created_at: string;
@@ -65,6 +68,9 @@ export async function upsertProfile(
         bio:            data.bio       || null,
         exercise:       data.exercise  || null,
         intent:         data.intent    || 'romance',
+        preferred_age_min:  data.preferredAgeMin  ?? 18,
+        preferred_age_max:  data.preferredAgeMax  ?? 65,
+        preferred_distance: data.preferredDistance ?? null,
       },
       { onConflict: 'id' },
     );

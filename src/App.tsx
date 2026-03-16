@@ -12,6 +12,7 @@ import { BasicsForm } from './components/onboarding/BasicsForm';
 import { PhotoUpload } from './components/onboarding/PhotoUpload';
 import { GameSelection } from './components/onboarding/GameSelection';
 import { RelationshipGoals } from './components/onboarding/RelationshipGoals';
+import { PreferencesStep } from './components/onboarding/PreferencesStep';
 import { LifestyleQuestions } from './components/onboarding/LifestyleQuestions';
 import { BioStep } from './components/onboarding/BioStep';
 import { PlayerCardPreview } from './components/onboarding/PlayerCardPreview';
@@ -84,6 +85,7 @@ export default function App() {
           <Route path="/onboarding/photos" element={<ProtectedRoute><PhotoUpload /></ProtectedRoute>} />
           <Route path="/onboarding/games" element={<ProtectedRoute><GameSelection /></ProtectedRoute>} />
           <Route path="/onboarding/relationship-goals" element={<ProtectedRoute><RelationshipGoals /></ProtectedRoute>} />
+          <Route path="/onboarding/preferences" element={<ProtectedRoute><PreferencesStep /></ProtectedRoute>} />
           <Route path="/onboarding/lifestyle" element={<ProtectedRoute><LifestyleQuestions /></ProtectedRoute>} />
           <Route path="/onboarding/bio" element={<ProtectedRoute><BioStep /></ProtectedRoute>} />
           <Route path="/onboarding/prompts" element={<ProtectedRoute><PromptsSelection /></ProtectedRoute>} />
