@@ -217,10 +217,10 @@ export function GamePicker() {
           transition={{ delay: 0.4 }}
         >
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate('/discover')}
             className="font-body text-sm text-white/30 hover:text-white/60 transition-colors"
           >
-            ← Back to profile
+            ← Back to profiles
           </button>
         </motion.div>
       </div>

@@ -292,22 +292,33 @@ export async function recordSwipe(
     if (Math.random() >= 0.25) return { matched: false };
   }
 
-  // We have a match — try to persist it, but don't block the match on DB failure
+  // Persist the match to the database (retry once on failure)
   const [user1Id, user2Id] = userId < targetId ? [userId, targetId] : [targetId, userId];
+  const matchPayload = { user_a: user1Id, user_b: user2Id };
 
-  try {
-    const { data: match } = await supabase
-      .from('matches')
-      .upsert({ user_a: user1Id, user_b: user2Id }, { onConflict: 'user_a,user_b' })
-      .select('id')
-      .maybeSingle();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { data: match, error } = await supabase
+        .from('matches')
+        .upsert(matchPayload, { onConflict: 'user_a,user_b' })
+        .select('id')
+        .maybeSingle();
 
-    return { matched: true, matchId: (match as { id: string } | null)?.id };
-  } catch {
-    // Match insert failed but the match decision already happened —
-    // return matched with a client-generated ID so the UI still works
-    return { matched: true, matchId: crypto.randomUUID() };
+      if (error) {
+        console.error(`[recordSwipe] Match insert attempt ${attempt + 1} failed:`, error.message);
+        if (attempt === 0) continue; // retry once
+        return { matched: false };
+      }
+
+      return { matched: true, matchId: (match as { id: string } | null)?.id };
+    } catch (err) {
+      console.error(`[recordSwipe] Match insert attempt ${attempt + 1} threw:`, err);
+      if (attempt === 0) continue; // retry once
+      return { matched: false };
+    }
   }
+
+  return { matched: false };
 }
 
 // ─── Matches ──────────────────────────────────────────────────────────────────
