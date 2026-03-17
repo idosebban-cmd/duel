@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
@@ -6,6 +6,21 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { upsertProfile, savePhotos } from '../../lib/database';
+
+// Check if URL contains an OAuth redirect hash (access_token, etc.)
+function hasOAuthRedirectHash(): boolean {
+  const hash = window.location.hash;
+  return hash.includes('access_token=') || hash.includes('error=');
+}
+
+function friendlyOAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('provider') && lower.includes('not enabled'))
+    return 'Google sign-in is not set up yet. Please use email instead.';
+  if (lower.includes('network') || lower.includes('fetch'))
+    return 'Network error — check your connection and try again.';
+  return message;
+}
 
 export function CreateAccountScreen() {
   const navigate = useNavigate();
@@ -17,9 +32,14 @@ export function CreateAccountScreen() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+
+  // Track the authenticated user so retry works for both flows
+  const [authedUser, setAuthedUser] = useState<{ id: string; email: string } | null>(null);
+  const oauthHandled = useRef(false);
 
   const inputStyle = (focused: boolean) => ({
     background: 'rgba(255,255,255,0.04)',
@@ -44,8 +64,53 @@ export function CreateAccountScreen() {
     }
   };
 
+  const finishSignUp = async (userId: string, userEmail: string) => {
+    setSavingProfile(true);
+    setError(null);
+    setAuthedUser({ id: userId, email: userEmail });
+    try {
+      store.setUserId(userId);
+      await saveProfile(userId, userEmail);
+      navigate('/discover');
+      store.reset();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save profile.';
+      setError(msg);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // ─── Handle Google OAuth redirect return ─────────────────────────────────────
+  useEffect(() => {
+    if (oauthHandled.current || !supabase || !hasOAuthRedirectHash()) return;
+    oauthHandled.current = true;
+
+    setSavingProfile(true);
+
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setSession(session);
+          setUser(session.user);
+          await finishSignUp(session.user.id, session.user.email ?? '');
+        } else {
+          // Hash present but no session — something went wrong
+          setError('Google sign-in did not complete. Please try again.');
+          setSavingProfile(false);
+        }
+      } catch (err) {
+        console.error('[CreateAccount] OAuth return error:', err);
+        setError('Something went wrong after Google sign-in. Please try again.');
+        setSavingProfile(false);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Google OAuth ────────────────────────────────────────────────────────────
   const handleGoogleSignUp = async () => {
-    if (loading) return;
+    if (loading || savingProfile) return;
     setError(null);
 
     if (!supabase) {
@@ -59,11 +124,15 @@ export function CreateAccountScreen() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/onboarding/create-account`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
       if (oauthError) {
         console.error('[CreateAccount] Google OAuth error:', oauthError);
-        setError(oauthError.message);
+        setError(friendlyOAuthError(oauthError.message));
         setLoading(false);
       }
       // If no error, browser redirects to Google — loading stays true
@@ -74,8 +143,9 @@ export function CreateAccountScreen() {
     }
   };
 
+  // ─── Email/Password ──────────────────────────────────────────────────────────
   const handleEmailSignUp = async () => {
-    if (loading) return;
+    if (loading || savingProfile) return;
     setError(null);
 
     if (!supabase) {
@@ -110,39 +180,54 @@ export function CreateAccountScreen() {
       }
 
       if (data.user) {
-        store.setUserId(data.user.id);
-        await saveProfile(data.user.id, data.user.email ?? email);
-        store.reset();
-        navigate('/discover');
+        setLoading(false);
+        await finishSignUp(data.user.id, data.user.email ?? email);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong. Tap to retry.';
+      const msg = err instanceof Error ? err.message : 'Something went wrong.';
       setError(msg);
-    } finally {
       setLoading(false);
     }
   };
 
-  // Handle Google OAuth return — check for session on mount
-  // This runs when Google redirects back with a session
-  const [checkedOAuth, setCheckedOAuth] = useState(false);
-  if (!checkedOAuth && supabase) {
-    setCheckedOAuth(true);
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setSession(session);
-        setUser(session.user);
-        store.setUserId(session.user.id);
-        try {
-          await saveProfile(session.user.id, session.user.email ?? '');
-          store.reset();
-          navigate('/discover');
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Failed to save profile.';
-          setError(msg);
-        }
-      }
-    });
+  // ─── Retry handler (works for both Google and email flows) ───────────────────
+  const handleRetry = async () => {
+    if (!authedUser) return;
+    await finishSignUp(authedUser.id, authedUser.email);
+  };
+
+  // ─── Saving profile state (shown after OAuth redirect or during save) ────────
+  if (savingProfile) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: '#12122A' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
+
+        <motion.div
+          className="text-center px-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            className="w-12 h-12 mx-auto mb-6 rounded-full"
+            style={{ border: '3px solid rgba(78,255,196,0.2)', borderTopColor: '#4EFFC4' }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+          />
+          <h2
+            className="font-display font-extrabold text-2xl mb-2"
+            style={{ color: '#4EFFC4', textShadow: '0 0 16px rgba(78,255,196,0.5)' }}
+          >
+            SETTING UP YOUR PROFILE
+          </h2>
+          <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Almost ready to play...
+          </p>
+        </motion.div>
+
+        <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
+      </div>
+    );
   }
 
   return (
@@ -215,6 +300,32 @@ export function CreateAccountScreen() {
             </p>
           </motion.div>
 
+          {/* Error banner with retry (shown above form for both flows) */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                className="mb-4 px-4 py-3 rounded-xl font-body text-sm text-center"
+                style={{ background: 'rgba(255,107,168,0.1)', border: '1px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <p>{error}</p>
+                {authedUser && (
+                  <motion.button
+                    onClick={handleRetry}
+                    className="mt-2 px-4 py-1.5 rounded-lg font-display font-bold text-xs"
+                    style={{ background: 'rgba(255,107,168,0.2)', border: '1px solid rgba(255,107,168,0.4)' }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    TAP TO RETRY
+                  </motion.button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence mode="wait">
             {mode === 'main' ? (
               <motion.div
@@ -282,21 +393,6 @@ export function CreateAccountScreen() {
                 >
                   SIGN UP WITH EMAIL
                 </motion.button>
-
-                {/* Error */}
-                <AnimatePresence>
-                  {error && (
-                    <motion.p
-                      className="font-body text-xs text-center px-3 py-2.5 rounded-xl"
-                      style={{ background: 'rgba(255,107,168,0.1)', border: '1px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      {error}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
               </motion.div>
             ) : (
               <motion.div
@@ -360,21 +456,6 @@ export function CreateAccountScreen() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Error */}
-                  <AnimatePresence>
-                    {error && (
-                      <motion.p
-                        className="font-body text-xs text-center px-2 py-2 rounded-lg"
-                        style={{ background: 'rgba(255,107,168,0.1)', border: '1px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        {error}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
 
                   {/* Submit */}
                   <motion.button
