@@ -241,4 +241,5 @@ export const STEPS = [
   { id: 8, path: '/onboarding/bio', label: 'Bio' },
   { id: 9, path: '/onboarding/prompts', label: 'Prompts' },
   { id: 10, path: '/onboarding/preview', label: 'Preview' },
+  { id: 11, path: '/onboarding/create-account', label: 'Create Account' },
 ] as const;
