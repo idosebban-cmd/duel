@@ -1,11 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
-import { useAuthStore } from '../../store/authStore';
-import { upsertProfile, savePhotos } from '../../lib/database';
-import { supabase } from '../../lib/supabase';
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -78,14 +75,7 @@ const lookingForIcons: Record<string, string> = {
 export function PlayerCardPreview() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
-  const { user, session } = useAuthStore();
   const [photoIndex, setPhotoIndex] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [pendingSave, setPendingSave] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-
-  const emailConfirmed = !!session;
 
   const {
     character, element, affiliation,
@@ -106,61 +96,9 @@ export function PlayerCardPreview() {
   ].filter(Boolean) as { icon: string; label: string }[];
 
 
-  const saveAndNavigate = async () => {
-    if (saving) return;
-    setSaving(true);
-    setSaveError(null);
-
-    if (!user) {
-      console.warn('[Onboarding] No user found — waiting for auth');
-      setSaving(false);
-      setPendingSave(true);
-      return;
-    }
-
-    // Verify we have a valid Supabase session before saving
-    const { data: sessionData } = await supabase?.auth.getSession() ?? { data: { session: null } };
-    if (!sessionData.session) {
-      console.error('[Onboarding] No active Supabase session — cannot save');
-      setSaveError('No active session. Please check your email confirmation and try again.');
-      setSaving(false);
-      return;
-    }
-
-    console.log('[Onboarding] Saving profile for user:', user.id);
-    const { error } = await upsertProfile(user.id, { ...store, email: user.email ?? '' });
-    if (error) {
-      console.error('[Onboarding] upsertProfile failed:', error);
-      setSaveError(`Failed to save profile: ${error.message}. Tap to retry.`);
-      setSaving(false);
-      return;
-    }
-    console.log('[Onboarding] Profile saved successfully');
-
-    if (store.photos.length > 0) {
-      await savePhotos(user.id, store.photos);
-      console.log('[Onboarding] Photos saved');
-    }
-
-    setSaving(false);
-    setPendingSave(false);
-    navigate('/discover');
-  };
-
-  // Auto-save when session arrives while waiting for confirmation
-  useEffect(() => {
-    if (pendingSave && session) {
-      saveAndNavigate();
-    }
-  }, [session, pendingSave]);
-
-  const handleStartPlaying = () => {
-    if (saving) return;
-    if (!emailConfirmed) {
-      setPendingSave(true);
-      return;
-    }
-    saveAndNavigate();
+  const handleNext = () => {
+    store.completeStep(10);
+    navigate('/onboarding/create-account');
   };
 
   return (
@@ -471,106 +409,34 @@ export function PlayerCardPreview() {
       {/* Fixed bottom buttons */}
       <div className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-5 z-20" style={{ background: 'linear-gradient(to top, #12122A 70%, transparent)' }}>
         <div className="max-w-lg mx-auto space-y-3">
-          {/* Email confirmation prompt */}
-          <AnimatePresence>
-            {pendingSave && !emailConfirmed && (
-              <motion.div
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm"
-                style={{
-                  background: 'rgba(255,230,109,0.1)',
-                  border: '1.5px solid rgba(255,230,109,0.35)',
-                  color: '#FFE66D',
-                }}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,230,109,0.3)', borderTopColor: '#FFE66D', borderRadius: '50%', flexShrink: 0 }}
-                />
-                <span>Please confirm your email to continue. Check your inbox.</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Save error banner */}
-          <AnimatePresence>
-            {saveError && (
-              <motion.div
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm cursor-pointer"
-                style={{
-                  background: 'rgba(255,107,168,0.1)',
-                  border: '1.5px solid rgba(255,107,168,0.35)',
-                  color: '#FF6BA8',
-                }}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                onClick={() => { setSaveError(null); saveAndNavigate(); }}
-              >
-                <span>⚠</span>
-                <span>{saveError}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* START PLAYING button */}
+          {/* LOOKS GOOD button */}
           <motion.button
-            ref={btnRef}
-            onClick={handleStartPlaying}
-            disabled={saving}
+            onClick={handleNext}
             className="w-full font-display font-extrabold text-xl sm:text-2xl text-white rounded-2xl py-5 px-8 relative overflow-hidden"
             style={{
-              background: saving
-                ? 'rgba(255,255,255,0.1)'
-                : 'linear-gradient(135deg, #FF6BA8 0%, #FF3D71 100%)',
+              background: 'linear-gradient(135deg, #FF6BA8 0%, #FF3D71 100%)',
               border: '4px solid black',
-              boxShadow: saving ? 'none' : '8px 8px 0px 0px #B565FF',
+              boxShadow: '8px 8px 0px 0px #B565FF',
               textShadow: '2px 2px 0 rgba(0,0,0,0.2)',
             }}
-            whileHover={saving ? {} : { scale: 1.03, boxShadow: '12px 12px 0px 0px #B565FF' }}
-            whileTap={saving ? {} : { scale: 0.97, boxShadow: '4px 4px 0px 0px #B565FF' }}
+            whileHover={{ scale: 1.03, boxShadow: '12px 12px 0px 0px #B565FF' }}
+            whileTap={{ scale: 0.97, boxShadow: '4px 4px 0px 0px #B565FF' }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {/* Glossy overlay */}
             <span className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
-
-            <AnimatePresence mode="wait">
-              {saving ? (
-                <motion.span
-                  key="saving"
-                  className="flex items-center justify-center gap-2"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                >
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
-                    style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'white', borderRadius: '50%' }}
-                  />
-                  SAVING...
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="idle"
-                  className="flex items-center justify-center gap-2"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                >
-                  <Gamepad2 size={24} />
-                  START PLAYING
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <span className="flex items-center justify-center gap-2">
+              <Gamepad2 size={24} />
+              LOOKS GOOD, NEXT
+            </span>
           </motion.button>
 
           {/* Edit button */}
           <motion.button onClick={() => navigate('/onboarding/avatar')} className="w-full font-display font-bold text-base rounded-2xl py-3 px-8"
             style={{ background: 'rgba(255,255,255,0.07)', border: '2px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.7)' }}
             whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            ✏️ Edit Profile
+            Edit Profile
           </motion.button>
         </div>
       </div>

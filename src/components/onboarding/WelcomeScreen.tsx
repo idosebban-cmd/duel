@@ -186,7 +186,7 @@ export function WelcomeScreen() {
 
         {/* CTA */}
         <motion.button
-          onClick={() => navigate('/login?mode=signup')}
+          onClick={() => navigate('/onboarding/avatar')}
           className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
           style={{
             background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',

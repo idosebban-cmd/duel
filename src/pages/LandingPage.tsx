@@ -168,7 +168,7 @@ function HeroSection() {
 
         {/* INSERT COIN */}
         <motion.button
-          onClick={() => navigate('/login?mode=signup')}
+          onClick={() => navigate('/onboarding/welcome')}
           className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
           style={{
             background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
@@ -480,7 +480,7 @@ function FooterSection() {
       <div className="max-w-sm mx-auto text-center">
         {/* INSERT COIN again */}
         <motion.button
-          onClick={() => navigate('/login?mode=signup')}
+          onClick={() => navigate('/onboarding/welcome')}
           className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none mx-auto block"
           style={{
             background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',

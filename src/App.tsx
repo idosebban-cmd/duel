@@ -6,6 +6,7 @@ import { supabase } from './lib/supabase';
 import { useAuthStore } from './store/authStore';
 import { useOnboardingStore } from './store/onboardingStore';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { OnboardingGuard } from './components/OnboardingGuard';
 import { WelcomeScreen } from './components/onboarding/WelcomeScreen';
 import { AvatarSelection } from './components/onboarding/AvatarSelection';
 import { BasicsForm } from './components/onboarding/BasicsForm';
@@ -17,6 +18,7 @@ import { LifestyleQuestions } from './components/onboarding/LifestyleQuestions';
 import { BioStep } from './components/onboarding/BioStep';
 import { PlayerCardPreview } from './components/onboarding/PlayerCardPreview';
 import { PromptsSelection } from './components/onboarding/PromptsSelection';
+import { CreateAccountScreen } from './components/onboarding/CreateAccountScreen';
 import { GameSetup } from './pages/game/GameSetup';
 import { LobbyScreen } from './pages/game/LobbyScreen';
 import { GameBoard } from './pages/game/GameBoard';
@@ -79,17 +81,18 @@ export default function App() {
           <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
 
-          {/* Onboarding (protected — requires sign-up first) */}
-          <Route path="/onboarding/avatar" element={<ProtectedRoute><AvatarSelection /></ProtectedRoute>} />
-          <Route path="/onboarding/basics" element={<ProtectedRoute><BasicsForm /></ProtectedRoute>} />
-          <Route path="/onboarding/photos" element={<ProtectedRoute><PhotoUpload /></ProtectedRoute>} />
-          <Route path="/onboarding/games" element={<ProtectedRoute><GameSelection /></ProtectedRoute>} />
-          <Route path="/onboarding/relationship-goals" element={<ProtectedRoute><RelationshipGoals /></ProtectedRoute>} />
-          <Route path="/onboarding/preferences" element={<ProtectedRoute><PreferencesStep /></ProtectedRoute>} />
-          <Route path="/onboarding/lifestyle" element={<ProtectedRoute><LifestyleQuestions /></ProtectedRoute>} />
-          <Route path="/onboarding/bio" element={<ProtectedRoute><BioStep /></ProtectedRoute>} />
-          <Route path="/onboarding/prompts" element={<ProtectedRoute><PromptsSelection /></ProtectedRoute>} />
-          <Route path="/onboarding/preview" element={<ProtectedRoute><PlayerCardPreview /></ProtectedRoute>} />
+          {/* Onboarding (unprotected — auth happens at the end) */}
+          <Route path="/onboarding/avatar" element={<OnboardingGuard><AvatarSelection /></OnboardingGuard>} />
+          <Route path="/onboarding/basics" element={<OnboardingGuard><BasicsForm /></OnboardingGuard>} />
+          <Route path="/onboarding/photos" element={<OnboardingGuard><PhotoUpload /></OnboardingGuard>} />
+          <Route path="/onboarding/games" element={<OnboardingGuard><GameSelection /></OnboardingGuard>} />
+          <Route path="/onboarding/relationship-goals" element={<OnboardingGuard><RelationshipGoals /></OnboardingGuard>} />
+          <Route path="/onboarding/preferences" element={<OnboardingGuard><PreferencesStep /></OnboardingGuard>} />
+          <Route path="/onboarding/lifestyle" element={<OnboardingGuard><LifestyleQuestions /></OnboardingGuard>} />
+          <Route path="/onboarding/bio" element={<OnboardingGuard><BioStep /></OnboardingGuard>} />
+          <Route path="/onboarding/prompts" element={<OnboardingGuard><PromptsSelection /></OnboardingGuard>} />
+          <Route path="/onboarding/preview" element={<OnboardingGuard><PlayerCardPreview /></OnboardingGuard>} />
+          <Route path="/onboarding/create-account" element={<CreateAccountScreen />} />
 
           {/* Login */}
           <Route path="/login" element={<LoginScreen />} />
