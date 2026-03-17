@@ -80,7 +80,7 @@ export function GamePicker() {
     if (matchId) {
       // Route to matchId-specific game for multiplayer; keep localStorage as fallback
       localStorage.setItem('pending_match_id', matchId);
-      navigate(`${route}/${matchId}/lobby`);
+      navigate(`/game/${matchId}/lobby`);
     } else {
       navigate(route);
     }
