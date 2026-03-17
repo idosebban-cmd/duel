@@ -116,6 +116,8 @@ export function LifestyleQuestions() {
 
 
   const handleSkip = () => {
+    // Clear any previous answer for this question
+    updateLifestyle(question.id, '');
     if (currentQ < questions.length - 1) {
       setDirection(1);
       setCurrentQ((q) => q + 1);
