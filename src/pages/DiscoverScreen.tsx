@@ -1630,9 +1630,9 @@ export function DiscoverScreen() {
               window.setTimeout(() => setMatchProfile(profile), 100);
             }
           })
-          .catch(() => {/* swipe lost — non-critical */});
+          .catch((err) => console.error('[Discover] recordSwipe failed:', err));
       } else {
-        recordSwipe(user.id, profile.id, 'pass').catch(() => {});
+        recordSwipe(user.id, profile.id, 'pass').catch((err) => console.error('[Discover] pass swipe failed:', err));
       }
     } else if (dir === 'right' && profile.willMatch) {
       // Fallback for fake seed profiles – generate a local matchId so chat/games work

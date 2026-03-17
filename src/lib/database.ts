@@ -265,8 +265,12 @@ export async function recordSwipe(
     const { error } = await supabase
       .from('swipes')
       .upsert({ user_id: userId, target_id: targetId, action }, { onConflict: 'user_id,target_id' });
+    if (error) {
+      console.error('[recordSwipe] Swipe record failed:', error.message);
+    }
     swipeResult = !error;
-  } catch {
+  } catch (err) {
+    console.error('[recordSwipe] Swipe record threw:', err);
     swipeResult = false;
   }
 
@@ -292,30 +296,41 @@ export async function recordSwipe(
     if (Math.random() >= 0.25) return { matched: false };
   }
 
-  // Persist the match to the database (retry once on failure)
+  // Persist the match to the database — check-then-insert (upsert requires
+  // an UPDATE RLS policy which we intentionally omit; match rows are immutable).
   const [user1Id, user2Id] = userId < targetId ? [userId, targetId] : [targetId, userId];
-  const matchPayload = { user_a: user1Id, user_b: user2Id };
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
+  try {
+    // Check if match already exists
+    const { data: existing } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('user_a', user1Id)
+      .eq('user_b', user2Id)
+      .maybeSingle();
+
+    if (existing) {
+      return { matched: true, matchId: (existing as { id: string }).id };
+    }
+
+    // Insert new match (retry once on failure)
+    for (let attempt = 0; attempt < 2; attempt++) {
       const { data: match, error } = await supabase
         .from('matches')
-        .upsert(matchPayload, { onConflict: 'user_a,user_b' })
+        .insert({ user_a: user1Id, user_b: user2Id })
         .select('id')
         .maybeSingle();
 
       if (error) {
         console.error(`[recordSwipe] Match insert attempt ${attempt + 1} failed:`, error.message);
-        if (attempt === 0) continue; // retry once
+        if (attempt === 0) continue;
         return { matched: false };
       }
 
       return { matched: true, matchId: (match as { id: string } | null)?.id };
-    } catch (err) {
-      console.error(`[recordSwipe] Match insert attempt ${attempt + 1} threw:`, err);
-      if (attempt === 0) continue; // retry once
-      return { matched: false };
     }
+  } catch (err) {
+    console.error('[recordSwipe] Match creation threw:', err);
   }
 
   return { matched: false };
