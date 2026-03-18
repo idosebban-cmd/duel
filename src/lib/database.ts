@@ -258,6 +258,7 @@ export async function recordSwipe(
   // Bot profiles never swipe back, so simulate a 25% match rate
   const BOT_PREFIX = 'a0000000-0000-0000-0000-00000000';
   const isBot = targetId.startsWith(BOT_PREFIX);
+  if (isBot) console.log('[recordSwipe] Bot detected:', targetId);
 
   // Attempt to record the swipe (non-blocking for bots)
   let swipeResult = false;
@@ -293,12 +294,15 @@ export async function recordSwipe(
     }
   } else {
     // Bot: 25% random match chance — independent of DB success
-    if (Math.random() >= 0.25) return { matched: false };
+    const roll = Math.random();
+    console.log('[recordSwipe] Roll result:', roll, '— match?', roll < 0.25);
+    if (roll >= 0.25) return { matched: false };
   }
 
   // Persist the match to the database — check-then-insert (upsert requires
   // an UPDATE RLS policy which we intentionally omit; match rows are immutable).
   const [user1Id, user2Id] = userId < targetId ? [userId, targetId] : [targetId, userId];
+  console.log('[recordSwipe] Checking for existing match:', user1Id, user2Id);
 
   try {
     // Check if match already exists
@@ -309,11 +313,14 @@ export async function recordSwipe(
       .eq('user_b', user2Id)
       .maybeSingle();
 
+    console.log('[recordSwipe] Existing match found:', existing);
+
     if (existing) {
       return { matched: true, matchId: (existing as { id: string }).id };
     }
 
     // Insert new match (retry once on failure)
+    console.log('[recordSwipe] Attempting match insert...');
     for (let attempt = 0; attempt < 2; attempt++) {
       const { data: match, error } = await supabase
         .from('matches')
@@ -321,6 +328,7 @@ export async function recordSwipe(
         .select('id')
         .maybeSingle();
 
+      console.log('[recordSwipe] Insert result — match:', match, 'error:', error);
       if (error) {
         console.error(`[recordSwipe] Match insert attempt ${attempt + 1} failed:`, error.message);
         if (attempt === 0) continue;
