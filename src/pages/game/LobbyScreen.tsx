@@ -2,10 +2,21 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swords } from '../../components/ui/Icons';
-import { connectSocket, disconnectSocket } from '../../lib/socket';
+import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
 import { CountdownScreen } from '../../components/game/CountdownScreen';
-import type { LobbyState } from '../../types/game';
+import {
+  createOrJoinGame,
+  getGame,
+  getProfile,
+  getMatchById,
+  updateGameReady,
+  deleteGame,
+} from '../../lib/database';
+import type { GameRow } from '../../lib/database';
+
+const POLL_MS = 2000;
+const LOBBY_TIMEOUT_MS = 60_000;
 
 function useTimer(seconds: number) {
   const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -14,132 +25,182 @@ function useTimer(seconds: number) {
 }
 
 export function LobbyScreen() {
-  const { gameId } = useParams<{ gameId: string }>();
+  // URL param is actually the matchId (set by GamePicker)
+  const { gameId: matchId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const myUserId = user?.id ?? null;
   const {
-    myUserId, myName,
-    lobbyState, isCountingDown, connectionStatus, errorMessage,
-    setLobbyState, setGameId, setGameState,
-    startCountdown, setConnectionStatus, setError,
+    isCountingDown,
+    errorMessage,
+    setGameId, setError,
+    startCountdown,
   } = useGameStore();
 
-  const socketRef = useRef(connectSocket());
-  const [connectTimedOut, setConnectTimedOut] = useState(false);
+  const [gameRow, setGameRow] = useState<GameRow | null>(null);
+  const [myName, setMyName] = useState('You');
+  const [myAvatar, setMyAvatar] = useState('🎮');
+  const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [opponentAvatar, setOpponentAvatar] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
-  const timeRemaining = lobbyState?.timeRemaining ?? null;
-  const timerDisplay = useTimer(timeRemaining ?? 0);
-  const timerColor = (timeRemaining ?? 999) < 60 ? '#FF3D71' : (timeRemaining ?? 999) < 120 ? '#FFE66D' : '#4EFFC4';
+  const gameRowRef = useRef<GameRow | null>(null);
+  const countdownStartedRef = useRef(false);
+  const mountedAtRef = useRef(Date.now());
 
-  // If no identity set, send them to setup first with gameId pre-filled
+  // ── Redirect if not authenticated ──────────────────────────────
   useEffect(() => {
-    if (!myUserId && gameId) {
-      navigate(`/game?join=${gameId}`, { replace: true });
+    if (!myUserId && matchId) {
+      navigate(`/game?join=${matchId}`, { replace: true });
     }
-  }, [myUserId, gameId, navigate]);
+  }, [myUserId, matchId, navigate]);
+
+  // ── Create / join game on mount ────────────────────────────────
+  useEffect(() => {
+    if (!matchId || !myUserId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Load my profile for display
+        const { data: myProfile } = await getProfile(myUserId);
+        if (cancelled) return;
+        if (myProfile?.name) setMyName(myProfile.name);
+        if (myProfile?.character) {
+          setMyAvatar(`/characters/${myProfile.character.charAt(0).toUpperCase() + myProfile.character.slice(1)}.png`);
+        }
+
+        // Resolve opponent from match
+        const match = await getMatchById(matchId);
+        if (cancelled) return;
+        if (!match) {
+          setError('Match not found');
+          setLoading(false);
+          return;
+        }
+
+        const opponentId = match.user_a === myUserId ? match.user_b : match.user_a;
+
+        // Load opponent profile
+        const { data: oppProfile } = await getProfile(opponentId);
+        if (cancelled) return;
+        if (oppProfile?.name) setOpponentName(oppProfile.name);
+        if (oppProfile?.character) {
+          setOpponentAvatar(`/characters/${oppProfile.character.charAt(0).toUpperCase() + oppProfile.character.slice(1)}.png`);
+        }
+
+        // Create or join the game row
+        const row = await createOrJoinGame(matchId, 'guess_who', myUserId, opponentId, {});
+        if (cancelled) return;
+        if (row) {
+          gameRowRef.current = row;
+          setGameRow(row);
+          setGameId(row.id);
+        } else {
+          setError('Failed to create game');
+        }
+      } catch (err) {
+        if (!cancelled) setError('Failed to set up lobby');
+        console.error('[LobbyScreen] init error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, myUserId]);
+
+  // ── Poll for game state every 2s ───────────────────────────────
+  useEffect(() => {
+    const row = gameRowRef.current;
+    if (!row) return;
+
+    const id = setInterval(async () => {
+      try {
+        const updated = await getGame(row.id);
+        if (!updated) return;
+        gameRowRef.current = updated;
+        setGameRow({ ...updated });
+      } catch {
+        // Transient error — retry on next tick
+      }
+    }, POLL_MS);
+
+    return () => clearInterval(id);
+  }, [gameRow?.id]);
+
+  // ── Lobby timeout timer (counts down from 60s) ────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      const elapsed = Date.now() - mountedAtRef.current;
+      const remaining = Math.max(0, Math.ceil((LOBBY_TIMEOUT_MS - elapsed) / 1000));
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(id);
+        navigate('/discover');
+      }
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [navigate]);
+
+  // ── Detect both players ready → countdown → navigate ──────────
+  useEffect(() => {
+    if (!gameRow || !myUserId || countdownStartedRef.current) return;
+
+    const state = (gameRow.state ?? {}) as Record<string, unknown>;
+    const ready = (state.ready ?? {}) as Record<string, boolean>;
+    const bothReady = ready[gameRow.player1_id] && ready[gameRow.player2_id];
+
+    if (bothReady) {
+      countdownStartedRef.current = true;
+      startCountdown(3);
+    }
+  }, [gameRow, myUserId, startCountdown]);
 
   const handleCountdownComplete = useCallback(() => {
-    navigate(`/game/${gameId}/play`);
-  }, [gameId, navigate]);
+    // Navigate using matchId — GameBoard expects it in the URL
+    navigate(`/game/${matchId}/play`);
+  }, [matchId, navigate]);
 
-  useEffect(() => {
-    if (!gameId || !myUserId) return;
-    const socket = socketRef.current;
+  // ── Ready button ───────────────────────────────────────────────
+  const handleReady = async () => {
+    if (!gameRow?.id || !myUserId) return;
+    await updateGameReady(gameRow.id, myUserId);
+    // Optimistic: update local state immediately
+    const state = (gameRow.state ?? {}) as Record<string, unknown>;
+    const ready = { ...((state.ready as Record<string, boolean>) ?? {}), [myUserId]: true };
+    const updated = { ...gameRow, state: { ...state, ready } };
+    gameRowRef.current = updated;
+    setGameRow(updated);
+  };
 
-    setGameId(gameId);
-    setConnectionStatus('connecting');
-
-    // Time out after 15 s of no connection
-    const timeoutId = setTimeout(() => {
-      if (socketRef.current.connected) return;
-      setConnectTimedOut(true);
-      setConnectionStatus('error');
-      setError('Could not reach the server. It may be starting up — try again in a moment.');
-    }, 15000);
-
-    socket.on('connect', () => {
-      clearTimeout(timeoutId);
-      setConnectTimedOut(false);
-      setConnectionStatus('connected');
-      socket.emit('join_lobby', { gameId, userId: myUserId });
-    });
-
-    socket.on('connect_error', () => {
-      setConnectionStatus('error');
-      setError('Cannot connect to game server. Is the server running?');
-    });
-
-    socket.on('lobby_updated', (data: LobbyState) => {
-      setLobbyState(data);
-    });
-
-    socket.on('game_starting', ({ countdown }: { countdown: number }) => {
-      startCountdown(countdown);
-    });
-
-    socket.on('game_started', ({ gameState }: { gameState: any }) => {
-      setGameState(gameState);
-      navigate(`/game/${gameId}/play`);
-    });
-
-    socket.on('lobby_expired', () => {
-      navigate('/');
-    });
-
-    socket.on('game_cancelled', () => {
-      navigate('/');
-    });
-
-    socket.on('error', ({ message }: { message: string }) => {
-      setError(message);
-    });
-
-    if (!socket.connected) {
-      socket.connect();
-    } else {
-      setConnectionStatus('connected');
-      socket.emit('join_lobby', { gameId, userId: myUserId });
+  // ── Cancel button ──────────────────────────────────────────────
+  const handleCancel = async () => {
+    if (gameRow?.id) {
+      await deleteGame(gameRow.id);
     }
-
-    return () => {
-      clearTimeout(timeoutId);
-      socket.off('connect');
-      socket.off('connect_error');
-      socket.off('lobby_updated');
-      socket.off('game_starting');
-      socket.off('game_started');
-      socket.off('lobby_expired');
-      socket.off('game_cancelled');
-      socket.off('error');
-    };
-  }, [gameId, myUserId]);
-
-  const handleReady = () => {
-    if (!gameId || !myUserId) return;
-    socketRef.current.emit('player_ready', { gameId, userId: myUserId });
+    navigate('/discover');
   };
 
-  const handleCancel = () => {
-    if (!gameId || !myUserId) return;
-    socketRef.current.emit('cancel_game', { gameId, userId: myUserId });
-    disconnectSocket();
-    navigate('/');
-  };
+  // ── Derive display state ───────────────────────────────────────
+  const state = (gameRow?.state ?? {}) as Record<string, unknown>;
+  const readyMap = (state.ready ?? {}) as Record<string, boolean>;
+  const meReady = myUserId ? !!readyMap[myUserId] : false;
 
-  const handleRetry = () => {
-    setConnectTimedOut(false);
-    setConnectionStatus('connecting');
-    setError(null);
-    const socket = socketRef.current;
-    socket.disconnect();
-    socket.connect();
-  };
-
-  const me = lobbyState
-    ? (lobbyState.player1.userId === myUserId ? lobbyState.player1 : lobbyState.player2)
+  // Opponent is the other player in the game row
+  const opponentId = gameRow && myUserId
+    ? (gameRow.player1_id === myUserId ? gameRow.player2_id : gameRow.player1_id)
     : null;
-  const opponent = lobbyState
-    ? (lobbyState.player1.userId === myUserId ? lobbyState.player2 : lobbyState.player1)
-    : null;
+  const opponentJoined = !!opponentId && opponentId !== myUserId
+    && gameRow?.player1_id !== gameRow?.player2_id;
+  const oppReady = opponentId ? !!readyMap[opponentId] : false;
+
+  const timerDisplay = useTimer(timeRemaining ?? 0);
+  const timerColor = (timeRemaining ?? 999) < 15 ? '#FF3D71' : (timeRemaining ?? 999) < 30 ? '#FFE66D' : '#4EFFC4';
 
   return (
     <>
@@ -195,9 +256,9 @@ export function LobbyScreen() {
           >
             {/* Me */}
             <PlayerCard
-              name={me?.name ?? myName ?? 'You'}
-              avatar={me?.avatar ?? '🎮'}
-              ready={me?.ready ?? false}
+              name={myName}
+              avatar={myAvatar}
+              ready={meReady}
               isMe
             />
 
@@ -213,9 +274,9 @@ export function LobbyScreen() {
 
             {/* Opponent */}
             <PlayerCard
-              name={opponent?.name ?? '???'}
-              avatar={opponent?.avatar ?? '❓'}
-              ready={opponent?.ready ?? false}
+              name={opponentJoined ? (opponentName ?? 'Opponent') : '???'}
+              avatar={opponentJoined ? (opponentAvatar ?? '❓') : '❓'}
+              ready={oppReady}
               isMe={false}
             />
           </motion.div>
@@ -227,24 +288,27 @@ export function LobbyScreen() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            {me?.ready && !opponent?.ready && (
+            {loading && (
+              <p className="font-body text-white/60 text-sm animate-pulse">Setting up game...</p>
+            )}
+            {!loading && meReady && !oppReady && (
               <p className="font-body text-white/60 text-sm">
                 Waiting for{' '}
-                <span className="text-electric-mint font-medium">{opponent?.name ?? 'opponent'}</span>
-                {' '}to join...
+                <span className="text-electric-mint font-medium">{opponentJoined ? (opponentName ?? 'opponent') : 'opponent'}</span>
+                {opponentJoined ? ' to be ready...' : ' to join...'}
               </p>
             )}
-            {!me?.ready && (
+            {!loading && !meReady && (
               <p className="font-body text-white/60 text-sm">Press Ready when you're set!</p>
             )}
-            {me?.ready && opponent?.ready && (
+            {!loading && meReady && oppReady && (
               <p className="font-body text-electric-mint font-medium text-sm animate-pulse">
                 Both ready! Starting game...
               </p>
             )}
           </motion.div>
 
-          {/* Timer — only shown once we have server data */}
+          {/* Timer */}
           {timeRemaining !== null && (
             <motion.div
               className="mb-6 mx-auto max-w-xs rounded-2xl px-6 py-4 text-center"
@@ -264,7 +328,7 @@ export function LobbyScreen() {
                 style={{
                   color: timerColor,
                   textShadow: `0 0 20px ${timerColor}88`,
-                  animation: timeRemaining < 60 ? 'pulse 1s ease-in-out infinite' : 'none',
+                  animation: (timeRemaining ?? 999) < 15 ? 'pulse 1s ease-in-out infinite' : 'none',
                 }}
               >
                 {timerDisplay}
@@ -272,7 +336,7 @@ export function LobbyScreen() {
             </motion.div>
           )}
 
-          {/* Error / connection status */}
+          {/* Error */}
           {errorMessage && (
             <motion.div
               className="mb-4 px-4 py-3 rounded-xl text-center font-body text-sm"
@@ -281,21 +345,7 @@ export function LobbyScreen() {
               animate={{ opacity: 1 }}
             >
               {errorMessage}
-              {connectTimedOut && (
-                <button
-                  onClick={handleRetry}
-                  className="block mx-auto mt-2 px-4 py-1.5 rounded-xl font-display font-bold text-xs text-white"
-                  style={{ background: '#FF3D71', border: '2px solid white' }}
-                >
-                  Retry Connection
-                </button>
-              )}
             </motion.div>
-          )}
-          {connectionStatus === 'connecting' && !errorMessage && (
-            <p className="text-center font-body text-xs text-white/30 mb-2 animate-pulse">
-              Connecting to server...
-            </p>
           )}
 
           {/* Buttons */}
@@ -305,7 +355,7 @@ export function LobbyScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            {!me?.ready && (
+            {!meReady && !loading && (
               <motion.button
                 onClick={handleReady}
                 className="w-full py-4 rounded-2xl font-display font-extrabold text-xl text-white relative overflow-hidden"

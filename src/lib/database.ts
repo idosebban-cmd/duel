@@ -618,6 +618,32 @@ export async function getGame(gameId: string): Promise<GameRow | null> {
   }
 }
 
+/** Toggle a player's ready flag inside games.state.ready */
+export async function updateGameReady(gameId: string, userId: string): Promise<void> {
+  try {
+    const game = await getGame(gameId);
+    if (!game) return;
+    const state = (game.state ?? {}) as Record<string, unknown>;
+    const ready = ((state.ready as Record<string, boolean>) ?? {});
+    ready[userId] = true;
+    await supabase
+      .from('games')
+      .update({ state: { ...state, ready } })
+      .eq('id', gameId);
+  } catch (err) {
+    console.error('[updateGameReady]', err);
+  }
+}
+
+/** Delete a game row (used when cancelling from the lobby). */
+export async function deleteGame(gameId: string): Promise<void> {
+  try {
+    await supabase.from('games').delete().eq('id', gameId);
+  } catch (err) {
+    console.error('[deleteGame]', err);
+  }
+}
+
 /**
  * Atomically records a move + updates game state + advances the turn.
  * Pass winner = 'player1' | 'player2' | 'draw' to end the game.
