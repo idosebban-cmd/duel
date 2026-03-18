@@ -114,10 +114,10 @@ export async function getDiscoverProfiles(userId: string): Promise<UserProfile[]
   try {
     const { data: swiped } = await supabase
       .from('swipes')
-      .select('to_user')
-      .eq('from_user', userId);
+      .select('target_id')
+      .eq('user_id', userId);
 
-    const swipedIds = new Set<string>(swiped?.map((s: { to_user: string }) => s.to_user) ?? []);
+    const swipedIds = new Set<string>(swiped?.map((s: { target_id: string }) => s.target_id) ?? []);
 
     const { data } = await supabase
       .from('profiles')
@@ -151,11 +151,11 @@ export async function getDiscoveryUsers(
     // Get users already swiped on
     const { data: swiped } = await supabase
       .from('swipes')
-      .select('to_user')
-      .eq('from_user', currentUserId);
+      .select('target_id')
+      .eq('user_id', currentUserId);
 
     const swipedIds = new Set<string>(
-      swiped?.map((s: { to_user: string }) => s.to_user) ?? [],
+      swiped?.map((s: { target_id: string }) => s.target_id) ?? [],
     );
 
     const callerIntent = filters.callerIntent ?? 'romance';
@@ -250,7 +250,7 @@ export async function recordSwipe(
     // Fire-and-forget for passes
     supabase
       .from('swipes')
-      .upsert({ from_user: userId, to_user: targetId, direction: action }, { onConflict: 'from_user,to_user' })
+      .upsert({ user_id: userId, target_id: targetId, action }, { onConflict: 'user_id,target_id' })
       .then(() => {});
     return { matched: false };
   }
@@ -265,7 +265,7 @@ export async function recordSwipe(
   try {
     const { error } = await supabase
       .from('swipes')
-      .upsert({ from_user: userId, to_user: targetId, direction: action }, { onConflict: 'from_user,to_user' });
+      .upsert({ user_id: userId, target_id: targetId, action }, { onConflict: 'user_id,target_id' });
     if (error) {
       console.error('[recordSwipe] Swipe record failed:', error.message);
     }
@@ -283,9 +283,9 @@ export async function recordSwipe(
       const { data: mutual } = await supabase
         .from('swipes')
         .select('id')
-        .eq('from_user', targetId)
-        .eq('to_user', userId)
-        .eq('direction', 'like')
+        .eq('user_id', targetId)
+        .eq('target_id', userId)
+        .eq('action', 'like')
         .maybeSingle();
 
       if (!mutual) return { matched: false };
@@ -395,11 +395,11 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
 //
 //   CREATE TABLE messages (
 //     id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-//     room_id    UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
-//     sender     UUID NOT NULL REFERENCES auth.users(id),
+//     match_id   UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+//     sender_id  UUID NOT NULL REFERENCES auth.users(id),
 //     content    TEXT NOT NULL,
 //     created_at TIMESTAMPTZ DEFAULT now(),
-//     delivered  BOOLEAN DEFAULT false
+//     read       BOOLEAN DEFAULT false
 //   );
 //   ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 //   CREATE POLICY "match members can access messages"

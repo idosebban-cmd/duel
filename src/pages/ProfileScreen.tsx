@@ -569,7 +569,7 @@ export function ProfileScreen() {
             } catch { /* best effort */ }
             // Delete photo records, profile, swipes, matches
             await supabase.from('photos').delete().eq('user_id', user.id);
-            await supabase.from('swipes').delete().eq('from_user', user.id);
+            await supabase.from('swipes').delete().eq('user_id', user.id);
             await supabase.from('profiles').delete().eq('id', user.id);
           }
           await supabase?.auth.signOut();

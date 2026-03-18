@@ -93,11 +93,11 @@ create trigger profiles_updated_at
 -- ─── Swipes table ────────────────────────────────────────────────────────────
 create table if not exists swipes (
   id         uuid        default gen_random_uuid() primary key,
-  from_user  uuid        references profiles(id) on delete cascade not null,
-  to_user    uuid        references profiles(id) on delete cascade not null,
-  direction  text        check (direction in ('like', 'pass')) not null,
+  user_id    uuid        references profiles(id) on delete cascade not null,
+  target_id  uuid        references profiles(id) on delete cascade not null,
+  action     text        check (action in ('like', 'pass')) not null,
   created_at timestamptz default now(),
-  unique(from_user, to_user)
+  unique(user_id, target_id)
 );
 
 alter table swipes enable row level security;
@@ -105,15 +105,15 @@ alter table swipes enable row level security;
 -- Owner can read their own swipes; users can also check if someone swiped on them (for match detection)
 create policy "Users can view their own swipes"
   on swipes for select
-  using (auth.uid() = from_user or auth.uid() = to_user);
+  using (auth.uid() = user_id or auth.uid() = target_id);
 
 create policy "Users can insert their own swipes"
   on swipes for insert
-  with check (auth.uid() = from_user);
+  with check (auth.uid() = user_id);
 
 create policy "Users can update their own swipes"
   on swipes for update
-  using (auth.uid() = from_user);
+  using (auth.uid() = user_id);
 
 -- ─── Matches table ────────────────────────────────────────────────────────────
 -- user_a < user_b enforced by insert logic so each pair has one row
