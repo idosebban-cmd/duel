@@ -561,39 +561,42 @@ export async function createOrJoinGame(
     // Deterministic ordering: smaller UUID = player1
     const [p1, p2] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
 
-    const { data } = await supabase
+    // Check for an existing active game (no winner yet)
+    const { data: existing } = await supabase
       .from('games')
-      .upsert({
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('game_type', gameType)
+      .is('winner', null)
+      .maybeSingle();
+
+    if (existing) return existing as GameRow;
+
+    // No active game — insert a fresh row
+    const { data: inserted } = await supabase
+      .from('games')
+      .insert({
         match_id: matchId,
         game_type: gameType,
         player1_id: p1,
         player2_id: p2,
         state: initialState,
         current_turn: p1,
-      }, { onConflict: 'match_id,game_type' })
+      })
       .select()
-      .maybeSingle();
+      .single();
 
-    if (data) return data as GameRow;
-
-    // Upsert returned nothing (conflict with no update) — fetch existing row
-    const { data: existing } = await supabase
-      .from('games')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('game_type', gameType)
-      .maybeSingle();
-
-    return (existing as GameRow) ?? null;
+    return (inserted as GameRow) ?? null;
   } catch (err) {
     console.error('[createOrJoinGame]', err);
-    // Last-resort fallback: try to fetch existing row
+    // Last-resort fallback: try to fetch existing active row
     try {
       const { data: fallback } = await supabase
         .from('games')
         .select('*')
         .eq('match_id', matchId)
         .eq('game_type', gameType)
+        .is('winner', null)
         .maybeSingle();
       return (fallback as GameRow) ?? null;
     } catch {
