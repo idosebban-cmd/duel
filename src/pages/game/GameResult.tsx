@@ -272,7 +272,7 @@ export function GameResult() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
-                navigate('/chat', { state: { matchId, name: opponentName, character: opponentChar?.attributes?.type } });
+                navigate(matchId ? `/match/${matchId}` : '/matches');
               }}
             >
               START CHATTING →
@@ -290,7 +290,7 @@ export function GameResult() {
             whileTap={{ scale: 0.97 }}
             onClick={() => {
               store.reset();
-              navigate('/');
+              navigate(matchId ? `/match/${matchId}` : '/matches');
             }}
           >
             Play Again
