@@ -190,7 +190,7 @@ export function GameBoard() {
         currentQuestion: null,
         currentAnswer: null,
         turnPhase: 'ask',
-        turnHistory: gs.turnHistory.map((h) => ({
+        turnHistory: (gs.turnHistory ?? []).map((h) => ({
           asker: h.asker === 'player1' ? (mp.gameRow!.player1_id) : (mp.gameRow!.player2_id),
           question: h.question,
           answer: h.answer,
@@ -206,14 +206,29 @@ export function GameBoard() {
 
   // ── Derived values ────────────────────────────────────────────
   const characters = gs?.characters ?? [];
-  const mySecretId = gs ? (myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId) : '';
-  const myFlipped = gs ? (myRole === 'player1' ? gs.p1Flipped : gs.p2Flipped) : [];
+  const mySecretId = gs ? (myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId) ?? '' : '';
+  const myFlipped = gs ? (myRole === 'player1' ? gs.p1Flipped : gs.p2Flipped) ?? [] : [];
   const myChar = characters.find((c) => c.id === mySecretId);
   const turnPhase = gs?.turnPhase ?? 'ask';
   const currentQuestion = gs?.currentQuestion ?? null;
   const currentAnswer = gs?.currentAnswer ?? null;
   const turnHistory = gs?.turnHistory ?? [];
   const canFlip = isMyTurn && turnPhase === 'flip';
+
+  // Stale DB row with empty/incomplete state — wait for it to be populated
+  if (gs && (!gs.characters || gs.characters.length === 0)) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: '#0f172a' }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <WaitingDots />
+          <p className="font-body text-white/50">Setting up game...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Move handlers ─────────────────────────────────────────────
 
