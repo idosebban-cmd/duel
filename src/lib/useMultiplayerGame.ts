@@ -140,17 +140,28 @@ export function useMultiplayerGame<S>({
     // Stop polling once the game has a winner
     if (gameRow.winner) return;
 
+    let pollCount = 0;
     const id = setInterval(async () => {
+      pollCount++;
+      console.log(`[useMultiplayerGame] Poll #${pollCount} — fetching game ${gameRowRef.current!.id}`);
       try {
         const updated = await getGame(gameRowRef.current!.id);
-        console.log('[useMultiplayerGame] Poll — game row:', updated);
-        if (!updated) return;
+        if (!updated) {
+          console.warn(`[useMultiplayerGame] Poll #${pollCount} — getGame returned null/undefined`);
+          return;
+        }
+        const localUpdatedAt = gameRowRef.current?.updated_at ?? '(none)';
+        const serverUpdatedAt = updated.updated_at;
+        console.log(`[useMultiplayerGame] Poll #${pollCount} — server updated_at: ${serverUpdatedAt}, local updated_at: ${localUpdatedAt}`);
         if (updated.updated_at !== gameRowRef.current?.updated_at) {
+          console.log(`[useMultiplayerGame] Poll #${pollCount} — STATE CHANGE DETECTED, updating gameRow. current_turn: ${updated.current_turn}, winner: ${updated.winner}`);
           gameRowRef.current = updated;
           setGameRow({ ...updated });
+        } else {
+          console.log(`[useMultiplayerGame] Poll #${pollCount} — no change`);
         }
       } catch (err) {
-        console.error('[useMultiplayerGame] Poll error:', err);
+        console.error(`[useMultiplayerGame] Poll #${pollCount} error:`, err);
       }
     }, pollInterval);
 
