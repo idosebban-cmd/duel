@@ -195,6 +195,7 @@ export function MatchScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesLenRef = useRef(0);
+  const prevChallengeStatusRef = useRef<Record<string, string>>({});
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
@@ -265,14 +266,23 @@ export function MatchScreen() {
         const challs = await getChallengesForMatch(matchId);
         setChallenges(challs);
 
-        // Auto-redirect: if an outgoing challenge was accepted, go to lobby
-        const accepted = challs.find(
-          (c) => c.from_user === myUserId && c.status === 'accepted',
+        // Only redirect on pending → accepted TRANSITION
+        const newlyAccepted = challs.find(
+          (c) =>
+            c.from_user === myUserId &&
+            c.status === 'accepted' &&
+            prevChallengeStatusRef.current[c.id] === 'pending',
         );
-        if (accepted) {
+
+        // Update prevStatusRef for next poll
+        prevChallengeStatusRef.current = Object.fromEntries(
+          challs.map((c) => [c.id, c.status]),
+        );
+
+        if (newlyAccepted) {
           clearInterval(id);
-          navigate(`/game/${accepted.match_id}/lobby`, {
-            state: { gameType: accepted.game_type },
+          navigate(`/game/${newlyAccepted.match_id}/lobby`, {
+            state: { gameType: newlyAccepted.game_type },
           });
         }
       } catch { /* retry on next tick */ }
