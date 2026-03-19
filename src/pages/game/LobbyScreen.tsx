@@ -152,7 +152,7 @@ export function LobbyScreen() {
       const remaining = Math.max(0, Math.ceil((LOBBY_TIMEOUT_MS - elapsed) / 1000));
       setTimeRemaining(remaining);
 
-      if (remaining <= 0) {
+      if (remaining <= 0 && !countdownStartedRef.current) {
         clearInterval(id);
         navigate('/discover');
       }
