@@ -86,6 +86,9 @@ export function GameBoard() {
     if (myUserId) store.setIdentity(myUserId, '', '');
   }, [myUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Track when this component mounted to detect stale game rows
+  const mountTimeRef = useRef(Date.now());
+
   // Generate the deterministic board from matchId
   const boardRef = useRef(matchId ? generateGuessWhoBoard(matchId) : null);
 
@@ -155,6 +158,11 @@ export function GameBoard() {
     if (!mp.gameRow || !gs) return;
     const winner = mp.gameRow.winner;
     if (winner && winner !== prevWinnerRef.current) {
+      // Skip stale game rows from a previous game
+      const gameCreatedAt = new Date(mp.gameRow.created_at).getTime();
+      if (gameCreatedAt < mountTimeRef.current - 5000) {
+        return;
+      }
       prevWinnerRef.current = winner;
 
       // Build a GameOverPayload for the result screen
