@@ -31,7 +31,6 @@ create table if not exists profiles (
   updated_at   timestamptz default now()
 );
 
--- Add location index for proximity queries
 create index if not exists profiles_location_idx on profiles (latitude, longitude);
 
 -- ─── Photos table ─────────────────────────────────────────────────────────────
@@ -47,7 +46,6 @@ create table if not exists photos (
 alter table profiles enable row level security;
 alter table photos    enable row level security;
 
--- Profiles: any authenticated user can read all; only owner can write
 create policy "Authenticated users can view profiles"
   on profiles for select
   using (auth.role() = 'authenticated');
@@ -60,7 +58,6 @@ create policy "Users can update their own profile"
   on profiles for update
   using (auth.uid() = id);
 
--- Photos: any authenticated user can read; only owner can write/delete
 create policy "Authenticated users can view photos"
   on photos for select
   using (auth.role() = 'authenticated');
@@ -102,7 +99,6 @@ create table if not exists swipes (
 
 alter table swipes enable row level security;
 
--- Owner can read their own swipes; users can also check if someone swiped on them (for match detection)
 create policy "Users can view their own swipes"
   on swipes for select
   using (auth.uid() = from_user or auth.uid() = to_user);
@@ -116,19 +112,18 @@ create policy "Users can update their own swipes"
   using (auth.uid() = from_user);
 
 -- ─── Matches table ────────────────────────────────────────────────────────────
--- user_a < user_b enforced by insert logic so each pair has one row
 create table if not exists matches (
   id            uuid        default gen_random_uuid() primary key,
-  user_a      uuid        references profiles(id) on delete cascade not null,
-  user_b      uuid        references profiles(id) on delete cascade not null,
+  user_a        uuid        references profiles(id) on delete cascade not null,
+  user_b        uuid        references profiles(id) on delete cascade not null,
+  status        text        default 'active',
   matched_at    timestamptz default now(),
-  game_selected text,
+  created_at    timestamptz default now(),
   unique(user_a, user_b)
 );
 
 alter table matches enable row level security;
 
--- Both matched users can read the match row
 create policy "Matched users can view their matches"
   on matches for select
   using (auth.uid() = user_a or auth.uid() = user_b);
@@ -137,26 +132,44 @@ create policy "Users can insert matches"
   on matches for insert
   with check (auth.uid() = user_a or auth.uid() = user_b);
 
--- ─── Messages table (supplemental) ───────────────────────────────────────────
--- The messages table already exists with columns: id, created_at, room_id,
--- sender, content, delivered, metadata.
--- Run these if not already present:
+-- ─── Messages table ──────────────────────────────────────────────────────────
+create table if not exists messages (
+  id         uuid        default gen_random_uuid() primary key,
+  room_id    uuid        not null references matches(id) on delete cascade,
+  sender     uuid        not null references auth.users(id),
+  content    text        not null,
+  delivered  boolean     default false,
+  created_at timestamptz default now()
+);
 
--- create index if not exists messages_room_created_idx on messages (room_id, created_at desc);
--- alter publication supabase_realtime add table messages;
+create index if not exists messages_room_created_idx on messages (room_id, created_at desc);
+
+alter table messages enable row level security;
+
+create policy "Match members can view messages"
+  on messages for select
+  using (room_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
+
+create policy "Match members can insert messages"
+  on messages for insert
+  with check (room_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
+
+create policy "Sender can update own messages"
+  on messages for update
+  using (auth.uid() = sender);
 
 -- ─── Games table ──────────────────────────────────────────────────────────────
--- Tracks one game session per match + game_type combination.
--- player1_id < player2_id (enforced by createOrJoinGame) for deterministic ordering.
 create table if not exists games (
   id           uuid        default gen_random_uuid() primary key,
-  match_id     uuid        not null references matches(id) on delete cascade,
+  match_id     uuid        references matches(id) on delete cascade,
   game_type    text        not null,
   player1_id   uuid        not null references auth.users(id),
   player2_id   uuid        not null references auth.users(id),
+  owner        uuid        references auth.users(id),
+  status       text        default 'pending',
   state        jsonb       not null default '{}',
   current_turn uuid        references auth.users(id),
-  winner       text,       -- 'player1' | 'player2' | 'draw' | null
+  winner       text,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
@@ -167,22 +180,25 @@ alter table games enable row level security;
 
 create policy "Match members can select games"
   on games for select
-  using (match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
+  using (player1_id = auth.uid() or player2_id = auth.uid());
 
 create policy "Match members can insert games"
   on games for insert
-  with check (match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
+  with check (player1_id = auth.uid() or player2_id = auth.uid());
 
 create policy "Match members can update games"
   on games for update
-  using (match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
+  using (player1_id = auth.uid() or player2_id = auth.uid());
+
+create policy "Match members can delete games"
+  on games for delete
+  using (player1_id = auth.uid() or player2_id = auth.uid());
 
 create trigger games_updated_at
   before update on games
   for each row execute procedure update_updated_at();
 
 -- ─── Moves table ──────────────────────────────────────────────────────────────
--- Append-only log of every move for replay / audit.
 create table if not exists moves (
   id         uuid        default gen_random_uuid() primary key,
   game_id    uuid        not null references games(id) on delete cascade,
@@ -200,7 +216,7 @@ create policy "Match members can select moves"
   using (
     game_id in (
       select g.id from games g
-      where g.match_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid())
+      where g.player1_id = auth.uid() or g.player2_id = auth.uid()
     )
   );
 
