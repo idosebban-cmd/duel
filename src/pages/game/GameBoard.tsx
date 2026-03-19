@@ -1,11 +1,42 @@
+/**
+ * GameBoard – Guess Who (Supabase multiplayer via useMultiplayerGame)
+ *
+ * Replaces the old Socket.IO implementation. All game state lives in
+ * the `games.state` JSONB column and is polled every 2.5 s by the hook.
+ */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
-import { connectSocket } from '../../lib/socket';
+import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import { GuessModal } from '../../components/game/GuessModal';
-import type { GameOverPayload } from '../../types/game';
+import type { Character } from '../../types/game';
+
+// ── DB state shape ──────────────────────────────────────────────────────────
+
+interface GWTurnHistory {
+  asker: 'player1' | 'player2';
+  question: string;
+  answer: 'yes' | 'no';
+}
+
+interface GuessWhoState {
+  characters: Character[];
+  p1SecretId: string;
+  p2SecretId: string;
+  p1Flipped: string[];
+  p2Flipped: string[];
+  turnPhase: 'ask' | 'answer' | 'flip';
+  currentQuestion: string | null;
+  currentAnswer: 'yes' | 'no' | null;
+  turnHistory: GWTurnHistory[];
+  moveCount: number;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 const PLACEHOLDER_EXAMPLES = [
   'Does your person wear glasses?',
@@ -17,30 +48,93 @@ const PLACEHOLDER_EXAMPLES = [
   'Does your person have blonde hair?',
 ];
 
-export function GameBoard() {
-  const { gameId } = useParams<{ gameId: string }>();
-  const navigate = useNavigate();
-  const store = useGameStore();
-  const socketRef = useRef(connectSocket());
+function validateQuestion(q: string): string | null {
+  if (!q || q.trim().length < 5) return 'Question too short (min 5 characters)';
+  if (q.trim().length > 100) return 'Too long (max 100 characters)';
+  if (!q.trim().endsWith('?')) return 'Yes/no questions must end with "?"';
+  return null;
+}
 
+function WaitingDots() {
+  return (
+    <div className="flex gap-1">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="w-2 h-2 rounded-full bg-white/40"
+          animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
+
+export function GameBoard() {
+  // Route param is actually the matchId (set by LobbyScreen)
+  const { gameId: matchId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const store = useGameStore();
+  const myUserId = user?.id ?? '';
+
+  // Generate the deterministic board from matchId
+  const boardRef = useRef(matchId ? generateGuessWhoBoard(matchId) : null);
+
+  const initialState: GuessWhoState = boardRef.current
+    ? {
+        characters: boardRef.current.characters,
+        p1SecretId: boardRef.current.p1SecretId,
+        p2SecretId: boardRef.current.p2SecretId,
+        p1Flipped: [],
+        p2Flipped: [],
+        turnPhase: 'ask',
+        currentQuestion: null,
+        currentAnswer: null,
+        turnHistory: [],
+        moveCount: 0,
+      }
+    : {
+        characters: [],
+        p1SecretId: '',
+        p2SecretId: '',
+        p1Flipped: [],
+        p2Flipped: [],
+        turnPhase: 'ask',
+        currentQuestion: null,
+        currentAnswer: null,
+        turnHistory: [],
+        moveCount: 0,
+      };
+
+  const mp = useMultiplayerGame<GuessWhoState>({
+    matchId: matchId ?? '',
+    gameType: 'guess_who',
+    initialState,
+    enabled: !!matchId,
+  });
+
+  const myRole = mp.myRole;
+  const gs = mp.gameState;
+  const isMyTurn = mp.isMyTurn;
+
+  // ── Local UI state ──────────────────────────────────────────────
   const [question, setQuestion] = useState('');
   const [showGuessModal, setShowGuessModal] = useState(false);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [disconnectMsg, setDisconnectMsg] = useState<string | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const game = store.gameState;
-  const myId = store.myUserId;
-  const isMyTurn = game?.currentTurn === myId;
-
-  // ── Elapsed timer ────────────────────────────────────────────
+  // ── Elapsed timer ─────────────────────────────────────────────
   useEffect(() => {
     const t = setInterval(() => setElapsed((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // ── Cycle placeholder (only when input is empty) ─────────────
+  // ── Cycle placeholder ─────────────────────────────────────────
   useEffect(() => {
     if (question.length > 0) return;
     const t = setInterval(() => {
@@ -49,130 +143,216 @@ export function GameBoard() {
     return () => clearInterval(t);
   }, [question.length]);
 
-  // ── Socket events ────────────────────────────────────────────
+  // ── Detect game over from polling ─────────────────────────────
+  const prevWinnerRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!gameId || !myId) return;
-    const socket = socketRef.current;
+    if (!mp.gameRow || !gs) return;
+    const winner = mp.gameRow.winner;
+    if (winner && winner !== prevWinnerRef.current) {
+      prevWinnerRef.current = winner;
 
-    socket.on('question_asked', ({ question: q }: { question: string; askedBy: string }) => {
-      store.applyQuestionAsked(q, '');
-    });
-
-    socket.on('question_answered', ({ answer }: { answer: 'yes' | 'no' }) => {
-      store.applyQuestionAnswered(answer);
-    });
-
-    socket.on('cards_flipped', ({ cardIds, flippedBy }: { cardIds: string[]; flippedBy: string }) => {
-      store.applyCardsFlipped(cardIds, flippedBy);
-    });
-
-    socket.on('turn_changed', ({ currentTurn }: { currentTurn: string }) => {
-      store.applyTurnChanged(currentTurn);
-    });
-
-    socket.on('game_over', (payload: GameOverPayload) => {
-      store.setGameOver(payload);
-      navigate(`/game/${gameId}/result`);
-    });
-
-    socket.on('opponent_disconnected', ({ message }: { message: string }) => {
-      setDisconnectMsg(message);
-      setTimeout(() => setDisconnectMsg(null), 32000);
-    });
-
-    socket.on('opponent_reconnected', () => {
-      setDisconnectMsg(null);
-    });
-
-    socket.on('error', ({ message }: { message: string }) => {
-      store.setError(message);
-      setTimeout(() => store.setError(null), 4000);
-    });
-
-    socket.on('game_rejoined', ({ gameState }: { gameState: any }) => {
-      store.setGameState(gameState);
-    });
-
-    // Reconnect: if we have a gameId but no game state, rejoin
-    if (!game) {
-      socket.emit('rejoin_game', { gameId, userId: myId });
+      // Build a GameOverPayload for the result screen
+      const iWon = winner === myRole;
+      const winnerId = iWon ? myUserId : mp.opponentId;
+      const loserId = iWon ? mp.opponentId : myUserId;
+      store.setGameOver({
+        winner: winnerId,
+        loser: loserId,
+        player1SecretId: gs.p1SecretId,
+        player2SecretId: gs.p2SecretId,
+        characters: gs.characters,
+        gameId: mp.gameId ?? matchId ?? '',
+      });
+      // Also set game state in store for GameResult stats
+      store.setGameState({
+        gameId: mp.gameId ?? matchId ?? '',
+        matchId: matchId ?? '',
+        me: {
+          userId: myUserId,
+          name: '',
+          avatar: '',
+          secretCharacterId: myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId,
+          flippedCards: myRole === 'player1' ? gs.p1Flipped : gs.p2Flipped,
+          ready: true,
+        },
+        opponent: {
+          userId: mp.opponentId,
+          name: 'Opponent',
+          avatar: '',
+          flippedCards: myRole === 'player1' ? gs.p2Flipped : gs.p1Flipped,
+          ready: true,
+        },
+        characters: gs.characters,
+        currentTurn: '',
+        phase: 'finished',
+        lobbyExpiresAt: null,
+        currentQuestion: null,
+        currentAnswer: null,
+        turnPhase: 'ask',
+        turnHistory: gs.turnHistory.map((h) => ({
+          asker: h.asker === 'player1' ? (mp.gameRow!.player1_id) : (mp.gameRow!.player2_id),
+          question: h.question,
+          answer: h.answer,
+          timestamp: '',
+        })),
+        winner: winnerId,
+        createdAt: mp.gameRow!.created_at,
+        finishedAt: mp.gameRow!.updated_at,
+      });
+      navigate(`/game/${matchId}/result`);
     }
+  }, [mp.gameRow?.winner, mp.gameRow?.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    return () => {
-      socket.off('question_asked');
-      socket.off('question_answered');
-      socket.off('cards_flipped');
-      socket.off('turn_changed');
-      socket.off('game_over');
-      socket.off('opponent_disconnected');
-      socket.off('opponent_reconnected');
-      socket.off('error');
-      socket.off('game_rejoined');
-    };
-  }, [gameId, myId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ── Derived values ────────────────────────────────────────────
+  const characters = gs?.characters ?? [];
+  const mySecretId = gs ? (myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId) : '';
+  const myFlipped = gs ? (myRole === 'player1' ? gs.p1Flipped : gs.p2Flipped) : [];
+  const myChar = characters.find((c) => c.id === mySecretId);
+  const turnPhase = gs?.turnPhase ?? 'ask';
+  const currentQuestion = gs?.currentQuestion ?? null;
+  const currentAnswer = gs?.currentAnswer ?? null;
+  const turnHistory = gs?.turnHistory ?? [];
+  const canFlip = isMyTurn && turnPhase === 'flip';
+
+  // ── Move handlers ─────────────────────────────────────────────
 
   const handleAskQuestion = useCallback(() => {
-    if (!gameId || !myId || !question.trim()) return;
-    const err = validateQuestion(question);
-    if (err) { store.setError(err); return; }
-    socketRef.current.emit('ask_question', { gameId, userId: myId, question: question.trim() });
+    if (!gs || !isMyTurn) return;
+    const q = question.trim();
+    const err = validateQuestion(q);
+    if (err) { setErrorMsg(err); setTimeout(() => setErrorMsg(null), 3000); return; }
+
+    const newState: GuessWhoState = {
+      ...gs,
+      turnPhase: 'answer',
+      currentQuestion: q,
+      currentAnswer: null,
+      moveCount: gs.moveCount + 1,
+    };
+    // Turn swaps to opponent (they answer)
+    mp.submitMove({ type: 'ask', question: q }, newState);
     setQuestion('');
-  }, [gameId, myId, question]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gs, isMyTurn, question, mp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAnswer = useCallback((answer: 'yes' | 'no') => {
-    if (!gameId || !myId) return;
-    socketRef.current.emit('answer_question', { gameId, userId: myId, answer });
-  }, [gameId, myId]);
+    if (!gs || !isMyTurn) return;
 
-  const handleCardFlipToggle = useCallback((charId: string) => {
-    if (!isMyTurn || game?.turnPhase !== 'flip') return;
-    store.togglePendingFlip(charId);
-  }, [isMyTurn, game?.turnPhase]); // eslint-disable-line react-hooks/exhaustive-deps
+    const newHistory: GWTurnHistory[] = [
+      ...gs.turnHistory,
+      {
+        asker: myRole === 'player1' ? 'player2' : 'player1', // opponent asked
+        question: gs.currentQuestion ?? '',
+        answer,
+      },
+    ];
+
+    const newState: GuessWhoState = {
+      ...gs,
+      turnPhase: 'flip',
+      currentAnswer: answer,
+      turnHistory: newHistory,
+      moveCount: gs.moveCount + 1,
+    };
+    // Turn swaps back to asker (they flip cards)
+    mp.submitMove({ type: 'answer', answer }, newState);
+  }, [gs, isMyTurn, myRole, mp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConfirmFlips = useCallback(() => {
-    if (!gameId || !myId || store.pendingFlips.length === 0) return;
-    socketRef.current.emit('flip_cards', { gameId, userId: myId, cardIds: store.pendingFlips });
+    if (!gs || !isMyTurn || store.pendingFlips.length === 0) return;
+
+    const flippedKey = myRole === 'player1' ? 'p1Flipped' : 'p2Flipped';
+    const newFlipped = [...new Set([...gs[flippedKey], ...store.pendingFlips])];
+
+    const newState: GuessWhoState = {
+      ...gs,
+      [flippedKey]: newFlipped,
+      moveCount: gs.moveCount + 1,
+    };
+    // Flip doesn't change turn — still asker's turn to end
+    // We need to submit WITHOUT swapping turn. But the hook always swaps.
+    // So we combine flip + end_turn into a single submit that also resets phase.
+    const finalState: GuessWhoState = {
+      ...newState,
+      turnPhase: 'ask',
+      currentQuestion: null,
+      currentAnswer: null,
+    };
+    // Turn swaps to opponent (new round)
+    mp.submitMove({ type: 'flip_and_end', cardIds: store.pendingFlips }, finalState);
     store.clearPendingFlips();
-  }, [gameId, myId, store.pendingFlips]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gs, isMyTurn, myRole, store.pendingFlips, mp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEndTurn = useCallback(() => {
-    if (!gameId || !myId) return;
-    socketRef.current.emit('end_turn', { gameId, userId: myId });
-  }, [gameId, myId]);
+    if (!gs || !isMyTurn) return;
+
+    const newState: GuessWhoState = {
+      ...gs,
+      turnPhase: 'ask',
+      currentQuestion: null,
+      currentAnswer: null,
+      moveCount: gs.moveCount + 1,
+    };
+    // Turn swaps to opponent (new round)
+    mp.submitMove({ type: 'end_turn' }, newState);
+    store.clearPendingFlips();
+  }, [gs, isMyTurn, mp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCardFlipToggle = useCallback((charId: string) => {
+    if (!canFlip) return;
+    store.togglePendingFlip(charId);
+  }, [canFlip]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGuess = useCallback((charId: string) => {
-    if (!gameId || !myId) return;
-    socketRef.current.emit('make_guess', { gameId, userId: myId, guessedCharacterId: charId });
-    setShowGuessModal(false);
-  }, [gameId, myId]);
+    if (!gs || !isMyTurn) return;
 
-  if (!game) {
+    // Determine opponent's secret
+    const opponentSecretId = myRole === 'player1' ? gs.p2SecretId : gs.p1SecretId;
+    const correct = charId === opponentSecretId;
+    const winner = correct ? myRole : (myRole === 'player1' ? 'player2' : 'player1');
+
+    const newState: GuessWhoState = {
+      ...gs,
+      moveCount: gs.moveCount + 1,
+    };
+    mp.submitMove({ type: 'guess', guessedCharacterId: charId, correct }, newState, winner);
+    setShowGuessModal(false);
+  }, [gs, isMyTurn, myRole, mp]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleForfeit = useCallback(() => {
+    if (!gs) return;
+    const opponentRole = myRole === 'player1' ? 'player2' : 'player1';
+    mp.submitMove({ type: 'forfeit' }, gs, opponentRole);
+    navigate('/');
+  }, [gs, myRole, mp, navigate]);
+
+  // ── Loading ───────────────────────────────────────────────────
+  if (mp.loading || !gs) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
         style={{ background: '#0f172a' }}
       >
-        <p className="font-body text-white/50">Loading game...</p>
+        <div className="flex flex-col items-center gap-3">
+          <WaitingDots />
+          <p className="font-body text-white/50">Loading game...</p>
+        </div>
       </div>
     );
   }
 
-  const myChar = game.characters.find((c) => c.id === game.me.secretCharacterId);
-  const myFlipped = game.me.flippedCards;
-
   const elapsedMins = String(Math.floor(elapsed / 60)).padStart(2, '0');
   const elapsedSecs = String(elapsed % 60).padStart(2, '0');
-
   const questionValid = !validateQuestion(question);
-  const canFlip = isMyTurn && game.turnPhase === 'flip';
-  const opponentName = game.opponent.name;
+  // For display: who answered? During flip phase, current_turn is the asker.
+  // If it's my turn during flip → opponent answered.
+  const answererIsMe = !isMyTurn && turnPhase === 'answer';
 
   return (
     <>
       <AnimatePresence>
         {showGuessModal && (
           <GuessModal
-            characters={game.characters}
+            characters={characters}
             flippedCards={myFlipped}
             onConfirm={handleGuess}
             onClose={() => setShowGuessModal(false)}
@@ -200,7 +380,7 @@ export function GameBoard() {
             style={{ borderBottom: '2px solid rgba(255,255,255,0.06)' }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-lg">⏱️</span>
+              <span className="text-lg">{'\u23F1\uFE0F'}</span>
               <span
                 className="font-mono font-bold text-xl"
                 style={{ color: '#FFE66D', letterSpacing: 1 }}
@@ -209,7 +389,9 @@ export function GameBoard() {
               </span>
             </div>
 
-            <div className="flex-1" />
+            <div className="font-display font-bold text-sm text-white/30">
+              {isMyTurn ? 'YOUR TURN' : 'WAITING\u2026'}
+            </div>
 
             <button
               onClick={() => setShowExitConfirm(true)}
@@ -222,7 +404,7 @@ export function GameBoard() {
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
             {/* Error */}
             <AnimatePresence>
-              {store.errorMessage && (
+              {errorMsg && (
                 <motion.div
                   className="px-4 py-2 rounded-xl font-body text-sm text-white text-center"
                   style={{ background: '#FF3D7188', border: '2px solid #FF3D71' }}
@@ -230,22 +412,7 @@ export function GameBoard() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                 >
-                  {store.errorMessage}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Disconnection notice */}
-            <AnimatePresence>
-              {disconnectMsg && (
-                <motion.div
-                  className="px-4 py-3 rounded-xl font-body text-sm text-white text-center"
-                  style={{ background: 'rgba(255,163,0,0.2)', border: '2px solid #FF9F1C' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  ⚠️ {disconnectMsg}
+                  {errorMsg}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -257,7 +424,7 @@ export function GameBoard() {
                   className="font-display font-bold text-xs mb-2 uppercase tracking-widest"
                   style={{ color: '#FF9F1C' }}
                 >
-                  ★ Your Mystery Character
+                  {'\u2605'} Your Mystery Character
                 </p>
                 <div style={{ width: 120 }}>
                   <CharacterCard character={myChar} isFlipped={false} isMySecret size="lg" />
@@ -272,7 +439,7 @@ export function GameBoard() {
                   Your Board
                   {canFlip && (
                     <span className="ml-2 text-electric-mint normal-case font-body">
-                      — tap to eliminate
+                      {'\u2014'} tap to eliminate
                     </span>
                   )}
                 </p>
@@ -292,7 +459,7 @@ export function GameBoard() {
                 }}
               >
                 <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))' }}>
-                  {game.characters.map((char) => {
+                  {characters.map((char) => {
                     const isFlipped = myFlipped.includes(char.id);
                     const isPending = store.pendingFlips.includes(char.id);
                     return (
@@ -309,39 +476,41 @@ export function GameBoard() {
                   })}
                 </div>
               </div>
-
             </div>
 
             {/* Turn history */}
-            {game.turnHistory.length > 0 && (
+            {turnHistory.length > 0 && (
               <div>
                 <p className="font-display font-bold text-xs uppercase tracking-widest text-white/30 mb-2">
                   Question History
                 </p>
                 <div className="flex flex-col gap-2">
-                  {[...game.turnHistory].reverse().slice(0, 5).map((entry, i) => (
-                    <div
-                      key={i}
-                      className="px-3 py-2 rounded-xl font-body text-sm"
-                      style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      <span className="text-white/60">{entry.asker === myId ? 'You' : opponentName} asked: </span>
-                      <span className="text-white/80 italic">"{entry.question}"</span>
-                      <span
-                        className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                  {[...turnHistory].reverse().slice(0, 5).map((entry, i) => {
+                    const askerIsMe = entry.asker === myRole;
+                    return (
+                      <div
+                        key={i}
+                        className="px-3 py-2 rounded-xl font-body text-sm"
                         style={{
-                          background: entry.answer === 'yes' ? '#4EFFC433' : '#FF3D7133',
-                          color: entry.answer === 'yes' ? '#4EFFC4' : '#FF3D71',
-                          border: `1px solid ${entry.answer === 'yes' ? '#4EFFC4' : '#FF3D71'}`,
+                          background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid rgba(255,255,255,0.08)',
                         }}
                       >
-                        {entry.answer.toUpperCase()}
-                      </span>
-                    </div>
-                  ))}
+                        <span className="text-white/60">{askerIsMe ? 'You' : 'Opponent'} asked: </span>
+                        <span className="text-white/80 italic">&quot;{entry.question}&quot;</span>
+                        <span
+                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                          style={{
+                            background: entry.answer === 'yes' ? '#4EFFC433' : '#FF3D7133',
+                            color: entry.answer === 'yes' ? '#4EFFC4' : '#FF3D71',
+                            border: `1px solid ${entry.answer === 'yes' ? '#4EFFC4' : '#FF3D71'}`,
+                          }}
+                        >
+                          {entry.answer.toUpperCase()}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -359,8 +528,8 @@ export function GameBoard() {
             }}
           >
             <AnimatePresence mode="wait">
-              {/* Their turn to ask → we answer */}
-              {!isMyTurn && game.turnPhase === 'answer' && game.currentQuestion && (
+              {/* Answerer sees the question → YES / NO */}
+              {isMyTurn && turnPhase === 'answer' && currentQuestion && (
                 <motion.div
                   key="answer"
                   initial={{ opacity: 0, y: 16 }}
@@ -372,8 +541,8 @@ export function GameBoard() {
                     className="px-4 py-3 rounded-2xl"
                     style={{ background: 'rgba(181,101,255,0.15)', border: '2px solid #B565FF' }}
                   >
-                    <p className="font-body text-xs text-grape-neon/70 mb-1">{opponentName} asks:</p>
-                    <p className="font-display font-bold text-white text-base">"{game.currentQuestion}"</p>
+                    <p className="font-body text-xs text-grape-neon/70 mb-1">Opponent asks:</p>
+                    <p className="font-display font-bold text-white text-base">&quot;{currentQuestion}&quot;</p>
                   </div>
                   <div className="flex gap-3">
                     <motion.button
@@ -388,7 +557,7 @@ export function GameBoard() {
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      YES ✓
+                      YES {'\u2713'}
                     </motion.button>
                     <motion.button
                       onClick={() => handleAnswer('no')}
@@ -402,14 +571,14 @@ export function GameBoard() {
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      NO ✗
+                      NO {'\u2717'}
                     </motion.button>
                   </div>
                 </motion.div>
               )}
 
-              {/* Waiting for opponent to answer */}
-              {isMyTurn && game.turnPhase === 'answer' && (
+              {/* Asker waiting for answer */}
+              {!isMyTurn && turnPhase === 'answer' && (
                 <motion.div
                   key="waiting-answer"
                   initial={{ opacity: 0 }}
@@ -418,12 +587,12 @@ export function GameBoard() {
                   className="flex items-center justify-center gap-3 py-4"
                 >
                   <WaitingDots />
-                  <p className="font-body text-white/50">Waiting for {opponentName} to answer...</p>
+                  <p className="font-body text-white/50">Waiting for opponent to answer...</p>
                 </motion.div>
               )}
 
-              {/* Flip phase answer reveal + End Turn */}
-              {game.turnPhase === 'flip' && (
+              {/* Flip phase: answer reveal + card elimination */}
+              {turnPhase === 'flip' && (
                 <motion.div
                   key="flip"
                   initial={{ opacity: 0, y: 16 }}
@@ -434,21 +603,21 @@ export function GameBoard() {
                   <div
                     className="px-4 py-3 rounded-2xl flex items-center gap-3"
                     style={{
-                      background: game.currentAnswer === 'yes'
+                      background: currentAnswer === 'yes'
                         ? 'rgba(78,255,196,0.15)' : 'rgba(255,61,113,0.15)',
-                      border: `2px solid ${game.currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71'}`,
+                      border: `2px solid ${currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71'}`,
                     }}
                   >
-                    <span className="text-2xl">{game.currentAnswer === 'yes' ? '✅' : '❌'}</span>
+                    <span className="text-2xl">{currentAnswer === 'yes' ? '\u2705' : '\u274C'}</span>
                     <div>
                       <p className="font-body text-xs text-white/50">
-                        {game.currentTurn === myId ? opponentName : 'You'} answered:
+                        {answererIsMe ? 'You' : 'Opponent'} answered:
                       </p>
                       <p
                         className="font-display font-extrabold text-xl"
-                        style={{ color: game.currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71' }}
+                        style={{ color: currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71' }}
                       >
-                        {game.currentAnswer?.toUpperCase()}
+                        {currentAnswer?.toUpperCase()}
                       </p>
                     </div>
                     {isMyTurn && (
@@ -474,7 +643,7 @@ export function GameBoard() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.97 }}
                           >
-                            Flip {store.pendingFlips.length} card{store.pendingFlips.length !== 1 ? 's' : ''}
+                            Flip {store.pendingFlips.length} card{store.pendingFlips.length !== 1 ? 's' : ''} & End Turn
                           </motion.button>
                           <button
                             onClick={() => store.clearPendingFlips()}
@@ -497,7 +666,7 @@ export function GameBoard() {
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
                         >
-                          Done Eliminating → End Turn
+                          Done Eliminating {'\u2192'} End Turn
                         </motion.button>
                       )}
                     </div>
@@ -506,7 +675,7 @@ export function GameBoard() {
               )}
 
               {/* My turn to ask */}
-              {isMyTurn && game.turnPhase === 'ask' && (
+              {isMyTurn && turnPhase === 'ask' && (
                 <motion.div
                   key="ask"
                   initial={{ opacity: 0, y: 16 }}
@@ -580,8 +749,8 @@ export function GameBoard() {
                 </motion.div>
               )}
 
-              {/* Waiting for their turn to ask */}
-              {!isMyTurn && game.turnPhase === 'ask' && (
+              {/* Waiting for opponent to ask */}
+              {!isMyTurn && turnPhase === 'ask' && (
                 <motion.div
                   key="waiting-ask"
                   initial={{ opacity: 0 }}
@@ -590,7 +759,7 @@ export function GameBoard() {
                   className="flex items-center justify-center gap-3 py-4"
                 >
                   <WaitingDots />
-                  <p className="font-body text-white/50">{opponentName} is thinking...</p>
+                  <p className="font-body text-white/50">Opponent is thinking...</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -627,7 +796,7 @@ export function GameBoard() {
                   Stay
                 </button>
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={handleForfeit}
                   className="flex-1 py-3 rounded-xl font-display font-bold text-white"
                   style={{ background: '#FF3D71', border: '2px solid black' }}
                 >
@@ -640,27 +809,4 @@ export function GameBoard() {
       </AnimatePresence>
     </>
   );
-}
-
-
-function WaitingDots() {
-  return (
-    <div className="flex gap-1">
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="w-2 h-2 rounded-full bg-white/40"
-          animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function validateQuestion(q: string): string | null {
-  if (!q || q.trim().length < 5) return 'Question too short (min 5 characters)';
-  if (q.trim().length > 100) return 'Too long (max 100 characters)';
-  if (!q.trim().endsWith('?')) return 'Yes/no questions must end with "?"';
-  return null;
 }

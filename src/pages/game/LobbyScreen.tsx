@@ -13,6 +13,7 @@ import {
   updateGameReady,
   deleteGame,
 } from '../../lib/database';
+import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
 
 const POLL_MS = 2000;
@@ -91,7 +92,20 @@ export function LobbyScreen() {
         }
 
         // Create or join the game row
-        const row = await createOrJoinGame(matchId, 'guess_who', myUserId, opponentId, {});
+        const board = generateGuessWhoBoard(matchId);
+        const guessWhoInitial = {
+          characters: board.characters,
+          p1SecretId: board.p1SecretId,
+          p2SecretId: board.p2SecretId,
+          p1Flipped: [] as string[],
+          p2Flipped: [] as string[],
+          turnPhase: 'ask' as const,
+          currentQuestion: null,
+          currentAnswer: null,
+          turnHistory: [] as Array<{ asker: string; question: string; answer: string }>,
+          moveCount: 0,
+        };
+        const row = await createOrJoinGame(matchId, 'guess_who', myUserId, opponentId, guessWhoInitial);
         if (cancelled) return;
         if (row) {
           gameRowRef.current = row;
