@@ -19,7 +19,7 @@ interface GameOption {
 
 const GAMES: GameOption[] = [
   {
-    id: 'guess-who',
+    id: 'guess_who',
     name: 'Guess Who?',
     imgSrc: '/landing-icons/Ghost.png',
     description: 'Ask questions to deduce your opponent\'s secret character. Quick deduction game.',
@@ -28,7 +28,7 @@ const GAMES: GameOption[] = [
     color: '#FF6BA8',
   },
   {
-    id: 'dot-dash',
+    id: 'dot_dash',
     name: 'Dot Dash',
     imgSrc: '/landing-icons/Dot%20Dash.png',
     description: 'Race through a maze collecting dots while avoiding ghosts. Real-time action!',
@@ -37,7 +37,7 @@ const GAMES: GameOption[] = [
     color: '#4EFFC4',
   },
   {
-    id: 'word-blitz',
+    id: 'word_blitz',
     name: 'Word Blitz',
     imgSrc: '/game-icons/Word%20games.png',
     description: 'Build connecting words from your letters in 3 minutes. Vocabulary & speed!',
@@ -55,7 +55,7 @@ const GAMES: GameOption[] = [
     color: '#FFE66D',
   },
   {
-    id: 'connect-four',
+    id: 'connect_four',
     name: 'Connect Four',
     imgSrc: '/game-icons/Boardgames.png',
     description: 'Connect 4 in a row. Strategy meets speed.',

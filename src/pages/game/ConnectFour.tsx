@@ -260,7 +260,7 @@ export function ConnectFour() {
 
   const mp = useMultiplayerGame<CF4State>({
     matchId: matchId ?? '',
-    gameType: 'connect-four',
+    gameType: 'connect_four',
     initialState: { board: makeDbBoard(), moveCount: 0 },
     enabled: matchIdLooksMultiplayer,
   });
