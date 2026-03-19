@@ -81,6 +81,11 @@ export function GameBoard() {
   const store = useGameStore();
   const myUserId = user?.id ?? '';
 
+  // Ensure game store has our identity so GameResult can read it
+  useEffect(() => {
+    if (myUserId) store.setIdentity(myUserId, '', '');
+  }, [myUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Generate the deterministic board from matchId
   const boardRef = useRef(matchId ? generateGuessWhoBoard(matchId) : null);
 

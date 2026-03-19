@@ -769,10 +769,14 @@ export async function createChallenge(
 
 export async function getChallengesForMatch(matchId: string): Promise<ChallengeRow[]> {
   try {
+    const now = new Date().toISOString();
+    const cutoff = new Date(Date.now() - 60_000).toISOString();
     const { data } = await supabase
       .from('challenges')
       .select('*')
       .eq('match_id', matchId)
+      .gt('expires_at', now)
+      .or(`status.eq.pending,resolved_at.gt.${cutoff}`)
       .order('created_at', { ascending: false });
     return (data ?? []) as ChallengeRow[];
   } catch {
