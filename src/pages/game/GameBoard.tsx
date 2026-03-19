@@ -204,6 +204,17 @@ export function GameBoard() {
     }
   }, [mp.gameRow?.winner, mp.gameRow?.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Self-heal stale DB row with empty state ────────────────────
+  const healedRef = useRef(false);
+  useEffect(() => {
+    if (!gs || healedRef.current) return;
+    if (gs.characters && gs.characters.length > 0) return;
+    // State is empty/incomplete — re-initialize it
+    healedRef.current = true;
+    console.warn('[GameBoard] stale game state detected — re-initializing');
+    mp.submitMove({ type: 'heal_init' }, initialState);
+  }, [gs]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Derived values ────────────────────────────────────────────
   const characters = gs?.characters ?? [];
   const mySecretId = gs ? (myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId) ?? '' : '';
@@ -214,21 +225,6 @@ export function GameBoard() {
   const currentAnswer = gs?.currentAnswer ?? null;
   const turnHistory = gs?.turnHistory ?? [];
   const canFlip = isMyTurn && turnPhase === 'flip';
-
-  // Stale DB row with empty/incomplete state — wait for it to be populated
-  if (gs && (!gs.characters || gs.characters.length === 0)) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: '#0f172a' }}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <WaitingDots />
-          <p className="font-body text-white/50">Setting up game...</p>
-        </div>
-      </div>
-    );
-  }
 
   // ── Move handlers ─────────────────────────────────────────────
 
@@ -340,6 +336,21 @@ export function GameBoard() {
     mp.submitMove({ type: 'forfeit' }, gs, opponentRole);
     navigate('/');
   }, [gs, myRole, mp, navigate]);
+
+  // ── Stale DB row guard (after all hooks) ────────────────────
+  if (gs && (!gs.characters || gs.characters.length === 0)) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: '#0f172a' }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <WaitingDots />
+          <p className="font-body text-white/50">Setting up game...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Loading ───────────────────────────────────────────────────
   if (mp.loading || !gs) {
