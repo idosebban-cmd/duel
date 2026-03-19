@@ -100,6 +100,7 @@ export function useMultiplayerGame<S>({
         if (cancelled) return;
         if (!match) {
           // Match not found in DB — likely a fake/seed profile match
+          console.warn('[useMultiplayerGame] getMatchById returned null for matchId:', matchId, '— setting fallbackToBotMode');
           setFallbackToBotMode(true);
           return;
         }

@@ -530,14 +530,17 @@ export interface GameRow {
 
 /** Returns the match row so games can derive opponentId. */
 export async function getMatchById(matchId: string): Promise<{ user_a: string; user_b: string } | null> {
+  console.log('[getMatchById] querying matchId:', matchId);
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('matches')
       .select('user_a, user_b')
       .eq('id', matchId)
       .maybeSingle();
+    console.log('[getMatchById] response — data:', data, 'error:', error);
     return data as { user_a: string; user_b: string } | null;
-  } catch {
+  } catch (err) {
+    console.error('[getMatchById] caught exception:', err);
     return null;
   }
 }
