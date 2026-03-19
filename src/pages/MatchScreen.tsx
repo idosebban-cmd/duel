@@ -7,11 +7,14 @@ import {
   getProfile,
   getMatchById,
   getGamesByMatch,
+  getChallengesForMatch,
+  acceptChallenge,
+  declineChallenge,
   getMessages,
   sendMessage,
   markMessagesRead,
 } from '../lib/database';
-import type { UserProfile, GameRow, DbMessage } from '../lib/database';
+import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -75,6 +78,23 @@ function winnerColor(game: GameRow, myId: string): string {
   const isP1 = game.player1_id === myId;
   const iWon = (game.winner === 'player1' && isP1) || (game.winner === 'player2' && !isP1);
   return iWon ? '#4EFFC4' : '#FF6BA8';
+}
+
+function timeRemaining(expiresAt: string | null): string {
+  if (!expiresAt) return '';
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return 'expired';
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `expires in ${mins}m`;
+  const hours = Math.floor(mins / 60);
+  const remainMins = mins % 60;
+  return `expires in ${hours}h ${remainMins}m`;
+}
+
+function isPendingAndValid(c: ChallengeRow): boolean {
+  if (c.status !== 'pending') return false;
+  if (!c.expires_at) return true;
+  return new Date(c.expires_at).getTime() > Date.now();
 }
 
 // ─── Small components ─────────────────────────────────────────────────────────
@@ -168,6 +188,9 @@ export function MatchScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [challenges, setChallenges] = useState<ChallengeRow[]>([]);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [challengeError, setChallengeError] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -206,11 +229,12 @@ export function MatchScreen() {
         const opponentId = match.user_a === myUserId ? match.user_b : match.user_a;
 
         // Load in parallel
-        const [myP, theirP, gameRows, msgs] = await Promise.all([
+        const [myP, theirP, gameRows, msgs, challs] = await Promise.all([
           getProfile(myUserId),
           getProfile(opponentId),
           getGamesByMatch(matchId),
           getMessages(matchId),
+          getChallengesForMatch(matchId),
         ]);
 
         if (cancelled) return;
@@ -218,6 +242,7 @@ export function MatchScreen() {
         setTheirProfile(theirP.data);
         setGames(gameRows);
         setMessages(msgs);
+        setChallenges(challs);
         messagesLenRef.current = msgs.length;
 
         markMessagesRead(matchId, myUserId);
@@ -230,6 +255,53 @@ export function MatchScreen() {
 
     return () => { cancelled = true; };
   }, [matchId, myUserId]);
+
+  // ── Poll for challenges every 5s ────────────────────────────────
+  useEffect(() => {
+    if (!matchId) return;
+
+    const id = setInterval(async () => {
+      try {
+        const challs = await getChallengesForMatch(matchId);
+        setChallenges(challs);
+      } catch { /* retry on next tick */ }
+    }, CHAT_POLL_MS);
+
+    return () => clearInterval(id);
+  }, [matchId]);
+
+  // ── Derived: incoming + outgoing pending challenges ────────────
+  const incomingChallenges = challenges.filter(
+    (c) => c.to_user === myUserId && isPendingAndValid(c),
+  );
+  const outgoingChallenges = challenges.filter(
+    (c) => c.from_user === myUserId && isPendingAndValid(c),
+  );
+
+  // ── Accept / decline handlers ──────────────────────────────────
+  const handleAccept = async (c: ChallengeRow) => {
+    if (acceptingId) return;
+    setAcceptingId(c.id);
+    setChallengeError(null);
+    try {
+      await acceptChallenge(c.id);
+      localStorage.setItem('pending_match_id', c.match_id);
+      navigate(`/game/${c.match_id}/lobby`, { state: { gameType: c.game_type } });
+    } catch (err) {
+      console.error('[MatchScreen] accept challenge error:', err);
+      setChallengeError('Failed to accept challenge. Please try again.');
+      setAcceptingId(null);
+    }
+  };
+
+  const handleDecline = async (c: ChallengeRow) => {
+    try {
+      await declineChallenge(c.id);
+      setChallenges((prev) => prev.filter((ch) => ch.id !== c.id));
+    } catch (err) {
+      console.error('[MatchScreen] decline challenge error:', err);
+    }
+  };
 
   // ── Poll for new messages every 5s (only when chat unlocked) ───
   useEffect(() => {
@@ -419,6 +491,109 @@ export function MatchScreen() {
             Challenge to a Game
           </motion.button>
         </div>
+
+        {/* ── Pending challenges ───────────────────────────────── */}
+        {(incomingChallenges.length > 0 || outgoingChallenges.length > 0) && (
+          <div className="px-4 pt-3 pb-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                Challenges
+              </span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            </div>
+
+            {/* Challenge error */}
+            {challengeError && (
+              <motion.div
+                className="mb-2 px-3 py-2 rounded-xl font-body text-xs"
+                style={{ background: 'rgba(255,107,168,0.12)', border: '1px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {challengeError}
+              </motion.div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              {/* Incoming challenges */}
+              <AnimatePresence>
+                {incomingChallenges.map((c) => (
+                  <motion.div
+                    key={c.id}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,107,168,0.08), rgba(181,101,255,0.08))',
+                      border: '1.5px solid rgba(255,107,168,0.3)',
+                    }}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-sm" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                        {theirName} wants to play{' '}
+                        <span style={{ color: '#FF6BA8' }}>{GAME_LABELS[c.game_type] ?? c.game_type}</span>
+                      </p>
+                      <p className="font-body text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        {timeRemaining(c.expires_at)}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <motion.button
+                        onClick={() => handleAccept(c)}
+                        disabled={acceptingId === c.id}
+                        className="px-3 py-1.5 rounded-lg font-display font-bold text-xs"
+                        style={{
+                          background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
+                          color: '#12122A',
+                          opacity: acceptingId === c.id ? 0.6 : 1,
+                        }}
+                        whileTap={{ scale: 0.93 }}
+                      >
+                        {acceptingId === c.id ? '...' : 'Accept'}
+                      </motion.button>
+                      <motion.button
+                        onClick={() => handleDecline(c)}
+                        className="px-3 py-1.5 rounded-lg font-display font-bold text-xs"
+                        style={{
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          color: 'rgba(255,255,255,0.5)',
+                        }}
+                        whileTap={{ scale: 0.93 }}
+                      >
+                        Decline
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* Outgoing challenges */}
+              {outgoingChallenges.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                  style={{
+                    background: 'rgba(78,255,196,0.04)',
+                    border: '1px solid rgba(78,255,196,0.15)',
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                      <span style={{ color: '#4EFFC4' }}>{GAME_LABELS[c.game_type] ?? c.game_type}</span>
+                      {' \u2014 '}
+                      {timeRemaining(c.expires_at)}
+                    </p>
+                  </div>
+                  <span className="font-body text-xs flex-shrink-0" style={{ color: 'rgba(78,255,196,0.5)' }}>
+                    Waiting...
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Game history ─────────────────────────────────────── */}
         {games.length > 0 && (

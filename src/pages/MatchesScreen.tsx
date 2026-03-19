@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getMatches, getLastMessages } from '../lib/database';
-import type { MatchWithProfile, LastMessageInfo } from '../lib/database';
+import { getMatches, getLastMessages, getChallengesForMatch } from '../lib/database';
+import type { MatchWithProfile, LastMessageInfo, ChallengeRow } from '../lib/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ function AvatarStack({ character, element, size = 60 }: {
 
 // ─── Match card ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, onTap, isNew }: { match: Match; onTap: () => void; isNew: boolean }) {
+function MatchCard({ match, onTap, isNew, hasPendingChallenge }: { match: Match; onTap: () => void; isNew: boolean; hasPendingChallenge?: boolean }) {
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
@@ -200,6 +200,17 @@ function MatchCard({ match, onTap, isNew }: { match: Match; onTap: () => void; i
           >
             <span className="font-body text-[10px] font-bold" style={{ color: '#12122A' }}>
               {match.lastMessage.unread > 9 ? '9+' : match.lastMessage.unread}
+            </span>
+          </motion.div>
+        ) : hasPendingChallenge ? (
+          <motion.div
+            className="min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+            style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.7)' }}
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <span className="font-body text-[9px] font-bold" style={{ color: '#fff' }}>
+              !
             </span>
           </motion.div>
         ) : isNew && !match.lastMessage ? (
@@ -342,6 +353,7 @@ export function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [challengedMatchIds, setChallengedMatchIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -358,6 +370,27 @@ export function MatchesScreen() {
         if (matchList.length > 0) {
           const lm = await getLastMessages(matchList.map((m) => m.id), user.id);
           if (!cancelled) setMatches((prev) => prev.map((m) => ({ ...m, lastMessage: lm.get(m.id) })));
+
+          // Fetch pending incoming challenges across all matches
+          try {
+            const allChallenges = await Promise.all(
+              matchList.map((m) => getChallengesForMatch(m.id)),
+            );
+            if (!cancelled) {
+              const now = Date.now();
+              const ids = new Set<string>();
+              allChallenges.forEach((challs, i) => {
+                const hasIncoming = challs.some(
+                  (c: ChallengeRow) =>
+                    c.to_user === user.id &&
+                    c.status === 'pending' &&
+                    (!c.expires_at || new Date(c.expires_at).getTime() > now),
+                );
+                if (hasIncoming) ids.add(matchList[i].id);
+              });
+              setChallengedMatchIds(ids);
+            }
+          } catch { /* best-effort */ }
         }
       } catch {
         if (!cancelled) {
@@ -452,7 +485,7 @@ export function MatchesScreen() {
                 <SectionLabel label="New" />
                 {newMatches.map((m, i) => (
                   <motion.div key={m.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06, duration: 0.25 }}>
-                    <MatchCard match={m} isNew={true} onTap={() => handleTap(m)} />
+                    <MatchCard match={m} isNew={true} onTap={() => handleTap(m)} hasPendingChallenge={challengedMatchIds.has(m.id)} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -463,7 +496,7 @@ export function MatchesScreen() {
                 <SectionLabel label="Matches" />
                 {olderMatches.map((m, i) => (
                   <motion.div key={m.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: newMatches.length * 0.06 + i * 0.06, duration: 0.25 }}>
-                    <MatchCard match={m} isNew={false} onTap={() => handleTap(m)} />
+                    <MatchCard match={m} isNew={false} onTap={() => handleTap(m)} hasPendingChallenge={challengedMatchIds.has(m.id)} />
                   </motion.div>
                 ))}
               </motion.div>
