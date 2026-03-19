@@ -109,6 +109,7 @@ export function useMultiplayerGame<S>({
         if (!cancelled) setOpponentId(oppId);
 
         // 2. Create or join the game
+        console.log('[useMultiplayerGame] Calling createOrJoinGame — matchId:', matchId, 'gameType:', gameType, 'myUserId:', myUserId, 'oppId:', oppId);
         const row = await createOrJoinGame(
           matchId,
           gameType,
@@ -116,6 +117,7 @@ export function useMultiplayerGame<S>({
           oppId,
           initialState as object,
         );
+        console.log('[useMultiplayerGame] createOrJoinGame returned:', row);
 
         if (!cancelled && row) {
           gameRowRef.current = row;
@@ -141,13 +143,14 @@ export function useMultiplayerGame<S>({
     const id = setInterval(async () => {
       try {
         const updated = await getGame(gameRowRef.current!.id);
+        console.log('[useMultiplayerGame] Poll — game row:', updated);
         if (!updated) return;
         if (updated.updated_at !== gameRowRef.current?.updated_at) {
           gameRowRef.current = updated;
           setGameRow({ ...updated });
         }
-      } catch {
-        // Transient network error — will retry on next tick
+      } catch (err) {
+        console.error('[useMultiplayerGame] Poll error:', err);
       }
     }, pollInterval);
 

@@ -781,13 +781,17 @@ export async function getChallengesForMatch(matchId: string): Promise<ChallengeR
 }
 
 export async function acceptChallenge(challengeId: string): Promise<void> {
+  console.log('[acceptChallenge] Updating challenge ID:', challengeId);
   try {
-    await supabase
+    const { data, error, status, statusText } = await supabase
       .from('challenges')
       .update({ status: 'accepted', resolved_at: new Date().toISOString() })
-      .eq('id', challengeId);
+      .eq('id', challengeId)
+      .select();
+    console.log('[acceptChallenge] Supabase response — data:', data, 'error:', error, 'status:', status, statusText);
+    console.log('[acceptChallenge] Update succeeded:', !error);
   } catch (err) {
-    console.error('[acceptChallenge]', err);
+    console.error('[acceptChallenge] Exception thrown:', err);
   }
 }
 
