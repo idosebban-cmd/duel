@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -146,8 +146,19 @@ function MessageBubble({ msg, myUserId, theirAvatar }: {
 export function MatchScreen() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthStore();
   const myUserId = user?.id ?? '';
+
+  // ── Flash message from navigation state ────────────────────────
+  const flash = (location.state as { flash?: string } | null)?.flash ?? null;
+  const [showFlash, setShowFlash] = useState(!!flash);
+  useEffect(() => {
+    if (!flash) return;
+    setShowFlash(true);
+    const t = setTimeout(() => setShowFlash(false), 3000);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   // ── State ──────────────────────────────────────────────────────
   const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
@@ -164,6 +175,22 @@ export function MatchScreen() {
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
+
+  // ── Chat lock: unlocked only when at least one game has a winner ─
+  const chatUnlocked = games.some((g) => g.winner !== null);
+
+  // ── Re-check games when window regains focus (e.g. after a game) ─
+  useEffect(() => {
+    if (!matchId) return;
+    const refresh = async () => {
+      try {
+        const gameRows = await getGamesByMatch(matchId);
+        setGames(gameRows);
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [matchId]);
 
   // ── Load profiles + games + messages on mount ──────────────────
   useEffect(() => {
@@ -204,9 +231,9 @@ export function MatchScreen() {
     return () => { cancelled = true; };
   }, [matchId, myUserId]);
 
-  // ── Poll for new messages every 5s ─────────────────────────────
+  // ── Poll for new messages every 5s (only when chat unlocked) ───
   useEffect(() => {
-    if (!matchId || !myUserId) return;
+    if (!matchId || !myUserId || !chatUnlocked) return;
 
     const id = setInterval(async () => {
       try {
@@ -220,11 +247,11 @@ export function MatchScreen() {
     }, CHAT_POLL_MS);
 
     return () => clearInterval(id);
-  }, [matchId, myUserId]);
+  }, [matchId, myUserId, chatUnlocked]);
 
   // ── Realtime via Supabase channel (complements polling) ────────
   useEffect(() => {
-    if (!matchId || !supabase) return;
+    if (!matchId || !supabase || !chatUnlocked) return;
 
     const channel = supabase
       .channel(`match-chat-${matchId}`)
@@ -347,13 +374,34 @@ export function MatchScreen() {
         </div>
       </header>
 
+      {/* ── Flash toast ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showFlash && flash && (
+          <motion.div
+            className="absolute top-20 left-1/2 z-50 px-5 py-2.5 rounded-2xl font-display font-bold text-sm pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(78,255,196,0.25), rgba(0,217,255,0.25))',
+              border: '1.5px solid rgba(78,255,196,0.5)',
+              color: '#4EFFC4',
+              boxShadow: '0 4px 20px rgba(78,255,196,0.3)',
+              transform: 'translateX(-50%)',
+            }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            {flash}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Scrollable body ───────────────────────────────────── */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto flex flex-col"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {/* ── Challenge button (Stage 3 placeholder) ──────────── */}
+        {/* ── Challenge button ────────────────────────────────── */}
         <div className="px-4 pt-4 pb-2">
           <motion.button
             onClick={() => navigate('/play', { state: { matchId } })}
@@ -420,92 +468,132 @@ export function MatchScreen() {
               Chat
             </span>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+            {!chatUnlocked && !loading && (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
+                <rect x="3" y="6" width="8" height="6" rx="1.5" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" />
+                <path d="M5 6V4.5C5 3.4 5.9 2.5 7 2.5C8.1 2.5 9 3.4 9 4.5V6" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            )}
           </div>
         </div>
 
-        {/* ── Messages ─────────────────────────────────────────── */}
-        <div className="flex-1 px-4 flex flex-col gap-3 pb-3 pt-2">
-          {loading && (
-            <div className="flex justify-center py-4">
-              <div className="flex gap-1">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: 'rgba(78,255,196,0.4)' }}
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!loading && messages.length === 0 && (
-            <motion.div
-              className="text-center py-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+        {/* ── Chat content (locked or unlocked) ────────────────── */}
+        {!chatUnlocked && !loading ? (
+          /* Locked state */
+          <div className="flex-1 px-4 flex flex-col items-center justify-center gap-3 pb-6 pt-4">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '2px solid rgba(255,255,255,0.08)' }}
             >
-              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                No messages yet. Say hi!
-              </p>
-            </motion.div>
-          )}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect x="5" y="11" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+                <path d="M8 11V8C8 5.8 9.8 4 12 4C14.2 4 16 5.8 16 8V11" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="12" cy="16" r="1.5" fill="rgba(255,255,255,0.3)" />
+              </svg>
+            </div>
+            <p className="font-display text-sm text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Play a game first to unlock chat
+            </p>
+            <motion.button
+              onClick={() => navigate('/play', { state: { matchId } })}
+              className="px-5 py-2 rounded-xl font-display font-bold text-xs"
+              style={{
+                background: 'rgba(78,255,196,0.1)',
+                border: '1.5px solid rgba(78,255,196,0.3)',
+                color: '#4EFFC4',
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Challenge Now
+            </motion.button>
+          </div>
+        ) : (
+          /* Unlocked: show messages */
+          <div className="flex-1 px-4 flex flex-col gap-3 pb-3 pt-2">
+            {loading && (
+              <div className="flex justify-center py-4">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: 'rgba(78,255,196,0.4)' }}
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 0.8, delay: i * 0.2, repeat: Infinity }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-          <AnimatePresence initial={false}>
-            {!loading && messages.map((msg) => (
-              <MessageBubble key={msg.id} msg={msg} myUserId={myUserId} theirAvatar={theirAvatar} />
-            ))}
-          </AnimatePresence>
-        </div>
+            {!loading && messages.length === 0 && (
+              <motion.div
+                className="text-center py-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  No messages yet. Say hi!
+                </p>
+              </motion.div>
+            )}
+
+            <AnimatePresence initial={false}>
+              {!loading && messages.map((msg) => (
+                <MessageBubble key={msg.id} msg={msg} myUserId={myUserId} theirAvatar={theirAvatar} />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
-      {/* ── Chat input ────────────────────────────────────────── */}
-      <div
-        className="flex-none px-4 py-3"
-        style={{
-          background: 'rgba(14,14,34,0.97)',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={`Message ${theirName}...`}
-            disabled={!matchId || !myUserId}
-            className="flex-1 px-4 py-2.5 rounded-2xl font-body text-sm outline-none"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: `1.5px solid ${input ? 'rgba(78,255,196,0.35)' : 'rgba(255,255,255,0.08)'}`,
-              color: 'rgba(255,255,255,0.92)',
-              caretColor: '#4EFFC4',
-            }}
-          />
-          <motion.button
-            onClick={handleSend}
-            disabled={!canSend || sending}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{
-              background: canSend ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)' : 'rgba(78,255,196,0.08)',
-              border: `1.5px solid ${canSend ? '#4EFFC4' : 'rgba(78,255,196,0.2)'}`,
-              opacity: sending ? 0.6 : 1,
-            }}
-            whileTap={canSend ? { scale: 0.88 } : {}}
-            whileHover={canSend ? { scale: 1.08 } : {}}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M14 8L2 2L5 8L2 14L14 8Z" fill={canSend ? '#12122A' : 'rgba(78,255,196,0.3)'} />
-            </svg>
-          </motion.button>
+      {/* ── Chat input (only when unlocked) ───────────────────── */}
+      {chatUnlocked && (
+        <div
+          className="flex-none px-4 py-3"
+          style={{
+            background: 'rgba(14,14,34,0.97)',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`Message ${theirName}...`}
+              disabled={!matchId || !myUserId}
+              className="flex-1 px-4 py-2.5 rounded-2xl font-body text-sm outline-none"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: `1.5px solid ${input ? 'rgba(78,255,196,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                color: 'rgba(255,255,255,0.92)',
+                caretColor: '#4EFFC4',
+              }}
+            />
+            <motion.button
+              onClick={handleSend}
+              disabled={!canSend || sending}
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{
+                background: canSend ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)' : 'rgba(78,255,196,0.08)',
+                border: `1.5px solid ${canSend ? '#4EFFC4' : 'rgba(78,255,196,0.2)'}`,
+                opacity: sending ? 0.6 : 1,
+              }}
+              whileTap={canSend ? { scale: 0.88 } : {}}
+              whileHover={canSend ? { scale: 1.08 } : {}}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M14 8L2 2L5 8L2 14L14 8Z" fill={canSend ? '#12122A' : 'rgba(78,255,196,0.3)'} />
+              </svg>
+            </motion.button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

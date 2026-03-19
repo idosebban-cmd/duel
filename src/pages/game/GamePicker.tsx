@@ -1,8 +1,11 @@
 /**
  * Game Picker – choose which game to play (Guess Who or Dot Dash)
  */
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuthStore } from '../../store/authStore';
+import { getMatchById, createChallenge } from '../../lib/database';
 
 interface GameOption {
   id: string;
@@ -74,15 +77,43 @@ const GAMES: GameOption[] = [
 export function GamePicker() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
   const matchId = (location.state as { matchId?: string } | null)?.matchId;
+  const [busy, setBusy] = useState(false);
 
-  const handleGameSelect = (route: string) => {
-    if (matchId) {
-      // Route to matchId-specific game for multiplayer; keep localStorage as fallback
-      localStorage.setItem('pending_match_id', matchId);
-      navigate(`/game/${matchId}/lobby`);
-    } else {
-      navigate(route);
+  const handleGameSelect = async (game: GameOption) => {
+    if (!matchId || !user?.id) {
+      // No match context — navigate directly to the game route
+      navigate(game.route);
+      return;
+    }
+
+    if (busy) return;
+    setBusy(true);
+
+    try {
+      const match = await getMatchById(matchId);
+      if (!match) {
+        navigate(`/match/${matchId}`);
+        return;
+      }
+
+      const opponentId = match.user_a === user.id ? match.user_b : match.user_a;
+      const result = await createChallenge(matchId, user.id, opponentId, game.id);
+
+      if (result.mutual) {
+        // Both players challenged each other — go to lobby
+        localStorage.setItem('pending_match_id', matchId);
+        navigate(`/game/${matchId}/lobby`, { state: { gameType: game.id } });
+      } else {
+        // Challenge sent — go back to match screen with flash
+        navigate(`/match/${matchId}`, { state: { flash: 'Challenge sent!' } });
+      }
+    } catch (err) {
+      console.error('[GamePicker] challenge error:', err);
+      navigate(`/match/${matchId}`, { state: { flash: 'Failed to send challenge' } });
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -142,7 +173,8 @@ export function GamePicker() {
           {GAMES.map((game, idx) => (
             <motion.button
               key={game.id}
-              onClick={() => handleGameSelect(game.route)}
+              onClick={() => handleGameSelect(game)}
+              disabled={busy}
               className="group relative rounded-3xl p-6 text-left overflow-hidden transition-all"
               style={{
                 background: 'rgba(255,255,255,0.05)',
@@ -217,10 +249,10 @@ export function GamePicker() {
           transition={{ delay: 0.4 }}
         >
           <button
-            onClick={() => navigate('/discover')}
+            onClick={() => navigate(matchId ? `/match/${matchId}` : '/discover')}
             className="font-body text-sm text-white/30 hover:text-white/60 transition-colors"
           >
-            ← Back to profiles
+            {matchId ? '\u2190 Back to match' : '\u2190 Back to profiles'}
           </button>
         </motion.div>
       </div>
