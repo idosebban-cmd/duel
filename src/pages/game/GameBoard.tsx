@@ -75,6 +75,7 @@ function WaitingDots() {
 export function GameBoard() {
   // Route param is actually the matchId (set by LobbyScreen)
   const { gameId: matchId } = useParams<{ gameId: string }>();
+  console.log('[GameBoard] mounted — matchId from useParams:', matchId);
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const store = useGameStore();
