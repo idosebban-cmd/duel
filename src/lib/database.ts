@@ -689,6 +689,116 @@ export async function submitGameMove(
   }
 }
 
+// ─── Challenges ──────────────────────────────────────────────────────────────
+
+export interface ChallengeRow {
+  id: string;
+  match_id: string;
+  from_user: string;
+  to_user: string;
+  game_type: string;
+  status: string;
+  expires_at: string | null;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+/**
+ * Creates a challenge. If the opponent already has a pending challenge for the
+ * same game_type in the same match, both are set to 'accepted' and the
+ * opponent's challenge is returned (so the caller knows it was a mutual match).
+ */
+export async function createChallenge(
+  matchId: string,
+  fromUser: string,
+  toUser: string,
+  gameType: string,
+): Promise<{ mutual: boolean; challenge: ChallengeRow }> {
+  // Check for existing pending challenge from opponent for same game
+  try {
+    const { data: existing } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('from_user', toUser)
+      .eq('to_user', fromUser)
+      .eq('game_type', gameType)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (existing) {
+      // Mutual match — mark opponent's challenge as accepted
+      await supabase
+        .from('challenges')
+        .update({ status: 'accepted', resolved_at: new Date().toISOString() })
+        .eq('id', existing.id);
+
+      return { mutual: true, challenge: existing as ChallengeRow };
+    }
+  } catch (err) {
+    console.error('[createChallenge] check existing:', err);
+  }
+
+  // No mutual match — insert new challenge
+  const isDotDash = gameType === 'dot-dash' || gameType === 'dot_dash';
+  const expiresAt = new Date(Date.now() + (isDotDash ? 10 * 60_000 : 24 * 60 * 60_000)).toISOString();
+
+  try {
+    const { data } = await supabase
+      .from('challenges')
+      .insert({
+        match_id: matchId,
+        from_user: fromUser,
+        to_user: toUser,
+        game_type: gameType,
+        status: 'pending',
+        expires_at: expiresAt,
+      })
+      .select('*')
+      .single();
+
+    return { mutual: false, challenge: data as ChallengeRow };
+  } catch (err) {
+    console.error('[createChallenge] insert:', err);
+    throw err;
+  }
+}
+
+export async function getChallengesForMatch(matchId: string): Promise<ChallengeRow[]> {
+  try {
+    const { data } = await supabase
+      .from('challenges')
+      .select('*')
+      .eq('match_id', matchId)
+      .order('created_at', { ascending: false });
+    return (data ?? []) as ChallengeRow[];
+  } catch {
+    return [];
+  }
+}
+
+export async function acceptChallenge(challengeId: string): Promise<void> {
+  try {
+    await supabase
+      .from('challenges')
+      .update({ status: 'accepted', resolved_at: new Date().toISOString() })
+      .eq('id', challengeId);
+  } catch (err) {
+    console.error('[acceptChallenge]', err);
+  }
+}
+
+export async function declineChallenge(challengeId: string): Promise<void> {
+  try {
+    await supabase
+      .from('challenges')
+      .update({ status: 'declined', resolved_at: new Date().toISOString() })
+      .eq('id', challengeId);
+  } catch (err) {
+    console.error('[declineChallenge]', err);
+  }
+}
+
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
 async function uploadPhotoToStorage(
