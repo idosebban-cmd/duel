@@ -279,8 +279,7 @@ export function MatchScreen() {
       .subscribe();
 
     return () => { supabase?.removeChannel(channel); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, myUserId]);
+  }, [matchId, myUserId, chatUnlocked]);
 
   // ── Auto-scroll when new messages arrive ───────────────────────
   useEffect(() => {

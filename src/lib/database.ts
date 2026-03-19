@@ -726,7 +726,7 @@ export async function createChallenge(
       .maybeSingle();
 
     if (existing) {
-      // Mutual match — accept both
+      // Mutual match — mark opponent's challenge as accepted
       await supabase
         .from('challenges')
         .update({ status: 'accepted' })
