@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS challenges (
   to_user    uuid NOT NULL REFERENCES profiles(id),
   game_type  text NOT NULL,
   status     text NOT NULL DEFAULT 'pending',
-  expires_at timestamptz,
-  created_at timestamptz DEFAULT now()
+  expires_at  timestamptz,
+  created_at  timestamptz DEFAULT now(),
+  resolved_at timestamptz
 );
 
 CREATE INDEX IF NOT EXISTS idx_challenges_match_id ON challenges(match_id);

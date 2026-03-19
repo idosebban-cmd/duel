@@ -700,6 +700,7 @@ export interface ChallengeRow {
   status: string;
   expires_at: string | null;
   created_at: string;
+  resolved_at: string | null;
 }
 
 /**
@@ -729,7 +730,7 @@ export async function createChallenge(
       // Mutual match — mark opponent's challenge as accepted
       await supabase
         .from('challenges')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted', resolved_at: new Date().toISOString() })
         .eq('id', existing.id);
 
       return { mutual: true, challenge: existing as ChallengeRow };
@@ -780,7 +781,7 @@ export async function acceptChallenge(challengeId: string): Promise<void> {
   try {
     await supabase
       .from('challenges')
-      .update({ status: 'accepted' })
+      .update({ status: 'accepted', resolved_at: new Date().toISOString() })
       .eq('id', challengeId);
   } catch (err) {
     console.error('[acceptChallenge]', err);
@@ -791,7 +792,7 @@ export async function declineChallenge(challengeId: string): Promise<void> {
   try {
     await supabase
       .from('challenges')
-      .update({ status: 'declined' })
+      .update({ status: 'declined', resolved_at: new Date().toISOString() })
       .eq('id', challengeId);
   } catch (err) {
     console.error('[declineChallenge]', err);
