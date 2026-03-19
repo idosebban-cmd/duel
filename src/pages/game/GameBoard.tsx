@@ -81,14 +81,6 @@ export function GameBoard() {
   const store = useGameStore();
   const myUserId = user?.id ?? '';
 
-  // Ensure game store has our identity so GameResult can read it
-  useEffect(() => {
-    if (myUserId) store.setIdentity(myUserId, '', '');
-  }, [myUserId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Track when this component mounted to detect stale game rows
-  const mountTimeRef = useRef(Date.now());
-
   // Generate the deterministic board from matchId
   const boardRef = useRef(matchId ? generateGuessWhoBoard(matchId) : null);
 
@@ -153,68 +145,28 @@ export function GameBoard() {
   }, [question.length]);
 
   // ── Detect game over from polling ─────────────────────────────
-  const prevWinnerRef = useRef<string | null>(null);
+  const navigatedRef = useRef(false);
   useEffect(() => {
-    if (!mp.gameRow || !gs) return;
+    if (!mp.gameRow || !gs || navigatedRef.current) return;
     const winner = mp.gameRow.winner;
-    if (winner && winner !== prevWinnerRef.current) {
-      // Skip stale game rows from a previous game
-      const gameCreatedAt = new Date(mp.gameRow.created_at).getTime();
-      if (gameCreatedAt < mountTimeRef.current - 5000) {
-        return;
-      }
-      prevWinnerRef.current = winner;
+    if (!winner) return;
 
-      // Build a GameOverPayload for the result screen
-      const iWon = winner === myRole;
-      const winnerId = iWon ? myUserId : mp.opponentId;
-      const loserId = iWon ? mp.opponentId : myUserId;
-      store.setGameOver({
-        winner: winnerId,
-        loser: loserId,
-        player1SecretId: gs.p1SecretId,
-        player2SecretId: gs.p2SecretId,
+    navigatedRef.current = true;
+    navigate(`/game/${matchId}/result`, {
+      state: {
+        winner,
+        myRole,
+        myUserId,
+        opponentId: mp.opponentId,
+        p1SecretId: gs.p1SecretId,
+        p2SecretId: gs.p2SecretId,
         characters: gs.characters,
-        gameId: mp.gameId ?? matchId ?? '',
-      });
-      // Also set game state in store for GameResult stats
-      store.setGameState({
-        gameId: mp.gameId ?? matchId ?? '',
-        matchId: matchId ?? '',
-        me: {
-          userId: myUserId,
-          name: '',
-          avatar: '',
-          secretCharacterId: myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId,
-          flippedCards: myRole === 'player1' ? gs.p1Flipped : gs.p2Flipped,
-          ready: true,
-        },
-        opponent: {
-          userId: mp.opponentId,
-          name: 'Opponent',
-          avatar: '',
-          flippedCards: myRole === 'player1' ? gs.p2Flipped : gs.p1Flipped,
-          ready: true,
-        },
-        characters: gs.characters,
-        currentTurn: '',
-        phase: 'finished',
-        lobbyExpiresAt: null,
-        currentQuestion: null,
-        currentAnswer: null,
-        turnPhase: 'ask',
-        turnHistory: (gs.turnHistory ?? []).map((h) => ({
-          asker: h.asker === 'player1' ? (mp.gameRow!.player1_id) : (mp.gameRow!.player2_id),
-          question: h.question,
-          answer: h.answer,
-          timestamp: '',
-        })),
-        winner: winnerId,
-        createdAt: mp.gameRow!.created_at,
-        finishedAt: mp.gameRow!.updated_at,
-      });
-      navigate(`/game/${matchId}/result`);
-    }
+        matchId,
+        turnHistory: gs.turnHistory ?? [],
+        gameRowPlayer1Id: mp.gameRow.player1_id,
+        gameRowPlayer2Id: mp.gameRow.player2_id,
+      },
+    });
   }, [mp.gameRow?.winner, mp.gameRow?.updated_at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Self-heal stale DB row with empty state ────────────────────

@@ -1,9 +1,24 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/gameStore';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import type { Character } from '../../types/game';
+
+// ── Location state passed from GameBoard ─────────────────────────
+interface ResultLocationState {
+  winner: 'player1' | 'player2';
+  myRole: 'player1' | 'player2';
+  myUserId: string;
+  opponentId: string;
+  p1SecretId: string;
+  p2SecretId: string;
+  characters: Character[];
+  matchId: string;
+  turnHistory: Array<{ asker: string; question: string; answer: string }>;
+  gameRowPlayer1Id: string;
+  gameRowPlayer2Id: string;
+}
 
 // Simple confetti particle
 function ConfettiParticle({ color, delay }: { color: string; delay: number }) {
@@ -24,46 +39,40 @@ const CONFETTI_COLORS = ['#FF6BA8', '#4EFFC4', '#FFE66D', '#B565FF', '#FF3D71', 
 
 export function GameResult() {
   const navigate = useNavigate();
+  const location = useLocation();
   const store = useGameStore();
-  const payload = store.gameOverPayload;
-  const myId = store.myUserId;
+  const s = location.state as ResultLocationState | null;
 
-  const didWin = payload?.winner === myId;
+  // Redirect if location.state is missing/incomplete
+  useEffect(() => {
+    if (!s || !s.winner || !s.myRole || !s.characters) {
+      navigate('/matches', { replace: true });
+    }
+  }, [s, navigate]);
 
-  // Compute character info early (needed by auto-redirect useEffect)
-  const gameState = store.gameState;
-  const player1SecretId = payload?.player1SecretId ?? '';
-  const player2SecretId = payload?.player2SecretId ?? '';
-  const characters = payload?.characters ?? [];
-  const actualMySecretId = gameState?.me.secretCharacterId ?? player1SecretId;
-  const actualOpponentSecretId = gameState?.opponent
-    ? (actualMySecretId === player1SecretId ? player2SecretId : player1SecretId)
-    : player2SecretId;
-  const opponentChar = characters.find((c) => c.id === actualOpponentSecretId);
-  const opponentName = gameState?.opponent.name ?? 'Opponent';
+  if (!s || !s.winner || !s.myRole || !s.characters) return null;
+
+  const didWin = s.winner === s.myRole;
+  const mySecretId = s.myRole === 'player1' ? s.p1SecretId : s.p2SecretId;
+  const opponentSecretId = s.myRole === 'player1' ? s.p2SecretId : s.p1SecretId;
+  const myChar = s.characters.find((c) => c.id === mySecretId);
+  const opponentChar = s.characters.find((c) => c.id === opponentSecretId);
 
   // Detect first game with this match
-  const matchId = localStorage.getItem('pending_match_id');
+  const matchId = s.matchId ?? localStorage.getItem('pending_match_id');
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const [showChatUnlock, setShowChatUnlock] = useState(false);
 
-  // Redirect to home if no payload
-  useEffect(() => {
-    if (!payload) {
-      navigate('/');
-    }
-  }, [payload, navigate]);
-
   // Auto-redirect to chat after 3s for first game with this match
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (!payload || !isFirstGame || !matchId) return;
+    if (!isFirstGame || !matchId) return;
 
     const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
     const redirectTimer = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
-      // Keep pending_match_id so subsequent games can still reach chat
       store.reset();
-      navigate('/chat', { state: { matchId, name: opponentName, character: opponentChar?.attributes?.type } });
+      navigate('/chat', { state: { matchId, name: 'Opponent', character: opponentChar?.attributes?.type } });
     }, 3000);
 
     return () => {
@@ -71,16 +80,9 @@ export function GameResult() {
       clearTimeout(redirectTimer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payload, isFirstGame, matchId]);
+  }, [isFirstGame, matchId]);
 
-  if (!payload) return null;
-
-  const { winner, forfeit } = payload;
-
-  const myChar = characters.find((c) => c.id === actualMySecretId);
-  const guessedChar = payload.guessedCharacterId
-    ? characters.find((c) => c.id === payload.guessedCharacterId)
-    : null;
+  const turnHistory = s.turnHistory ?? [];
 
   return (
     <div
@@ -92,7 +94,7 @@ export function GameResult() {
       }}
     >
       {/* Confetti (winner only) */}
-      {didWin && !forfeit && (
+      {didWin && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           {CONFETTI_COLORS.flatMap((color, ci) =>
             Array.from({ length: 3 }, (_, i) => (
@@ -134,9 +136,7 @@ export function GameResult() {
               >
                 YOU WIN!
               </h1>
-              <p className="font-body text-white/60 mt-2">
-                {forfeit ? `${opponentName} forfeited!` : 'You guessed it!'}
-              </p>
+              <p className="font-body text-white/60 mt-2">You guessed it!</p>
             </>
           ) : (
             <>
@@ -145,15 +145,9 @@ export function GameResult() {
                 className="font-display font-extrabold text-4xl"
                 style={{ color: 'rgba(255,255,255,0.7)' }}
               >
-                {winner === myId ? 'YOU WIN!' : `${opponentName} wins!`}
+                Opponent wins!
               </h1>
-              <p className="font-body text-white/50 mt-2">
-                {forfeit
-                  ? 'Opponent forfeited'
-                  : payload.guessedBy === myId
-                  ? 'Wrong guess — better luck next time!'
-                  : `${opponentName} guessed correctly!`}
-              </p>
+              <p className="font-body text-white/50 mt-2">Better luck next time!</p>
             </>
           )}
         </motion.div>
@@ -165,19 +159,11 @@ export function GameResult() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          {guessedChar && (
-            <RevealCard
-              label={didWin ? '✓ Correct guess!' : '✗ Wrong guess'}
-              character={guessedChar}
-              accent={didWin ? '#4EFFC4' : '#FF3D71'}
-            />
-          )}
-
           <div className="flex gap-3">
             {opponentChar && (
               <div className="flex-1">
                 <RevealCard
-                  label={`${opponentName}'s character`}
+                  label="Opponent's character"
                   character={opponentChar}
                   accent="#B565FF"
                   compact
@@ -198,7 +184,7 @@ export function GameResult() {
         </motion.div>
 
         {/* Stats */}
-        {store.gameState && store.gameState.turnHistory.length > 0 && (
+        {turnHistory.length > 0 && (
           <motion.div
             className="w-full rounded-2xl p-4"
             style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.08)' }}
@@ -210,8 +196,8 @@ export function GameResult() {
               Game Stats
             </p>
             <div className="flex justify-around">
-              <Stat label="Questions" value={String(store.gameState.turnHistory.length)} />
-              <Stat label="Rounds" value={String(Math.ceil(store.gameState.turnHistory.length / 2))} />
+              <Stat label="Questions" value={String(turnHistory.length)} />
+              <Stat label="Rounds" value={String(Math.ceil(turnHistory.length / 2))} />
             </div>
           </motion.div>
         )}
