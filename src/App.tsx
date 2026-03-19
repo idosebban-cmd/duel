@@ -34,6 +34,7 @@ import { ChatScreen } from './pages/ChatScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { MatchesScreen } from './pages/MatchesScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
+import { MatchScreen } from './pages/MatchScreen';
 import { WordBlitz } from './pages/game/WordBlitz';
 import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
@@ -100,6 +101,7 @@ export default function App() {
           {/* Protected routes */}
           <Route path="/discover" element={<ProtectedRoute><DiscoverScreen /></ProtectedRoute>} />
           <Route path="/matches" element={<ProtectedRoute><MatchesScreen /></ProtectedRoute>} />
+          <Route path="/match/:matchId" element={<ProtectedRoute><MatchScreen /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute><ChatScreen /></ProtectedRoute>} />
           <Route path="/play" element={<ProtectedRoute><GamePicker /></ProtectedRoute>} />

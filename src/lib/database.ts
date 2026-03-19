@@ -605,6 +605,20 @@ export async function hasCompletedGame(matchId: string): Promise<boolean> {
   }
 }
 
+/** Returns all games for a match, newest first. Filters out null match_id rows. */
+export async function getGamesByMatch(matchId: string): Promise<GameRow[]> {
+  try {
+    const { data } = await supabase
+      .from('games')
+      .select('*')
+      .eq('match_id', matchId)
+      .order('created_at', { ascending: false });
+    return (data ?? []) as GameRow[];
+  } catch {
+    return [];
+  }
+}
+
 export async function getGame(gameId: string): Promise<GameRow | null> {
   try {
     const { data } = await supabase
