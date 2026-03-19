@@ -264,11 +264,22 @@ export function MatchScreen() {
       try {
         const challs = await getChallengesForMatch(matchId);
         setChallenges(challs);
+
+        // Auto-redirect: if an outgoing challenge was accepted, go to lobby
+        const accepted = challs.find(
+          (c) => c.from_user === myUserId && c.status === 'accepted',
+        );
+        if (accepted) {
+          clearInterval(id);
+          navigate(`/game/${accepted.match_id}/lobby`, {
+            state: { gameType: accepted.game_type },
+          });
+        }
       } catch { /* retry on next tick */ }
     }, CHAT_POLL_MS);
 
     return () => clearInterval(id);
-  }, [matchId]);
+  }, [matchId, myUserId, navigate]);
 
   // ── Derived: incoming + outgoing pending challenges ────────────
   const incomingChallenges = challenges.filter(
