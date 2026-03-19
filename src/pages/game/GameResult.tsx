@@ -62,6 +62,7 @@ export function GameResult() {
     const redirectTimer = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
       // Keep pending_match_id so subsequent games can still reach chat
+      store.reset();
       navigate('/chat', { state: { matchId, name: opponentName, character: opponentChar?.attributes?.type } });
     }, 3000);
 
@@ -272,6 +273,7 @@ export function GameResult() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
+                store.reset();
                 navigate(matchId ? `/match/${matchId}` : '/matches');
               }}
             >
