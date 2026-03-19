@@ -1,0 +1,45 @@
+-- ============================================================
+-- Migration: schema.sql audit — align with live Supabase DB
+-- Date: 2026-03-19
+-- Description: Documents every difference between the old
+--   schema.sql and the live database. NO SQL was executed;
+--   this file is a record of what changed in schema.sql.
+-- ============================================================
+
+-- ─── matches table ──────────────────────────────────────────
+-- 1. ADDED: created_at column (exists in live DB, was missing from schema.sql)
+--    ALTER TABLE matches ADD COLUMN created_at timestamptz DEFAULT now();
+--
+-- 2. ADDED: status column (exists in live DB, was missing from schema.sql)
+--    ALTER TABLE matches ADD COLUMN status text DEFAULT 'active';
+--
+-- 3. REMOVED from schema.sql: game_selected column
+--    (was in old schema.sql but does NOT exist in live DB)
+--    If it somehow exists: ALTER TABLE matches DROP COLUMN IF EXISTS game_selected;
+
+-- ─── messages table ─────────────────────────────────────────
+-- 4. ADDED full CREATE TABLE to schema.sql (was only a comment block).
+--    The live DB already has this table with columns:
+--      id, room_id, sender, content, delivered, created_at
+--    No SQL needed — table already exists in live DB.
+
+-- ─── games table ────────────────────────────────────────────
+-- 5. CHANGED: match_id from NOT NULL to nullable
+--    ALTER TABLE games ALTER COLUMN match_id DROP NOT NULL;
+--
+-- 6. ADDED: owner column (exists in live DB, was missing from schema.sql)
+--    ALTER TABLE games ADD COLUMN owner uuid REFERENCES auth.users(id);
+--
+-- 7. ADDED: status column (exists in live DB, was missing from schema.sql)
+--    ALTER TABLE games ADD COLUMN status text DEFAULT 'pending';
+--
+-- 8. ADDED: delete RLS policy for games (code calls deleteGame())
+--    CREATE POLICY "Match members can delete games"
+--      ON games FOR DELETE
+--      USING (player1_id = auth.uid() OR player2_id = auth.uid());
+
+-- ─── games + moves RLS simplification ───────────────────────
+-- 9. Simplified games RLS policies: use player1_id/player2_id directly
+--    instead of subquery through matches table. Functionally equivalent
+--    but simpler and faster.
+-- 10. Simplified moves select policy similarly.
