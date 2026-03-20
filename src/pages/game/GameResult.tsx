@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
@@ -125,6 +126,7 @@ export function GameResult() {
 
   // Derive values needed by the auto-redirect effect (safe even when result is null)
   const matchId = result?.matchId ?? localStorage.getItem('pending_match_id') ?? '';
+  usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const characters = result?.characters ?? [];
   const opponentSecretId = result?.myRole === 'player1' ? p2SecretId : p1SecretId;

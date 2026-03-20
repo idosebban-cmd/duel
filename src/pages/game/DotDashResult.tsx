@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { motion } from 'framer-motion';
 import { useDotDashStore } from '../../store/dotDashStore';
 
@@ -31,6 +32,7 @@ export function DotDashResult() {
 
   // Detect first game with this match
   const matchId = localStorage.getItem('pending_match_id');
+  usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const [showChatUnlock, setShowChatUnlock] = useState(false);
 
