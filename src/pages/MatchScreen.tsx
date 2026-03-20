@@ -195,7 +195,6 @@ export function MatchScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesLenRef = useRef(0);
-  const prevChallengeStatusRef = useRef<Record<string, string>>({});
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
@@ -257,36 +256,53 @@ export function MatchScreen() {
     return () => { cancelled = true; };
   }, [matchId, myUserId]);
 
-  // ── Poll for challenges every 5s ────────────────────────────────
+  // ── Challenges: mount check + Supabase Realtime ─────────────────
   useEffect(() => {
-    if (!matchId) return;
+    if (!matchId || !myUserId || !supabase) return;
 
-    const id = setInterval(async () => {
+    // One-time mount check: if inviter returns after acceptance
+    (async () => {
       try {
         const challs = await getChallengesForMatch(matchId);
         setChallenges(challs);
-
-        // Only redirect on pending → accepted TRANSITION
-        const newlyAccepted = challs.find(
-          (c) =>
-            c.from_user === myUserId &&
-            c.status === 'accepted' &&
-            prevChallengeStatusRef.current[c.id] === 'pending',
+        const accepted = challs.find(
+          (c) => c.from_user === myUserId && c.status === 'accepted',
         );
-
-        // Update prevStatusRef for next poll
-        prevChallengeStatusRef.current = Object.fromEntries(
-          challs.map((c) => [c.id, c.status]),
-        );
-
-        if (newlyAccepted) {
-          clearInterval(id);
-          navigate(`/game/${newlyAccepted.match_id}/lobby?type=${newlyAccepted.game_type}`);
+        if (accepted) {
+          navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
         }
-      } catch { /* retry on next tick */ }
-    }, CHAT_POLL_MS);
+      } catch { /* ignore */ }
+    })();
 
-    return () => clearInterval(id);
+    // Realtime subscription for challenge changes
+    const channel = supabase
+      .channel(`match-challenges-${matchId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'challenges', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const updated = payload.new as ChallengeRow;
+          setChallenges((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+          // Inviter is on MatchScreen when opponent accepts
+          if (updated.from_user === myUserId && updated.status === 'accepted') {
+            navigate(`/game/${updated.match_id}/lobby?type=${updated.game_type}`);
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'challenges', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const newChall = payload.new as ChallengeRow;
+          setChallenges((prev) => {
+            if (prev.some((c) => c.id === newChall.id)) return prev;
+            return [...prev, newChall];
+          });
+        },
+      )
+      .subscribe();
+
+    return () => { supabase?.removeChannel(channel); };
   }, [matchId, myUserId, navigate]);
 
   // ── Derived: incoming + outgoing pending challenges ────────────
