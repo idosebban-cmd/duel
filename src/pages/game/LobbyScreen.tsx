@@ -174,6 +174,12 @@ export function LobbyScreen() {
         if (!updated) return;
         gameRowRef.current = updated;
         setGameRow({ ...updated });
+        const pollState = (updated.state ?? {}) as Record<string, unknown>;
+        const pollReady = pollState.ready as Record<string, boolean> | undefined;
+        console.log('[Lobby] Poll — state.ready:', pollReady);
+        const p1Ready = pollReady?.[updated.player1_id];
+        const p2Ready = pollReady?.[updated.player2_id];
+        console.log('[Lobby] bothReady:', !!(p1Ready && p2Ready));
       } catch {
         // Transient error — retry on next tick
       }
@@ -220,7 +226,9 @@ export function LobbyScreen() {
   // ── Ready button ───────────────────────────────────────────────
   const handleReady = async () => {
     if (!gameRow?.id || !myUserId) return;
-    await updateGameReady(gameRow.id, myUserId);
+    console.log('[Lobby] Ready clicked, gameRowId:', gameRow?.id);
+    const { data: result, error } = await updateGameReady(gameRow.id, myUserId);
+    console.log('[Lobby] set_player_ready result:', result, error);
     // Optimistic: update local state immediately
     const state = (gameRow.state ?? {}) as Record<string, unknown>;
     const ready = { ...((state.ready as Record<string, boolean>) ?? {}), [myUserId]: true };
