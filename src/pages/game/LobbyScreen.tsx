@@ -142,7 +142,11 @@ export function LobbyScreen() {
             const board = generateGuessWhoBoard(matchId);
             const isPlayer1 = row.player1_id === myUserId;
             const mySecretCharId = isPlayer1 ? board.p1SecretId : board.p2SecretId;
-            await insertGameSecret(row.id, myUserId, mySecretCharId);
+            const ok = await insertGameSecret(row.id, myUserId, mySecretCharId);
+            if (!ok && !cancelled) {
+              setError('Failed to set up your secret character. Please leave and rejoin.');
+              return;
+            }
           }
         } else {
           setError('Failed to create game');

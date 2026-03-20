@@ -46,18 +46,19 @@ export function GameResult() {
   const store = useGameStore();
   const s = location.state as ResultLocationState | null;
 
-  // DB fallback state (for page refresh when location.state is lost)
+  // ── All useState hooks (before any early returns) ────────────────
   const [dbResult, setDbResult] = useState<ResultLocationState | null>(null);
   const [loading, setLoading] = useState(!s);
   const [showChatUnlock, setShowChatUnlock] = useState(false);
-
-  // Revealed secrets from RPC
   const [p1SecretId, setP1SecretId] = useState<string | null>(null);
   const [p2SecretId, setP2SecretId] = useState<string | null>(null);
+  const [secretsError, setSecretsError] = useState(false);
 
-  // If location.state is missing, try to load from DB
+  // ── All useEffect hooks (before any early returns) ───────────────
+
+  // DB fallback: load game from DB if location.state is missing (page refresh)
   useEffect(() => {
-    if (s) return; // fast path — already have state
+    if (s) return;
     const mid = urlMatchId;
     if (!mid || !user?.id) {
       navigate('/matches', { replace: true });
@@ -95,57 +96,43 @@ export function GameResult() {
     return () => { cancelled = true; };
   }, [s, urlMatchId, user?.id, navigate]);
 
-  // Use location.state (fast path) or DB result (refresh path)
   const result = s ?? dbResult;
 
-  // Reveal secrets via RPC once we have the gameId
+  // Reveal secrets via RPC (with retry)
   useEffect(() => {
     const gId = result?.gameId;
     if (!gId) return;
     let cancelled = false;
-    (async () => {
+    let attempt = 0;
+
+    const tryReveal = async () => {
       const secrets = await revealSecrets(gId);
       if (cancelled) return;
       if (secrets) {
         setP1SecretId(secrets.p1_character_id);
         setP2SecretId(secrets.p2_character_id);
+      } else if (attempt < 2) {
+        attempt++;
+        setTimeout(() => { if (!cancelled) tryReveal(); }, 2000);
+      } else {
+        setSecretsError(true);
       }
-    })();
+    };
+
+    tryReveal();
     return () => { cancelled = true; };
   }, [result?.gameId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
-      </div>
-    );
-  }
-
-  if (!result || !result.winner || !result.myRole || !result.characters) return null;
-
-  // Show loading while secrets haven't been revealed yet
-  if (!p1SecretId || !p2SecretId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/50 text-sm animate-pulse">Revealing characters...</p>
-      </div>
-    );
-  }
-
-  const didWin = result.winner === result.myRole;
-  const mySecretId = result.myRole === 'player1' ? p1SecretId : p2SecretId;
-  const opponentSecretId = result.myRole === 'player1' ? p2SecretId : p1SecretId;
-  const myChar = result.characters.find((c) => c.id === mySecretId);
-  const opponentChar = result.characters.find((c) => c.id === opponentSecretId);
-
-  // Detect first game with this match
-  const matchId = result.matchId ?? localStorage.getItem('pending_match_id');
+  // Derive values needed by the auto-redirect effect (safe even when result is null)
+  const matchId = result?.matchId ?? localStorage.getItem('pending_match_id') ?? '';
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+  const characters = result?.characters ?? [];
+  const opponentSecretId = result?.myRole === 'player1' ? p2SecretId : p1SecretId;
+  const opponentChar = opponentSecretId ? characters.find((c) => c.id === opponentSecretId) : undefined;
 
   // Auto-redirect to chat after 3s for first game with this match
   useEffect(() => {
-    if (!isFirstGame || !matchId) return;
+    if (!isFirstGame || !matchId || !p1SecretId || !p2SecretId) return;
 
     const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
     const redirectTimer = setTimeout(() => {
@@ -159,8 +146,47 @@ export function GameResult() {
       clearTimeout(redirectTimer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFirstGame, matchId]);
+  }, [isFirstGame, matchId, p1SecretId, p2SecretId]);
 
+  // ── Early returns (all hooks are above) ──────────────────────────
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
+      </div>
+    );
+  }
+
+  if (!result || !result.winner || !result.myRole || !result.characters) return null;
+
+  if (secretsError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/70 text-sm">Something went wrong loading game results.</p>
+        <button
+          onClick={() => navigate('/matches', { replace: true })}
+          className="px-6 py-3 rounded-2xl font-display font-bold text-sm"
+          style={{ background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.2)', color: 'white' }}
+        >
+          Back to Matches
+        </button>
+      </div>
+    );
+  }
+
+  if (!p1SecretId || !p2SecretId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/50 text-sm animate-pulse">Revealing characters...</p>
+      </div>
+    );
+  }
+
+  // ── Derived render values ────────────────────────────────────────
+  const didWin = result.winner === result.myRole;
+  const mySecretId = result.myRole === 'player1' ? p1SecretId : p2SecretId;
+  const myChar = characters.find((c) => c.id === mySecretId);
   const turnHistory = result.turnHistory ?? [];
 
   return (

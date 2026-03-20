@@ -669,32 +669,38 @@ export async function updateGameReady(gameId: string, userId: string): Promise<v
 
 // ─── Game Secrets ─────────────────────────────────────────────────────────────
 
-/** Insert a player's secret character. ON CONFLICT DO NOTHING for lobby re-joins. */
+/** Insert a player's secret character. ON CONFLICT DO NOTHING for lobby re-joins. Returns false on failure. */
 export async function insertGameSecret(
   gameId: string,
   playerId: string,
   characterId: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await supabase
+    const { error } = await supabase
       .from('game_secrets')
       .upsert(
         { game_id: gameId, player_id: playerId, character_id: characterId },
         { onConflict: 'game_id,player_id', ignoreDuplicates: true },
       );
+    if (error) { console.error('[insertGameSecret]', error.message); return false; }
+    return true;
   } catch (err) {
     console.error('[insertGameSecret]', err);
+    return false;
   }
 }
 
 /** Returns the current user's secret character ID for a game. */
 export async function getMySecret(gameId: string): Promise<string | null> {
   try {
-    const { data } = await supabase
+    const userId = (await supabase.auth.getUser()).data.user?.id ?? '';
+    const { data, error } = await supabase
       .from('game_secrets')
       .select('character_id')
       .eq('game_id', gameId)
+      .eq('player_id', userId)
       .maybeSingle();
+    if (error) { console.error('[getMySecret]', error.message); return null; }
     return (data as { character_id: string } | null)?.character_id ?? null;
   } catch (err) {
     console.error('[getMySecret]', err);

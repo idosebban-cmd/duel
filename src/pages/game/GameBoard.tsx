@@ -291,6 +291,16 @@ export function GameBoard() {
     setIsGuessing(true);
     try {
       const result = await checkGuess(mp.gameId, charId);
+      // checkGuess returns { correct: false, winner: null } on error — detect that
+      // by checking if winner is null AND correct is false with no real RPC response.
+      // A real "wrong guess" still returns winner (the opponent). So winner===null
+      // means the RPC failed.
+      if (!result.correct && result.winner === null) {
+        setErrorMsg('Network error — tap Guess to try again');
+        setTimeout(() => setErrorMsg(null), 4000);
+        return;
+      }
+
       const winner = result.correct
         ? myRole
         : (myRole === 'player1' ? 'player2' : 'player1');
@@ -301,6 +311,9 @@ export function GameBoard() {
       };
       mp.submitMove({ type: 'guess', guessedCharacterId: charId, correct: result.correct }, newState, winner);
       setShowGuessModal(false);
+    } catch {
+      setErrorMsg('Failed to check guess — try again');
+      setTimeout(() => setErrorMsg(null), 4000);
     } finally {
       setIsGuessing(false);
     }
