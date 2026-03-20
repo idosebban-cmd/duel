@@ -521,8 +521,10 @@ export interface GameRow {
   game_type: string;
   player1_id: string;
   player2_id: string;
+  owner: string;
   state: Record<string, unknown>;
   current_turn: string;
+  status: string;
   winner: string | null;
   created_at: string;
   updated_at: string;
@@ -560,22 +562,43 @@ export async function createOrJoinGame(
   const [p1, p2] = myUserId < opponentId
     ? [myUserId, opponentId]
     : [opponentId, myUserId];
+
+  // 1. Check if a game already exists for this match+type
   try {
-    await supabase
+    const { data: existing } = await supabase
+      .from('games')
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('game_type', gameType)
+      .is('winner', null)
+      .maybeSingle();
+    if (existing) return existing as GameRow;
+  } catch {
+    // Fall through to INSERT
+  }
+
+  // 2. No existing game — INSERT with owner column
+  try {
+    const { data: inserted, error } = await supabase
       .from('games')
       .insert({
         match_id: matchId,
         game_type: gameType,
         player1_id: p1,
         player2_id: p2,
+        owner: p1,
         state: initialState,
         current_turn: p1,
         status: 'pending',
-      });
+      })
+      .select()
+      .maybeSingle();
+    if (!error && inserted) return inserted as GameRow;
   } catch {
-    // 409 conflict is expected when both players create simultaneously
-    // Fall through to SELECT
+    // 409 conflict — other player inserted first
   }
+
+  // 3. Fallback SELECT (always reachable)
   try {
     const { data } = await supabase
       .from('games')
