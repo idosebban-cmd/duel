@@ -13,6 +13,11 @@
 - After every fix: commit, push, and remind me to create a PR
 - Always run git fetch origin && git log --oneline origin/main before
   starting work to confirm what's on main
+- Before writing any code that reads from or writes to Supabase,
+  run SELECT queries against the live DB to confirm every table
+  column, constraint, and RPC function actually exists with the
+  expected names and types. Never assume schema.sql matches the
+  live DB.
 
 ## Tech stack
 
