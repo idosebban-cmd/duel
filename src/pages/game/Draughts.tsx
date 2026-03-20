@@ -411,12 +411,14 @@ export function Draughts() {
     }
 
     // Victory check
-    const botAlive = newPieces.some(p => p.player === 'bot');
-    if (!botAlive) { setResult('player_wins'); setPhase('result'); return; }
-    const botHasMoves = newPieces.filter(p => p.player === 'bot').some(p =>
-      getValidDests(newPieces, p, hasAnyJump(newPieces, 'bot')).length > 0
-    );
-    if (!botHasMoves) { setResult('player_wins'); setPhase('result'); return; }
+    if (!isMultiplayer) {
+      const botAlive = newPieces.some(p => p.player === 'bot');
+      if (!botAlive) { setResult('player_wins'); setPhase('result'); return; }
+      const botHasMoves = newPieces.filter(p => p.player === 'bot').some(p =>
+        getValidDests(newPieces, p, hasAnyJump(newPieces, 'bot')).length > 0
+      );
+      if (!botHasMoves) { setResult('player_wins'); setPhase('result'); return; }
+    }
 
     setSelectedId(null);
     setValidDests([]);
