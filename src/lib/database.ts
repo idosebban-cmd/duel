@@ -676,15 +676,17 @@ export async function getGameByMatchId(matchId: string): Promise<GameRow | null>
 }
 
 /** Toggle a player's ready flag inside games.state.ready (via atomic RPC). */
-export async function updateGameReady(gameId: string, userId: string): Promise<void> {
+export async function updateGameReady(gameId: string, userId: string): Promise<{ data: unknown; error: unknown }> {
   try {
-    const { error } = await supabase.rpc('set_player_ready', {
+    const { data, error } = await supabase.rpc('set_player_ready', {
       p_game_id: gameId,
       p_user_id: userId,
     });
     if (error) console.error('[updateGameReady]', error.message);
+    return { data, error };
   } catch (err) {
     console.error('[updateGameReady] threw:', err);
+    return { data: null, error: err };
   }
 }
 
