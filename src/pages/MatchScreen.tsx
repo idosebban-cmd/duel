@@ -281,9 +281,7 @@ export function MatchScreen() {
 
         if (newlyAccepted) {
           clearInterval(id);
-          navigate(`/game/${newlyAccepted.match_id}/lobby`, {
-            state: { gameType: newlyAccepted.game_type },
-          });
+          navigate(`/game/${newlyAccepted.match_id}/lobby?type=${newlyAccepted.game_type}`);
         }
       } catch { /* retry on next tick */ }
     }, CHAT_POLL_MS);
@@ -307,7 +305,7 @@ export function MatchScreen() {
     try {
       await acceptChallenge(c.id);
       localStorage.setItem('pending_match_id', c.match_id);
-      navigate(`/game/${c.match_id}/lobby`, { state: { gameType: c.game_type } });
+      navigate(`/game/${c.match_id}/lobby?type=${c.game_type}`);
     } catch (err) {
       console.error('[MatchScreen] accept challenge error:', err);
       setChallengeError('Failed to accept challenge. Please try again.');

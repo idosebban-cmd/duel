@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swords } from '../../components/ui/Icons';
 import { useAuthStore } from '../../store/authStore';
@@ -12,6 +12,7 @@ import {
   getMatchById,
   updateGameReady,
   deleteGame,
+  insertGameSecret,
 } from '../../lib/database';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
@@ -31,8 +32,6 @@ function getInitialState(gameType: string, matchId: string): object {
       const board = generateGuessWhoBoard(matchId);
       return {
         characters: board.characters,
-        p1SecretId: board.p1SecretId,
-        p2SecretId: board.p2SecretId,
         p1Flipped: [] as string[],
         p2Flipped: [] as string[],
         turnPhase: 'ask' as const,
@@ -61,8 +60,8 @@ export function LobbyScreen() {
   // URL param is actually the matchId (set by GamePicker)
   const { gameId: matchId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const gameType = (location.state as { gameType?: string } | null)?.gameType;
+  const [searchParams] = useSearchParams();
+  const gameType = searchParams.get('type');
   const { user } = useAuthStore();
   const myUserId = user?.id ?? null;
   const {
@@ -137,6 +136,18 @@ export function LobbyScreen() {
           gameRowRef.current = row;
           setGameRow(row);
           setGameId(row.id);
+
+          // Insert my secret character into game_secrets (ON CONFLICT DO NOTHING for re-joins)
+          if (gameType === 'guess_who') {
+            const board = generateGuessWhoBoard(matchId);
+            const isPlayer1 = row.player1_id === myUserId;
+            const mySecretCharId = isPlayer1 ? board.p1SecretId : board.p2SecretId;
+            const ok = await insertGameSecret(row.id, myUserId, mySecretCharId);
+            if (!ok && !cancelled) {
+              setError('Failed to set up your secret character. Please leave and rejoin.');
+              return;
+            }
+          }
         } else {
           setError('Failed to create game');
         }

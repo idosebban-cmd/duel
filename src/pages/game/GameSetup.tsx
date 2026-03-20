@@ -67,7 +67,7 @@ export function GameSetup() {
       const data = await res.json();
       if (data.gameId) {
         setIdentity(userId, name, avatar);
-        navigate(`/game/${data.gameId}/lobby`);
+        navigate(`/game/${data.gameId}/lobby?type=guess_who`);
       } else {
         setError(data.error ?? 'Failed to create game');
       }
@@ -98,7 +98,7 @@ export function GameSetup() {
         return;
       }
       setIdentity(userId, name, avatar);
-      navigate(`/game/${gameId.trim()}/lobby`);
+      navigate(`/game/${gameId.trim()}/lobby?type=guess_who`);
     } catch {
       setError('Cannot reach server');
     }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
+import { getGameByMatchId, revealSecrets } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import type { Character } from '../../types/game';
 
@@ -11,8 +13,7 @@ interface ResultLocationState {
   myRole: 'player1' | 'player2';
   myUserId: string;
   opponentId: string;
-  p1SecretId: string;
-  p2SecretId: string;
+  gameId: string;
   characters: Character[];
   matchId: string;
   turnHistory: Array<{ asker: string; question: string; answer: string }>;
@@ -40,33 +41,98 @@ const CONFETTI_COLORS = ['#FF6BA8', '#4EFFC4', '#FFE66D', '#B565FF', '#FF3D71', 
 export function GameResult() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { gameId: urlMatchId } = useParams<{ gameId: string }>();
+  const { user } = useAuthStore();
   const store = useGameStore();
   const s = location.state as ResultLocationState | null;
 
-  // Redirect if location.state is missing/incomplete
-  useEffect(() => {
-    if (!s || !s.winner || !s.myRole || !s.characters) {
-      navigate('/matches', { replace: true });
-    }
-  }, [s, navigate]);
-
-  if (!s || !s.winner || !s.myRole || !s.characters) return null;
-
-  const didWin = s.winner === s.myRole;
-  const mySecretId = s.myRole === 'player1' ? s.p1SecretId : s.p2SecretId;
-  const opponentSecretId = s.myRole === 'player1' ? s.p2SecretId : s.p1SecretId;
-  const myChar = s.characters.find((c) => c.id === mySecretId);
-  const opponentChar = s.characters.find((c) => c.id === opponentSecretId);
-
-  // Detect first game with this match
-  const matchId = s.matchId ?? localStorage.getItem('pending_match_id');
-  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+  // ── All useState hooks (before any early returns) ────────────────
+  const [dbResult, setDbResult] = useState<ResultLocationState | null>(null);
+  const [loading, setLoading] = useState(!s);
   const [showChatUnlock, setShowChatUnlock] = useState(false);
+  const [p1SecretId, setP1SecretId] = useState<string | null>(null);
+  const [p2SecretId, setP2SecretId] = useState<string | null>(null);
+  const [secretsError, setSecretsError] = useState(false);
+
+  // ── All useEffect hooks (before any early returns) ───────────────
+
+  // DB fallback: load game from DB if location.state is missing (page refresh)
+  useEffect(() => {
+    if (s) return;
+    const mid = urlMatchId;
+    if (!mid || !user?.id) {
+      navigate('/matches', { replace: true });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const game = await getGameByMatchId(mid);
+        if (cancelled) return;
+        if (!game || !game.winner) {
+          navigate('/matches', { replace: true });
+          return;
+        }
+        const state = game.state as Record<string, unknown>;
+        const isP1 = game.player1_id === user.id;
+        setDbResult({
+          winner: game.winner as 'player1' | 'player2',
+          myRole: isP1 ? 'player1' : 'player2',
+          myUserId: user.id,
+          opponentId: isP1 ? game.player2_id : game.player1_id,
+          gameId: game.id,
+          characters: (state.characters as Character[]) ?? [],
+          matchId: game.match_id,
+          turnHistory: (state.turnHistory as Array<{ asker: string; question: string; answer: string }>) ?? [],
+          gameRowPlayer1Id: game.player1_id,
+          gameRowPlayer2Id: game.player2_id,
+        });
+      } catch {
+        if (!cancelled) navigate('/matches', { replace: true });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [s, urlMatchId, user?.id, navigate]);
+
+  const result = s ?? dbResult;
+
+  // Reveal secrets via RPC (with retry)
+  useEffect(() => {
+    const gId = result?.gameId;
+    if (!gId) return;
+    let cancelled = false;
+    let attempt = 0;
+
+    const tryReveal = async () => {
+      const secrets = await revealSecrets(gId);
+      if (cancelled) return;
+      if (secrets) {
+        setP1SecretId(secrets.p1_character_id);
+        setP2SecretId(secrets.p2_character_id);
+      } else if (attempt < 2) {
+        attempt++;
+        setTimeout(() => { if (!cancelled) tryReveal(); }, 2000);
+      } else {
+        setSecretsError(true);
+      }
+    };
+
+    tryReveal();
+    return () => { cancelled = true; };
+  }, [result?.gameId]);
+
+  // Derive values needed by the auto-redirect effect (safe even when result is null)
+  const matchId = result?.matchId ?? localStorage.getItem('pending_match_id') ?? '';
+  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+  const characters = result?.characters ?? [];
+  const opponentSecretId = result?.myRole === 'player1' ? p2SecretId : p1SecretId;
+  const opponentChar = opponentSecretId ? characters.find((c) => c.id === opponentSecretId) : undefined;
 
   // Auto-redirect to chat after 3s for first game with this match
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (!isFirstGame || !matchId) return;
+    if (!isFirstGame || !matchId || !p1SecretId || !p2SecretId) return;
 
     const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
     const redirectTimer = setTimeout(() => {
@@ -80,9 +146,48 @@ export function GameResult() {
       clearTimeout(redirectTimer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFirstGame, matchId]);
+  }, [isFirstGame, matchId, p1SecretId, p2SecretId]);
 
-  const turnHistory = s.turnHistory ?? [];
+  // ── Early returns (all hooks are above) ──────────────────────────
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
+      </div>
+    );
+  }
+
+  if (!result || !result.winner || !result.myRole || !result.characters) return null;
+
+  if (secretsError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/70 text-sm">Something went wrong loading game results.</p>
+        <button
+          onClick={() => navigate('/matches', { replace: true })}
+          className="px-6 py-3 rounded-2xl font-display font-bold text-sm"
+          style={{ background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.2)', color: 'white' }}
+        >
+          Back to Matches
+        </button>
+      </div>
+    );
+  }
+
+  if (!p1SecretId || !p2SecretId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/50 text-sm animate-pulse">Revealing characters...</p>
+      </div>
+    );
+  }
+
+  // ── Derived render values ────────────────────────────────────────
+  const didWin = result.winner === result.myRole;
+  const mySecretId = result.myRole === 'player1' ? p1SecretId : p2SecretId;
+  const myChar = characters.find((c) => c.id === mySecretId);
+  const turnHistory = result.turnHistory ?? [];
 
   return (
     <div
