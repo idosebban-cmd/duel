@@ -324,7 +324,7 @@ export async function recordSwipe(
     for (let attempt = 0; attempt < 2; attempt++) {
       const { data: match, error } = await supabase
         .from('matches')
-        .insert({ user_a: user1Id, user_b: user2Id })
+        .insert({ user_a: user1Id, user_b: user2Id, status: 'active' })
         .select('id')
         .maybeSingle();
 
