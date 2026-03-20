@@ -124,7 +124,6 @@ export function GameBoard() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mySecretId, setMySecretId] = useState('');
-  const [isGuessing, setIsGuessing] = useState(false);
 
   // ── Load my secret from game_secrets table ─────────────────────
   useEffect(() => {
@@ -286,38 +285,24 @@ export function GameBoard() {
   }, [canFlip]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGuess = useCallback(async (charId: string) => {
-    if (!gs || !isMyTurn || !mp.gameId || isGuessing) return;
+    if (!gs || !isMyTurn || !mp.gameId) return;
 
-    setIsGuessing(true);
     try {
       const result = await checkGuess(mp.gameId, charId);
-      // checkGuess returns { correct: false, winner: null } on error — detect that
-      // by checking if winner is null AND correct is false with no real RPC response.
-      // A real "wrong guess" still returns winner (the opponent). So winner===null
-      // means the RPC failed.
-      if (!result.correct && result.winner === null) {
+      if (!result) {
         setErrorMsg('Network error — tap Guess to try again');
         setTimeout(() => setErrorMsg(null), 4000);
         return;
       }
-
-      const winner = result.correct
-        ? myRole
-        : (myRole === 'player1' ? 'player2' : 'player1');
-
-      const newState: GuessWhoState = {
-        ...gs,
-        moveCount: gs.moveCount + 1,
-      };
-      mp.submitMove({ type: 'guess', guessedCharacterId: charId, correct: result.correct }, newState, winner);
+      // RPC handled move insert + game finalization atomically.
+      // Navigation to result screen happens via the existing useEffect
+      // that watches mp.gameRow.winner (picked up on next poll).
       setShowGuessModal(false);
     } catch {
       setErrorMsg('Failed to check guess — try again');
       setTimeout(() => setErrorMsg(null), 4000);
-    } finally {
-      setIsGuessing(false);
     }
-  }, [gs, isMyTurn, myRole, mp, isGuessing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gs, isMyTurn, mp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleForfeit = useCallback(() => {
     if (!gs) return;

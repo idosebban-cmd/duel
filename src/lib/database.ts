@@ -708,11 +708,13 @@ export async function getMySecret(gameId: string): Promise<string | null> {
   }
 }
 
-/** RPC: check a guess against opponent's secret. Returns { correct, winner }. */
+/** RPC: check a guess against opponent's secret.
+ *  The RPC handles everything atomically: move insert + game finalization.
+ *  Returns { correct, winner } on success, or null on error. */
 export async function checkGuess(
   gameId: string,
   guessedCharacter: string,
-): Promise<{ correct: boolean; winner: string | null }> {
+): Promise<{ correct: boolean; winner: string } | null> {
   try {
     const { data, error } = await supabase.rpc('check_guess', {
       p_game_id: gameId,
@@ -720,12 +722,12 @@ export async function checkGuess(
     });
     if (error) {
       console.error('[checkGuess]', error.message);
-      return { correct: false, winner: null };
+      return null;
     }
-    return data as { correct: boolean; winner: string | null };
+    return data as { correct: boolean; winner: string };
   } catch (err) {
     console.error('[checkGuess] threw:', err);
-    return { correct: false, winner: null };
+    return null;
   }
 }
 
