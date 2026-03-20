@@ -17,14 +17,24 @@ function piecesToDb(ps: Piece[], role: 'player1'|'player2'): DbPiece[] {
   const mine: 'p1'|'p2' = role === 'player1' ? 'p1' : 'p2';
   const theirs: 'p1'|'p2' = role === 'player1' ? 'p2' : 'p1';
   const flip = role === 'player2';
-  return ps.map(p => ({ id: p.id, row: flip ? 7 - p.row : p.row, col: flip ? 7 - p.col : p.col, isKing: p.isKing,
-    player: p.player === 'player' ? mine : theirs }));
+  return ps.map(p => ({
+    id: p.id,
+    row: flip ? 7 - p.row : p.row,
+    col: flip ? 7 - p.col : p.col,
+    isKing: p.isKing,
+    player: p.player === 'player' ? mine : theirs,
+  }));
 }
 function piecesFromDb(db: DbPiece[], role: 'player1'|'player2'): Piece[] {
   const mine: 'p1'|'p2' = role === 'player1' ? 'p1' : 'p2';
   const flip = role === 'player2';
-  return db.map(p => ({ id: p.id, row: flip ? 7 - p.row : p.row, col: flip ? 7 - p.col : p.col, isKing: p.isKing,
-    player: p.player === mine ? 'player' : 'bot' }));
+  return db.map(p => ({
+    id: p.id,
+    row: flip ? 7 - p.row : p.row,
+    col: flip ? 7 - p.col : p.col,
+    isKing: p.isKing,
+    player: p.player === mine ? 'player' : 'bot',
+  }));
 }
 function makeInitialDbPieces(role: 'player1'|'player2'): DbPiece[] {
   return piecesToDb(makeInitialPieces(), role);
