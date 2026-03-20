@@ -44,7 +44,7 @@ function getInitialState(gameType: string, matchId: string): object {
     case 'connect_four':
       return { board: Array.from({ length: 7 }, () => Array(6).fill(0)), moveCount: 0 };
     case 'battleship':
-      return { phase: 'placement', p1Ships: [], p2Ships: [], p1Grid: [], p2Grid: [], p1Shots: [], p2Shots: [] };
+      return { phase: 'placing_p1', p1Ships: [], p2Ships: [], p1Grid: [], p2Grid: [], p1Shots: [], p2Shots: [] };
     case 'draughts':
       return { pieces: [], moveCount: 0 };
     case 'word_blitz':
