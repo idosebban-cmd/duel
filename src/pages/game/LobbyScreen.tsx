@@ -43,10 +43,29 @@ function getInitialState(gameType: string, matchId: string): object {
     }
     case 'connect_four':
       return { board: Array.from({ length: 7 }, () => Array(6).fill(0)), moveCount: 0 };
-    case 'battleship':
-      return { phase: 'placing_p1', p1Ships: [], p2Ships: [], p1Grid: [], p2Grid: [], p1Shots: [], p2Shots: [] };
-    case 'draughts':
-      return { pieces: [], moveCount: 0 };
+    case 'battleship': {
+      const emptyShots = () => Array.from({ length: 10 }, () => Array(10).fill(null));
+      return {
+        phase: 'placing_p1',
+        p1Ships: null, p1Grid: null,
+        p2Ships: null, p2Grid: null,
+        p1Shots: emptyShots(), p2Shots: emptyShots(),
+      };
+    }
+    case 'draughts': {
+      // Generate initial 24-piece board using DB serialisation (p1 = bottom, p2 = top)
+      const pieces: Array<{ id: string; row: number; col: number; player: 'p1' | 'p2'; isKing: boolean }> = [];
+      let pid = 0;
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          if ((row + col) % 2 === 1) {
+            if (row < 3) pieces.push({ id: `b${pid++}`, row, col, player: 'p2', isKing: false });
+            if (row > 4) pieces.push({ id: `p${pid++}`, row, col, player: 'p1', isKing: false });
+          }
+        }
+      }
+      return { pieces, moveCount: 0 };
+    }
     case 'word_blitz':
       return { grid: [], pool: [], p1Score: 0, p2Score: 0, moveCount: 0 };
     case 'dot_dash':
