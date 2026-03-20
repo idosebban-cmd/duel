@@ -561,19 +561,9 @@ export async function createOrJoinGame(
     // Deterministic ordering: smaller UUID = player1
     const [p1, p2] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
 
-    // Check for an existing active game (no winner yet)
-    const { data: existing } = await supabase
-      .from('games')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('game_type', gameType)
-      .is('winner', null)
-      .maybeSingle();
-
-    if (existing) return existing as GameRow;
-
-    // No active game — insert a fresh row
-    const { data: inserted } = await supabase
+    // INSERT with ON CONFLICT (match_id, game_type) WHERE winner IS NULL → DO NOTHING
+    // This is safe against two clients racing: one wins the insert, the other no-ops.
+    await supabase
       .from('games')
       .insert({
         match_id: matchId,
@@ -584,24 +574,21 @@ export async function createOrJoinGame(
         current_turn: p1,
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    return (inserted as GameRow) ?? null;
+    // Always SELECT the canonical row (handles both insert-winner and conflict-loser)
+    const { data: row } = await supabase
+      .from('games')
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('game_type', gameType)
+      .is('winner', null)
+      .maybeSingle();
+
+    return (row as GameRow) ?? null;
   } catch (err) {
     console.error('[createOrJoinGame]', err);
-    // Last-resort fallback: try to fetch existing active row
-    try {
-      const { data: fallback } = await supabase
-        .from('games')
-        .select('*')
-        .eq('match_id', matchId)
-        .eq('game_type', gameType)
-        .is('winner', null)
-        .maybeSingle();
-      return (fallback as GameRow) ?? null;
-    } catch {
-      return null;
-    }
+    return null;
   }
 }
 
@@ -677,6 +664,81 @@ export async function updateGameReady(gameId: string, userId: string): Promise<v
     if (error) console.error('[updateGameReady]', error.message);
   } catch (err) {
     console.error('[updateGameReady] threw:', err);
+  }
+}
+
+// ─── Game Secrets ─────────────────────────────────────────────────────────────
+
+/** Insert a player's secret character. ON CONFLICT DO NOTHING for lobby re-joins. */
+export async function insertGameSecret(
+  gameId: string,
+  playerId: string,
+  characterId: string,
+): Promise<void> {
+  try {
+    await supabase
+      .from('game_secrets')
+      .upsert(
+        { game_id: gameId, player_id: playerId, character_id: characterId },
+        { onConflict: 'game_id,player_id', ignoreDuplicates: true },
+      );
+  } catch (err) {
+    console.error('[insertGameSecret]', err);
+  }
+}
+
+/** Returns the current user's secret character ID for a game. */
+export async function getMySecret(gameId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from('game_secrets')
+      .select('character_id')
+      .eq('game_id', gameId)
+      .maybeSingle();
+    return (data as { character_id: string } | null)?.character_id ?? null;
+  } catch (err) {
+    console.error('[getMySecret]', err);
+    return null;
+  }
+}
+
+/** RPC: check a guess against opponent's secret. Returns { correct, winner }. */
+export async function checkGuess(
+  gameId: string,
+  guessedCharacter: string,
+): Promise<{ correct: boolean; winner: string | null }> {
+  try {
+    const { data, error } = await supabase.rpc('check_guess', {
+      p_game_id: gameId,
+      p_guessed_character: guessedCharacter,
+    });
+    if (error) {
+      console.error('[checkGuess]', error.message);
+      return { correct: false, winner: null };
+    }
+    return data as { correct: boolean; winner: string | null };
+  } catch (err) {
+    console.error('[checkGuess] threw:', err);
+    return { correct: false, winner: null };
+  }
+}
+
+/** RPC: reveal both players' secrets (only works after game has a winner). */
+export async function revealSecrets(
+  gameId: string,
+): Promise<{ p1_character_id: string; p2_character_id: string } | null> {
+  try {
+    const { data, error } = await supabase.rpc('reveal_secrets', {
+      p_game_id: gameId,
+    });
+    if (error) {
+      console.error('[revealSecrets]', error.message);
+      return null;
+    }
+    return data as { p1_character_id: string; p2_character_id: string } | null;
+  } catch (err) {
+    console.error('[revealSecrets] threw:', err);
+    return null;
   }
 }
 

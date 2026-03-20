@@ -12,6 +12,7 @@ import {
   getMatchById,
   updateGameReady,
   deleteGame,
+  insertGameSecret,
 } from '../../lib/database';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
@@ -31,8 +32,6 @@ function getInitialState(gameType: string, matchId: string): object {
       const board = generateGuessWhoBoard(matchId);
       return {
         characters: board.characters,
-        p1SecretId: board.p1SecretId,
-        p2SecretId: board.p2SecretId,
         p1Flipped: [] as string[],
         p2Flipped: [] as string[],
         turnPhase: 'ask' as const,
@@ -137,6 +136,14 @@ export function LobbyScreen() {
           gameRowRef.current = row;
           setGameRow(row);
           setGameId(row.id);
+
+          // Insert my secret character into game_secrets (ON CONFLICT DO NOTHING for re-joins)
+          if (gameType === 'guess_who') {
+            const board = generateGuessWhoBoard(matchId);
+            const isPlayer1 = row.player1_id === myUserId;
+            const mySecretCharId = isPlayer1 ? board.p1SecretId : board.p2SecretId;
+            await insertGameSecret(row.id, myUserId, mySecretCharId);
+          }
         } else {
           setError('Failed to create game');
         }

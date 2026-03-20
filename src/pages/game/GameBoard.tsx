@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
+import { getMySecret, checkGuess } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import { GuessModal } from '../../components/game/GuessModal';
 import type { Character } from '../../types/game';
@@ -25,8 +26,6 @@ interface GWTurnHistory {
 
 interface GuessWhoState {
   characters: Character[];
-  p1SecretId: string;
-  p2SecretId: string;
   p1Flipped: string[];
   p2Flipped: string[];
   turnPhase: 'ask' | 'answer' | 'flip';
@@ -87,8 +86,6 @@ export function GameBoard() {
   const initialState: GuessWhoState = boardRef.current
     ? {
         characters: boardRef.current.characters,
-        p1SecretId: boardRef.current.p1SecretId,
-        p2SecretId: boardRef.current.p2SecretId,
         p1Flipped: [],
         p2Flipped: [],
         turnPhase: 'ask',
@@ -99,8 +96,6 @@ export function GameBoard() {
       }
     : {
         characters: [],
-        p1SecretId: '',
-        p2SecretId: '',
         p1Flipped: [],
         p2Flipped: [],
         turnPhase: 'ask',
@@ -128,6 +123,19 @@ export function GameBoard() {
   const [elapsed, setElapsed] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [mySecretId, setMySecretId] = useState('');
+  const [isGuessing, setIsGuessing] = useState(false);
+
+  // ── Load my secret from game_secrets table ─────────────────────
+  useEffect(() => {
+    if (!mp.gameId) return;
+    let cancelled = false;
+    (async () => {
+      const charId = await getMySecret(mp.gameId!);
+      if (!cancelled && charId) setMySecretId(charId);
+    })();
+    return () => { cancelled = true; };
+  }, [mp.gameId]);
 
   // ── Elapsed timer ─────────────────────────────────────────────
   useEffect(() => {
@@ -158,8 +166,7 @@ export function GameBoard() {
         myRole,
         myUserId,
         opponentId: mp.opponentId,
-        p1SecretId: gs.p1SecretId,
-        p2SecretId: gs.p2SecretId,
+        gameId: mp.gameRow.id,
         characters: gs.characters,
         matchId,
         turnHistory: gs.turnHistory ?? [],
@@ -182,7 +189,6 @@ export function GameBoard() {
 
   // ── Derived values ────────────────────────────────────────────
   const characters = gs?.characters ?? [];
-  const mySecretId = gs ? (myRole === 'player1' ? gs.p1SecretId : gs.p2SecretId) ?? '' : '';
   const myFlipped = gs ? (myRole === 'player1' ? gs.p1Flipped : gs.p2Flipped) ?? [] : [];
   const myChar = characters.find((c) => c.id === mySecretId);
   const turnPhase = gs?.turnPhase ?? 'ask';
@@ -279,21 +285,26 @@ export function GameBoard() {
     store.togglePendingFlip(charId);
   }, [canFlip]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleGuess = useCallback((charId: string) => {
-    if (!gs || !isMyTurn) return;
+  const handleGuess = useCallback(async (charId: string) => {
+    if (!gs || !isMyTurn || !mp.gameId || isGuessing) return;
 
-    // Determine opponent's secret
-    const opponentSecretId = myRole === 'player1' ? gs.p2SecretId : gs.p1SecretId;
-    const correct = charId === opponentSecretId;
-    const winner = correct ? myRole : (myRole === 'player1' ? 'player2' : 'player1');
+    setIsGuessing(true);
+    try {
+      const result = await checkGuess(mp.gameId, charId);
+      const winner = result.correct
+        ? myRole
+        : (myRole === 'player1' ? 'player2' : 'player1');
 
-    const newState: GuessWhoState = {
-      ...gs,
-      moveCount: gs.moveCount + 1,
-    };
-    mp.submitMove({ type: 'guess', guessedCharacterId: charId, correct }, newState, winner);
-    setShowGuessModal(false);
-  }, [gs, isMyTurn, myRole, mp]); // eslint-disable-line react-hooks/exhaustive-deps
+      const newState: GuessWhoState = {
+        ...gs,
+        moveCount: gs.moveCount + 1,
+      };
+      mp.submitMove({ type: 'guess', guessedCharacterId: charId, correct: result.correct }, newState, winner);
+      setShowGuessModal(false);
+    } finally {
+      setIsGuessing(false);
+    }
+  }, [gs, isMyTurn, myRole, mp, isGuessing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleForfeit = useCallback(() => {
     if (!gs) return;

@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
-import { getGameByMatchId } from '../../lib/database';
+import { getGameByMatchId, revealSecrets } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import type { Character } from '../../types/game';
 
@@ -13,8 +13,7 @@ interface ResultLocationState {
   myRole: 'player1' | 'player2';
   myUserId: string;
   opponentId: string;
-  p1SecretId: string;
-  p2SecretId: string;
+  gameId: string;
   characters: Character[];
   matchId: string;
   turnHistory: Array<{ asker: string; question: string; answer: string }>;
@@ -52,6 +51,10 @@ export function GameResult() {
   const [loading, setLoading] = useState(!s);
   const [showChatUnlock, setShowChatUnlock] = useState(false);
 
+  // Revealed secrets from RPC
+  const [p1SecretId, setP1SecretId] = useState<string | null>(null);
+  const [p2SecretId, setP2SecretId] = useState<string | null>(null);
+
   // If location.state is missing, try to load from DB
   useEffect(() => {
     if (s) return; // fast path — already have state
@@ -76,8 +79,7 @@ export function GameResult() {
           myRole: isP1 ? 'player1' : 'player2',
           myUserId: user.id,
           opponentId: isP1 ? game.player2_id : game.player1_id,
-          p1SecretId: (state.p1SecretId as string) ?? '',
-          p2SecretId: (state.p2SecretId as string) ?? '',
+          gameId: game.id,
           characters: (state.characters as Character[]) ?? [],
           matchId: game.match_id,
           turnHistory: (state.turnHistory as Array<{ asker: string; question: string; answer: string }>) ?? [],
@@ -96,6 +98,22 @@ export function GameResult() {
   // Use location.state (fast path) or DB result (refresh path)
   const result = s ?? dbResult;
 
+  // Reveal secrets via RPC once we have the gameId
+  useEffect(() => {
+    const gId = result?.gameId;
+    if (!gId) return;
+    let cancelled = false;
+    (async () => {
+      const secrets = await revealSecrets(gId);
+      if (cancelled) return;
+      if (secrets) {
+        setP1SecretId(secrets.p1_character_id);
+        setP2SecretId(secrets.p2_character_id);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [result?.gameId]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
@@ -106,9 +124,18 @@ export function GameResult() {
 
   if (!result || !result.winner || !result.myRole || !result.characters) return null;
 
+  // Show loading while secrets haven't been revealed yet
+  if (!p1SecretId || !p2SecretId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/50 text-sm animate-pulse">Revealing characters...</p>
+      </div>
+    );
+  }
+
   const didWin = result.winner === result.myRole;
-  const mySecretId = result.myRole === 'player1' ? result.p1SecretId : result.p2SecretId;
-  const opponentSecretId = result.myRole === 'player1' ? result.p2SecretId : result.p1SecretId;
+  const mySecretId = result.myRole === 'player1' ? p1SecretId : p2SecretId;
+  const opponentSecretId = result.myRole === 'player1' ? p2SecretId : p1SecretId;
   const myChar = result.characters.find((c) => c.id === mySecretId);
   const opponentChar = result.characters.find((c) => c.id === opponentSecretId);
 
