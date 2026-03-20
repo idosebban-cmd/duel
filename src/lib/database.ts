@@ -557,12 +557,10 @@ export async function createOrJoinGame(
   opponentId: string,
   initialState: object,
 ): Promise<GameRow | null> {
+  const [p1, p2] = myUserId < opponentId
+    ? [myUserId, opponentId]
+    : [opponentId, myUserId];
   try {
-    // Deterministic ordering: smaller UUID = player1
-    const [p1, p2] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
-
-    // INSERT with ON CONFLICT (match_id, game_type) WHERE winner IS NULL → DO NOTHING
-    // This is safe against two clients racing: one wins the insert, the other no-ops.
     await supabase
       .from('games')
       .insert({
@@ -572,22 +570,22 @@ export async function createOrJoinGame(
         player2_id: p2,
         state: initialState,
         current_turn: p1,
-      })
-      .select()
-      .maybeSingle();
-
-    // Always SELECT the canonical row (handles both insert-winner and conflict-loser)
-    const { data: row } = await supabase
+        status: 'pending',
+      });
+  } catch {
+    // 409 conflict is expected when both players create simultaneously
+    // Fall through to SELECT
+  }
+  try {
+    const { data } = await supabase
       .from('games')
       .select('*')
       .eq('match_id', matchId)
       .eq('game_type', gameType)
       .is('winner', null)
       .maybeSingle();
-
-    return (row as GameRow) ?? null;
-  } catch (err) {
-    console.error('[createOrJoinGame]', err);
+    return (data as GameRow) ?? null;
+  } catch {
     return null;
   }
 }
