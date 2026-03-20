@@ -699,6 +699,7 @@ export async function submitGameMove(
           state: newState,
           current_turn: winner ? null : nextTurnId,
           winner: winner ?? null,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', gameId),
     ]);
