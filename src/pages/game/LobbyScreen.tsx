@@ -219,9 +219,27 @@ export function LobbyScreen() {
   }, [gameRow, myUserId, startCountdown]);
 
   const handleCountdownComplete = useCallback(() => {
-    // Navigate using matchId — GameBoard expects it in the URL
-    navigate(`/game/${matchId}/play`);
-  }, [matchId, navigate]);
+    switch (gameType) {
+      case 'word_blitz':
+        navigate(`/games/word-blitz/${matchId}`);
+        break;
+      case 'draughts':
+        navigate(`/games/draughts/${matchId}`);
+        break;
+      case 'connect_four':
+        navigate(`/games/connect-four/${matchId}`);
+        break;
+      case 'battleship':
+        navigate(`/games/battleship/${matchId}`);
+        break;
+      case 'dot_dash':
+        navigate(`/dotdash/${matchId}/play`);
+        break;
+      default: // guess_who
+        navigate(`/game/${matchId}/play`);
+        break;
+    }
+  }, [matchId, gameType, navigate]);
 
   // ── Ready button ───────────────────────────────────────────────
   const handleReady = async () => {
