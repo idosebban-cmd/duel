@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swords } from '../../components/ui/Icons';
 import { useAuthStore } from '../../store/authStore';
@@ -25,10 +25,44 @@ function useTimer(seconds: number) {
   return `${mins}:${secs}`;
 }
 
+function getInitialState(gameType: string, matchId: string): object {
+  switch (gameType) {
+    case 'guess_who': {
+      const board = generateGuessWhoBoard(matchId);
+      return {
+        characters: board.characters,
+        p1SecretId: board.p1SecretId,
+        p2SecretId: board.p2SecretId,
+        p1Flipped: [] as string[],
+        p2Flipped: [] as string[],
+        turnPhase: 'ask' as const,
+        currentQuestion: null,
+        currentAnswer: null,
+        turnHistory: [] as Array<{ asker: string; question: string; answer: string }>,
+        moveCount: 0,
+      };
+    }
+    case 'connect_four':
+      return { board: Array(6).fill(Array(7).fill(0)), moveCount: 0 };
+    case 'battleship':
+      return { phase: 'placement', p1Ships: [], p2Ships: [], p1Grid: [], p2Grid: [], p1Shots: [], p2Shots: [] };
+    case 'draughts':
+      return { pieces: [], moveCount: 0 };
+    case 'word_blitz':
+      return { grid: [], pool: [], p1Score: 0, p2Score: 0, moveCount: 0 };
+    case 'dot_dash':
+      return {};
+    default:
+      return {};
+  }
+}
+
 export function LobbyScreen() {
   // URL param is actually the matchId (set by GamePicker)
   const { gameId: matchId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const gameType = (location.state as { gameType?: string } | null)?.gameType;
   const { user } = useAuthStore();
   const myUserId = user?.id ?? null;
   const {
@@ -50,12 +84,16 @@ export function LobbyScreen() {
   const countdownStartedRef = useRef(false);
   const mountedAtRef = useRef(Date.now());
 
-  // ── Redirect if not authenticated ──────────────────────────────
+  // ── Redirect if missing gameType or not authenticated ─────────
   useEffect(() => {
+    if (!gameType) {
+      navigate('/matches', { replace: true });
+      return;
+    }
     if (!myUserId && matchId) {
       navigate(`/game?join=${matchId}`, { replace: true });
     }
-  }, [myUserId, matchId, navigate]);
+  }, [gameType, myUserId, matchId, navigate]);
 
   // ── Create / join game on mount ────────────────────────────────
   useEffect(() => {
@@ -92,20 +130,8 @@ export function LobbyScreen() {
         }
 
         // Create or join the game row
-        const board = generateGuessWhoBoard(matchId);
-        const guessWhoInitial = {
-          characters: board.characters,
-          p1SecretId: board.p1SecretId,
-          p2SecretId: board.p2SecretId,
-          p1Flipped: [] as string[],
-          p2Flipped: [] as string[],
-          turnPhase: 'ask' as const,
-          currentQuestion: null,
-          currentAnswer: null,
-          turnHistory: [] as Array<{ asker: string; question: string; answer: string }>,
-          moveCount: 0,
-        };
-        const row = await createOrJoinGame(matchId, 'guess_who', myUserId, opponentId, guessWhoInitial);
+        const initialState = getInitialState(gameType!, matchId);
+        const row = await createOrJoinGame(matchId, gameType!, myUserId, opponentId, initialState);
         if (cancelled) return;
         if (row) {
           gameRowRef.current = row;
