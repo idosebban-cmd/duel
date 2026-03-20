@@ -19,6 +19,14 @@
   expected names and types. Never assume schema.sql matches the
   live DB.
 
+## Git & deploy workflow
+
+- One branch per session — start fresh from main, never reuse a merged branch
+- Strict pipeline: branch → PR → merge to main → confirm Netlify deploy → then test
+- Verify fix is on main before closing a bug — git log main must contain the commit
+- Check Netlify deploy hash matches latest main commit before testing on playduel.app
+- QA against main/production only — never against the feature branch
+
 ## Tech stack
 
 - React + Vite + TypeScript + Tailwind
