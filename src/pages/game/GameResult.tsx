@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
+import { getGameByMatchId } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import type { Character } from '../../types/game';
 
@@ -40,31 +42,81 @@ const CONFETTI_COLORS = ['#FF6BA8', '#4EFFC4', '#FFE66D', '#B565FF', '#FF3D71', 
 export function GameResult() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { gameId: urlMatchId } = useParams<{ gameId: string }>();
+  const { user } = useAuthStore();
   const store = useGameStore();
   const s = location.state as ResultLocationState | null;
 
-  // Redirect if location.state is missing/incomplete
-  useEffect(() => {
-    if (!s || !s.winner || !s.myRole || !s.characters) {
-      navigate('/matches', { replace: true });
-    }
-  }, [s, navigate]);
-
-  if (!s || !s.winner || !s.myRole || !s.characters) return null;
-
-  const didWin = s.winner === s.myRole;
-  const mySecretId = s.myRole === 'player1' ? s.p1SecretId : s.p2SecretId;
-  const opponentSecretId = s.myRole === 'player1' ? s.p2SecretId : s.p1SecretId;
-  const myChar = s.characters.find((c) => c.id === mySecretId);
-  const opponentChar = s.characters.find((c) => c.id === opponentSecretId);
-
-  // Detect first game with this match
-  const matchId = s.matchId ?? localStorage.getItem('pending_match_id');
-  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+  // DB fallback state (for page refresh when location.state is lost)
+  const [dbResult, setDbResult] = useState<ResultLocationState | null>(null);
+  const [loading, setLoading] = useState(!s);
   const [showChatUnlock, setShowChatUnlock] = useState(false);
 
+  // If location.state is missing, try to load from DB
+  useEffect(() => {
+    if (s) return; // fast path — already have state
+    const mid = urlMatchId;
+    if (!mid || !user?.id) {
+      navigate('/matches', { replace: true });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const game = await getGameByMatchId(mid);
+        if (cancelled) return;
+        if (!game || !game.winner) {
+          navigate('/matches', { replace: true });
+          return;
+        }
+        const state = game.state as Record<string, unknown>;
+        const isP1 = game.player1_id === user.id;
+        setDbResult({
+          winner: game.winner as 'player1' | 'player2',
+          myRole: isP1 ? 'player1' : 'player2',
+          myUserId: user.id,
+          opponentId: isP1 ? game.player2_id : game.player1_id,
+          p1SecretId: (state.p1SecretId as string) ?? '',
+          p2SecretId: (state.p2SecretId as string) ?? '',
+          characters: (state.characters as Character[]) ?? [],
+          matchId: game.match_id,
+          turnHistory: (state.turnHistory as Array<{ asker: string; question: string; answer: string }>) ?? [],
+          gameRowPlayer1Id: game.player1_id,
+          gameRowPlayer2Id: game.player2_id,
+        });
+      } catch {
+        if (!cancelled) navigate('/matches', { replace: true });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [s, urlMatchId, user?.id, navigate]);
+
+  // Use location.state (fast path) or DB result (refresh path)
+  const result = s ?? dbResult;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
+        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
+      </div>
+    );
+  }
+
+  if (!result || !result.winner || !result.myRole || !result.characters) return null;
+
+  const didWin = result.winner === result.myRole;
+  const mySecretId = result.myRole === 'player1' ? result.p1SecretId : result.p2SecretId;
+  const opponentSecretId = result.myRole === 'player1' ? result.p2SecretId : result.p1SecretId;
+  const myChar = result.characters.find((c) => c.id === mySecretId);
+  const opponentChar = result.characters.find((c) => c.id === opponentSecretId);
+
+  // Detect first game with this match
+  const matchId = result.matchId ?? localStorage.getItem('pending_match_id');
+  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+
   // Auto-redirect to chat after 3s for first game with this match
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (!isFirstGame || !matchId) return;
 
@@ -82,7 +134,7 @@ export function GameResult() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFirstGame, matchId]);
 
-  const turnHistory = s.turnHistory ?? [];
+  const turnHistory = result.turnHistory ?? [];
 
   return (
     <div

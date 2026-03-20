@@ -650,20 +650,33 @@ export async function getGame(gameId: string): Promise<GameRow | null> {
   }
 }
 
-/** Toggle a player's ready flag inside games.state.ready */
+/** Returns the most recent completed game for a match (winner IS NOT NULL). */
+export async function getGameByMatchId(matchId: string): Promise<GameRow | null> {
+  try {
+    const { data } = await supabase
+      .from('games')
+      .select('*')
+      .eq('match_id', matchId)
+      .not('winner', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data as GameRow | null;
+  } catch {
+    return null;
+  }
+}
+
+/** Toggle a player's ready flag inside games.state.ready (via atomic RPC). */
 export async function updateGameReady(gameId: string, userId: string): Promise<void> {
   try {
-    const game = await getGame(gameId);
-    if (!game) return;
-    const state = (game.state ?? {}) as Record<string, unknown>;
-    const ready = ((state.ready as Record<string, boolean>) ?? {});
-    ready[userId] = true;
-    await supabase
-      .from('games')
-      .update({ state: { ...state, ready } })
-      .eq('id', gameId);
+    const { error } = await supabase.rpc('set_player_ready', {
+      p_game_id: gameId,
+      p_user_id: userId,
+    });
+    if (error) console.error('[updateGameReady]', error.message);
   } catch (err) {
-    console.error('[updateGameReady]', err);
+    console.error('[updateGameReady] threw:', err);
   }
 }
 
@@ -677,7 +690,7 @@ export async function deleteGame(gameId: string): Promise<void> {
 }
 
 /**
- * Atomically records a move + updates game state + advances the turn.
+ * Atomically records a move + updates game state + advances the turn (via RPC).
  * Pass winner = 'player1' | 'player2' | 'draw' to end the game.
  */
 export async function submitGameMove(
@@ -685,26 +698,21 @@ export async function submitGameMove(
   playerId: string,
   moveData: object,
   newState: object,
-  nextTurnId: string,
+  nextTurn: string,
   winner?: string | null,
 ): Promise<void> {
   try {
-    await Promise.all([
-      supabase
-        .from('moves')
-        .insert({ game_id: gameId, player_id: playerId, move_data: moveData }),
-      supabase
-        .from('games')
-        .update({
-          state: newState,
-          current_turn: winner ? null : nextTurnId,
-          winner: winner ?? null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', gameId),
-    ]);
-  } catch {
-    // Polling will reconcile state on next tick
+    const { error } = await supabase.rpc('submit_move', {
+      p_game_id: gameId,
+      p_player_id: playerId,
+      p_move: moveData,
+      p_new_state: newState,
+      p_next_turn: nextTurn,
+      p_winner: winner ?? null,
+    });
+    if (error) console.error('[submitGameMove]', error.message);
+  } catch (err) {
+    console.error('[submitGameMove] threw:', err);
   }
 }
 

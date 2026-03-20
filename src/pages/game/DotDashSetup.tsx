@@ -50,7 +50,7 @@ export function DotDashSetup() {
       const data = await res.json();
       if (data.gameId) {
         store.setIdentity(userId, name.trim(), avatar);
-        navigate(`/dotdash/${data.gameId}/lobby`);
+        navigate(`/dotdash/${data.gameId}/lobby?type=dot_dash`);
       } else {
         setError(data.error ?? 'Failed to create game');
       }
@@ -72,7 +72,7 @@ export function DotDashSetup() {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Failed to join'); return; }
       store.setIdentity(userId, name.trim(), avatar);
-      navigate(`/dotdash/${gameId.trim()}/lobby`);
+      navigate(`/dotdash/${gameId.trim()}/lobby?type=dot_dash`);
     } catch { setError('Cannot reach server'); }
     finally  { setBusy(false); }
   };

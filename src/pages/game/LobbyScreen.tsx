@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swords } from '../../components/ui/Icons';
 import { useAuthStore } from '../../store/authStore';
@@ -61,8 +61,8 @@ export function LobbyScreen() {
   // URL param is actually the matchId (set by GamePicker)
   const { gameId: matchId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const gameType = (location.state as { gameType?: string } | null)?.gameType;
+  const [searchParams] = useSearchParams();
+  const gameType = searchParams.get('type');
   const { user } = useAuthStore();
   const myUserId = user?.id ?? null;
   const {
