@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { isValidWord, scoreWord } from '../../utils/wordList';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -449,7 +450,10 @@ export function WordBlitz() {
   const seed   = matchId || 'demo';
 
   // ── Phase ─────────────────────────────────────────────────────────────────
+  const isMultiplayer = !!matchId && matchId !== 'demo';
   const [phase, setPhase] = useState<Phase>('setup');
+
+  usePostGameRedirect({ isMultiplayer, matchId: matchId ?? null, phase });
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);

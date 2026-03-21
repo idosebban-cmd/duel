@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDotDashStore } from '../../store/dotDashStore';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 
 function ConfettiPiece({ color, delay }: { color: string; delay: number }) {
   const x   = Math.random() * 100;
@@ -31,6 +32,9 @@ export function DotDashResult() {
 
   // Detect first game with this match
   const matchId = localStorage.getItem('pending_match_id');
+
+  usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
+
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const [showChatUnlock, setShowChatUnlock] = useState(false);
 

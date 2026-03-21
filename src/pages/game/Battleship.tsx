@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 
 // ── Multiplayer state shape ────────────────────────────────────────────────────
 // phase hierarchy: 'placing_p1' → 'placing_p2' → 'battle' → 'result'
@@ -373,6 +374,8 @@ export function Battleship() {
 
   // ── Phase ────────────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('placement');
+
+  usePostGameRedirect({ isMultiplayer, matchId, phase });
 
   // ── Placement ────────────────────────────────────────────────────────────
   const [myGrid,      setMyGrid]      = useState<Grid>(makeGrid);
