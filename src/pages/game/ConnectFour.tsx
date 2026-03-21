@@ -439,6 +439,12 @@ export function ConnectFour() {
     navigate(`/match/${matchId}`);
   };
 
+  useEffect(() => {
+    if (phase === 'result') {
+      window.history.replaceState(null, '', `/matches`);
+    }
+  }, [phase]);
+
   // ── Derived ───────────────────────────────────────────────────────────────
   const winCellSet = new Set((winCells ?? []).map(([c, r]) => `${c},${r}`));
 

@@ -555,6 +555,12 @@ export function Draughts() {
   const botCount     = pieces.filter(p => p.player === 'bot').length;
   const playerKings  = pieces.filter(p => p.player === 'player' && p.isKing).length;
 
+  useEffect(() => {
+    if (phase === 'result') {
+      window.history.replaceState(null, '', `/matches`);
+    }
+  }, [phase]);
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A1628' }}>
