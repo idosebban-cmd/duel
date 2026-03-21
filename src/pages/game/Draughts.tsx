@@ -585,7 +585,7 @@ export function Draughts() {
             botCaptures={botCaptures}
             moves={moves}
             playerKings={playerKings}
-            onBack={() => navigate('/play')}
+            onBack={() => navigate('/matches')}
             onChat={() => {
               if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
               navigate('/chat', matchId ? { state: { matchId } } : undefined);
@@ -775,7 +775,7 @@ export function Draughts() {
             Leave Game
           </button>
         ) : (
-          <button onClick={() => navigate('/play')} className="font-body text-xs"
+          <button onClick={() => navigate('/matches')} className="font-body text-xs"
             style={{ color: 'rgba(255,255,255,0.28)' }}>
             ← Games
           </button>

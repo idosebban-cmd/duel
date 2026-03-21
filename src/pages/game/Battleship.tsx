@@ -701,7 +701,7 @@ export function Battleship() {
         {phase === 'result' && result && (
           <ResultScreen
             result={result} myShots={myShots} playerSunk={playerSunkCount}
-            onBack={() => navigate('/play')}
+            onBack={() => navigate('/matches')}
             onChat={() => {
               if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
               navigate('/chat', matchId ? { state: { matchId } } : undefined);
@@ -715,7 +715,7 @@ export function Battleship() {
         <>
           <div className="flex-none px-4 pt-4 pb-2">
             <div className="flex items-center gap-2 mb-0.5">
-              <button onClick={() => navigate('/play')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>← Games</button>
+              <button onClick={() => navigate('/matches')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>← Games</button>
             </div>
             <h1 className="font-display text-2xl text-center" style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.5)' }}>
               DEPLOY YOUR FLEET
@@ -926,7 +926,7 @@ export function Battleship() {
                 Leave Game
               </button>
             ) : (
-              <button onClick={() => navigate('/play')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
+              <button onClick={() => navigate('/matches')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
                 ← Games
               </button>
             )}
