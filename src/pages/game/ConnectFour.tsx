@@ -196,10 +196,9 @@ function SetupScreen({ playerChar, onDone }: { playerChar: string; onDone: () =>
 }
 
 // ── Result screen ─────────────────────────────────────────────────────────────
-function ResultScreen({ result, moves, onRematch, onBack, onChat }: {
+function ResultScreen({ result, moves, onBack, onChat }: {
   result: 'player_wins' | 'bot_wins' | 'draw';
   moves: number;
-  onRematch: () => void;
   onBack: () => void;
   onChat: () => void;
 }) {
@@ -243,11 +242,6 @@ function ResultScreen({ result, moves, onRematch, onBack, onChat }: {
           style={{ background: 'linear-gradient(135deg,#00F5FF,#FF006E)', color: '#12122A', border: '3px solid rgba(255,255,255,0.2)', boxShadow: '0 0 28px rgba(0,245,255,0.45),4px 4px 0 rgba(0,0,0,0.35)' }}
           whileTap={{ scale: 0.97 }}>
           START CHATTING →
-        </motion.button>
-        <motion.button onClick={onRematch} className="w-full py-3 rounded-2xl font-display text-base mb-2"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
-          whileTap={{ scale: 0.97 }}>
-          REMATCH ↺
         </motion.button>
         <button onClick={onBack} className="font-body text-sm w-full py-2"
           style={{ color: 'rgba(255,255,255,0.3)' }}>
@@ -403,6 +397,7 @@ export function ConnectFour() {
     prevUpdatedAtRef.current = mp.gameRow.updated_at;
 
     // Game ended (winner set by opponent or by me)
+    if (leavingRef.current) return;
     if (mp.gameRow.winner && phase !== 'result') {
       const iWon = mp.gameRow.winner === myRole || mp.gameRow.winner === 'draw';
       setResult(
@@ -437,24 +432,11 @@ export function ConnectFour() {
   }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
   // ── Leave game (Rule 3) ───────────────────────────────────────────────────
+  const leavingRef = useRef(false);
   const handleLeaveConfirm = async () => {
+    leavingRef.current = true;
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
     navigate(`/match/${matchId}`);
-  };
-
-  // ── Rematch ───────────────────────────────────────────────────────────────
-  const handleRematch = () => {
-    const fresh = makeBoard();
-    boardRef.current = fresh;
-    setBoard(fresh);
-    setDiscs([]);
-    setTurn('player');
-    setWinCells(null);
-    setMoveCount(0);
-    setResult(null);
-    setHoveredCol(null);
-    setShakeCol(null);
-    setPhase('setup');
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -499,8 +481,7 @@ export function ConnectFour() {
           <ResultScreen
             result={result}
             moves={moveCount}
-            onRematch={handleRematch}
-            onBack={() => navigate('/play')}
+            onBack={() => navigate('/matches')}
             onChat={() => {
               if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
               navigate('/chat', matchId ? { state: { matchId } } : undefined);
@@ -697,7 +678,7 @@ export function ConnectFour() {
             Leave Game
           </button>
         ) : (
-          <button onClick={() => navigate('/play')} className="font-body text-xs"
+          <button onClick={() => navigate('/matches')} className="font-body text-xs"
             style={{ color: 'rgba(255,255,255,0.28)' }}>
             ← Games
           </button>
