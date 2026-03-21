@@ -569,6 +569,7 @@ export async function createOrJoinGame(
       .eq('match_id', matchId)
       .eq('game_type', gameType)
       .is('winner', null)
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .maybeSingle();
     if (existing) return existing as GameRow;
   } catch {
@@ -604,6 +605,7 @@ export async function createOrJoinGame(
       .eq('match_id', matchId)
       .eq('game_type', gameType)
       .is('winner', null)
+      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .maybeSingle();
     return (data as GameRow) ?? null;
   } catch {

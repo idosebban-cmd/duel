@@ -54,7 +54,11 @@ function formatDate(iso: string): string {
 }
 
 function winnerLabel(game: GameRow, myId: string): string {
-  if (!game.winner) return 'In progress';
+  if (!game.winner) {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const isStale = new Date(game.created_at) < twoHoursAgo;
+    return isStale ? 'Abandoned' : 'In progress';
+  }
   if (game.winner === 'draw') return 'Draw';
   const isP1 = game.player1_id === myId;
   const iWon = (game.winner === 'player1' && isP1) || (game.winner === 'player2' && !isP1);
