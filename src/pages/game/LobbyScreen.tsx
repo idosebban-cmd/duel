@@ -81,6 +81,15 @@ export function LobbyScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameType = searchParams.get('type');
+  const GAME_LABELS: Record<string, string> = {
+    guess_who: 'GUESS WHO?',
+    draughts: 'DRAUGHTS',
+    connect_four: 'CONNECT FOUR',
+    battleship: 'BATTLESHIP',
+    word_blitz: 'WORD BLITZ',
+    dot_dash: 'DOT DASH',
+  };
+  const gameLabel = GAME_LABELS[gameType ?? ''] ?? 'GAME';
   const { user } = useAuthStore();
   const myUserId = user?.id ?? null;
   const {
@@ -336,7 +345,7 @@ export function LobbyScreen() {
                   textShadow: 'none',
                 }}
               >
-                GUESS WHO?
+                {gameLabel}
               </h1>
               <Swords size={28} className="text-electric-mint scale-x-[-1]" />
             </div>
