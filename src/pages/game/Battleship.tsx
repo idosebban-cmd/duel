@@ -304,9 +304,9 @@ function FleetGrid({ myGrid, botShots, myShips, cellSize }: {
 }
 
 // ── Result screen ─────────────────────────────────────────────────────────────
-function ResultScreen({ result, myShots, playerSunk, onRematch, onBack, onChat }: {
+function ResultScreen({ result, myShots, playerSunk, onBack, onChat }: {
   result: 'player_wins' | 'bot_wins'; myShots: Shots; playerSunk: number;
-  onRematch: () => void; onBack: () => void; onChat: () => void;
+  onBack: () => void; onChat: () => void;
 }) {
   const won   = result === 'player_wins';
   const color = won ? '#4EFFC4' : '#FF3D71';
@@ -347,11 +347,6 @@ function ResultScreen({ result, myShots, playerSunk, onRematch, onBack, onChat }
           style={{ background: 'linear-gradient(135deg,#00F5FF,#FF006E)', color: '#12122A', border: '3px solid rgba(255,255,255,0.2)', boxShadow: '0 0 28px rgba(0,245,255,0.45),4px 4px 0 rgba(0,0,0,0.35)' }}
           whileTap={{ scale: 0.97 }}>
           START CHATTING →
-        </motion.button>
-        <motion.button onClick={onRematch} className="w-full py-3 rounded-2xl font-display text-base mb-2"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '2px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
-          whileTap={{ scale: 0.97 }}>
-          REMATCH ↺
         </motion.button>
         <button onClick={onBack} className="font-body text-sm w-full py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
           Back to Games
@@ -675,20 +670,6 @@ export function Battleship() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
-  // ── Rematch ───────────────────────────────────────────────────────────────
-  const handleRematch = () => {
-    const fresh = makeGrid();
-    myGridRef.current = fresh;
-    setMyGrid(fresh); setMyShips([]); setShipIdx(0); setHorizontal(true); setPreviewCell(null);
-    setBotGrid(makeGrid()); setBotShips([]);
-    setTurn('player');
-    const freshShots = makeShots();
-    setMyShots(freshShots); setTheirShots(freshShots);
-    myShotsRef.current = freshShots; theirShotsRef.current = freshShots;
-    setSelectedCell(null); setBattleMsg(null); setSunkEnemyIds(new Set());
-    setBotThinking(false); setResult(null); setPhase('placement');
-  };
-
   // ── Derived ───────────────────────────────────────────────────────────────
   const sunkEnemyCells = new Set<string>();
   for (const ship of botShips) {
@@ -720,7 +701,7 @@ export function Battleship() {
         {phase === 'result' && result && (
           <ResultScreen
             result={result} myShots={myShots} playerSunk={playerSunkCount}
-            onRematch={handleRematch} onBack={() => navigate('/play')}
+            onBack={() => navigate('/play')}
             onChat={() => {
               if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
               navigate('/chat', matchId ? { state: { matchId } } : undefined);
