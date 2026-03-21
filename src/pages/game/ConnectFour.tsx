@@ -16,6 +16,7 @@ import {
   ReconnectOverlay,
   useOpponentLeftRedirect,
   useBeforeUnload,
+  useReconnectGrace,
 } from '../../components/game/MultiplayerOverlays';
 
 // ── Multiplayer board helpers ─────────────────────────────────────────────────
@@ -284,24 +285,12 @@ export function ConnectFour() {
 
   // ── Multiplayer rules state ────────────────────────────────────────────
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [graceActive, setGraceActive] = useState(false);
-  const [showForfeit, setShowForfeit] = useState(false);
+  const { graceActive, showForfeit } = useReconnectGrace(
+    isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
+  );
 
-  // Rule 1: beforeunload warning
   useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
-
-  // Rule 4: auto-redirect after forfeit overlay
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
-
-  // Rule 4: grace period → forfeit detection
-  useEffect(() => {
-    if (!isMultiplayer || phase === 'result') return;
-    if (mp.opponentLeft) {
-      // abandon_game already fired — skip grace, show forfeit
-      setGraceActive(false);
-      setShowForfeit(true);
-    }
-  }, [isMultiplayer, mp.opponentLeft, phase]);
 
   const [board,      setBoard]      = useState<Board>(makeBoard);
   const [discs,      setDiscs]      = useState<PlacedDisc[]>([]);

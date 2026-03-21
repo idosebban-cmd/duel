@@ -17,6 +17,7 @@ import {
   ReconnectOverlay,
   useOpponentLeftRedirect,
   useBeforeUnload,
+  useReconnectGrace,
 } from '../../components/game/MultiplayerOverlays';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -474,19 +475,12 @@ export function WordBlitz() {
 
   // ── Multiplayer rules state ────────────────────────────────────────────
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [graceActive, setGraceActive] = useState(false);
-  const [showForfeit, setShowForfeit] = useState(false);
+  const { graceActive, showForfeit } = useReconnectGrace(
+    isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
+  );
 
   useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
   useOpponentLeftRedirect(showForfeit, matchId ?? null, 'opponent');
-
-  useEffect(() => {
-    if (!isMultiplayer || phase === 'result') return;
-    if (mp.opponentLeft) {
-      setGraceActive(false);
-      setShowForfeit(true);
-    }
-  }, [isMultiplayer, mp.opponentLeft, phase]);
 
   const handleLeaveConfirm = async () => {
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
@@ -534,48 +528,62 @@ export function WordBlitz() {
   const rootRef       = useRef<HTMLDivElement>(null);
   const oppSectionRef = useRef<HTMLDivElement>(null);
 
-  // ─── Start game ───────────────────────────────────────────────────────────
-  const startGame = useCallback(() => {
-    setPhase('playing');
+  // ─── Timer logic (extracted so both solo and MP can start it) ─────────────
+  const startTimer = useCallback(() => {
+    if (timerRef.current) return; // already running
     elapsedRef.current = 0;
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
       const elapsed = elapsedRef.current;
       setTimeLeft(GAME_SECONDS - elapsed);
 
-      // Bot moves
-      for (const move of BOT_MOVES) {
-        if (!botMovesDone.current.has(move.at) && elapsed >= move.at) {
-          botMovesDone.current.add(move.at);
-          setOppScore((s) => s + move.pts);
-          setOppPopup(`${move.word} +${move.pts}`);
-          setTimeout(() => setOppPopup(null), 1800);
-          // Place word visually in opp grid
-          setOppGrid((g) => {
-            const next = g.map((r) => [...r]);
-            for (let i = 0; i < move.word.length; i++) {
-              if (move.dir === 'h') {
-                next[move.row][move.col + i] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
-              } else {
-                next[move.row + i][move.col] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+      // Bot moves (solo only — multiplayer has real opponent)
+      if (!isMultiplayer) {
+        for (const move of BOT_MOVES) {
+          if (!botMovesDone.current.has(move.at) && elapsed >= move.at) {
+            botMovesDone.current.add(move.at);
+            setOppScore((s) => s + move.pts);
+            setOppPopup(`${move.word} +${move.pts}`);
+            setTimeout(() => setOppPopup(null), 1800);
+            setOppGrid((g) => {
+              const next = g.map((r) => [...r]);
+              for (let i = 0; i < move.word.length; i++) {
+                if (move.dir === 'h') {
+                  next[move.row][move.col + i] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+                } else {
+                  next[move.row + i][move.col] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+                }
               }
-            }
-            return next;
-          });
-          setOppWords((ws) => {
-            // Replace any word that is a prefix of the new word (e.g. CAT→CATS→CAST)
-            const pruned = ws.filter((w) => !move.word.startsWith(w));
-            return [...pruned, move.word];
-          });
+              return next;
+            });
+            setOppWords((ws) => {
+              const pruned = ws.filter((w) => !move.word.startsWith(w));
+              return [...pruned, move.word];
+            });
+          }
         }
       }
 
       if (GAME_SECONDS - elapsed <= 0) {
         clearInterval(timerRef.current!);
+        timerRef.current = null;
         setPhase('result');
       }
     }, 1000);
-  }, []);
+  }, [isMultiplayer]);
+
+  // ─── Start game ───────────────────────────────────────────────────────────
+  const startGame = useCallback(() => {
+    setPhase('playing');
+    // Solo: start timer immediately. MP: timer starts when bothPresent (see effect below).
+    if (!isMultiplayer) startTimer();
+  }, [isMultiplayer, startTimer]);
+
+  // ─── MP: start timer once both players are present ─────────────────────────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent) return;
+    startTimer();
+  }, [isMultiplayer, phase, mp.bothPresent, startTimer]);
 
   // Cleanup timer
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);

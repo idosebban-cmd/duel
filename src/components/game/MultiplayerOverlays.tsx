@@ -193,6 +193,64 @@ export function ReconnectOverlay({ visible, opponentName }: ReconnectOverlayProp
   );
 }
 
+// ── Hook: reconnect grace period (15s) + forfeit detection ───────────────────
+
+export function useReconnectGrace(
+  isMultiplayer: boolean,
+  bothPresent: boolean,
+  opponentLeft: boolean,
+  gamePhase: string,
+  /** Phase values that mean "game is over" — skip grace logic */
+  resultPhase: string = 'result',
+) {
+  const [graceActive, setGraceActive] = useState(false);
+  const [showForfeit, setShowForfeit] = useState(false);
+  const prevBothPresentRef = useRef(false);
+  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isMultiplayer || gamePhase === resultPhase) {
+      prevBothPresentRef.current = bothPresent;
+      return;
+    }
+
+    // If opponent abandoned, skip grace and show forfeit immediately
+    if (opponentLeft) {
+      if (graceTimerRef.current) { clearTimeout(graceTimerRef.current); graceTimerRef.current = null; }
+      setGraceActive(false);
+      setShowForfeit(true);
+      prevBothPresentRef.current = bothPresent;
+      return;
+    }
+
+    // Detect transition: bothPresent was true → now false (opponent dropped)
+    if (prevBothPresentRef.current && !bothPresent && !showForfeit) {
+      setGraceActive(true);
+      graceTimerRef.current = setTimeout(() => {
+        graceTimerRef.current = null;
+        // Timer expired without recovery or abandon — dismiss grace overlay
+        // (polling will eventually pick up the abandon status)
+        setGraceActive(false);
+      }, 15000);
+    }
+
+    // Opponent reconnected during grace period
+    if (bothPresent && graceActive) {
+      if (graceTimerRef.current) { clearTimeout(graceTimerRef.current); graceTimerRef.current = null; }
+      setGraceActive(false);
+    }
+
+    prevBothPresentRef.current = bothPresent;
+  }, [isMultiplayer, bothPresent, opponentLeft, gamePhase, resultPhase, graceActive, showForfeit]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { if (graceTimerRef.current) clearTimeout(graceTimerRef.current); };
+  }, []);
+
+  return { graceActive, showForfeit };
+}
+
 // ── Hook: auto-redirect after opponent forfeits ──────────────────────────────
 
 export function useOpponentLeftRedirect(

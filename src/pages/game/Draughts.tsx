@@ -16,6 +16,7 @@ import {
   ReconnectOverlay,
   useOpponentLeftRedirect,
   useBeforeUnload,
+  useReconnectGrace,
 } from '../../components/game/MultiplayerOverlays';
 
 // ── Multiplayer piece serialisation ──────────────────────────────────────────
@@ -365,19 +366,12 @@ export function Draughts() {
 
   // ── Multiplayer rules state ────────────────────────────────────────────
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [graceActive, setGraceActive] = useState(false);
-  const [showForfeit, setShowForfeit] = useState(false);
+  const { graceActive, showForfeit } = useReconnectGrace(
+    isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
+  );
 
   useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
-
-  useEffect(() => {
-    if (!isMultiplayer || phase === 'result') return;
-    if (mp.opponentLeft) {
-      setGraceActive(false);
-      setShowForfeit(true);
-    }
-  }, [isMultiplayer, mp.opponentLeft, phase]);
 
   const handleLeaveConfirm = async () => {
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
