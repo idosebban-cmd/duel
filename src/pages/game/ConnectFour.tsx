@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 
 // ── Multiplayer board helpers ─────────────────────────────────────────────────
 // DB stores numbers: 0=empty, 1=player1, 2=player2
@@ -269,6 +270,9 @@ export function ConnectFour() {
   const myRole = mp.myRole;
 
   const [phase,      setPhase]      = useState<Phase>('setup');
+
+  usePostGameRedirect({ isMultiplayer, matchId, phase });
+
   const [board,      setBoard]      = useState<Board>(makeBoard);
   const [discs,      setDiscs]      = useState<PlacedDisc[]>([]);
   const [turn,       setTurn]       = useState<Player>('player');

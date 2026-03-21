@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
+import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 
 // ── Multiplayer piece serialisation ──────────────────────────────────────────
 // DB stores player as 'p1'|'p2'; locally we use 'player'|'bot'
@@ -350,6 +351,9 @@ export function Draughts() {
   const myRole = mp.myRole;
 
   const [phase,          setPhase]          = useState<Phase>('setup');
+
+  usePostGameRedirect({ isMultiplayer, matchId, phase });
+
   const [pieces,         setPieces]         = useState<Piece[]>(() => makeInitialPieces());
   const [turn,           setTurn]           = useState<Player>('player');
   const [selectedId,     setSelectedId]     = useState<string | null>(null);
