@@ -16,6 +16,7 @@ import {
 } from '../../lib/database';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
+import { GAME_LABELS } from '../../lib/gameConstants';
 
 const POLL_MS = 2000;
 const LOBBY_TIMEOUT_MS = 60_000;
@@ -81,6 +82,7 @@ export function LobbyScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameType = searchParams.get('type');
+  const gameLabel = (GAME_LABELS[gameType ?? ''] ?? 'GAME').toUpperCase();
   const { user } = useAuthStore();
   const myUserId = user?.id ?? null;
   const {
@@ -216,12 +218,14 @@ export function LobbyScreen() {
 
       if (remaining <= 0 && !countdownStartedRef.current) {
         clearInterval(id);
-        navigate('/discover');
+        navigate(`/match/${matchId}`, {
+          state: { flash: 'Game cancelled — opponent didn\'t join in time.' },
+        });
       }
     }, 1000);
 
     return () => clearInterval(id);
-  }, [navigate]);
+  }, [matchId, navigate]);
 
   // ── Detect both players ready → countdown → navigate ──────────
   useEffect(() => {
@@ -279,7 +283,7 @@ export function LobbyScreen() {
     if (gameRow?.id) {
       await deleteGame(gameRow.id);
     }
-    navigate('/discover');
+    navigate(`/match/${matchId}`);
   };
 
   // ── Derive display state ───────────────────────────────────────
@@ -336,7 +340,7 @@ export function LobbyScreen() {
                   textShadow: 'none',
                 }}
               >
-                GUESS WHO?
+                {gameLabel}
               </h1>
               <Swords size={28} className="text-electric-mint scale-x-[-1]" />
             </div>

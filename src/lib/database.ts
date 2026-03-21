@@ -448,14 +448,12 @@ export async function sendMessage(
   }
 }
 
-export async function markMessagesRead(matchId: string, userId: string): Promise<void> {
+export async function markMessagesRead(matchId: string): Promise<void> {
   try {
-    await supabase
-      .from('messages')
-      .update({ delivered: true })
-      .eq('room_id', matchId)
-      .neq('sender', userId)
-      .eq('delivered', false);
+    const { error } = await supabase.rpc('mark_messages_read', {
+      p_room_id: matchId,
+    });
+    if (error) throw error;
   } catch {
     // Non-critical — delivery status can be stale
   }

@@ -15,10 +15,12 @@ import {
   markMessagesRead,
 } from '../lib/database';
 import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
+import { GAME_LABELS } from '../lib/gameConstants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CHAT_POLL_MS = 5_000;
+const CHALLENGE_POLL_MS = 5_000;
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -30,19 +32,6 @@ const characterImages: Record<string, string> = {
   witch: '/characters/Witch.png', knight: '/characters/Knight.png',
   viking: '/characters/Viking.png', pixie: '/characters/Pixie.png',
   ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
-};
-
-const GAME_LABELS: Record<string, string> = {
-  guess_who: 'Guess Who?',
-  'guess-who': 'Guess Who?',
-  dot_dash: 'Dot Dash',
-  'dot-dash': 'Dot Dash',
-  word_blitz: 'Word Blitz',
-  'word-blitz': 'Word Blitz',
-  draughts: 'Draughts',
-  connect_four: 'Connect Four',
-  'connect-four': 'Connect Four',
-  battleship: 'Battleship',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -195,6 +184,7 @@ export function MatchScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesLenRef = useRef(0);
+  const navigatedToLobbyRef = useRef(false);
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
@@ -245,7 +235,7 @@ export function MatchScreen() {
         setChallenges(challs);
         messagesLenRef.current = msgs.length;
 
-        markMessagesRead(matchId, myUserId);
+        markMessagesRead(matchId);
       } catch (err) {
         console.error('[MatchScreen] load error:', err);
       } finally {
@@ -260,20 +250,6 @@ export function MatchScreen() {
   useEffect(() => {
     if (!matchId || !myUserId || !supabase) return;
 
-    // One-time mount check: if inviter returns after acceptance
-    (async () => {
-      try {
-        const challs = await getChallengesForMatch(matchId);
-        setChallenges(challs);
-        const accepted = challs.find(
-          (c) => c.from_user === myUserId && c.status === 'accepted',
-        );
-        if (accepted) {
-          navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
-        }
-      } catch { /* ignore */ }
-    })();
-
     // Realtime subscription for challenge changes
     const channel = supabase
       .channel(`match-challenges-${matchId}`)
@@ -285,6 +261,8 @@ export function MatchScreen() {
           setChallenges((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
           // Inviter is on MatchScreen when opponent accepts
           if (updated.from_user === myUserId && updated.status === 'accepted') {
+            if (navigatedToLobbyRef.current) return;
+            navigatedToLobbyRef.current = true;
             navigate(`/game/${updated.match_id}/lobby?type=${updated.game_type}`);
           }
         },
@@ -300,9 +278,46 @@ export function MatchScreen() {
           });
         },
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try {
+            const challs = await getChallengesForMatch(matchId);
+            setChallenges(challs);
+            const accepted = challs.find(
+              (c) => c.from_user === myUserId && c.status === 'accepted',
+            );
+            if (accepted) {
+              if (navigatedToLobbyRef.current) return;
+              navigatedToLobbyRef.current = true;
+              navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
+            }
+          } catch { /* ignore */ }
+        }
+      });
 
     return () => { supabase?.removeChannel(channel); };
+  }, [matchId, myUserId, navigate]);
+
+  // ── Poll for challenge acceptance every 5s (safety net) ────────
+  useEffect(() => {
+    if (!matchId || !myUserId) return;
+
+    const id = setInterval(async () => {
+      try {
+        const challs = await getChallengesForMatch(matchId);
+        const accepted = challs.find(
+          (c) => c.from_user === myUserId && c.status === 'accepted',
+        );
+        if (accepted) {
+          clearInterval(id);
+          if (navigatedToLobbyRef.current) return;
+          navigatedToLobbyRef.current = true;
+          navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
+        }
+      } catch { /* retry on next tick */ }
+    }, CHALLENGE_POLL_MS);
+
+    return () => clearInterval(id);
   }, [matchId, myUserId, navigate]);
 
   // ── Derived: incoming + outgoing pending challenges ────────────
@@ -321,6 +336,8 @@ export function MatchScreen() {
     try {
       await acceptChallenge(c.id);
       localStorage.setItem('pending_match_id', c.match_id);
+      if (navigatedToLobbyRef.current) return;
+      navigatedToLobbyRef.current = true;
       navigate(`/game/${c.match_id}/lobby?type=${c.game_type}`);
     } catch (err) {
       console.error('[MatchScreen] accept challenge error:', err);
@@ -348,7 +365,7 @@ export function MatchScreen() {
         if (msgs.length !== messagesLenRef.current) {
           setMessages(msgs);
           messagesLenRef.current = msgs.length;
-          markMessagesRead(matchId, myUserId);
+          markMessagesRead(matchId);
         }
       } catch { /* retry on next tick */ }
     }, CHAT_POLL_MS);
@@ -372,7 +389,7 @@ export function MatchScreen() {
             messagesLenRef.current = prev.length + 1;
             return [...prev, msg];
           });
-          if (msg.sender !== myUserId) markMessagesRead(matchId, myUserId);
+          if (msg.sender !== myUserId) markMessagesRead(matchId);
         },
       )
       .on(
@@ -507,24 +524,37 @@ export function MatchScreen() {
         className="flex-1 overflow-y-auto flex flex-col"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {/* ── Challenge button ────────────────────────────────── */}
+        {/* ── Challenge button / pending state ─────────────────── */}
         <div className="px-4 pt-4 pb-2">
-          <motion.button
-            onClick={() => navigate('/play', { state: { matchId } })}
-            className="w-full py-3 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
-              border: '3px solid black',
-              boxShadow: '6px 6px 0px 0px #B565FF',
-              color: '#1a1a2e',
-            }}
-            whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
-            Challenge to a Game
-          </motion.button>
+          {outgoingChallenges.length > 0 ? (
+            <div
+              className="w-full py-3 rounded-2xl font-display font-extrabold text-base text-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(78,255,196,0.12), rgba(0,217,255,0.12))',
+                border: '2px solid rgba(78,255,196,0.25)',
+                color: 'rgba(255,255,255,0.5)',
+              }}
+            >
+              ⏳ Challenge sent — waiting for {theirProfile?.name ?? 'opponent'}...
+            </div>
+          ) : (
+            <motion.button
+              onClick={() => navigate('/play', { state: { matchId } })}
+              className="w-full py-3 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
+                border: '3px solid black',
+                boxShadow: '6px 6px 0px 0px #B565FF',
+                color: '#1a1a2e',
+              }}
+              whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
+              <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
+              Challenge to a Game
+            </motion.button>
+          )}
         </div>
 
         {/* ── Pending challenges ───────────────────────────────── */}
