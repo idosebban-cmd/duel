@@ -17,6 +17,7 @@ import {
   createOrJoinGame,
   getGame,
   submitGameMove,
+  setPlayerPresent,
 } from './database';
 import type { GameRow } from './database';
 
@@ -43,6 +44,10 @@ export interface MultiplayerGame<S> {
   loading: boolean;
   /** True when the match was not found in the DB — game should use bot mode */
   fallbackToBotMode: boolean;
+  /** True when both players have signalled presence on the game screen */
+  bothPresent: boolean;
+  /** True when the opponent abandoned (game status='abandoned' and winner is not me) */
+  opponentLeft: boolean;
   /**
    * Optimistically update local state then persist to DB.
    * @param moveData  logged to the moves table for audit / replay
@@ -134,6 +139,14 @@ export function useMultiplayerGame<S>({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, myUserId, matchId, gameType]);
 
+  // ── Presence: signal "I've loaded the game screen" once ──────────────────
+  const presenceSentRef = useRef(false);
+  useEffect(() => {
+    if (!enabled || !gameRow?.id || !myUserId || presenceSentRef.current) return;
+    presenceSentRef.current = true;
+    setPlayerPresent(gameRow.id, myUserId);
+  }, [enabled, gameRow?.id, myUserId]);
+
   // ── Polling ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!enabled || !gameRow?.id) return;
@@ -174,6 +187,17 @@ export function useMultiplayerGame<S>({
 
   const isMyTurn =
     !!gameRow && gameRow.current_turn === myUserId && !gameRow.winner;
+
+  // ── Presence derived values ────────────────────────────────────────────
+  const gameState = gameRow ? (gameRow.state as Record<string, unknown>) : null;
+  const presentMap = (gameState?.present ?? {}) as Record<string, boolean>;
+  const bothPresent = !!gameRow
+    && !!presentMap[gameRow.player1_id]
+    && !!presentMap[gameRow.player2_id];
+  const opponentLeft = !!gameRow
+    && gameRow.status === 'abandoned'
+    && !!gameRow.winner
+    && gameRow.winner !== myRole;
 
   // ── submitMove ──────────────────────────────────────────────────────────
   const submitMove = useCallback(
@@ -220,6 +244,8 @@ export function useMultiplayerGame<S>({
       winner: null,
       loading: false,
       fallbackToBotMode,
+      bothPresent: false,
+      opponentLeft: false,
       submitMove: () => {},
     };
   }
@@ -234,6 +260,8 @@ export function useMultiplayerGame<S>({
     winner: gameRow?.winner ?? null,
     loading,
     fallbackToBotMode: false,
+    bothPresent,
+    opponentLeft,
     submitMove,
   };
 }

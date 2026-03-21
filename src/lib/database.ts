@@ -771,10 +771,40 @@ export async function revealSecrets(
   }
 }
 
+/** Signal that a player has loaded the game screen (presence tracking). */
+export async function setPlayerPresent(gameId: string, userId: string): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('set_player_present', {
+      p_game_id: gameId,
+      p_user_id: userId,
+    });
+    if (error) console.error('[setPlayerPresent]', error.message);
+  } catch (err) {
+    console.error('[setPlayerPresent] threw:', err);
+  }
+}
+
+/** Atomically abandon a game (forfeit). Returns winner info or null on error. */
+export async function abandonGame(gameId: string): Promise<{ abandoned_by: string; winner: string } | null> {
+  try {
+    const { data, error } = await supabase.rpc('abandon_game', {
+      p_game_id: gameId,
+    });
+    if (error) {
+      console.error('[abandonGame]', error.message);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error('[abandonGame] threw:', err);
+    return null;
+  }
+}
+
 /** Delete a game row (used when cancelling from the lobby). */
 export async function deleteGame(gameId: string): Promise<void> {
   try {
-    await supabase.from('games').delete().eq('id', gameId);
+    await supabase.from('games').delete().eq('id', gameId).eq('status', 'pending');
   } catch (err) {
     console.error('[deleteGame]', err);
   }

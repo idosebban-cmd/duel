@@ -7,7 +7,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, scoreWord } from '../../utils/wordList';
+import { abandonGame } from '../../lib/database';
+import {
+  WaitingForOpponentOverlay,
+  LeaveGameDialog,
+  OpponentLeftOverlay,
+  ReconnectOverlay,
+  useOpponentLeftRedirect,
+  useBeforeUnload,
+  useReconnectGrace,
+} from '../../components/game/MultiplayerOverlays';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -453,7 +464,28 @@ export function WordBlitz() {
   const isMultiplayer = !!matchId && matchId !== 'demo';
   const [phase, setPhase] = useState<Phase>('setup');
 
+  const mp = useMultiplayerGame<object>({
+    matchId: matchId ?? '',
+    gameType: 'word_blitz',
+    initialState: {},
+    enabled: isMultiplayer,
+  });
+
   usePostGameRedirect({ isMultiplayer, matchId: matchId ?? null, phase });
+
+  // ── Multiplayer rules state ────────────────────────────────────────────
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const { graceActive, showForfeit } = useReconnectGrace(
+    isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
+  );
+
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+  useOpponentLeftRedirect(showForfeit, matchId ?? null, 'opponent');
+
+  const handleLeaveConfirm = async () => {
+    if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
+    navigate(`/match/${matchId}`);
+  };
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
@@ -496,48 +528,62 @@ export function WordBlitz() {
   const rootRef       = useRef<HTMLDivElement>(null);
   const oppSectionRef = useRef<HTMLDivElement>(null);
 
-  // ─── Start game ───────────────────────────────────────────────────────────
-  const startGame = useCallback(() => {
-    setPhase('playing');
+  // ─── Timer logic (extracted so both solo and MP can start it) ─────────────
+  const startTimer = useCallback(() => {
+    if (timerRef.current) return; // already running
     elapsedRef.current = 0;
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
       const elapsed = elapsedRef.current;
       setTimeLeft(GAME_SECONDS - elapsed);
 
-      // Bot moves
-      for (const move of BOT_MOVES) {
-        if (!botMovesDone.current.has(move.at) && elapsed >= move.at) {
-          botMovesDone.current.add(move.at);
-          setOppScore((s) => s + move.pts);
-          setOppPopup(`${move.word} +${move.pts}`);
-          setTimeout(() => setOppPopup(null), 1800);
-          // Place word visually in opp grid
-          setOppGrid((g) => {
-            const next = g.map((r) => [...r]);
-            for (let i = 0; i < move.word.length; i++) {
-              if (move.dir === 'h') {
-                next[move.row][move.col + i] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
-              } else {
-                next[move.row + i][move.col] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+      // Bot moves (solo only — multiplayer has real opponent)
+      if (!isMultiplayer) {
+        for (const move of BOT_MOVES) {
+          if (!botMovesDone.current.has(move.at) && elapsed >= move.at) {
+            botMovesDone.current.add(move.at);
+            setOppScore((s) => s + move.pts);
+            setOppPopup(`${move.word} +${move.pts}`);
+            setTimeout(() => setOppPopup(null), 1800);
+            setOppGrid((g) => {
+              const next = g.map((r) => [...r]);
+              for (let i = 0; i < move.word.length; i++) {
+                if (move.dir === 'h') {
+                  next[move.row][move.col + i] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+                } else {
+                  next[move.row + i][move.col] = { letterId: `opp-${move.word}-${i}`, letter: move.word[i] };
+                }
               }
-            }
-            return next;
-          });
-          setOppWords((ws) => {
-            // Replace any word that is a prefix of the new word (e.g. CAT→CATS→CAST)
-            const pruned = ws.filter((w) => !move.word.startsWith(w));
-            return [...pruned, move.word];
-          });
+              return next;
+            });
+            setOppWords((ws) => {
+              const pruned = ws.filter((w) => !move.word.startsWith(w));
+              return [...pruned, move.word];
+            });
+          }
         }
       }
 
       if (GAME_SECONDS - elapsed <= 0) {
         clearInterval(timerRef.current!);
+        timerRef.current = null;
         setPhase('result');
       }
     }, 1000);
-  }, []);
+  }, [isMultiplayer]);
+
+  // ─── Start game ───────────────────────────────────────────────────────────
+  const startGame = useCallback(() => {
+    setPhase('playing');
+    // Solo: start timer immediately. MP: timer starts when bothPresent (see effect below).
+    if (!isMultiplayer) startTimer();
+  }, [isMultiplayer, startTimer]);
+
+  // ─── MP: start timer once both players are present ─────────────────────────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent) return;
+    startTimer();
+  }, [isMultiplayer, phase, mp.bothPresent, startTimer]);
 
   // Cleanup timer
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
@@ -666,6 +712,16 @@ export function WordBlitz() {
       <div className="fixed inset-0 pointer-events-none z-10 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
       />
+
+      {/* Multiplayer overlays */}
+      {isMultiplayer && (
+        <>
+          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
+          <ReconnectOverlay visible={graceActive} opponentName="opponent" />
+          <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <LeaveGameDialog visible={showLeaveDialog} opponentName="opponent" onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
+        </>
+      )}
 
       {/* ══ MY BOARD — above the fold on mobile, left 60% on desktop ══ */}
       <div className="h-screen flex-shrink-0 flex flex-col overflow-hidden md:flex-1 md:h-screen">
@@ -1068,6 +1124,17 @@ export function WordBlitz() {
           <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>Back to your board</span>
         </motion.button>
       </div>
+
+      {/* Leave Game button (multiplayer only) */}
+      {isMultiplayer && phase === 'playing' && mp.bothPresent && (
+        <button
+          onClick={() => setShowLeaveDialog(true)}
+          className="fixed bottom-4 left-4 z-20 font-body text-xs px-3 py-1.5 rounded-lg"
+          style={{ background: 'rgba(255,61,113,0.15)', border: '1px solid #FF3D71', color: '#FF3D71' }}
+        >
+          Leave Game
+        </button>
+      )}
 
       {/* Bottom neon bar */}
       <div className="fixed bottom-0 left-0 right-0 h-[3px] pointer-none"
