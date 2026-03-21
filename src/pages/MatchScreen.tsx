@@ -536,24 +536,37 @@ export function MatchScreen() {
         className="flex-1 overflow-y-auto flex flex-col"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {/* ── Challenge button ────────────────────────────────── */}
+        {/* ── Challenge button / pending state ─────────────────── */}
         <div className="px-4 pt-4 pb-2">
-          <motion.button
-            onClick={() => navigate('/play', { state: { matchId } })}
-            className="w-full py-3 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
-              border: '3px solid black',
-              boxShadow: '6px 6px 0px 0px #B565FF',
-              color: '#1a1a2e',
-            }}
-            whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
-            Challenge to a Game
-          </motion.button>
+          {outgoingChallenges.length > 0 ? (
+            <div
+              className="w-full py-3 rounded-2xl font-display font-extrabold text-base text-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(78,255,196,0.12), rgba(0,217,255,0.12))',
+                border: '2px solid rgba(78,255,196,0.25)',
+                color: 'rgba(255,255,255,0.5)',
+              }}
+            >
+              ⏳ Challenge sent — waiting for {theirProfile?.name ?? 'opponent'}...
+            </div>
+          ) : (
+            <motion.button
+              onClick={() => navigate('/play', { state: { matchId } })}
+              className="w-full py-3 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
+                border: '3px solid black',
+                boxShadow: '6px 6px 0px 0px #B565FF',
+                color: '#1a1a2e',
+              }}
+              whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
+              <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
+              Challenge to a Game
+            </motion.button>
+          )}
         </div>
 
         {/* ── Pending challenges ───────────────────────────────── */}
