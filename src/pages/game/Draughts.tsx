@@ -368,7 +368,9 @@ export function Draughts() {
   useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
 
+  const leavingRef = useRef(false);
   const handleLeaveConfirm = async () => {
+    leavingRef.current = true;
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
     navigate(`/match/${matchId}`);
   };
@@ -525,6 +527,7 @@ export function Draughts() {
     if (mp.gameRow.updated_at === prevDrUpdatedAt.current) return;
     prevDrUpdatedAt.current = mp.gameRow.updated_at;
 
+    if (leavingRef.current) return;
     if (mp.gameRow.winner && phase !== 'result') {
       setResult(mp.gameRow.winner === myRole ? 'player_wins' : 'bot_wins');
       setPhase('result');

@@ -391,7 +391,9 @@ export function Battleship() {
   useBeforeUnload(isMultiplayer && phase === 'battle' && mp.bothPresent);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
 
+  const leavingRef = useRef(false);
   const handleLeaveConfirm = async () => {
+    leavingRef.current = true;
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
     navigate(`/match/${matchId}`);
   };
@@ -629,6 +631,7 @@ export function Battleship() {
     const gs = mp.gameState;
 
     // Game over
+    if (leavingRef.current) return;
     if (mp.gameRow.winner && phase !== 'result') {
       setResult(mp.gameRow.winner === myRole ? 'player_wins' : 'bot_wins');
       setPhase('result');

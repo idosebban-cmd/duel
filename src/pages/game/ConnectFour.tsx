@@ -397,6 +397,7 @@ export function ConnectFour() {
     prevUpdatedAtRef.current = mp.gameRow.updated_at;
 
     // Game ended (winner set by opponent or by me)
+    if (leavingRef.current) return;
     if (mp.gameRow.winner && phase !== 'result') {
       const iWon = mp.gameRow.winner === myRole || mp.gameRow.winner === 'draw';
       setResult(
@@ -431,7 +432,9 @@ export function ConnectFour() {
   }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
   // ── Leave game (Rule 3) ───────────────────────────────────────────────────
+  const leavingRef = useRef(false);
   const handleLeaveConfirm = async () => {
+    leavingRef.current = true;
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
     navigate(`/match/${matchId}`);
   };

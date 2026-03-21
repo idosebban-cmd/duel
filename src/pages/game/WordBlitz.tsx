@@ -482,7 +482,9 @@ export function WordBlitz() {
   useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
   useOpponentLeftRedirect(showForfeit, matchId ?? null, 'opponent');
 
+  const leavingRef = useRef(false);
   const handleLeaveConfirm = async () => {
+    leavingRef.current = true;
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
     navigate(`/match/${matchId}`);
   };
