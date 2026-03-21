@@ -209,16 +209,47 @@ CREATE POLICY "messages_insert_match_member"
     )
   );
 
--- markMessagesRead updates delivered flag on messages from the OTHER user
--- so the updater is a match member but NOT the sender. Scope to match membership.
-CREATE POLICY "messages_update_match_member"
+-- Strict: only the sender can update their own messages (e.g. edit content).
+-- markMessagesRead needs to update OTHER users' messages (delivered flag),
+-- so it must use the mark_messages_read RPC (SECURITY DEFINER) below.
+CREATE POLICY "messages_update_sender_only"
   ON messages FOR UPDATE
-  USING (
-    room_id IN (
-      SELECT id FROM matches
-      WHERE user_a = auth.uid() OR user_b = auth.uid()
-    )
-  );
+  USING (auth.uid() = sender);
+
+-- ─── 7b. mark_messages_read RPC ────────────────────────────
+-- SECURITY DEFINER: bypasses RLS to set delivered=true on messages
+-- sent by the OTHER user in a match room. Scoped internally:
+--   - Only marks messages where sender != caller (can't mark own)
+--   - Only marks undelivered messages
+--   - Caller must be authenticated (auth.uid() is set)
+--
+-- FRONTEND CHANGE REQUIRED:
+--   database.ts markMessagesRead() must be updated to call:
+--     supabase.rpc('mark_messages_read', { p_room_id: matchId })
+--   instead of the current direct .update() call.
+
+CREATE OR REPLACE FUNCTION mark_messages_read(p_room_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Verify caller is a participant in this match
+  IF NOT EXISTS (
+    SELECT 1 FROM matches
+    WHERE id = p_room_id
+      AND (user_a = auth.uid() OR user_b = auth.uid())
+  ) THEN
+    RAISE EXCEPTION 'Not a participant in this match';
+  END IF;
+
+  UPDATE messages
+  SET delivered = true
+  WHERE room_id = p_room_id
+    AND sender != auth.uid()
+    AND delivered = false;
+END;
+$$;
 
 -- ─── 8. RLS: games ─────────────────────────────────────────
 -- App behavior:
