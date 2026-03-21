@@ -9,17 +9,23 @@
 --   2. Adds ON DELETE CASCADE to challenges FKs
 --   3. Enables RLS + creates policies on ALL tables
 --      (photos already has RLS enabled — skipped)
+--   4. Adds mark_messages_read RPC (SECURITY DEFINER)
+--   5. Updates chk_games_status to include 'abandoned'
+--   6. Adds uq_games_match_type_active partial unique index
+--   7. Adds set_player_present RPC (SECURITY DEFINER)
+--   8. Adds abandon_game RPC (SECURITY DEFINER)
 --
 -- Pre-requisites:
 --   - game_secrets table must exist (confirmed live)
 --   - All 4 RPCs deployed (confirmed live)
 --   - CHECK constraints already applied (confirmed live)
 --
--- IMPORTANT: The 4 RPCs (set_player_ready, submit_move,
--- check_guess, reveal_secrets) are SECURITY DEFINER. They
--- bypass RLS by design. This is correct — they run as the
--- function owner and enforce their own authorization checks
--- internally.
+-- IMPORTANT: The RPCs (set_player_ready, submit_move,
+-- check_guess, reveal_secrets, mark_messages_read,
+-- set_player_present, abandon_game) are SECURITY DEFINER.
+-- They bypass RLS by design. This is correct — they run as
+-- the function owner and enforce their own authorization
+-- checks internally.
 -- ============================================================
 
 BEGIN;
@@ -356,5 +362,116 @@ CREATE POLICY "game_secrets_select_own"
 CREATE POLICY "game_secrets_insert_own"
   ON game_secrets FOR INSERT
   WITH CHECK (auth.uid() = player_id);
+
+-- ─── 12. Update chk_games_status to include 'abandoned' ──
+-- The existing constraint allows: pending, ready, playing, finished.
+-- Drop and recreate to add 'abandoned' for game abandonment flow.
+
+ALTER TABLE games DROP CONSTRAINT IF EXISTS chk_games_status;
+ALTER TABLE games ADD CONSTRAINT chk_games_status
+  CHECK (status IN ('pending', 'ready', 'playing', 'finished', 'abandoned'));
+
+-- ─── 13. Partial unique index: one active game per match+type ─
+-- Prevents TOCTOU race in createOrJoinGame — two players inserting
+-- simultaneously would create duplicate active games. With this index,
+-- the second INSERT gets a unique violation and falls back to SELECT.
+-- An abandoned game (winner IS NOT NULL) no longer occupies the slot.
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_games_match_type_active
+  ON games (match_id, game_type)
+  WHERE winner IS NULL;
+
+-- ─── 14. set_player_present RPC ──────────────────────────────
+-- Same pattern as set_player_ready: atomically sets
+-- state.present[userId] = true in the game's JSONB state.
+-- Used by game screens to signal "I've loaded the game board".
+-- Both players must be present before gameplay begins.
+--
+-- FRONTEND CHANGE REQUIRED:
+--   Game screen components should call:
+--     supabase.rpc('set_player_present', { p_game_id, p_user_id })
+--   on mount, then poll/subscribe for both present flags before
+--   enabling gameplay.
+
+CREATE OR REPLACE FUNCTION set_player_present(
+  p_game_id UUID,
+  p_user_id UUID
+) RETURNS JSONB AS $$
+  UPDATE games
+  SET state = jsonb_set(
+    COALESCE(state, '{}'::jsonb),
+    ARRAY['present', p_user_id::text],
+    'true'::jsonb
+  ),
+  updated_at = now()
+  WHERE id = p_game_id
+    AND (player1_id = p_user_id OR player2_id = p_user_id)
+  RETURNING state->'present';
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- ─── 15. abandon_game RPC ────────────────────────────────────
+-- Atomically marks a game as abandoned when a player leaves mid-game.
+-- Sets status='abandoned', awards forfeit win to the other player,
+-- clears current_turn, and logs the abandonment in the moves table.
+-- Row-level FOR UPDATE lock prevents races with concurrent moves.
+--
+-- FRONTEND CHANGE REQUIRED:
+--   database.ts needs a new abandonGame() function that calls:
+--     supabase.rpc('abandon_game', { p_game_id })
+--   Game screens should call this when a player confirms exit.
+--   The remaining player's polling loop will detect winner != null
+--   and can check status === 'abandoned' to show the right message.
+
+CREATE OR REPLACE FUNCTION abandon_game(p_game_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_game         RECORD;
+  v_abandoner_id UUID := auth.uid();
+  v_winner       TEXT;
+BEGIN
+  -- Lock the row to prevent concurrent moves/abandons
+  SELECT * INTO v_game
+    FROM games
+   WHERE id = p_game_id
+     AND winner IS NULL
+   FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Game not found or already finished';
+  END IF;
+
+  -- Verify caller is a participant and determine forfeit winner
+  IF v_game.player1_id = v_abandoner_id THEN
+    v_winner := 'player2';
+  ELSIF v_game.player2_id = v_abandoner_id THEN
+    v_winner := 'player1';
+  ELSE
+    RAISE EXCEPTION 'Not a participant in this game';
+  END IF;
+
+  -- Mark abandoned with forfeit winner
+  UPDATE games
+     SET status       = 'abandoned',
+         winner       = v_winner,
+         current_turn = NULL,
+         updated_at   = now()
+   WHERE id = p_game_id;
+
+  -- Log the abandonment as a move for audit trail
+  INSERT INTO moves (game_id, player_id, move_data)
+  VALUES (p_game_id, v_abandoner_id, jsonb_build_object(
+    'type', 'abandon',
+    'reason', 'player_left'
+  ));
+
+  RETURN jsonb_build_object(
+    'abandoned_by', v_abandoner_id,
+    'winner', v_winner
+  );
+END;
+$$;
 
 COMMIT;
