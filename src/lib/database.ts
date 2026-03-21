@@ -774,7 +774,7 @@ export async function revealSecrets(
 /** Delete a game row (used when cancelling from the lobby). */
 export async function deleteGame(gameId: string): Promise<void> {
   try {
-    await supabase.from('games').delete().eq('id', gameId);
+    await supabase.from('games').delete().eq('id', gameId).eq('status', 'pending');
   } catch (err) {
     console.error('[deleteGame]', err);
   }

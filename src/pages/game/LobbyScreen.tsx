@@ -99,6 +99,7 @@ export function LobbyScreen() {
   const [opponentAvatar, setOpponentAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [bothReady, setBothReady] = useState(false);
 
   const gameRowRef = useRef<GameRow | null>(null);
   const countdownStartedRef = useRef(false);
@@ -237,6 +238,7 @@ export function LobbyScreen() {
 
     if (bothReady) {
       countdownStartedRef.current = true;
+      setBothReady(true);
       startCountdown(3);
     }
   }, [gameRow, myUserId, startCountdown]);
@@ -474,17 +476,19 @@ export function LobbyScreen() {
               </motion.button>
             )}
 
-            <button
-              onClick={handleCancel}
-              className="w-full py-3 rounded-2xl font-display font-bold text-base"
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '2px solid rgba(255,255,255,0.15)',
-                color: 'rgba(255,255,255,0.5)',
-              }}
-            >
-              Cancel Game
-            </button>
+            {!bothReady && (
+              <button
+                onClick={handleCancel}
+                className="w-full py-3 rounded-2xl font-display font-bold text-base"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '2px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+              >
+                Cancel Game
+              </button>
+            )}
           </motion.div>
         </div>
       </div>
