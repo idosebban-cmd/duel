@@ -14,6 +14,7 @@
 --   6. Adds uq_games_match_type_active partial unique index
 --   7. Adds set_player_present RPC (SECURITY DEFINER)
 --   8. Adds abandon_game RPC (SECURITY DEFINER)
+--   9. Adds expire_stale_games function (manual/cron caller)
 --
 -- Pre-requisites:
 --   - game_secrets table must exist (confirmed live)
@@ -22,7 +23,8 @@
 --
 -- IMPORTANT: The RPCs (set_player_ready, submit_move,
 -- check_guess, reveal_secrets, mark_messages_read,
--- set_player_present, abandon_game) are SECURITY DEFINER.
+-- set_player_present, abandon_game, expire_stale_games)
+-- are SECURITY DEFINER.
 -- They bypass RLS by design. This is correct — they run as
 -- the function owner and enforce their own authorization
 -- checks internally.
@@ -471,6 +473,41 @@ BEGIN
     'abandoned_by', v_abandoner_id,
     'winner', v_winner
   );
+END;
+$$;
+
+-- ─── 16. expire_stale_games function ─────────────────────────
+-- Finds games with no winner that are older than 2 hours and
+-- marks them as abandoned with winner='draw' (no one played).
+-- Returns the number of rows affected.
+--
+-- NOT scheduled via pg_cron (free tier). Call manually:
+--   SELECT expire_stale_games();
+-- or via GitHub Actions / Edge Function on a 30-min schedule.
+--
+-- Why 'draw': chk_games_winner allows (player1, player2, draw).
+-- Neither player acted, so neither wins. The combination
+-- status='abandoned' + winner='draw' distinguishes timeout
+-- from a legitimate in-game draw (status='finished' + winner='draw').
+
+CREATE OR REPLACE FUNCTION expire_stale_games()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_count INTEGER;
+BEGIN
+  UPDATE games
+     SET status       = 'abandoned',
+         winner       = 'draw',
+         current_turn = NULL,
+         updated_at   = now()
+   WHERE winner IS NULL
+     AND created_at < now() - INTERVAL '2 hours';
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
 END;
 $$;
 
