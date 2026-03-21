@@ -7,7 +7,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, scoreWord } from '../../utils/wordList';
+import { abandonGame } from '../../lib/database';
+import {
+  WaitingForOpponentOverlay,
+  LeaveGameDialog,
+  OpponentLeftOverlay,
+  ReconnectOverlay,
+  useOpponentLeftRedirect,
+  useBeforeUnload,
+} from '../../components/game/MultiplayerOverlays';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -453,7 +463,35 @@ export function WordBlitz() {
   const isMultiplayer = !!matchId && matchId !== 'demo';
   const [phase, setPhase] = useState<Phase>('setup');
 
+  const mp = useMultiplayerGame<object>({
+    matchId: matchId ?? '',
+    gameType: 'word_blitz',
+    initialState: {},
+    enabled: isMultiplayer,
+  });
+
   usePostGameRedirect({ isMultiplayer, matchId: matchId ?? null, phase });
+
+  // ── Multiplayer rules state ────────────────────────────────────────────
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [graceActive, setGraceActive] = useState(false);
+  const [showForfeit, setShowForfeit] = useState(false);
+
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+  useOpponentLeftRedirect(showForfeit, matchId ?? null, 'opponent');
+
+  useEffect(() => {
+    if (!isMultiplayer || phase === 'result') return;
+    if (mp.opponentLeft) {
+      setGraceActive(false);
+      setShowForfeit(true);
+    }
+  }, [isMultiplayer, mp.opponentLeft, phase]);
+
+  const handleLeaveConfirm = async () => {
+    if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
+    navigate(`/match/${matchId}`);
+  };
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
@@ -666,6 +704,16 @@ export function WordBlitz() {
       <div className="fixed inset-0 pointer-events-none z-10 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
       />
+
+      {/* Multiplayer overlays */}
+      {isMultiplayer && (
+        <>
+          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
+          <ReconnectOverlay visible={graceActive} opponentName="opponent" />
+          <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <LeaveGameDialog visible={showLeaveDialog} opponentName="opponent" onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
+        </>
+      )}
 
       {/* ══ MY BOARD — above the fold on mobile, left 60% on desktop ══ */}
       <div className="h-screen flex-shrink-0 flex flex-col overflow-hidden md:flex-1 md:h-screen">
@@ -1068,6 +1116,17 @@ export function WordBlitz() {
           <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>Back to your board</span>
         </motion.button>
       </div>
+
+      {/* Leave Game button (multiplayer only) */}
+      {isMultiplayer && phase === 'playing' && mp.bothPresent && (
+        <button
+          onClick={() => setShowLeaveDialog(true)}
+          className="fixed bottom-4 left-4 z-20 font-body text-xs px-3 py-1.5 rounded-lg"
+          style={{ background: 'rgba(255,61,113,0.15)', border: '1px solid #FF3D71', color: '#FF3D71' }}
+        >
+          Leave Game
+        </button>
+      )}
 
       {/* Bottom neon bar */}
       <div className="fixed bottom-0 left-0 right-0 h-[3px] pointer-none"

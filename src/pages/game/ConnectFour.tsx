@@ -8,6 +8,15 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { abandonGame } from '../../lib/database';
+import {
+  WaitingForOpponentOverlay,
+  LeaveGameDialog,
+  OpponentLeftOverlay,
+  ReconnectOverlay,
+  useOpponentLeftRedirect,
+  useBeforeUnload,
+} from '../../components/game/MultiplayerOverlays';
 
 // ── Multiplayer board helpers ─────────────────────────────────────────────────
 // DB stores numbers: 0=empty, 1=player1, 2=player2
@@ -273,6 +282,27 @@ export function ConnectFour() {
 
   usePostGameRedirect({ isMultiplayer, matchId, phase });
 
+  // ── Multiplayer rules state ────────────────────────────────────────────
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [graceActive, setGraceActive] = useState(false);
+  const [showForfeit, setShowForfeit] = useState(false);
+
+  // Rule 1: beforeunload warning
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+
+  // Rule 4: auto-redirect after forfeit overlay
+  useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
+
+  // Rule 4: grace period → forfeit detection
+  useEffect(() => {
+    if (!isMultiplayer || phase === 'result') return;
+    if (mp.opponentLeft) {
+      // abandon_game already fired — skip grace, show forfeit
+      setGraceActive(false);
+      setShowForfeit(true);
+    }
+  }, [isMultiplayer, mp.opponentLeft, phase]);
+
   const [board,      setBoard]      = useState<Board>(makeBoard);
   const [discs,      setDiscs]      = useState<PlacedDisc[]>([]);
   const [turn,       setTurn]       = useState<Player>('player');
@@ -320,7 +350,7 @@ export function ConnectFour() {
   // ── Player tap handler ────────────────────────────────────────────────────
   const handleColumnTap = (col: number) => {
     if (turn !== 'player' || phase !== 'playing' || winCells) return;
-    if (isMultiplayer && !mp.isMyTurn) return;
+    if (isMultiplayer && (!mp.isMyTurn || !mp.bothPresent)) return;
     if (getDropRow(boardRef.current, col) === -1) {
       setShakeCol(col);
       setTimeout(() => setShakeCol(null), 450);
@@ -417,6 +447,12 @@ export function ConnectFour() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
+  // ── Leave game (Rule 3) ───────────────────────────────────────────────────
+  const handleLeaveConfirm = async () => {
+    if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
+    navigate(`/match/${matchId}`);
+  };
+
   // ── Rematch ───────────────────────────────────────────────────────────────
   const handleRematch = () => {
     const fresh = makeBoard();
@@ -441,6 +477,25 @@ export function ConnectFour() {
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
+
+      {/* Multiplayer overlays */}
+      {isMultiplayer && (
+        <>
+          <WaitingForOpponentOverlay
+            visible={phase === 'playing' && !mp.bothPresent}
+            opponentName="opponent"
+            matchId={matchId!}
+          />
+          <ReconnectOverlay visible={graceActive} opponentName="opponent" />
+          <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <LeaveGameDialog
+            visible={showLeaveDialog}
+            opponentName="opponent"
+            onStay={() => setShowLeaveDialog(false)}
+            onLeave={handleLeaveConfirm}
+          />
+        </>
+      )}
 
       {/* Setup overlay */}
       <AnimatePresence>
@@ -647,10 +702,17 @@ export function ConnectFour() {
       {/* Footer */}
       <div className="flex-none flex items-center justify-between px-5 py-3"
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
-        <button onClick={() => navigate('/play')} className="font-body text-xs"
-          style={{ color: 'rgba(255,255,255,0.28)' }}>
-          ← Games
-        </button>
+        {isMultiplayer && phase === 'playing' && mp.bothPresent ? (
+          <button onClick={() => setShowLeaveDialog(true)} className="font-body text-xs"
+            style={{ color: '#FF3D71' }}>
+            Leave Game
+          </button>
+        ) : (
+          <button onClick={() => navigate('/play')} className="font-body text-xs"
+            style={{ color: 'rgba(255,255,255,0.28)' }}>
+            ← Games
+          </button>
+        )}
         <div className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.22)' }}>
           {turn === 'player' && phase === 'playing' && !winCells ? 'Tap a column to drop' : '\u00A0'}
         </div>

@@ -8,6 +8,15 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { abandonGame } from '../../lib/database';
+import {
+  WaitingForOpponentOverlay,
+  LeaveGameDialog,
+  OpponentLeftOverlay,
+  ReconnectOverlay,
+  useOpponentLeftRedirect,
+  useBeforeUnload,
+} from '../../components/game/MultiplayerOverlays';
 
 // ── Multiplayer piece serialisation ──────────────────────────────────────────
 // DB stores player as 'p1'|'p2'; locally we use 'player'|'bot'
@@ -354,6 +363,27 @@ export function Draughts() {
 
   usePostGameRedirect({ isMultiplayer, matchId, phase });
 
+  // ── Multiplayer rules state ────────────────────────────────────────────
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [graceActive, setGraceActive] = useState(false);
+  const [showForfeit, setShowForfeit] = useState(false);
+
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+  useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
+
+  useEffect(() => {
+    if (!isMultiplayer || phase === 'result') return;
+    if (mp.opponentLeft) {
+      setGraceActive(false);
+      setShowForfeit(true);
+    }
+  }, [isMultiplayer, mp.opponentLeft, phase]);
+
+  const handleLeaveConfirm = async () => {
+    if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
+    navigate(`/match/${matchId}`);
+  };
+
   const [pieces,         setPieces]         = useState<Piece[]>(() => makeInitialPieces());
   const [turn,           setTurn]           = useState<Player>('player');
   const [selectedId,     setSelectedId]     = useState<string | null>(null);
@@ -464,7 +494,7 @@ export function Draughts() {
   // ── Cell tap handler ──────────────────────────────────────────────────────
   const handleCellTap = (row: number, col: number) => {
     if (turn !== 'player' || phase !== 'playing') return;
-    if (isMultiplayer && !mp.isMyTurn) return;
+    if (isMultiplayer && (!mp.isMyTurn || !mp.bothPresent)) return;
 
     if (chainJumpId) {
       const d = validDests.find(d => d.row === row && d.col === col);
@@ -553,6 +583,16 @@ export function Draughts() {
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
+
+      {/* Multiplayer overlays */}
+      {isMultiplayer && (
+        <>
+          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
+          <ReconnectOverlay visible={graceActive} opponentName="opponent" />
+          <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <LeaveGameDialog visible={showLeaveDialog} opponentName="opponent" onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
+        </>
+      )}
 
       {/* Setup overlay */}
       <AnimatePresence>
@@ -755,10 +795,17 @@ export function Draughts() {
       {/* Footer info bar */}
       <div className="flex-none flex items-center justify-between px-5 py-3"
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
-        <button onClick={() => navigate('/play')} className="font-body text-xs"
-          style={{ color: 'rgba(255,255,255,0.28)' }}>
-          ← Games
-        </button>
+        {isMultiplayer && phase === 'playing' && mp.bothPresent ? (
+          <button onClick={() => setShowLeaveDialog(true)} className="font-body text-xs"
+            style={{ color: '#FF3D71' }}>
+            Leave Game
+          </button>
+        ) : (
+          <button onClick={() => navigate('/play')} className="font-body text-xs"
+            style={{ color: 'rgba(255,255,255,0.28)' }}>
+            ← Games
+          </button>
+        )}
         <div className="font-body text-xs text-center" style={{ color: 'rgba(255,255,255,0.22)' }}>
           {mustCapture && turn === 'player' && phase === 'playing'
             ? <span style={{ color: '#FF9F1C' }}>Capture required!</span>

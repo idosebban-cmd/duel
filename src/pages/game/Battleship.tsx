@@ -8,6 +8,15 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { abandonGame } from '../../lib/database';
+import {
+  WaitingForOpponentOverlay,
+  LeaveGameDialog,
+  OpponentLeftOverlay,
+  ReconnectOverlay,
+  useOpponentLeftRedirect,
+  useBeforeUnload,
+} from '../../components/game/MultiplayerOverlays';
 
 // ── Multiplayer state shape ────────────────────────────────────────────────────
 // phase hierarchy: 'placing_p1' → 'placing_p2' → 'battle' → 'result'
@@ -377,6 +386,27 @@ export function Battleship() {
 
   usePostGameRedirect({ isMultiplayer, matchId, phase });
 
+  // ── Multiplayer rules state ────────────────────────────────────────────
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [graceActive, setGraceActive] = useState(false);
+  const [showForfeit, setShowForfeit] = useState(false);
+
+  useBeforeUnload(isMultiplayer && phase === 'battle' && mp.bothPresent);
+  useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
+
+  useEffect(() => {
+    if (!isMultiplayer || phase === 'result') return;
+    if (mp.opponentLeft) {
+      setGraceActive(false);
+      setShowForfeit(true);
+    }
+  }, [isMultiplayer, mp.opponentLeft, phase]);
+
+  const handleLeaveConfirm = async () => {
+    if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
+    navigate(`/match/${matchId}`);
+  };
+
   // ── Placement ────────────────────────────────────────────────────────────
   const [myGrid,      setMyGrid]      = useState<Grid>(makeGrid);
   const [myShips,     setMyShips]     = useState<ShipState[]>([]);
@@ -505,7 +535,7 @@ export function Battleship() {
 
   const handleFire = () => {
     if (!selectedCell || turn !== 'player') return;
-    if (isMultiplayer && !mp.isMyTurn) return;
+    if (isMultiplayer && (!mp.isMyTurn || !mp.bothPresent)) return;
     const [row, col] = selectedCell;
     if (myShots[row][col]) return;
 
@@ -680,6 +710,16 @@ export function Battleship() {
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
+
+      {/* Multiplayer overlays */}
+      {isMultiplayer && (
+        <>
+          <WaitingForOpponentOverlay visible={phase === 'battle' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
+          <ReconnectOverlay visible={graceActive} opponentName="opponent" />
+          <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <LeaveGameDialog visible={showLeaveDialog} opponentName="opponent" onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
+        </>
+      )}
 
       {/* Result overlay */}
       <AnimatePresence>
@@ -906,9 +946,15 @@ export function Battleship() {
           {/* Footer */}
           <div className="flex-none flex items-center justify-between px-5 py-2"
             style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
-            <button onClick={() => navigate('/play')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
-              ← Games
-            </button>
+            {isMultiplayer && phase === 'battle' && mp.bothPresent ? (
+              <button onClick={() => setShowLeaveDialog(true)} className="font-body text-xs" style={{ color: '#FF3D71' }}>
+                Leave Game
+              </button>
+            ) : (
+              <button onClick={() => navigate('/play')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                ← Games
+              </button>
+            )}
             <div className="font-display text-xs" style={{ color: 'rgba(255,255,255,0.15)' }}>DUEL</div>
           </div>
         </>
