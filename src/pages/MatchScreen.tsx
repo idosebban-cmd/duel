@@ -15,6 +15,7 @@ import {
   markMessagesRead,
 } from '../lib/database';
 import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
+import { GAME_LABELS } from '../lib/gameConstants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -31,19 +32,6 @@ const characterImages: Record<string, string> = {
   witch: '/characters/Witch.png', knight: '/characters/Knight.png',
   viking: '/characters/Viking.png', pixie: '/characters/Pixie.png',
   ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
-};
-
-const GAME_LABELS: Record<string, string> = {
-  guess_who: 'Guess Who?',
-  'guess-who': 'Guess Who?',
-  dot_dash: 'Dot Dash',
-  'dot-dash': 'Dot Dash',
-  word_blitz: 'Word Blitz',
-  'word-blitz': 'Word Blitz',
-  draughts: 'Draughts',
-  connect_four: 'Connect Four',
-  'connect-four': 'Connect Four',
-  battleship: 'Battleship',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -247,7 +235,7 @@ export function MatchScreen() {
         setChallenges(challs);
         messagesLenRef.current = msgs.length;
 
-        markMessagesRead(matchId, myUserId);
+        markMessagesRead(matchId);
       } catch (err) {
         console.error('[MatchScreen] load error:', err);
       } finally {
@@ -377,7 +365,7 @@ export function MatchScreen() {
         if (msgs.length !== messagesLenRef.current) {
           setMessages(msgs);
           messagesLenRef.current = msgs.length;
-          markMessagesRead(matchId, myUserId);
+          markMessagesRead(matchId);
         }
       } catch { /* retry on next tick */ }
     }, CHAT_POLL_MS);
@@ -401,7 +389,7 @@ export function MatchScreen() {
             messagesLenRef.current = prev.length + 1;
             return [...prev, msg];
           });
-          if (msg.sender !== myUserId) markMessagesRead(matchId, myUserId);
+          if (msg.sender !== myUserId) markMessagesRead(matchId);
         },
       )
       .on(

@@ -185,7 +185,7 @@ export function ChatScreen() {
       setMessages(msgs);
       setLoading(false);
     });
-    if (myUserId) markMessagesRead(matchId, myUserId);
+    if (myUserId) markMessagesRead(matchId);
   }, [matchId, myUserId]);
 
   // Realtime: new messages + read-receipt updates + typing broadcasts
@@ -201,7 +201,7 @@ export function ChatScreen() {
           const msg = payload.new as DbMessage;
           setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]);
           if (msg.sender !== myUserId && myUserId) {
-            markMessagesRead(matchId, myUserId);
+            markMessagesRead(matchId);
           }
         },
       )

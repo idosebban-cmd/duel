@@ -448,7 +448,7 @@ export async function sendMessage(
   }
 }
 
-export async function markMessagesRead(matchId: string, _userId: string): Promise<void> {
+export async function markMessagesRead(matchId: string): Promise<void> {
   try {
     const { error } = await supabase.rpc('mark_messages_read', {
       p_room_id: matchId,

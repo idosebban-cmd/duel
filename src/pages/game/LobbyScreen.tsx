@@ -16,6 +16,7 @@ import {
 } from '../../lib/database';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
+import { GAME_LABELS } from '../../lib/gameConstants';
 
 const POLL_MS = 2000;
 const LOBBY_TIMEOUT_MS = 60_000;
@@ -81,15 +82,7 @@ export function LobbyScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameType = searchParams.get('type');
-  const GAME_LABELS: Record<string, string> = {
-    guess_who: 'GUESS WHO?',
-    draughts: 'DRAUGHTS',
-    connect_four: 'CONNECT FOUR',
-    battleship: 'BATTLESHIP',
-    word_blitz: 'WORD BLITZ',
-    dot_dash: 'DOT DASH',
-  };
-  const gameLabel = GAME_LABELS[gameType ?? ''] ?? 'GAME';
+  const gameLabel = (GAME_LABELS[gameType ?? ''] ?? 'GAME').toUpperCase();
   const { user } = useAuthStore();
   const myUserId = user?.id ?? null;
   const {
