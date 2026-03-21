@@ -196,6 +196,7 @@ export function MatchScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesLenRef = useRef(0);
+  const navigatedToLobbyRef = useRef(false);
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
@@ -261,20 +262,6 @@ export function MatchScreen() {
   useEffect(() => {
     if (!matchId || !myUserId || !supabase) return;
 
-    // One-time mount check: if inviter returns after acceptance
-    (async () => {
-      try {
-        const challs = await getChallengesForMatch(matchId);
-        setChallenges(challs);
-        const accepted = challs.find(
-          (c) => c.from_user === myUserId && c.status === 'accepted',
-        );
-        if (accepted) {
-          navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
-        }
-      } catch { /* ignore */ }
-    })();
-
     // Realtime subscription for challenge changes
     const channel = supabase
       .channel(`match-challenges-${matchId}`)
@@ -286,6 +273,8 @@ export function MatchScreen() {
           setChallenges((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
           // Inviter is on MatchScreen when opponent accepts
           if (updated.from_user === myUserId && updated.status === 'accepted') {
+            if (navigatedToLobbyRef.current) return;
+            navigatedToLobbyRef.current = true;
             navigate(`/game/${updated.match_id}/lobby?type=${updated.game_type}`);
           }
         },
@@ -310,6 +299,8 @@ export function MatchScreen() {
               (c) => c.from_user === myUserId && c.status === 'accepted',
             );
             if (accepted) {
+              if (navigatedToLobbyRef.current) return;
+              navigatedToLobbyRef.current = true;
               navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
             }
           } catch { /* ignore */ }
@@ -326,12 +317,13 @@ export function MatchScreen() {
     const id = setInterval(async () => {
       try {
         const challs = await getChallengesForMatch(matchId);
-        setChallenges(challs);
         const accepted = challs.find(
           (c) => c.from_user === myUserId && c.status === 'accepted',
         );
         if (accepted) {
           clearInterval(id);
+          if (navigatedToLobbyRef.current) return;
+          navigatedToLobbyRef.current = true;
           navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
         }
       } catch { /* retry on next tick */ }
@@ -356,6 +348,8 @@ export function MatchScreen() {
     try {
       await acceptChallenge(c.id);
       localStorage.setItem('pending_match_id', c.match_id);
+      if (navigatedToLobbyRef.current) return;
+      navigatedToLobbyRef.current = true;
       navigate(`/game/${c.match_id}/lobby?type=${c.game_type}`);
     } catch (err) {
       console.error('[MatchScreen] accept challenge error:', err);
