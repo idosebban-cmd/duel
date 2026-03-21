@@ -18,7 +18,7 @@ import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
 import { GAME_LABELS } from '../../lib/gameConstants';
 
-const POLL_MS = 2000;
+const POLL_MS = 500;
 const LOBBY_TIMEOUT_MS = 60_000;
 
 function useTimer(seconds: number) {
@@ -100,6 +100,7 @@ export function LobbyScreen() {
   const [loading, setLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [bothReady, setBothReady] = useState(false);
+  const [readyError, setReadyError] = useState(false);
 
   const gameRowRef = useRef<GameRow | null>(null);
   const countdownStartedRef = useRef(false);
@@ -244,7 +245,8 @@ export function LobbyScreen() {
   }, [gameRow, myUserId, startCountdown]);
 
   const handleCountdownComplete = useCallback(() => {
-    switch (gameType) {
+    const resolvedType = gameType ?? gameRow?.game_type;
+    switch (resolvedType) {
       case 'word_blitz':
         navigate(`/games/word-blitz/${matchId}`);
         break;
@@ -264,15 +266,21 @@ export function LobbyScreen() {
         navigate(`/game/${matchId}/play`);
         break;
     }
-  }, [matchId, gameType, navigate]);
+  }, [matchId, gameType, gameRow?.game_type, navigate]);
 
   // ── Ready button ───────────────────────────────────────────────
   const handleReady = async () => {
     if (!gameRow?.id || !myUserId) return;
+    setReadyError(false);
     console.log('[Lobby] Ready clicked, gameRowId:', gameRow?.id);
     const { data: result, error } = await updateGameReady(gameRow.id, myUserId);
     console.log('[Lobby] set_player_ready result:', result, error);
-    // Optimistic: update local state immediately
+    if (error) {
+      // RPC failed — do NOT optimistic-update, let user retry
+      setReadyError(true);
+      return;
+    }
+    // Only mark ourselves ready locally; bothReady is driven by polling
     const state = (gameRow.state ?? {}) as Record<string, unknown>;
     const ready = { ...((state.ready as Record<string, boolean>) ?? {}), [myUserId]: true };
     const updated = { ...gameRow, state: { ...state, ready } };
@@ -447,6 +455,18 @@ export function LobbyScreen() {
               animate={{ opacity: 1 }}
             >
               {errorMessage}
+            </motion.div>
+          )}
+
+          {/* Ready error */}
+          {readyError && (
+            <motion.div
+              className="mb-4 px-4 py-3 rounded-xl text-center font-body text-sm"
+              style={{ background: 'rgba(255,61,113,0.15)', border: '1px solid #FF3D71', color: '#FF3D71' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              Failed to ready up — tap to retry.
             </motion.div>
           )}
 
