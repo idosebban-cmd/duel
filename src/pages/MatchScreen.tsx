@@ -19,6 +19,7 @@ import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/datab
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CHAT_POLL_MS = 5_000;
+const CHALLENGE_POLL_MS = 5_000;
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -300,9 +301,43 @@ export function MatchScreen() {
           });
         },
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try {
+            const challs = await getChallengesForMatch(matchId);
+            setChallenges(challs);
+            const accepted = challs.find(
+              (c) => c.from_user === myUserId && c.status === 'accepted',
+            );
+            if (accepted) {
+              navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
+            }
+          } catch { /* ignore */ }
+        }
+      });
 
     return () => { supabase?.removeChannel(channel); };
+  }, [matchId, myUserId, navigate]);
+
+  // ── Poll for challenge acceptance every 5s (safety net) ────────
+  useEffect(() => {
+    if (!matchId || !myUserId) return;
+
+    const id = setInterval(async () => {
+      try {
+        const challs = await getChallengesForMatch(matchId);
+        setChallenges(challs);
+        const accepted = challs.find(
+          (c) => c.from_user === myUserId && c.status === 'accepted',
+        );
+        if (accepted) {
+          clearInterval(id);
+          navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
+        }
+      } catch { /* retry on next tick */ }
+    }, CHALLENGE_POLL_MS);
+
+    return () => clearInterval(id);
   }, [matchId, myUserId, navigate]);
 
   // ── Derived: incoming + outgoing pending challenges ────────────
