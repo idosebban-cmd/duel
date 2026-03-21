@@ -225,12 +225,14 @@ export function LobbyScreen() {
 
       if (remaining <= 0 && !countdownStartedRef.current) {
         clearInterval(id);
-        navigate('/discover');
+        navigate(`/match/${matchId}`, {
+          state: { flash: 'Game cancelled — opponent didn\'t join in time.' },
+        });
       }
     }, 1000);
 
     return () => clearInterval(id);
-  }, [navigate]);
+  }, [matchId, navigate]);
 
   // ── Detect both players ready → countdown → navigate ──────────
   useEffect(() => {
@@ -288,7 +290,7 @@ export function LobbyScreen() {
     if (gameRow?.id) {
       await deleteGame(gameRow.id);
     }
-    navigate('/discover');
+    navigate(`/match/${matchId}`);
   };
 
   // ── Derive display state ───────────────────────────────────────
