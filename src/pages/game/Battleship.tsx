@@ -673,6 +673,12 @@ export function Battleship() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
+  useEffect(() => {
+    if (phase === 'result') {
+      window.history.replaceState(null, '', `/matches`);
+    }
+  }, [phase]);
+
   // ── Derived ───────────────────────────────────────────────────────────────
   const sunkEnemyCells = new Set<string>();
   for (const ship of botShips) {

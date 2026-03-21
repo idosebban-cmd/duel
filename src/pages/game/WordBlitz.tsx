@@ -683,6 +683,12 @@ export function WordBlitz() {
   const filledCount = grid.flat().filter(Boolean).length;
   const allUsed = filledCount === 21 && pool.length === 0;
 
+  useEffect(() => {
+    if (phase === 'result') {
+      window.history.replaceState(null, '', `/matches`);
+    }
+  }, [phase]);
+
   // ─── Render ───────────────────────────────────────────────────────────────
   if (phase === 'setup') {
     return <SetupScreen onGo={startGame} myCharacter={myChar} myName={myName} />;
