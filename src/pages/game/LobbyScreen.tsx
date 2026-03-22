@@ -18,7 +18,7 @@ import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
 import { GAME_LABELS } from '../../lib/gameConstants';
 
-const POLL_MS = 500;
+const POLL_MS = 1000;
 const LOBBY_TIMEOUT_MS = 60_000;
 
 function useTimer(seconds: number) {
@@ -104,6 +104,7 @@ export function LobbyScreen() {
 
   const gameRowRef = useRef<GameRow | null>(null);
   const countdownStartedRef = useRef(false);
+  const cleanedUpRef = useRef(false);
   const mountedAtRef = useRef(Date.now());
 
   // ── Redirect if missing gameType or not authenticated ─────────
@@ -221,7 +222,8 @@ export function LobbyScreen() {
       if (remaining <= 0 && !countdownStartedRef.current) {
         clearInterval(id);
         const row = gameRowRef.current;
-        if (row?.id) {
+        if (row?.id && !cleanedUpRef.current) {
+          cleanedUpRef.current = true;
           deleteGame(row.id);
         }
         navigate(`/match/${matchId}`, {
@@ -237,7 +239,8 @@ export function LobbyScreen() {
   useEffect(() => {
     return () => {
       const row = gameRowRef.current;
-      if (row?.id && !countdownStartedRef.current) {
+      if (row?.id && !countdownStartedRef.current && !cleanedUpRef.current) {
+        cleanedUpRef.current = true;
         deleteGame(row.id);
       }
     };
