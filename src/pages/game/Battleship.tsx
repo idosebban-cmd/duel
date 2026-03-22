@@ -363,7 +363,7 @@ export function Battleship() {
   const { character } = useOnboardingStore();
   const playerChar = character ?? 'ghost';
 
-  const matchId      = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
+  const matchId      = params.matchId ?? null;
   const matchIdLooksMultiplayer = !!matchId && matchId !== 'demo';
 
   const mp = useMultiplayerGame<BsState>({
@@ -713,7 +713,7 @@ export function Battleship() {
             onBack={() => navigate('/matches')}
             onChat={() => {
               if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
-              navigate('/chat', matchId ? { state: { matchId } } : undefined);
+              if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
             }}
           />
         )}

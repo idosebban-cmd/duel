@@ -30,7 +30,6 @@ import { DotDashResult } from './pages/game/DotDashResult';
 import { GamePicker } from './pages/game/GamePicker';
 import { LandingPage } from './pages/LandingPage';
 import { DiscoverScreen } from './pages/DiscoverScreen';
-import { ChatScreen } from './pages/ChatScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { MatchesScreen } from './pages/MatchesScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
@@ -122,7 +121,6 @@ export default function App() {
           <Route path="/matches" element={<ProtectedRoute><MatchesScreen /></ProtectedRoute>} />
           <Route path="/match/:matchId" element={<ProtectedRoute><MatchScreen /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
-          <Route path="/chat" element={<ProtectedRoute><ChatScreen /></ProtectedRoute>} />
           <Route path="/play" element={<ProtectedRoute><GamePicker /></ProtectedRoute>} />
 
           {/* Guess Who game */}

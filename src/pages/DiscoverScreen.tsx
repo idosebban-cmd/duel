@@ -1625,7 +1625,6 @@ export function DiscoverScreen() {
             if (matched) {
               if (realMatchId) {
                 setFakeMatchId(realMatchId);
-                localStorage.setItem('pending_match_id', realMatchId);
               }
               window.setTimeout(() => setMatchProfile(profile), 100);
             }
@@ -1638,7 +1637,6 @@ export function DiscoverScreen() {
       // Fallback for fake seed profiles – generate a local matchId so chat/games work
       const fakeId = crypto.randomUUID();
       setFakeMatchId(fakeId);
-      localStorage.setItem('pending_match_id', fakeId);
       window.setTimeout(() => setMatchProfile(profile), 100);
     }
   };

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDotDashStore } from '../../store/dotDashStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
@@ -22,6 +22,7 @@ const CONFETTI_COLORS = ['#FF6BA8','#4EFFC4','#FFE66D','#B565FF','#FF3D71','#FF9
 
 export function DotDashResult() {
   const navigate = useNavigate();
+  const { gameId } = useParams<{ gameId: string }>();
   const store    = useDotDashStore();
   const payload  = store.gameOverPayload;
   const myId     = store.myUserId;
@@ -30,27 +31,22 @@ export function DotDashResult() {
     if (!payload) navigate('/dotdash');
   }, [payload, navigate]);
 
-  // Detect first game with this match
-  const matchId = localStorage.getItem('pending_match_id');
+  // matchId comes from the URL (gameId param IS the matchId for multiplayer games)
+  const matchId = gameId ?? null;
 
   usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
 
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const [showChatUnlock, setShowChatUnlock] = useState(false);
 
-  const oppName = payload
-    ? (payload.gameState.player1.userId === myId ? payload.gameState.player2 : payload.gameState.player1).name
-    : '';
-
-  // Auto-redirect to chat after 3s for first game with this match
+  // Auto-redirect to match screen after 3s for first game with this match
   useEffect(() => {
     if (!payload || !isFirstGame || !matchId) return;
 
     const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
     const redirectTimer = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
-      // Keep pending_match_id so subsequent games can still reach chat
-      navigate('/chat', { state: { matchId, name: oppName } });
+      navigate(`/match/${matchId}`);
     }, 3000);
 
     return () => {
@@ -252,7 +248,7 @@ export function DotDashResult() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
-                navigate('/chat', { state: { matchId, name: opp.name } });
+                if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
               }}
             >
               START CHATTING →
