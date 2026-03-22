@@ -306,9 +306,10 @@ export function GameBoard() {
 
   const handleForfeit = useCallback(() => {
     if (!gs) return;
+    navigatedRef.current = true;
     const opponentRole = myRole === 'player1' ? 'player2' : 'player1';
     mp.submitMove({ type: 'forfeit' }, gs, opponentRole);
-    navigate('/');
+    navigate('/matches');
   }, [gs, myRole, mp, navigate]);
 
   // ── Stale DB row guard (after all hooks) ────────────────────

@@ -61,10 +61,29 @@ export default function App() {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setUserId(session?.user?.id ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+        setUserId(null);
+      } else if (session) {
+        setSession(session);
+        setUser(session.user);
+        setUserId(session.user.id);
+      } else {
+        // Transient failure (no session, not SIGNED_OUT) — attempt refresh
+        supabase!.auth.getSession().then(({ data }) => {
+          if (data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+            setUserId(data.session.user.id);
+          } else {
+            setSession(null);
+            setUser(null);
+            setUserId(null);
+          }
+        });
+      }
       setLoading(false);
     });
 
