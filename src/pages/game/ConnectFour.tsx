@@ -22,8 +22,6 @@ import {
 // ── Multiplayer board helpers ─────────────────────────────────────────────────
 // DB stores numbers: 0=empty, 1=player1, 2=player2
 type DbBoard = number[][];
-const makeDbBoard = (): DbBoard =>
-  Array.from({ length: COLS }, () => Array(ROWS).fill(0));
 function dbBoardToLocal(db: DbBoard, role: 'player1' | 'player2'): Board {
   const mine = role === 'player1' ? 1 : 2;
   return db.map(col => col.map(v => v === 0 ? null : v === mine ? 'player' : 'bot'));
@@ -266,7 +264,6 @@ export function ConnectFour() {
   const mp = useMultiplayerGame<CF4State>({
     matchId: matchId ?? '',
     gameType: 'connect_four',
-    initialState: { board: makeDbBoard(), moveCount: 0 },
     enabled: matchIdLooksMultiplayer,
   });
   // If the match wasn't found in DB (fake/seed profile), fall back to bot mode

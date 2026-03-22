@@ -555,7 +555,6 @@ export async function createOrJoinGame(
   gameType: string,
   myUserId: string,
   opponentId: string,
-  initialState: object,
 ): Promise<GameRow | null> {
   const [p1, p2] = myUserId < opponentId
     ? [myUserId, opponentId]
@@ -586,8 +585,8 @@ export async function createOrJoinGame(
         player1_id: p1,
         player2_id: p2,
         owner: p1,
-        state: initialState,
-        current_turn: p1,
+        state: { ready: {} },
+        current_turn: null,
         status: 'pending',
       })
       .select()

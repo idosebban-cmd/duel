@@ -108,7 +108,6 @@ export function GameBoard() {
   const mp = useMultiplayerGame<GuessWhoState>({
     matchId: matchId ?? '',
     gameType: 'guess_who',
-    initialState,
     enabled: !!matchId,
   });
 

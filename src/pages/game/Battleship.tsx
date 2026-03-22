@@ -32,15 +32,6 @@ interface BsState {
   p1Shots: ('hit' | 'miss' | null)[][];
   p2Shots: ('hit' | 'miss' | null)[][];
 }
-const emptyShots = (): ('hit'|'miss'|null)[][] =>
-  Array.from({ length: GRID }, () => Array(GRID).fill(null));
-const makeInitialBsState = (): BsState => ({
-  phase: 'placing_p1',
-  p1Ships: null, p1Grid: null,
-  p2Ships: null, p2Grid: null,
-  p1Shots: emptyShots(), p2Shots: emptyShots(),
-});
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 const GRID    = 10;
 const CELL_P  = 30;   // placement cell size (px)
@@ -369,7 +360,6 @@ export function Battleship() {
   const mp = useMultiplayerGame<BsState>({
     matchId: matchId ?? '',
     gameType: 'battleship',
-    initialState: makeInitialBsState(),
     enabled: matchIdLooksMultiplayer,
   });
   const isMultiplayer = matchIdLooksMultiplayer && !mp.fallbackToBotMode;

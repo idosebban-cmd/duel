@@ -47,10 +47,6 @@ function piecesFromDb(db: DbPiece[], role: 'player1'|'player2'): Piece[] {
     player: p.player === mine ? 'player' : 'bot',
   }));
 }
-function makeInitialDbPieces(role: 'player1'|'player2'): DbPiece[] {
-  return piecesToDb(makeInitialPieces(), role);
-}
-
 // ── Constants ────────────────────────────────────────────────────────────────
 const CELL  = 44;        // px per square
 const BOARD = CELL * 8;  // 352px
@@ -345,11 +341,9 @@ export function Draughts() {
   const matchId      = params.matchId ?? null;
   const matchIdLooksMultiplayer = !!matchId && matchId !== 'demo';
 
-  // myRole will be known once the hook resolves; initialState is placeholder
   const mp = useMultiplayerGame<DraughtsState>({
     matchId: matchId ?? '',
     gameType: 'draughts',
-    initialState: { pieces: makeInitialDbPieces('player1'), moveCount: 0 },
     enabled: matchIdLooksMultiplayer,
   });
   const isMultiplayer = matchIdLooksMultiplayer && !mp.fallbackToBotMode;
