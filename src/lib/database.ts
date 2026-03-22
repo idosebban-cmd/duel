@@ -833,9 +833,13 @@ export async function submitGameMove(
       p_next_turn: nextTurn,
       p_winner: winner ?? null,
     });
-    if (error) console.error('[submitGameMove]', error.message);
+    if (error) {
+      console.error('[submitGameMove]', error.message);
+      throw new Error(error.message);
+    }
   } catch (err) {
     console.error('[submitGameMove] threw:', err);
+    throw err;
   }
 }
 

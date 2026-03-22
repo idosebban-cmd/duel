@@ -14,11 +14,13 @@ import {
   deleteGame,
   insertGameSecret,
 } from '../../lib/database';
+import { supabase } from '../../lib/supabase';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { GameRow } from '../../lib/database';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { GAME_LABELS } from '../../lib/gameConstants';
 
-const POLL_MS = 1000;
+const FALLBACK_POLL_MS = 2500;
 const LOBBY_TIMEOUT_MS = 60_000;
 
 function useTimer(seconds: number) {
@@ -186,24 +188,83 @@ export function LobbyScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, myUserId]);
 
-  // ── Poll for game state every 2s ───────────────────────────────
+  // ── Realtime subscription for game state (with fallback polling) ──
   useEffect(() => {
     const row = gameRowRef.current;
-    if (!row) return;
+    if (!row || !supabase) return;
 
-    const id = setInterval(async () => {
-      try {
-        const updated = await getGame(row.id);
-        if (!updated) return;
-        gameRowRef.current = updated;
-        setGameRow({ ...updated });
+    const sb = supabase; // narrowed non-null for closures
+    const gameId = row.id;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+    let channelRef: RealtimeChannel | null = null;
 
-      } catch {
-        // Transient error — retry on next tick
+    function applyUpdate(updated: GameRow) {
+      gameRowRef.current = updated;
+      setGameRow({ ...updated });
+    }
+
+    function startFallbackPoll() {
+      if (fallbackTimer) return;
+      fallbackTimer = setInterval(async () => {
+        try {
+          const updated = await getGame(gameId);
+          if (updated) applyUpdate(updated);
+        } catch { /* retry next tick */ }
+      }, FALLBACK_POLL_MS);
+    }
+
+    function stopFallbackPoll() {
+      if (fallbackTimer) {
+        clearInterval(fallbackTimer);
+        fallbackTimer = null;
       }
-    }, POLL_MS);
+    }
 
-    return () => clearInterval(id);
+    function subscribe(): RealtimeChannel {
+      const channel = sb
+        .channel(`lobby-${gameId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'games',
+            filter: `id=eq.${gameId}`,
+          },
+          (payload) => {
+            applyUpdate(payload.new as GameRow);
+          },
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            // Reconcile missed events on connect/reconnect
+            getGame(gameId).then((updated) => {
+              if (updated) applyUpdate(updated);
+              stopFallbackPoll();
+            });
+          } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            startFallbackPoll();
+            setTimeout(() => {
+              if (channelRef === channel) {
+                sb.removeChannel(channel);
+                channelRef = subscribe();
+              }
+            }, 3000);
+          }
+        });
+
+      return channel;
+    }
+
+    channelRef = subscribe();
+
+    return () => {
+      stopFallbackPoll();
+      if (channelRef) {
+        sb.removeChannel(channelRef);
+        channelRef = null;
+      }
+    };
   }, [gameRow?.id]);
 
   // ── Lobby timeout timer (counts down from 60s) ────────────────

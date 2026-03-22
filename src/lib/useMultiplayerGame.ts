@@ -1,10 +1,10 @@
 /**
- * useMultiplayerGame – polling-based async multiplayer for turn-based games.
+ * useMultiplayerGame – Realtime-based async multiplayer for turn-based games.
  *
  * Responsibilities:
  *  - Look up the match to resolve opponentId
  *  - Create or join a game record in the DB
- *  - Poll every `pollInterval` ms for state changes
+ *  - Subscribe to Supabase Realtime for state changes (fallback to polling on disconnect)
  *  - Expose `isMyTurn`, `myRole`, `gameState`, `winner`, `submitMove`
  *
  * When `enabled = false` (solo / demo mode) the hook is a no-op.
@@ -19,7 +19,9 @@ import {
   submitGameMove,
   setPlayerPresent,
 } from './database';
+import { supabase } from './supabase';
 import type { GameRow } from './database';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -64,8 +66,8 @@ interface Options<S> {
   initialState: S;
   /** Pass false to disable multiplayer (solo / demo mode) */
   enabled?: boolean;
-  /** Polling interval in ms (default 2500) */
-  pollInterval?: number;
+  /** Fallback polling interval in ms when Realtime is disconnected (default 2500) */
+  fallbackPollInterval?: number;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
@@ -75,7 +77,7 @@ export function useMultiplayerGame<S>({
   gameType,
   initialState,
   enabled = true,
-  pollInterval = 2500,
+  fallbackPollInterval = 2500,
 }: Options<S>): MultiplayerGame<S> {
   const { user } = useAuthStore();
   const myUserId = user?.id ?? '';
@@ -147,39 +149,102 @@ export function useMultiplayerGame<S>({
     setPlayerPresent(gameRow.id, myUserId);
   }, [enabled, gameRow?.id, myUserId]);
 
-  // ── Polling ─────────────────────────────────────────────────────────────
+  // ── Realtime subscription with fallback polling ──────────────────────────
   useEffect(() => {
-    if (!enabled || !gameRow?.id) return;
-    // Stop polling once the game has a winner
+    if (!enabled || !gameRow?.id || !supabase) return;
+    // Stop subscribing once the game has a winner
     if (gameRow.winner) return;
 
-    let pollCount = 0;
-    const id = setInterval(async () => {
-      pollCount++;
-      console.log(`[useMultiplayerGame] Poll #${pollCount} — fetching game ${gameRowRef.current!.id}`);
-      try {
-        const updated = await getGame(gameRowRef.current!.id);
-        if (!updated) {
-          console.warn(`[useMultiplayerGame] Poll #${pollCount} — getGame returned null/undefined`);
-          return;
-        }
-        const localUpdatedAt = gameRowRef.current?.updated_at ?? '(none)';
-        const serverUpdatedAt = updated.updated_at;
-        console.log(`[useMultiplayerGame] Poll #${pollCount} — server updated_at: ${serverUpdatedAt}, local updated_at: ${localUpdatedAt}`);
-        if (updated.updated_at !== gameRowRef.current?.updated_at) {
-          console.log(`[useMultiplayerGame] Poll #${pollCount} — STATE CHANGE DETECTED, updating gameRow. current_turn: ${updated.current_turn}, winner: ${updated.winner}`);
-          gameRowRef.current = updated;
-          setGameRow({ ...updated });
-        } else {
-          console.log(`[useMultiplayerGame] Poll #${pollCount} — no change`);
-        }
-      } catch (err) {
-        console.error(`[useMultiplayerGame] Poll #${pollCount} error:`, err);
-      }
-    }, pollInterval);
+    const sb = supabase; // narrowed non-null for closures
+    const gameId = gameRow.id;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+    let channelRef: RealtimeChannel | null = null;
 
-    return () => clearInterval(id);
-  }, [enabled, gameRow?.id, gameRow?.winner, pollInterval]);
+    function applyUpdate(updated: GameRow) {
+      const local = gameRowRef.current;
+      // Skip if local updated_at is newer (prevents optimistic state being overwritten by self-echo)
+      if (local?.updated_at && updated.updated_at && local.updated_at > updated.updated_at) {
+        console.log('[useMultiplayerGame] Realtime: skipping stale update (local is newer)');
+        return;
+      }
+      if (updated.updated_at !== local?.updated_at) {
+        console.log('[useMultiplayerGame] Realtime: STATE CHANGE — current_turn:', updated.current_turn, 'winner:', updated.winner);
+        gameRowRef.current = updated;
+        setGameRow({ ...updated });
+      }
+    }
+
+    function startFallbackPoll() {
+      if (fallbackTimer) return;
+      console.log('[useMultiplayerGame] Starting fallback poll');
+      fallbackTimer = setInterval(async () => {
+        try {
+          const updated = await getGame(gameId);
+          if (updated) applyUpdate(updated);
+        } catch (err) {
+          console.error('[useMultiplayerGame] Fallback poll error:', err);
+        }
+      }, fallbackPollInterval);
+    }
+
+    function stopFallbackPoll() {
+      if (fallbackTimer) {
+        console.log('[useMultiplayerGame] Stopping fallback poll');
+        clearInterval(fallbackTimer);
+        fallbackTimer = null;
+      }
+    }
+
+    function subscribe() {
+      const channel = sb
+        .channel(`game-${gameId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'games',
+            filter: `id=eq.${gameId}`,
+          },
+          (payload) => {
+            const updated = payload.new as GameRow;
+            applyUpdate(updated);
+          },
+        )
+        .subscribe((status) => {
+          console.log('[useMultiplayerGame] Realtime status:', status);
+          if (status === 'SUBSCRIBED') {
+            // On reconnect: fetch once to reconcile missed events, then stop fallback
+            getGame(gameId).then((updated) => {
+              if (updated) applyUpdate(updated);
+              stopFallbackPoll();
+            });
+          } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            startFallbackPoll();
+            // Attempt resubscribe after a short delay
+            setTimeout(() => {
+              if (channelRef === channel) {
+                sb.removeChannel(channel);
+                channelRef = subscribe();
+              }
+            }, 3000);
+          }
+        });
+
+      return channel;
+    }
+
+    channelRef = subscribe();
+
+    return () => {
+      stopFallbackPoll();
+      if (channelRef) {
+        sb.removeChannel(channelRef);
+        channelRef = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, gameRow?.id, gameRow?.winner, fallbackPollInterval]);
 
   // ── Derived values ───────────────────────────────────────────────────────
   const myRole: PlayerRole =
@@ -201,7 +266,7 @@ export function useMultiplayerGame<S>({
 
   // ── submitMove ──────────────────────────────────────────────────────────
   const submitMove = useCallback(
-    (moveData: object, newState: S, winner?: string | null) => {
+    async (moveData: object, newState: S, winner?: string | null) => {
       const row = gameRowRef.current;
       if (!row) return;
 
@@ -219,15 +284,28 @@ export function useMultiplayerGame<S>({
       gameRowRef.current = optimistic;
       setGameRow(optimistic);
 
-      // Persist (fire-and-forget; polling will reconcile if it fails)
-      submitGameMove(
-        row.id,
-        myUserId,
-        moveData,
-        newState as object,
-        nextTurn,
-        winner ?? null,
-      );
+      // Persist — on failure, fetch canonical state and revert optimistic update
+      try {
+        await submitGameMove(
+          row.id,
+          myUserId,
+          moveData,
+          newState as object,
+          nextTurn,
+          winner ?? null,
+        );
+      } catch (err) {
+        console.error('[useMultiplayerGame] submitMove RPC failed, fetching canonical state:', err);
+        try {
+          const canonical = await getGame(row.id);
+          if (canonical) {
+            gameRowRef.current = canonical;
+            setGameRow({ ...canonical });
+          }
+        } catch (fetchErr) {
+          console.error('[useMultiplayerGame] Failed to fetch canonical state:', fetchErr);
+        }
+      }
     },
     [myUserId],
   );
