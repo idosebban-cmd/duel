@@ -99,7 +99,7 @@ export function LobbyScreen() {
   const [opponentAvatar, setOpponentAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [bothReady, setBothReady] = useState(false);
+  const [, setBothReady] = useState(false);
   const [readyError, setReadyError] = useState(false);
 
   const gameRowRef = useRef<GameRow | null>(null);
@@ -513,7 +513,7 @@ export function LobbyScreen() {
               </motion.button>
             )}
 
-            {!bothReady && (
+            {!isCountingDown && (
               <button
                 onClick={handleCancel}
                 className="w-full py-3 rounded-2xl font-display font-bold text-base"
