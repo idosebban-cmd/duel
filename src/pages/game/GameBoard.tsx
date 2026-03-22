@@ -309,7 +309,7 @@ export function GameBoard() {
     navigatedRef.current = true;
     const opponentRole = myRole === 'player1' ? 'player2' : 'player1';
     mp.submitMove({ type: 'forfeit' }, gs, opponentRole);
-    navigate('/matches');
+    navigate('/');
   }, [gs, myRole, mp, navigate]);
 
   // ── Stale DB row guard (after all hooks) ────────────────────
