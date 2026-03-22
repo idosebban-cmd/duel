@@ -208,6 +208,12 @@ export function useMultiplayerGame<S>({
           },
           (payload) => {
             const updated = payload.new as GameRow;
+            // Game over — tear down the channel immediately before any state update
+            if (updated.winner && channelRef) {
+              sb.removeChannel(channelRef);
+              channelRef = null;
+              stopFallbackPoll();
+            }
             applyUpdate(updated);
           },
         )

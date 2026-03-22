@@ -232,7 +232,14 @@ export function LobbyScreen() {
             filter: `id=eq.${gameId}`,
           },
           (payload) => {
-            applyUpdate(payload.new as GameRow);
+            const updated = payload.new as GameRow;
+            // Game has a winner — tear down the channel immediately
+            if (updated.winner && channelRef) {
+              sb.removeChannel(channelRef);
+              channelRef = null;
+              stopFallbackPoll();
+            }
+            applyUpdate(updated);
           },
         )
         .subscribe((status) => {
