@@ -99,7 +99,6 @@ export function LobbyScreen() {
   const [opponentAvatar, setOpponentAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [, setBothReady] = useState(false);
   const [readyError, setReadyError] = useState(false);
 
   const gameRowRef = useRef<GameRow | null>(null);
@@ -198,12 +197,7 @@ export function LobbyScreen() {
         if (!updated) return;
         gameRowRef.current = updated;
         setGameRow({ ...updated });
-        const pollState = (updated.state ?? {}) as Record<string, unknown>;
-        const pollReady = pollState.ready as Record<string, boolean> | undefined;
-        console.log('[Lobby] Poll — state.ready:', pollReady);
-        const p1Ready = pollReady?.[updated.player1_id];
-        const p2Ready = pollReady?.[updated.player2_id];
-        console.log('[Lobby] bothReady:', !!(p1Ready && p2Ready));
+
       } catch {
         // Transient error — retry on next tick
       }
@@ -256,7 +250,6 @@ export function LobbyScreen() {
 
     if (bothReady) {
       countdownStartedRef.current = true;
-      setBothReady(true);
       startCountdown(3);
     }
   }, [gameRow, myUserId, startCountdown]);
