@@ -15,7 +15,7 @@ export function usePostGameRedirect({
   useEffect(() => {
     if (!isMultiplayer || !matchId || phase !== 'result') return;
     const timer = setTimeout(() => {
-      navigate('/chat', { state: { matchId } });
+      navigate(`/match/${matchId}`);
     }, 4000);
     return () => clearTimeout(timer);
   }, [isMultiplayer, matchId, phase, navigate]);

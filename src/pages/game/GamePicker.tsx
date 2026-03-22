@@ -103,7 +103,6 @@ export function GamePicker() {
 
       if (result.mutual) {
         // Both players challenged each other — go to lobby
-        localStorage.setItem('pending_match_id', matchId);
         navigate(`/game/${matchId}/lobby?type=${game.id}`);
       } else {
         // Challenge sent — go back to match screen with flash

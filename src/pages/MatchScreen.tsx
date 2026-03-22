@@ -346,7 +346,6 @@ export function MatchScreen() {
     setChallengeError(null);
     try {
       await acceptChallenge(c.id);
-      localStorage.setItem('pending_match_id', c.match_id);
       if (navigatedToLobbyRef.current) return;
       navigatedToLobbyRef.current = true;
       navigate(`/game/${c.match_id}/lobby?type=${c.game_type}`);

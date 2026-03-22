@@ -260,7 +260,7 @@ export function ConnectFour() {
   const playerChar = character ?? 'ghost';
 
   // matchId from route param or localStorage (set by GamePicker)
-  const matchId = params.matchId ?? localStorage.getItem('pending_match_id') ?? null;
+  const matchId = params.matchId ?? null;
   const matchIdLooksMultiplayer = !!matchId && matchId !== 'demo';
 
   const mp = useMultiplayerGame<CF4State>({
@@ -490,7 +490,7 @@ export function ConnectFour() {
             onBack={() => navigate('/matches')}
             onChat={() => {
               if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
-              navigate('/chat', matchId ? { state: { matchId } } : undefined);
+              if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
             }}
           />
         )}

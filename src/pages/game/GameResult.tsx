@@ -125,7 +125,7 @@ export function GameResult() {
   }, [result?.gameId]);
 
   // Derive values needed by the auto-redirect effect (safe even when result is null)
-  const matchId = result?.matchId ?? localStorage.getItem('pending_match_id') ?? '';
+  const matchId = result?.matchId ?? '';
 
   usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
 
@@ -142,7 +142,7 @@ export function GameResult() {
     const redirectTimer = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
       store.reset();
-      navigate('/chat', { state: { matchId, name: 'Opponent', character: opponentChar?.attributes?.type } });
+      navigate(`/match/${matchId}`);
     }, 3000);
 
     return () => {

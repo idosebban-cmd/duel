@@ -702,7 +702,7 @@ export function WordBlitz() {
         onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
         onChat={() => {
           if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
-          navigate('/chat', matchId ? { state: { matchId } } : undefined);
+          if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
         }}
       />
     );
