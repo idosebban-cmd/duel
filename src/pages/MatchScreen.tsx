@@ -260,14 +260,20 @@ export function MatchScreen() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'challenges', filter: `match_id=eq.${matchId}` },
-        (payload) => {
+        async (payload) => {
           const updated = payload.new as ChallengeRow;
           setChallenges((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
           // Inviter is on MatchScreen when opponent accepts
           if (updated.from_user === myUserId && updated.status === 'accepted') {
-            if (navigatedToLobbyRef.current) return;
-            navigatedToLobbyRef.current = true;
-            navigate(`/game/${updated.match_id}/lobby?type=${updated.game_type}`);
+            const age = updated.resolved_at
+              ? Date.now() - new Date(updated.resolved_at).getTime()
+              : Infinity;
+            if (age < 60_000) {
+              if (navigatedToLobbyRef.current) return;
+              navigatedToLobbyRef.current = true;
+              try { await supabase!.from('challenges').update({ status: 'consumed' }).eq('id', updated.id); } catch {}
+              navigate(`/game/${updated.match_id}/lobby?type=${updated.game_type}`);
+            }
           }
         },
       )
@@ -293,6 +299,7 @@ export function MatchScreen() {
             if (accepted) {
               if (navigatedToLobbyRef.current) return;
               navigatedToLobbyRef.current = true;
+              try { await supabase!.from('challenges').update({ status: 'consumed' }).eq('id', accepted.id); } catch {}
               navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
             }
           } catch { /* ignore */ }
