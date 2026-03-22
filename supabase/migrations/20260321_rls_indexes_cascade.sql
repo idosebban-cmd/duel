@@ -15,6 +15,7 @@
 --   7. Adds set_player_present RPC (SECURITY DEFINER)
 --   8. Adds abandon_game RPC (SECURITY DEFINER)
 --   9. Adds expire_stale_games function (manual/cron caller)
+--  10. Adds chk_challenges_status constraint
 --
 -- Pre-requisites:
 --   - game_secrets table must exist (confirmed live)
@@ -510,5 +511,12 @@ BEGIN
   RETURN v_count;
 END;
 $$;
+
+-- ─── 17. Add CHECK constraint on challenges.status ───────────
+-- No constraint exists today — status is unchecked text.
+-- Adding one to enforce the valid lifecycle states.
+
+ALTER TABLE challenges ADD CONSTRAINT chk_challenges_status
+  CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'resolved'));
 
 COMMIT;
