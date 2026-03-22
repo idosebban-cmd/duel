@@ -514,9 +514,15 @@ $$;
 
 -- ─── 17. Add CHECK constraint on challenges.status ───────────
 -- No constraint exists today — status is unchecked text.
--- Adding one to enforce the valid lifecycle states.
+-- Adding one to enforce the valid lifecycle states:
+--   pending   — challenge sent, awaiting response
+--   accepted  — opponent agreed to play
+--   declined  — opponent declined
+--   expired   — timed out without response
+--   resolved  — challenge fully consumed, game created
+--   consumed  — challenge acted on, navigation triggered
 
 ALTER TABLE challenges ADD CONSTRAINT chk_challenges_status
-  CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'resolved'));
+  CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'resolved', 'consumed'));
 
 COMMIT;
