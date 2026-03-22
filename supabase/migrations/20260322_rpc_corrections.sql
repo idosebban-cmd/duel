@@ -6,7 +6,8 @@
 -- What this migration does:
 --   1. Replaces check_guess RPC with corrected live definition
 --      (adds status = 'finished' on game completion)
---   2. Drops stale challenges_status_check constraint
+--   2. Adds submit_move RPC (live definition with status fix)
+--   3. Drops stale challenges_status_check constraint
 --
 -- NOTE: These definitions were already applied directly to the
 -- live DB. This migration exists for version control only.
@@ -73,7 +74,44 @@ BEGIN
 END;
 $function$;
 
--- ─── 2. Drop stale challenges_status_check constraint ────────
+-- ─── 2. submit_move RPC (live definition with status fix) ────
+-- Sets status = 'finished' when p_winner is provided.
+
+CREATE OR REPLACE FUNCTION public.submit_move(
+  p_game_id    uuid,
+  p_player_id  uuid,
+  p_move       jsonb,
+  p_new_state  jsonb,
+  p_next_turn  uuid,
+  p_winner     text DEFAULT NULL::text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $function$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM games
+    WHERE id = p_game_id
+      AND (player1_id = p_player_id OR player2_id = p_player_id)
+  ) THEN
+    RAISE EXCEPTION 'Not a participant in this game';
+  END IF;
+  INSERT INTO moves (game_id, player_id, move_data)
+  VALUES (p_game_id, p_player_id, p_move);
+  UPDATE games
+  SET state        = p_new_state,
+      current_turn = CASE WHEN p_winner IS NOT NULL
+                     THEN NULL ELSE p_next_turn END,
+      winner       = p_winner,
+      status       = CASE WHEN p_winner IS NOT NULL
+                     THEN 'finished' ELSE status END,
+      updated_at   = now()
+  WHERE id = p_game_id;
+END;
+$function$;
+
+-- ─── 3. Drop stale challenges_status_check constraint ────────
 -- This constraint name does not match the canonical
 -- chk_challenges_status defined in 20260321. Drop it to
 -- prevent conflicts.
