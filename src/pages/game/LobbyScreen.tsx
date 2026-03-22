@@ -351,7 +351,7 @@ export function LobbyScreen() {
       setReadyError(true);
       return;
     }
-    // Only mark ourselves ready locally; bothReady is a local const derived from polling
+    // Only mark ourselves ready locally; bothReady is a local const derived from game state
     const state = (gameRow.state ?? {}) as Record<string, unknown>;
     const ready = { ...((state.ready as Record<string, boolean>) ?? {}), [myUserId]: true };
     const updated = { ...gameRow, state: { ...state, ready } };
