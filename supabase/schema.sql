@@ -58,6 +58,10 @@ create policy "Users can update their own profile"
   on profiles for update
   using (auth.uid() = id);
 
+create policy "Users can delete their own profile"
+  on profiles for delete
+  using (auth.uid() = id);
+
 create policy "Authenticated users can view photos"
   on photos for select
   using (auth.role() = 'authenticated');
@@ -111,6 +115,10 @@ create policy "Users can update their own swipes"
   on swipes for update
   using (auth.uid() = from_user);
 
+create policy "Users can delete their own swipes"
+  on swipes for delete
+  using (auth.uid() = from_user);
+
 -- ─── Matches table ────────────────────────────────────────────────────────────
 create table if not exists matches (
   id            uuid        default gen_random_uuid() primary key,
@@ -154,9 +162,9 @@ create policy "Match members can insert messages"
   on messages for insert
   with check (room_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
 
-create policy "Sender can update own messages"
+create policy "Match members can update messages"
   on messages for update
-  using (auth.uid() = sender);
+  using (room_id in (select id from matches where user_a = auth.uid() or user_b = auth.uid()));
 
 -- ─── Games table ──────────────────────────────────────────────────────────────
 create table if not exists games (
@@ -223,6 +231,59 @@ create policy "Match members can select moves"
 create policy "Players can insert their own moves"
   on moves for insert
   with check (auth.uid() = player_id);
+
+-- ─── Game Secrets table ─────────────────────────────────────────────────────
+create table if not exists game_secrets (
+  game_id      uuid not null references games(id) on delete cascade,
+  player_id    uuid not null references auth.users(id),
+  character_id text not null,
+  primary key (game_id, player_id)
+);
+
+alter table game_secrets enable row level security;
+
+create policy "Players can view their own secret"
+  on game_secrets for select
+  using (auth.uid() = player_id);
+
+create policy "Players can insert their own secret"
+  on game_secrets for insert
+  with check (auth.uid() = player_id);
+
+-- ─── Challenges table ───────────────────────────────────────────────────────
+create table if not exists challenges (
+  id          uuid        default gen_random_uuid() primary key,
+  match_id    uuid        not null references matches(id) on delete cascade,
+  from_user   uuid        not null references profiles(id) on delete cascade,
+  to_user     uuid        not null references profiles(id) on delete cascade,
+  game_type   text        not null,
+  status      text        not null default 'pending',
+  expires_at  timestamptz,
+  created_at  timestamptz default now(),
+  resolved_at timestamptz
+);
+
+create index if not exists idx_challenges_match_id on challenges(match_id);
+create index if not exists idx_challenges_to_user_status on challenges(to_user, status);
+
+alter table challenges enable row level security;
+
+create policy "Users can view their own challenges"
+  on challenges for select
+  using (auth.uid() = from_user or auth.uid() = to_user);
+
+create policy "Users can create challenges from themselves"
+  on challenges for insert
+  with check (auth.uid() = from_user);
+
+create policy "Involved users can update challenges"
+  on challenges for update
+  using (auth.uid() = from_user or auth.uid() = to_user);
+
+-- ─── Partial unique index: one active game per match+type ────────────────────
+create unique index if not exists uq_games_match_type_active
+  on games (match_id, game_type)
+  where winner is null;
 
 -- ─── Storage bucket ───────────────────────────────────────────────────────────
 -- Run these in the Supabase Dashboard → Storage → New Bucket:

@@ -34,7 +34,7 @@
 - Supabase (auth, database, realtime) — project: maqjhjvgfvomslktfznz
 - Netlify (auto-deploys from main) — live URL: playduel.app
 - Supabase requires legacy JWT anon key (eyJ... format)
-- RLS is currently DISABLED on all tables
+- RLS is enabled on all tables (profiles, photos, swipes, matches, messages, games, moves, game_secrets, challenges)
 
 ## Key files
 
