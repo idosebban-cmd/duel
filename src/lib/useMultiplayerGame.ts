@@ -59,11 +59,9 @@ export interface MultiplayerGame<S> {
   submitMove: (moveData: object, newState: S, winner?: string | null) => void;
 }
 
-interface Options<S> {
+interface Options {
   matchId: string;
   gameType: string;
-  /** Initial state used when creating a new game */
-  initialState: S;
   /** Pass false to disable multiplayer (solo / demo mode) */
   enabled?: boolean;
   /** Fallback polling interval in ms when Realtime is disconnected (default 2500) */
@@ -75,10 +73,9 @@ interface Options<S> {
 export function useMultiplayerGame<S>({
   matchId,
   gameType,
-  initialState,
   enabled = true,
   fallbackPollInterval = 2500,
-}: Options<S>): MultiplayerGame<S> {
+}: Options): MultiplayerGame<S> {
   const { user } = useAuthStore();
   const myUserId = user?.id ?? '';
 
@@ -122,7 +119,6 @@ export function useMultiplayerGame<S>({
           gameType,
           myUserId,
           oppId,
-          initialState as object,
         );
         console.log('[useMultiplayerGame] createOrJoinGame returned:', row);
 

@@ -467,7 +467,6 @@ export function WordBlitz() {
   const mp = useMultiplayerGame<object>({
     matchId: matchId ?? '',
     gameType: 'word_blitz',
-    initialState: {},
     enabled: isMultiplayer,
   });
 

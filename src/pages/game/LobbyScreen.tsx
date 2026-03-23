@@ -29,55 +29,6 @@ function useTimer(seconds: number) {
   return `${mins}:${secs}`;
 }
 
-function getInitialState(gameType: string, matchId: string): object {
-  switch (gameType) {
-    case 'guess_who': {
-      const board = generateGuessWhoBoard(matchId);
-      return {
-        characters: board.characters,
-        p1Flipped: [] as string[],
-        p2Flipped: [] as string[],
-        turnPhase: 'ask' as const,
-        currentQuestion: null,
-        currentAnswer: null,
-        turnHistory: [] as Array<{ asker: string; question: string; answer: string }>,
-        moveCount: 0,
-      };
-    }
-    case 'connect_four':
-      return { board: Array.from({ length: 7 }, () => Array(6).fill(0)), moveCount: 0 };
-    case 'battleship': {
-      const emptyShots = () => Array.from({ length: 10 }, () => Array(10).fill(null));
-      return {
-        phase: 'placing_p1',
-        p1Ships: null, p1Grid: null,
-        p2Ships: null, p2Grid: null,
-        p1Shots: emptyShots(), p2Shots: emptyShots(),
-      };
-    }
-    case 'draughts': {
-      // Generate initial 24-piece board using DB serialisation (p1 = bottom, p2 = top)
-      const pieces: Array<{ id: string; row: number; col: number; player: 'p1' | 'p2'; isKing: boolean }> = [];
-      let pid = 0;
-      for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-          if ((row + col) % 2 === 1) {
-            if (row < 3) pieces.push({ id: `b${pid++}`, row, col, player: 'p2', isKing: false });
-            if (row > 4) pieces.push({ id: `p${pid++}`, row, col, player: 'p1', isKing: false });
-          }
-        }
-      }
-      return { pieces, moveCount: 0 };
-    }
-    case 'word_blitz':
-      return { grid: [], pool: [], p1Score: 0, p2Score: 0, moveCount: 0 };
-    case 'dot_dash':
-      return {};
-    default:
-      return {};
-  }
-}
-
 export function LobbyScreen() {
   // URL param is actually the matchId (set by GamePicker)
   const { gameId: matchId } = useParams<{ gameId: string }>();
@@ -153,8 +104,7 @@ export function LobbyScreen() {
         }
 
         // Create or join the game row
-        const initialState = getInitialState(gameType!, matchId);
-        const row = await createOrJoinGame(matchId, gameType!, myUserId, opponentId, initialState);
+        const row = await createOrJoinGame(matchId, gameType!, myUserId, opponentId);
         if (cancelled) return;
         if (row) {
           gameRowRef.current = row;
@@ -275,13 +225,17 @@ export function LobbyScreen() {
 
   // ── Lobby timeout timer (counts down from 60s) ────────────────
   useEffect(() => {
-    const id = setInterval(() => {
+    const id = setInterval(async () => {
       const elapsed = Date.now() - mountedAtRef.current;
       const remaining = Math.max(0, Math.ceil((LOBBY_TIMEOUT_MS - elapsed) / 1000));
       setTimeRemaining(remaining);
 
       if (remaining <= 0 && !countdownStartedRef.current) {
         clearInterval(id);
+        const row = gameRowRef.current;
+        if (row?.id && row?.status === 'pending') {
+          await deleteGame(row.id);
+        }
         navigate(`/match/${matchId}`, {
           state: { flash: 'Game cancelled — opponent didn\'t join in time.' },
         });
@@ -295,11 +249,7 @@ export function LobbyScreen() {
   useEffect(() => {
     if (!gameRow || !myUserId || countdownStartedRef.current) return;
 
-    const state = (gameRow.state ?? {}) as Record<string, unknown>;
-    const ready = (state.ready ?? {}) as Record<string, boolean>;
-    const bothReady = ready[gameRow.player1_id] && ready[gameRow.player2_id];
-
-    if (bothReady) {
+    if (gameRow.status === 'playing') {
       countdownStartedRef.current = true;
       startCountdown(3);
     }
