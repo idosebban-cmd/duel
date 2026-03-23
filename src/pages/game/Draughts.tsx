@@ -1,14 +1,16 @@
 /**
  * Draughts – classic checkers for Duel
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
-import { abandonGame } from '../../lib/database';
+import { abandonGame, getProfile } from '../../lib/database';
+import { GameTitleCard } from '../../components/game/GameTitleCard';
+import { useNoShowGuard } from '../../lib/useNoShowGuard';
 import {
   WaitingForOpponentOverlay,
   LeaveGameDialog,
@@ -350,8 +352,39 @@ export function Draughts() {
   const myRole = mp.myRole;
 
   const [phase,          setPhase]          = useState<Phase>('setup');
+  const [titleCardComplete, setTitleCardComplete] = useState(!isMultiplayer);
+  const titleCardActiveRef = useRef(false);
+  const [opponentName, setOpponentName] = useState<string | null>(null);
 
   usePostGameRedirect({ isMultiplayer, matchId, phase });
+
+  useEffect(() => {
+    if (!isMultiplayer) {
+      titleCardActiveRef.current = false;
+      setTitleCardComplete(true);
+      return;
+    }
+    if (!titleCardComplete) {
+      titleCardActiveRef.current = true;
+    }
+  }, [isMultiplayer, titleCardComplete]);
+
+  const handleTitleCardComplete = useCallback(() => {
+    titleCardActiveRef.current = false;
+    setTitleCardComplete(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mp.opponentId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await getProfile(mp.opponentId);
+      if (!cancelled && data?.name) setOpponentName(data.name);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mp.opponentId]);
 
   // ── Multiplayer rules state ────────────────────────────────────────────
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -555,12 +588,32 @@ export function Draughts() {
     }
   }, [phase]);
 
+  const noShow = useNoShowGuard({
+    enabled: isMultiplayer && phase === 'playing' && !!matchId && !!mp.gameId && !!mp.gameRow && titleCardComplete && !mp.gameRow?.winner,
+    matchId: matchId ?? '',
+    gameId: mp.gameId,
+    gameStatus: mp.gameRow?.status,
+    titleCardComplete,
+    opponentActivityTick: mp.opponentActivityTick,
+    opponentDisplayName: opponentName ?? 'Opponent',
+    navigate,
+    titleCardActiveRef,
+  });
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A1628' }}>
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
+
+      {isMultiplayer && !titleCardComplete && (
+        <GameTitleCard
+          gameName="Draughts"
+          opponentName={opponentName}
+          onComplete={handleTitleCardComplete}
+        />
+      )}
 
       {/* Multiplayer overlays */}
       {isMultiplayer && (
@@ -574,7 +627,7 @@ export function Draughts() {
 
       {/* Setup overlay */}
       <AnimatePresence>
-        {phase === 'setup' && (
+        {phase === 'setup' && !isMultiplayer && (
           <SetupScreen playerChar={playerChar} onDone={() => setPhase('playing')} />
         )}
       </AnimatePresence>
@@ -791,6 +844,66 @@ export function Draughts() {
         </div>
         <div className="font-display text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>DUEL</div>
       </div>
+
+      <AnimatePresence>
+        {titleCardComplete && noShow.waitingLineVisible && !noShow.promptVisible && phase === 'playing' && (
+          <motion.div
+            key="no-show-line-draughts"
+            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4 pointer-events-none"
+            style={{ width: 'min(92vw, 420px)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <p className="text-center font-body text-sm text-white/45">
+              Waiting for {opponentName ?? 'Opponent'}...
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {titleCardComplete && noShow.promptVisible && phase === 'playing' && (
+          <motion.div
+            key="no-show-prompt-draughts"
+            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4"
+            style={{ width: 'min(92vw, 420px)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <div
+              className="rounded-2xl px-4 py-3"
+              style={{
+                background: 'rgba(15,23,42,0.95)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <p className="font-body text-sm text-center text-white/75 mb-3">
+                {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
+              </p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  type="button"
+                  onClick={() => void noShow.cancelWaiting()}
+                  className="px-4 py-2 rounded-xl font-display font-bold text-xs"
+                  style={{ background: '#FF3D71', border: '2px solid black', color: 'white' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={noShow.dismissPrompt}
+                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

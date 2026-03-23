@@ -612,6 +612,23 @@ export async function createOrJoinGame(
   }
 }
 
+/** Initialize a newly created/joined game row via RPC. */
+export async function initializeGame(gameId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.rpc('initialise_game', {
+      p_game_id: gameId,
+    });
+    if (error) {
+      console.error('[initializeGame]', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[initializeGame] threw:', err);
+    return false;
+  }
+}
+
 /**
  * Returns true if at least one game for this match has been completed (winner set).
  * Falls back to the localStorage flag for bot/fake matches.
@@ -671,21 +688,6 @@ export async function getGameByMatchId(matchId: string): Promise<GameRow | null>
     return data as GameRow | null;
   } catch {
     return null;
-  }
-}
-
-/** Toggle a player's ready flag inside games.state.ready (via atomic RPC). */
-export async function updateGameReady(gameId: string, userId: string): Promise<{ data: unknown; error: unknown }> {
-  try {
-    const { data, error } = await supabase.rpc('set_player_ready', {
-      p_game_id: gameId,
-      p_user_id: userId,
-    });
-    if (error) console.error('[updateGameReady]', error.message);
-    return { data, error };
-  } catch (err) {
-    console.error('[updateGameReady] threw:', err);
-    return { data: null, error: err };
   }
 }
 

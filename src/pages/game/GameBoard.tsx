@@ -11,9 +11,12 @@ import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
-import { getMySecret, checkGuess } from '../../lib/database';
+import { getProfile, insertGameSecret, checkGuess, abandonGame } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import { GuessModal } from '../../components/game/GuessModal';
+import { GameTitleCard } from '../../components/game/GameTitleCard';
+import { GAME_LABELS } from '../../lib/gameConstants';
+import { useNoShowGuard } from '../../lib/useNoShowGuard';
 import type { Character } from '../../types/game';
 
 // ── DB state shape ──────────────────────────────────────────────────────────
@@ -72,7 +75,7 @@ function WaitingDots() {
 // ── Main component ──────────────────────────────────────────────────────────
 
 export function GameBoard() {
-  // Route param is actually the matchId (set by LobbyScreen)
+  // Route param is currently the matchId for multiplayer game routes.
   const { gameId: matchId } = useParams<{ gameId: string }>();
   console.log('[GameBoard] mounted — matchId from useParams:', matchId);
   const navigate = useNavigate();
@@ -123,17 +126,80 @@ export function GameBoard() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [mySecretId, setMySecretId] = useState('');
+  const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [secretInsertDone, setSecretInsertDone] = useState(false);
+  const [secretInsertFailed, setSecretInsertFailed] = useState(false);
+  const [titleCardComplete, setTitleCardComplete] = useState(false);
+  const titleCardActiveRef = useRef(false);
+  const navigatedRef = useRef(false);
 
-  // ── Load my secret from game_secrets table ─────────────────────
+  // ── Opponent display name (best-effort) ────────────────────────
   useEffect(() => {
-    if (!mp.gameId) return;
+    if (!mp.opponentId) return;
     let cancelled = false;
     (async () => {
-      const charId = await getMySecret(mp.gameId!);
-      if (!cancelled && charId) setMySecretId(charId);
+      const { data } = await getProfile(mp.opponentId);
+      if (!cancelled && data?.name) setOpponentName(data.name);
     })();
     return () => { cancelled = true; };
-  }, [mp.gameId]);
+  }, [mp.opponentId]);
+
+  // ── Title card active ref (only while overlay visible) ────────
+  useEffect(() => {
+    if (!gs || mp.loading || titleCardComplete) return;
+    titleCardActiveRef.current = true;
+  }, [gs, mp.loading, titleCardComplete]);
+
+  // ── Insert secret on mount (moved from lobby) ─────────────────
+  useEffect(() => {
+    if (!mp.gameId || !mp.gameRow || !matchId || !myUserId) return;
+    let cancelled = false;
+
+    (async () => {
+      const board = generateGuessWhoBoard(matchId);
+      const isP1 = mp.gameRow!.player1_id === myUserId;
+      const charId = isP1 ? board.p1SecretId : board.p2SecretId;
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (cancelled) return;
+        const ok = await insertGameSecret(mp.gameId!, myUserId, charId);
+        if (ok) {
+          if (!cancelled) setMySecretId(charId);
+          setSecretInsertDone(true);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      setSecretInsertFailed(true);
+      setSecretInsertDone(true);
+    })();
+
+    return () => { cancelled = true; };
+  }, [mp.gameId, mp.gameRow, matchId, myUserId]);
+
+  const noShow = useNoShowGuard({
+    enabled: !!matchId && !!mp.gameId && !!mp.gameRow && titleCardComplete && !mp.gameRow?.winner,
+    matchId: matchId ?? '',
+    gameId: mp.gameId,
+    gameStatus: mp.gameRow?.status,
+    titleCardComplete,
+    opponentActivityTick: mp.opponentActivityTick,
+    opponentDisplayName: opponentName ?? 'Opponent',
+    navigate,
+    titleCardActiveRef,
+  });
+
+  const handleTitleCardComplete = useCallback(() => {
+    titleCardActiveRef.current = false;
+    setTitleCardComplete(true);
+  }, []);
+
+  const handleLeaveSecretFailure = useCallback(async () => {
+    if (!mp.gameId) return;
+    navigatedRef.current = true;
+    await abandonGame(mp.gameId);
+    navigate(`/match/${matchId}`);
+  }, [mp.gameId, matchId, navigate]);
 
   // ── Elapsed timer ─────────────────────────────────────────────
   useEffect(() => {
@@ -151,7 +217,6 @@ export function GameBoard() {
   }, [question.length]);
 
   // ── Detect game over from polling ─────────────────────────────
-  const navigatedRef = useRef(false);
   useEffect(() => {
     if (!mp.gameRow || !gs || navigatedRef.current) return;
     const winner = mp.gameRow.winner;
@@ -350,6 +415,15 @@ export function GameBoard() {
 
   return (
     <>
+      {!titleCardComplete && gs && (
+        <GameTitleCard
+          gameName={GAME_LABELS.guess_who ?? 'Guess Who?'}
+          opponentName={opponentName}
+          waitFor={!secretInsertDone}
+          onComplete={handleTitleCardComplete}
+        />
+      )}
+
       <AnimatePresence>
         {showGuessModal && (
           <GuessModal
@@ -375,6 +449,31 @@ export function GameBoard() {
         />
 
         <div className="relative flex-1 flex flex-col overflow-hidden">
+          {secretInsertFailed && titleCardComplete && (
+            <motion.div
+              className="mx-4 mt-3 px-4 py-3 rounded-2xl font-body text-sm text-center"
+              style={{
+                background: 'rgba(255,61,113,0.15)',
+                border: '2px solid #FF3D71',
+                color: '#FF9F9F',
+              }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              Couldn&apos;t set up game — please leave and try again.
+              <div className="mt-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => void handleLeaveSecretFailure()}
+                  className="px-4 py-2 rounded-xl font-display font-bold text-sm"
+                  style={{ background: '#FF3D71', border: '2px solid black', color: 'white' }}
+                >
+                  Leave
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* Top Bar */}
           <div
             className="flex items-center justify-between px-4 py-3 flex-shrink-0"
@@ -767,6 +866,67 @@ export function GameBoard() {
           </div>
         </div>
       </div>
+
+      {/* No-show: fixed bottom status + prompt (anchor = title card complete) */}
+      <AnimatePresence>
+        {titleCardComplete && noShow.waitingLineVisible && !noShow.promptVisible && (
+          <motion.div
+            key="no-show-line"
+            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4 pointer-events-none"
+            style={{ width: 'min(92vw, 420px)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <p className="text-center font-body text-sm text-white/45">
+              Waiting for {opponentName ?? 'Opponent'}...
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {titleCardComplete && noShow.promptVisible && (
+          <motion.div
+            key="no-show-prompt"
+            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4"
+            style={{ width: 'min(92vw, 420px)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <div
+              className="rounded-2xl px-4 py-3"
+              style={{
+                background: 'rgba(15,23,42,0.95)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <p className="font-body text-sm text-center text-white/75 mb-3">
+                {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
+              </p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  type="button"
+                  onClick={() => void noShow.cancelWaiting()}
+                  className="px-4 py-2 rounded-xl font-display font-bold text-xs"
+                  style={{ background: '#FF3D71', border: '2px solid black', color: 'white' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={noShow.dismissPrompt}
+                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Exit confirmation */}
       <AnimatePresence>

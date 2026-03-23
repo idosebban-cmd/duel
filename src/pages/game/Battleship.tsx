@@ -1,14 +1,16 @@
 /**
  * Battleship – naval strategy game for Duel
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
-import { abandonGame } from '../../lib/database';
+import { abandonGame, getProfile } from '../../lib/database';
+import { GameTitleCard } from '../../components/game/GameTitleCard';
+import { useNoShowGuard } from '../../lib/useNoShowGuard';
 import {
   WaitingForOpponentOverlay,
   LeaveGameDialog,
@@ -369,6 +371,10 @@ export function Battleship() {
 
   // ── Phase ────────────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>('placement');
+  const [titleCardComplete, setTitleCardComplete] = useState(!isMultiplayer);
+  const titleCardActiveRef = useRef(false);
+  const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [hasSubmittedFleet, setHasSubmittedFleet] = useState(false);
 
   usePostGameRedirect({ isMultiplayer, matchId, phase });
 
@@ -386,6 +392,13 @@ export function Battleship() {
     leavingRef.current = true;
     if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
     navigate(`/match/${matchId}`);
+  };
+
+  /** Placement ← Games: resolve game row (same abandon as leave) then exit to matches list. */
+  const handlePlacementExitToMatches = async () => {
+    leavingRef.current = true;
+    if (mp.gameRow?.id) await abandonGame(mp.gameRow.id);
+    navigate(matchId ? `/match/${matchId}` : '/matches');
   };
 
   // ── Placement ────────────────────────────────────────────────────────────
@@ -471,6 +484,7 @@ export function Battleship() {
     if (!allPlaced) return;
 
     if (isMultiplayer) {
+      setHasSubmittedFleet(true);
       // Save my fleet to the DB; transition phase based on my role
       const gs = mp.gameState;
       const myPlacingPhase: BsState['phase'] = isP1 ? 'placing_p1' : 'placing_p2';
@@ -506,6 +520,34 @@ export function Battleship() {
     botAIRef.current    = initBotAI();
     setPhase('battle');
   };
+
+  useEffect(() => {
+    if (!isMultiplayer) {
+      titleCardActiveRef.current = false;
+      setTitleCardComplete(true);
+      return;
+    }
+    if (!titleCardComplete) {
+      titleCardActiveRef.current = true;
+    }
+  }, [isMultiplayer, titleCardComplete]);
+
+  const handleTitleCardComplete = useCallback(() => {
+    titleCardActiveRef.current = false;
+    setTitleCardComplete(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mp.opponentId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await getProfile(mp.opponentId);
+      if (!cancelled && data?.name) setOpponentName(data.name);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mp.opponentId]);
 
   // ── Player fires ──────────────────────────────────────────────────────────
   const handleRadarTap = (row: number, col: number) => {
@@ -669,6 +711,28 @@ export function Battleship() {
     }
   }, [phase]);
 
+  const noShow = useNoShowGuard({
+    enabled: isMultiplayer && phase === 'battle' && !!matchId && !!mp.gameId && !!mp.gameRow && titleCardComplete && !mp.gameRow?.winner,
+    matchId: matchId ?? '',
+    gameId: mp.gameId,
+    gameStatus: mp.gameRow?.status,
+    titleCardComplete,
+    opponentActivityTick: mp.opponentActivityTick,
+    opponentDisplayName: opponentName ?? 'Opponent',
+    navigate,
+    titleCardActiveRef,
+  });
+
+  const waitingForPlacement =
+    isMultiplayer &&
+    phase === 'placement' &&
+    hasSubmittedFleet &&
+    !!mp.gameState &&
+    (
+      (isP1 && mp.gameState.phase === 'placing_p2') ||
+      (!isP1 && mp.gameState.phase === 'placing_p1')
+    );
+
   // ── Derived ───────────────────────────────────────────────────────────────
   const sunkEnemyCells = new Set<string>();
   for (const ship of botShips) {
@@ -684,6 +748,14 @@ export function Battleship() {
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
+
+      {isMultiplayer && !titleCardComplete && (
+        <GameTitleCard
+          gameName="Battleship"
+          opponentName={opponentName}
+          onComplete={handleTitleCardComplete}
+        />
+      )}
 
       {/* Multiplayer overlays */}
       {isMultiplayer && (
@@ -714,7 +786,14 @@ export function Battleship() {
         <>
           <div className="flex-none px-4 pt-4 pb-2">
             <div className="flex items-center gap-2 mb-0.5">
-              <button onClick={() => navigate('/matches')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>← Games</button>
+              <button
+                type="button"
+                onClick={() => void handlePlacementExitToMatches()}
+                className="font-body text-xs"
+                style={{ color: 'rgba(255,255,255,0.28)' }}
+              >
+                ← Games
+              </button>
             </div>
             <h1 className="font-display text-2xl text-center" style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.5)' }}>
               DEPLOY YOUR FLEET
@@ -795,7 +874,7 @@ export function Battleship() {
                 cursor: allPlaced ? 'pointer' : 'not-allowed',
               }}
               whileTap={allPlaced ? { scale: 0.97 } : {}}>
-              ⚓ BATTLE!
+              {waitingForPlacement ? 'WAITING…' : '⚓ BATTLE!'}
             </motion.button>
           </div>
         </>
@@ -933,6 +1012,104 @@ export function Battleship() {
           </div>
         </>
       )}
+
+      <AnimatePresence>
+        {waitingForPlacement && (
+          <motion.div
+            className="fixed inset-0 z-[58] flex items-center justify-center px-6"
+            style={{ background: 'rgba(10,12,24,0.64)', backdropFilter: 'blur(2px)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl px-5 py-4 text-center"
+              style={{
+                background: 'rgba(15,23,42,0.96)',
+                border: '1px solid rgba(255,255,255,0.14)',
+              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+            >
+              <p className="font-body text-sm text-white/75">
+                Waiting for {opponentName ?? 'Opponent'} to finish placing ships...
+              </p>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                {[0, 1, 2].map((idx) => (
+                  <motion.div
+                    key={idx}
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: 'rgba(78,255,196,0.8)' }}
+                    animate={{ opacity: [0.35, 1, 0.35], scale: [0.85, 1.15, 0.85] }}
+                    transition={{ duration: 0.9, repeat: Infinity, delay: idx * 0.18 }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {titleCardComplete && noShow.waitingLineVisible && !noShow.promptVisible && phase === 'battle' && (
+          <motion.div
+            key="no-show-line-bs"
+            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4 pointer-events-none"
+            style={{ width: 'min(92vw, 420px)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <p className="text-center font-body text-sm text-white/45">
+              Waiting for {opponentName ?? 'Opponent'}...
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {titleCardComplete && noShow.promptVisible && phase === 'battle' && (
+          <motion.div
+            key="no-show-prompt-bs"
+            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4"
+            style={{ width: 'min(92vw, 420px)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <div
+              className="rounded-2xl px-4 py-3"
+              style={{
+                background: 'rgba(15,23,42,0.95)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <p className="font-body text-sm text-center text-white/75 mb-3">
+                {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
+              </p>
+              <div className="flex gap-2 justify-center">
+                <button
+                  type="button"
+                  onClick={() => void noShow.cancelWaiting()}
+                  className="px-4 py-2 rounded-xl font-display font-bold text-xs"
+                  style={{ background: '#FF3D71', border: '2px solid black', color: 'white' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={noShow.dismissPrompt}
+                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

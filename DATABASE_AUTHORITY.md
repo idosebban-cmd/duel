@@ -2,7 +2,8 @@
 
 **Owner:** Database Architect (Claude)
 **Live project:** `maqjhjvgfvomslktfznz` (Supabase, North EU Stockholm)
-**Date:** 2026-03-20
+**Date:** 2026-03-20  
+**RLS (Phase 8, verified 2026-03-23):** Row-level security is **enabled** on all tables in this section, including `game_secrets` and `challenges`. Canonical apply scripts: `supabase/phase8_rls_rollout/*.sql`.
 
 ---
 
@@ -47,7 +48,7 @@ CREATE TABLE profiles (
 CREATE INDEX profiles_location_idx ON profiles (latitude, longitude);
 ```
 **Trigger:** `profiles_updated_at` → `update_updated_at()` before UPDATE
-**RLS:** ENABLED — 3 policies (select: authenticated, insert: self, update: self)
+**RLS:** ENABLED — 4 policies (select: authenticated, insert/update/delete: self)
 
 ### 1.2 `photos`
 ```sql
@@ -86,7 +87,7 @@ CREATE TABLE matches (
   UNIQUE(user_a, user_b)
 );
 ```
-**RLS:** ENABLED — 2 policies (select: participant, insert: participant)
+**RLS:** ENABLED — 3 policies (select/insert/update: participant)
 
 ### 1.5 `messages`
 ```sql
@@ -101,7 +102,7 @@ CREATE TABLE messages (
 
 CREATE INDEX messages_room_created_idx ON messages (room_id, created_at DESC);
 ```
-**RLS:** ENABLED — 3 policies (select/insert: match member via subquery, update: sender)
+**RLS:** ENABLED — 3 policies (select/insert: match member via subquery, update: **match member** — use `mark_messages_read` RPC for cross-sender read receipts)
 
 ### 1.6 `games`
 ```sql
@@ -139,7 +140,11 @@ CREATE INDEX moves_game_id ON moves (game_id, created_at);
 ```
 **RLS:** ENABLED — 2 policies (select: game participant via subquery, insert: self)
 
-### 1.8 `challenges`
+### 1.8 `game_secrets`
+Per-player secret rows for Guess Who (see **Section 2** for DDL).  
+**RLS:** ENABLED — 2 policies (`game_secrets_select_own`, `game_secrets_insert_own`: `auth.uid() = player_id`).
+
+### 1.9 `challenges`
 ```sql
 CREATE TABLE challenges (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -156,9 +161,9 @@ CREATE TABLE challenges (
 CREATE INDEX idx_challenges_match_id ON challenges (match_id);
 CREATE INDEX idx_challenges_to_user_status ON challenges (to_user, status);
 ```
-**RLS:** NOT ENABLED — **needs policies** (see Section 3)
+**RLS:** ENABLED — 3 policies (select/insert/update: `from_user` / `to_user` participants)
 
-### 1.9 Functions
+### 1.10 Functions
 ```sql
 -- Trigger function used by profiles and games
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -171,7 +176,7 @@ $$;
 ```
 **RPC functions deployed:** `check_guess` (atomic guess + move + winner — see Section 2 & 4), `reveal_secrets`, `set_player_ready`.
 
-### 1.10 Storage
+### 1.11 Storage
 - **Bucket:** `photos` (public: true)
 - **Policies:** authenticated upload to own folder, public read, owner delete
 
@@ -226,7 +231,7 @@ CREATE POLICY "Players insert own secret"
 
 ### How It Works
 
-1. **At game creation** (LobbyScreen/createOrJoinGame): instead of putting `p1SecretId`/`p2SecretId` in `games.state`, insert two rows into `game_secrets`:
+1. **At game creation** (`createOrJoinGame` / `GameBoard` mount): instead of putting `p1SecretId`/`p2SecretId` in `games.state`, insert two rows into `game_secrets`:
    - `{game_id, player_id: p1, secret: {characterId: "char_samantha"}}`
    - `{game_id, player_id: p2, secret: {characterId: "char_alex"}}`
 
@@ -305,7 +310,7 @@ CREATE POLICY "Players insert own secret"
 | File | Change |
 |------|--------|
 | `guessWhoCharacters.ts` | `generateGuessWhoBoard()` still returns `p1SecretId`/`p2SecretId` for initial setup, but they get stored in `game_secrets` not `games.state` |
-| `LobbyScreen.tsx` | After `createOrJoinGame()`, insert secrets into `game_secrets` table |
+| `GameBoard.tsx` | After join/create, each client calls `insertGameSecret()` into `game_secrets` |
 | `database.ts` | New functions: `insertGameSecret()`, `getMySecret()`, `checkGuess()` (RPC), `revealSecrets()` (RPC) |
 | `GameBoard.tsx` | Load `mySecretId` from `getMySecret()` instead of `games.state`. Use `checkGuess()` RPC for guesses instead of reading opponent's secret directly |
 | `GameResult.tsx` | Call `revealSecrets()` RPC to show both characters |
@@ -315,16 +320,15 @@ CREATE POLICY "Players insert own secret"
 
 ## 3. RLS Policy Designs — All Tables
 
+**Status:** Phase 8 rollout applied live (2026-03). Policy *names* in DB use `profiles_*`, `photos_*`, etc.; semantics match the table below.
+
 ### 3.1 `profiles` (existing — adequate)
 | Operation | Policy | Check |
 |-----------|--------|-------|
 | SELECT | Authenticated users can view profiles | `auth.role() = 'authenticated'` |
 | INSERT | Users can insert their own profile | `auth.uid() = id` |
 | UPDATE | Users can update their own profile | `auth.uid() = id` |
-
-**Missing:** No DELETE policy. Account deletion in `ProfileScreen.tsx` calls `supabase.from('profiles').delete().eq('id', userId)`. Options:
-- **Option A (recommended):** Add a DELETE policy: `auth.uid() = id`
-- **Option B:** Handle account deletion via a Supabase Edge Function that runs as service_role
+| DELETE | Users can delete their own profile | `auth.uid() = id` |
 
 ### 3.2 `photos` (existing — adequate)
 | Operation | Policy | Check |
@@ -358,10 +362,10 @@ No changes needed.
 | Operation | Policy | Check |
 |-----------|--------|-------|
 | SELECT | Match members can view messages | `room_id IN (SELECT id FROM matches WHERE user_a = auth.uid() OR user_b = auth.uid())` |
-| INSERT | Match members can insert messages | same subquery |
-| UPDATE | Sender can update own messages | `auth.uid() = sender` |
+| INSERT | Match members can insert messages | same subquery + `auth.uid() = sender` |
+| UPDATE | Match members can update rows in their room | same `room_id` / match membership subquery (not sender-only) |
 
-No changes needed.
+**Note:** Read receipts use RPC `mark_messages_read` (`SECURITY DEFINER`) to set `delivered` on the other player’s messages.
 
 ### 3.6 `games` (existing — adequate)
 | Operation | Policy | Check |
@@ -381,26 +385,12 @@ No changes needed. (Secret isolation is handled by the new `game_secrets` table,
 
 No changes needed.
 
-### 3.8 `challenges` (**NEW — not yet enabled**)
+### 3.8 `challenges` (enabled — Phase 8)
+Deployed policies align with:
 ```sql
-ALTER TABLE challenges ENABLE ROW LEVEL SECURITY;
-
--- Participants can see challenges for their matches
-CREATE POLICY "Participants can view challenges"
-  ON challenges FOR SELECT
-  USING (auth.uid() = from_user OR auth.uid() = to_user);
-
--- Users can create challenges as themselves
-CREATE POLICY "Users can create challenges"
-  ON challenges FOR INSERT
-  WITH CHECK (auth.uid() = from_user);
-
--- Recipients can accept/decline (update status)
-CREATE POLICY "Recipients can respond to challenges"
-  ON challenges FOR UPDATE
-  USING (auth.uid() = to_user OR auth.uid() = from_user);
+-- SELECT / INSERT / UPDATE: participant as from_user or to_user (see phase8 06_challenges.sql)
 ```
-**Rationale for UPDATE:** `from_user` needs UPDATE to mark opponent's challenge as `accepted` in the mutual-match path (see `createChallenge()` in database.ts line 752). `to_user` needs UPDATE to accept/decline.
+**Rationale for UPDATE:** `from_user` needs UPDATE to mark opponent's challenge as `accepted` in the mutual-match path. `to_user` needs UPDATE to accept/decline.
 
 ### 3.9 `game_secrets` (**NEW**)
 See Section 2 above. Strict per-player isolation — each player reads only their own row.
@@ -720,7 +710,7 @@ After the migration is applied, these database.ts functions need updating:
 | NEW: `checkGuess()` | Read opponent's secret client-side | `supabase.rpc('check_guess', {p_game_id, p_guessed_character})` |
 | NEW: `revealSecrets()` | N/A | `supabase.rpc('reveal_secrets', {p_game_id})` |
 
-**LobbyScreen.tsx:** After `createOrJoinGame()`, call `insertGameSecret()` for both players (each player inserts their own secret; RLS enforces `player_id = auth.uid()`).
+**Game boards:** Each player calls `insertGameSecret()` after the game row exists (each inserts their own row; RLS enforces `player_id = auth.uid()`).
 
 **GameBoard.tsx:** Remove all reads of `gs.p1SecretId` / `gs.p2SecretId`. Load `mySecretId` from `getMySecret()`. Replace direct secret comparison in guess logic with `checkGuess()` RPC call.
 

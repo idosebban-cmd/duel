@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { preloadImages } from './utils/preloadImages';
 import { supabase } from './lib/supabase';
@@ -20,7 +20,6 @@ import { PlayerCardPreview } from './components/onboarding/PlayerCardPreview';
 import { PromptsSelection } from './components/onboarding/PromptsSelection';
 import { CreateAccountScreen } from './components/onboarding/CreateAccountScreen';
 import { GameSetup } from './pages/game/GameSetup';
-import { LobbyScreen } from './pages/game/LobbyScreen';
 import { GameBoard } from './pages/game/GameBoard';
 import { GameResult } from './pages/game/GameResult';
 import { DotDashSetup } from './pages/game/DotDashSetup';
@@ -38,6 +37,163 @@ import { WordBlitz } from './pages/game/WordBlitz';
 import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
+import { getProfile } from './lib/database';
+import { prepareAcceptedChallenge, resolveGameRoute } from './lib/challengeGameFlow';
+
+interface ChallengeEventRow {
+  id: string;
+  from_user: string;
+  to_user: string;
+  match_id: string;
+  game_type: string;
+  status: string;
+}
+
+interface GlobalChallengeToastState {
+  message: string;
+  actionLabel: string;
+  kind: 'success' | 'error';
+  onAction: () => void;
+}
+
+function GlobalChallengeListener() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const [toast, setToast] = useState<GlobalChallengeToastState | null>(null);
+
+  const dedupeRef = useRef<Map<string, number>>(new Map());
+  const inFlightRef = useRef<Set<string>>(new Set());
+
+  const runSetup = useCallback(async (challenge: ChallengeEventRow): Promise<boolean> => {
+    const result = await prepareAcceptedChallenge({
+      matchId: challenge.match_id,
+      gameType: challenge.game_type,
+      myUserId: user?.id ?? '',
+    });
+    return result.ok;
+  }, [user?.id]);
+
+  const showSuccessToast = useCallback(async (challenge: ChallengeEventRow) => {
+    const route = resolveGameRoute(challenge.game_type, challenge.match_id);
+    if (!route) return;
+
+    let name = 'Someone';
+    try {
+      const profile = await getProfile(challenge.to_user);
+      if (profile.data?.name) name = profile.data.name;
+    } catch {
+      // Best-effort only.
+    }
+
+    setToast({
+      kind: 'success',
+      message: `${name} accepted your challenge!`,
+      actionLabel: 'Join game',
+      onAction: () => {
+        setToast(null);
+        navigate(route.path);
+      },
+    });
+  }, [navigate]);
+
+  const showRetryToast = useCallback((challenge: ChallengeEventRow) => {
+    setToast({
+      kind: 'error',
+      message: "Couldn't start game — tap to retry",
+      actionLabel: 'Retry',
+      onAction: async () => {
+        const ok = await runSetup(challenge);
+        if (ok) {
+          await showSuccessToast(challenge);
+        }
+      },
+    });
+  }, [runSetup, showSuccessToast]);
+
+  useEffect(() => {
+    if (!supabase || !user?.id) return;
+    const sb = supabase;
+
+    const channel = sb
+      .channel(`app-challenges-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'challenges',
+          filter: `from_user=eq.${user.id}`,
+        },
+        async (payload) => {
+          const updated = payload.new as ChallengeEventRow;
+          if (!updated || updated.status !== 'accepted') return;
+
+          const dedupeKey = `${updated.match_id}:${updated.game_type}`;
+          const now = Date.now();
+          const last = dedupeRef.current.get(dedupeKey) ?? 0;
+          if (now - last < 5000) return;
+          dedupeRef.current.set(dedupeKey, now);
+
+          if (inFlightRef.current.has(updated.id)) return;
+          inFlightRef.current.add(updated.id);
+
+          try {
+            const ok = await runSetup(updated);
+            if (ok) {
+              await showSuccessToast(updated);
+            } else {
+              showRetryToast(updated);
+            }
+          } finally {
+            inFlightRef.current.delete(updated.id);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [runSetup, showRetryToast, showSuccessToast, user?.id]);
+
+  if (!toast) return null;
+
+  return (
+    <div
+      className="fixed top-4 left-1/2 z-[100] -translate-x-1/2 px-4"
+      style={{ width: 'min(92vw, 460px)' }}
+    >
+      <div
+        className="rounded-2xl px-4 py-3 flex items-center gap-3"
+        style={{
+          background: toast.kind === 'success'
+            ? 'linear-gradient(135deg, rgba(78,255,196,0.2), rgba(0,217,255,0.2))'
+            : 'linear-gradient(135deg, rgba(255,61,113,0.2), rgba(255,107,168,0.2))',
+          border: toast.kind === 'success'
+            ? '1.5px solid rgba(78,255,196,0.55)'
+            : '1.5px solid rgba(255,61,113,0.6)',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
+        <div className="flex-1 min-w-0 font-body text-sm text-white/90">
+          {toast.message}
+        </div>
+        <button
+          onClick={toast.onAction}
+          className="px-3 py-1.5 rounded-lg font-display font-bold text-xs"
+          style={{
+            background: toast.kind === 'success'
+              ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)'
+              : 'linear-gradient(135deg, #FF3D71, #FF6BA8)',
+            color: toast.kind === 'success' ? '#0f172a' : '#ffffff',
+          }}
+        >
+          {toast.actionLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const { setUser, setSession, setLoading } = useAuthStore();
@@ -91,6 +247,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <GlobalChallengeListener />
       <AnimatePresence mode="wait">
         <Routes>
           {/* Landing page */}
@@ -125,7 +282,6 @@ export default function App() {
 
           {/* Guess Who game */}
           <Route path="/game" element={<ProtectedRoute><GameSetup /></ProtectedRoute>} />
-          <Route path="/game/:gameId/lobby" element={<ProtectedRoute><LobbyScreen /></ProtectedRoute>} />
           <Route path="/game/:gameId/play" element={<ProtectedRoute><GameBoard /></ProtectedRoute>} />
           <Route path="/game/:gameId/result" element={<ProtectedRoute><GameResult /></ProtectedRoute>} />
 

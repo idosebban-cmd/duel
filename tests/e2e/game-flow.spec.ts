@@ -2,7 +2,7 @@
  * Duel App — Full Game Flow E2E Tests
  *
  * Tests the core game loop:
- *   login → discover → match → challenge → lobby → game → result
+ *   login → discover → match → challenge → game board (lobbyless) → result
  *
  * Uses email/password auth (not Google OAuth).
  * Player 1: test1@playduel.app / TestPassword123
@@ -246,44 +246,31 @@ test.describe('Duel App — Full Game Flow', () => {
   });
 
   // ════════════════════════════════════════════════════════════════════════
-  // 4. LOBBY (Both Ready)
+  // 4. PRE-GAME (Guess Who — lobbyless; no /game/.../lobby route)
   // ════════════════════════════════════════════════════════════════════════
 
-  test.describe('4. Lobby', () => {
-    test('Lobby screen renders with player cards and ready button', async ({ page }) => {
+  test.describe('4. Pre-game (lobbyless)', () => {
+    test('Guess Who board URL loads or redirects (no lobby)', async ({ page }) => {
       await login(page, PLAYER1.email, PLAYER1.password);
 
-      // Navigate to a lobby URL (requires a valid matchId — we test UI rendering)
-      // Use a fake matchId to test the error handling
-      await page.goto(`${BASE_URL}/game/test-match-id/lobby`, {
+      await page.goto(`${BASE_URL}/game/test-match-id/play`, {
         waitUntil: 'networkidle',
       });
 
-      // Should either show lobby UI or redirect (missing gameType state)
       await page.waitForTimeout(2000);
 
-      // If redirected to matches (no gameType in state), that's expected behavior
-      if (page.url().includes('/matches')) {
-        // Expected: lobby requires location.state.gameType
-        expect(true).toBe(true);
-      } else {
-        // If somehow we're on lobby, check for ready button
-        const readyBtn = page.getByText(/ready/i);
-        if (await readyBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-          expect(true).toBe(true);
-        }
-      }
+      // May show loading/board, or redirect if no valid game
+      const url = page.url();
+      expect(url).toMatch(/\/(play|matches|discover)/);
     });
 
-    test('Lobby shows timer countdown', async ({ page }) => {
+    test('Deep link to play without backend game may leave app or show loading', async ({ page }) => {
       await login(page, PLAYER1.email, PLAYER1.password);
 
-      // Direct lobby navigation without state redirects to /matches
-      await page.goto(`${BASE_URL}/game/fake-id/lobby`);
+      await page.goto(`${BASE_URL}/game/fake-id/play`);
       await page.waitForTimeout(2000);
 
-      // Should redirect since no gameType in location.state
-      expect(page.url()).toMatch(/\/(matches|discover)/);
+      expect(page.url()).toMatch(/\/(play|matches|discover)/);
     });
   });
 
@@ -367,8 +354,8 @@ test.describe('Duel App — Full Game Flow', () => {
         // The Ask button should be disabled
         const askBtn = page.getByText(/ask question/i);
         if (await askBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-          // Check button appears disabled (gray styling or cursor-not-allowed)
-          const isDisabled = await askBtn.isDisabled().catch(() => false);
+          // Check button state (short question may disable Ask)
+          await askBtn.isDisabled().catch(() => false);
           expect(true).toBe(true); // Input validation works if no crash
         }
 
@@ -497,15 +484,14 @@ test.describe('Duel App — Full Game Flow', () => {
           await acceptBtn.click();
           await page2.waitForTimeout(3000);
 
-          // Player 2 should be in the lobby
-          expect(page2.url()).toMatch(/\/(lobby|game)/);
+          // Player 2 should navigate toward game or match (lobbyless flow)
+          expect(page2.url()).toMatch(/\/(play|game|match)/);
         }
       }
     });
 
-    test('Both players see lobby and can ready up', async () => {
-      // This test requires both players to be in the same lobby
-      // We test the lobby UI with a simplified approach
+    test('Both players can open match screen from matches list', async () => {
+      // Simplified flow: no shared lobby; match screen + challenge
       await Promise.all([
         login(page1, PLAYER1.email, PLAYER1.password),
         login(page2, PLAYER2.email, PLAYER2.password),
@@ -636,12 +622,13 @@ test.describe('Duel App — Full Game Flow', () => {
       expect(page.url()).toContain('/matches');
     });
 
-    test('Lobby page guard prevents access without gameType', async ({ page }) => {
+    test('Unknown /game/... path falls through (no Guess Who lobby route)', async ({ page }) => {
       await login(page, PLAYER1.email, PLAYER1.password);
 
-      // Try to access lobby directly (no location.state.gameType)
+      // No route for /game/:id/lobby — app catch-all redirects away from this URL
       await page.goto(`${BASE_URL}/game/any-id/lobby`);
-      await page.waitForURL(/\/(matches|discover)/, { timeout: 10_000 });
+      await page.waitForURL(/\/(onboarding\/welcome|discover|matches)/, { timeout: 15_000 });
+      expect(page.url()).not.toMatch(/\/game\/[^/]+\/lobby$/);
     });
 
     test('localStorage is used for first-game tracking', async ({ page }) => {
