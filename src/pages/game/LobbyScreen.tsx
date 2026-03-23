@@ -225,13 +225,17 @@ export function LobbyScreen() {
 
   // ── Lobby timeout timer (counts down from 60s) ────────────────
   useEffect(() => {
-    const id = setInterval(() => {
+    const id = setInterval(async () => {
       const elapsed = Date.now() - mountedAtRef.current;
       const remaining = Math.max(0, Math.ceil((LOBBY_TIMEOUT_MS - elapsed) / 1000));
       setTimeRemaining(remaining);
 
       if (remaining <= 0 && !countdownStartedRef.current) {
         clearInterval(id);
+        const row = gameRowRef.current;
+        if (row?.id && row?.status === 'pending') {
+          await deleteGame(row.id);
+        }
         navigate(`/match/${matchId}`, {
           state: { flash: 'Game cancelled — opponent didn\'t join in time.' },
         });
