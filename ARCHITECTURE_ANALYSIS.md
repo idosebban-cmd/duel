@@ -174,7 +174,7 @@ $$ LANGUAGE sql;
 - **games:** Players can only `SELECT`/`UPDATE` rows where `player1_id = auth.uid() OR player2_id = auth.uid()`
 - **game_moves:** Players can only `INSERT` where `player_id = auth.uid()`, `SELECT` where they're a participant in the parent game
 - **challenges:** Users can only `INSERT` where `challenger_id = auth.uid()`, `UPDATE` (accept/decline) where `challenged_id = auth.uid()`
-- **Enable RLS on all tables** — currently disabled, meaning any authenticated user can read/write any row
+- **RLS on all public app tables** — **enabled** in production (Phase 8 rollout; see `supabase/phase8_rls_rollout/` and `DATABASE_AUTHORITY.md`)
 
 ### 4e. Optimistic locking (optional, recommended)
 ```sql

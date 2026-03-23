@@ -15,6 +15,11 @@ import {
   markMessagesRead,
 } from '../lib/database';
 import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
+import {
+  normalizeGameType,
+  prepareAcceptedChallenge,
+  resolveGameRoute,
+} from '../lib/challengeGameFlow';
 import { GAME_LABELS } from '../lib/gameConstants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -188,7 +193,7 @@ export function MatchScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesLenRef = useRef(0);
-  const navigatedToLobbyRef = useRef(false);
+  const navigatedToGameRef = useRef(false);
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
@@ -250,6 +255,35 @@ export function MatchScreen() {
     return () => { cancelled = true; };
   }, [matchId, myUserId]);
 
+  const setupAndNavigateToAcceptedChallenge = useCallback(async (challenge: ChallengeRow): Promise<boolean> => {
+    const resolvedRoute = resolveGameRoute(challenge.game_type, challenge.match_id);
+    const normalizedType = normalizeGameType(challenge.game_type);
+    if (!resolvedRoute || !normalizedType) {
+      setChallengeError('Unsupported game type for this challenge.');
+      return false;
+    }
+
+    // Word Blitz is intentionally untouched and keeps direct route navigation.
+    if (normalizedType === 'word_blitz') {
+      navigate(resolvedRoute.path);
+      return true;
+    }
+
+    const setup = await prepareAcceptedChallenge({
+      matchId: challenge.match_id,
+      gameType: challenge.game_type,
+      myUserId,
+    });
+
+    if (!setup.ok) {
+      setChallengeError('Failed to start game. Please try again.');
+      return false;
+    }
+
+    navigate(resolvedRoute.path);
+    return true;
+  }, [myUserId, navigate]);
+
   // ── Challenges: mount check + Supabase Realtime ─────────────────
   useEffect(() => {
     if (!matchId || !myUserId || !supabase) return;
@@ -269,10 +303,11 @@ export function MatchScreen() {
               ? Date.now() - new Date(updated.resolved_at).getTime()
               : Infinity;
             if (age < 60_000) {
-              if (navigatedToLobbyRef.current) return;
-              navigatedToLobbyRef.current = true;
+              if (navigatedToGameRef.current) return;
+              navigatedToGameRef.current = true;
               try { await supabase!.from('challenges').update({ status: 'consumed' }).eq('id', updated.id); } catch {}
-              navigate(`/game/${updated.match_id}/lobby?type=${updated.game_type}`);
+              const ok = await setupAndNavigateToAcceptedChallenge(updated);
+              if (!ok) navigatedToGameRef.current = false;
             }
           }
         },
@@ -297,17 +332,18 @@ export function MatchScreen() {
               (c) => c.from_user === myUserId && c.status === 'accepted',
             );
             if (accepted) {
-              if (navigatedToLobbyRef.current) return;
-              navigatedToLobbyRef.current = true;
+              if (navigatedToGameRef.current) return;
+              navigatedToGameRef.current = true;
               try { await supabase!.from('challenges').update({ status: 'consumed' }).eq('id', accepted.id); } catch {}
-              navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
+              const ok = await setupAndNavigateToAcceptedChallenge(accepted);
+              if (!ok) navigatedToGameRef.current = false;
             }
           } catch { /* ignore */ }
         }
       });
 
     return () => { supabase?.removeChannel(channel); };
-  }, [matchId, myUserId, navigate]);
+  }, [matchId, myUserId, setupAndNavigateToAcceptedChallenge]);
 
   // ── Poll for challenge acceptance every 5s (safety net) ────────
   useEffect(() => {
@@ -321,15 +357,16 @@ export function MatchScreen() {
         );
         if (accepted) {
           clearInterval(id);
-          if (navigatedToLobbyRef.current) return;
-          navigatedToLobbyRef.current = true;
-          navigate(`/game/${accepted.match_id}/lobby?type=${accepted.game_type}`);
+          if (navigatedToGameRef.current) return;
+          navigatedToGameRef.current = true;
+          const ok = await setupAndNavigateToAcceptedChallenge(accepted);
+          if (!ok) navigatedToGameRef.current = false;
         }
       } catch { /* retry on next tick */ }
     }, CHALLENGE_POLL_MS);
 
     return () => clearInterval(id);
-  }, [matchId, myUserId, navigate]);
+  }, [matchId, myUserId, setupAndNavigateToAcceptedChallenge]);
 
   // ── Derived: incoming + outgoing pending challenges ────────────
   const incomingChallenges = challenges.filter(
@@ -346,9 +383,13 @@ export function MatchScreen() {
     setChallengeError(null);
     try {
       await acceptChallenge(c.id);
-      if (navigatedToLobbyRef.current) return;
-      navigatedToLobbyRef.current = true;
-      navigate(`/game/${c.match_id}/lobby?type=${c.game_type}`);
+      if (navigatedToGameRef.current) return;
+      navigatedToGameRef.current = true;
+      const ok = await setupAndNavigateToAcceptedChallenge(c);
+      if (!ok) {
+        navigatedToGameRef.current = false;
+        setAcceptingId(null);
+      }
     } catch (err) {
       console.error('[MatchScreen] accept challenge error:', err);
       setChallengeError('Failed to accept challenge. Please try again.');

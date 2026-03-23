@@ -93,8 +93,7 @@ duel/
 │       └── game/
 │           ├── GamePicker.tsx      # 6 game options
 │           ├── GameSetup.tsx       # Dev/demo game creation
-│           ├── LobbyScreen.tsx     # Pre-game countdown
-│           ├── GameBoard.tsx       # Guess Who gameplay
+│           ├── GameBoard.tsx       # Guess Who (lobbyless `/game/:matchId/play`)
 │           ├── GameResult.tsx      # Win/loss/draw
 │           ├── WordBlitz.tsx       # Word grid game
 │           ├── Draughts.tsx        # Checkers

@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { getMatchById, createChallenge } from '../../lib/database';
+import { resolveGameRoute } from '../../lib/challengeGameFlow';
 
 interface GameOption {
   id: string;
@@ -102,8 +103,12 @@ export function GamePicker() {
       const result = await createChallenge(matchId, user.id, opponentId, game.id);
 
       if (result.mutual) {
-        // Both players challenged each other — go to lobby
-        navigate(`/game/${matchId}/lobby?type=${game.id}`);
+        const route = resolveGameRoute(game.id, matchId);
+        if (route) {
+          navigate(route.path);
+        } else {
+          navigate(`/match/${matchId}`, { state: { flash: 'Unsupported game type' } });
+        }
       } else {
         // Challenge sent — go back to match screen with flash
         navigate(`/match/${matchId}`, { state: { flash: 'Challenge sent!' } });

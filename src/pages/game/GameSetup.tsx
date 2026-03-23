@@ -1,12 +1,12 @@
 /**
  * GameSetup — development/demo page.
  * In production this screen wouldn't exist: the app would deep-link
- * directly to /game/:gameId/lobby after a match is created server-side.
+ * directly to /game/:gameId/play after a match is created server-side.
  *
  * This lets you quickly spin up a game for testing:
  * 1. POST /api/games/create to get a gameId
  * 2. Fill in your userId/name and paste the gameId
- * 3. Click Join → goes to the lobby
+ * 3. Click Join → goes to the game board
  */
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -67,7 +67,7 @@ export function GameSetup() {
       const data = await res.json();
       if (data.gameId) {
         setIdentity(userId, name, avatar);
-        navigate(`/game/${data.gameId}/lobby?type=guess_who`);
+        navigate(`/game/${data.gameId}/play`);
       } else {
         setError(data.error ?? 'Failed to create game');
       }
@@ -98,7 +98,7 @@ export function GameSetup() {
         return;
       }
       setIdentity(userId, name, avatar);
-      navigate(`/game/${gameId.trim()}/lobby?type=guess_who`);
+      navigate(`/game/${gameId.trim()}/play`);
     } catch {
       setError('Cannot reach server');
     }

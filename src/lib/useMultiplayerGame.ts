@@ -50,6 +50,8 @@ export interface MultiplayerGame<S> {
   bothPresent: boolean;
   /** True when the opponent abandoned (game status='abandoned' and winner is not me) */
   opponentLeft: boolean;
+  /** Increments when a non-self game row update is applied (for no-show timer reset). */
+  opponentActivityTick: number;
   /**
    * Optimistically update local state then persist to DB.
    * @param moveData  logged to the moves table for audit / replay
@@ -83,10 +85,16 @@ export function useMultiplayerGame<S>({
   const [opponentId, setOpponentId] = useState('');
   const [loading, setLoading] = useState(true);
   const [fallbackToBotMode, setFallbackToBotMode] = useState(false);
+  const [opponentActivityTick, setOpponentActivityTick] = useState(0);
 
   // Stable ref so effects always see the latest row without re-subscribing
   const gameRowRef = useRef<GameRow | null>(null);
   gameRowRef.current = gameRow;
+
+  /** True until the next applied remote update is consumed as our own move echo. */
+  const expectingOwnMoveEchoRef = useRef(false);
+  /** True until the next applied remote update is consumed as our set_player_present write. */
+  const presenceWritePendingRef = useRef(false);
 
   // ── Initialization ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -142,6 +150,7 @@ export function useMultiplayerGame<S>({
   useEffect(() => {
     if (!enabled || !gameRow?.id || !myUserId || presenceSentRef.current) return;
     presenceSentRef.current = true;
+    presenceWritePendingRef.current = true;
     setPlayerPresent(gameRow.id, myUserId);
   }, [enabled, gameRow?.id, myUserId]);
 
@@ -165,6 +174,13 @@ export function useMultiplayerGame<S>({
       }
       if (updated.updated_at !== local?.updated_at) {
         console.log('[useMultiplayerGame] Realtime: STATE CHANGE — current_turn:', updated.current_turn, 'winner:', updated.winner);
+        if (expectingOwnMoveEchoRef.current) {
+          expectingOwnMoveEchoRef.current = false;
+        } else if (presenceWritePendingRef.current) {
+          presenceWritePendingRef.current = false;
+        } else if (local) {
+          setOpponentActivityTick((t) => t + 1);
+        }
         gameRowRef.current = updated;
         setGameRow({ ...updated });
       }
@@ -272,6 +288,8 @@ export function useMultiplayerGame<S>({
       const row = gameRowRef.current;
       if (!row) return;
 
+      expectingOwnMoveEchoRef.current = true;
+
       const nextTurn =
         row.current_turn === row.player1_id ? row.player2_id : row.player1_id;
 
@@ -298,6 +316,7 @@ export function useMultiplayerGame<S>({
         );
       } catch (err) {
         console.error('[useMultiplayerGame] submitMove RPC failed, fetching canonical state:', err);
+        expectingOwnMoveEchoRef.current = false;
         try {
           const canonical = await getGame(row.id);
           if (canonical) {
@@ -326,6 +345,7 @@ export function useMultiplayerGame<S>({
       fallbackToBotMode,
       bothPresent: false,
       opponentLeft: false,
+      opponentActivityTick: 0,
       submitMove: () => {},
     };
   }
@@ -342,6 +362,7 @@ export function useMultiplayerGame<S>({
     fallbackToBotMode: false,
     bothPresent,
     opponentLeft,
+    opponentActivityTick,
     submitMove,
   };
 }
