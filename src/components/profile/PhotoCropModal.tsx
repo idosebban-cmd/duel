@@ -3,10 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   PHOTO_CROP_EXPORT_HEIGHT_PX,
   PHOTO_CROP_EXPORT_WIDTH_PX,
-  PHOTO_CROP_PREVIEW_HEIGHT_PX,
-  PHOTO_CROP_PREVIEW_MAX_WIDTH_PX,
-  PHOTO_CROP_PREVIEW_RENDER_HEIGHT_PX,
-  PHOTO_CROP_PREVIEW_RENDER_WIDTH_PX,
   PHOTO_CROP_VIEWPORT_HEIGHT_PX,
   PHOTO_CROP_VIEWPORT_WIDTH_PX,
 } from '../../lib/discoverCardConstants';
@@ -42,7 +38,6 @@ export function PhotoCropModal({
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const dragStartRef = useRef<Point>({ x: 0, y: 0 });
   const dragOffsetStartRef = useRef<Point>({ x: 0, y: 0 });
 
@@ -53,7 +48,6 @@ export function PhotoCropModal({
     }
     setZoom(1);
     setOffset({ x: 0, y: 0 });
-    setPreviewDataUrl(null);
     const img = new Image();
     img.onload = () => {
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
@@ -61,14 +55,24 @@ export function PhotoCropModal({
     img.src = imageSrc;
   }, [open, imageSrc]);
 
-  const baseScale = useMemo(() => {
-    if (!naturalSize) return 1;
-    return Math.max(CROP_WIDTH / naturalSize.width, CROP_HEIGHT / naturalSize.height);
+  /** Contain at zoom 1: whole image visible; zoom scales up from there. */
+  const { baseScale, minZoomToFillFrame } = useMemo(() => {
+    if (!naturalSize) return { baseScale: 1, minZoomToFillFrame: 1 };
+    const bs = Math.min(CROP_WIDTH / naturalSize.width, CROP_HEIGHT / naturalSize.height);
+    const needW = CROP_WIDTH / (naturalSize.width * bs);
+    const needH = CROP_HEIGHT / (naturalSize.height * bs);
+    return { baseScale: bs, minZoomToFillFrame: Math.max(1, needW, needH) };
   }, [naturalSize]);
 
   const totalScale = baseScale * zoom;
   const displayWidth = (naturalSize?.width ?? CROP_WIDTH) * totalScale;
   const displayHeight = (naturalSize?.height ?? CROP_HEIGHT) * totalScale;
+
+  /** Image must cover the crop viewport (no letterboxing) before export. */
+  const cropFrameFilled =
+    naturalSize != null &&
+    displayWidth >= CROP_WIDTH - 0.5 &&
+    displayHeight >= CROP_HEIGHT - 0.5;
 
   const offsetLimits = useMemo(() => {
     const maxX = Math.max(0, (displayWidth - CROP_WIDTH) / 2);
@@ -83,39 +87,6 @@ export function PhotoCropModal({
     }),
     [offset.x, offset.y, offsetLimits.maxX, offsetLimits.maxY, offsetLimits.minX, offsetLimits.minY],
   );
-
-  useEffect(() => {
-    if (!open || !imageSrc || !naturalSize) return;
-    let cancelled = false;
-    const t = setTimeout(() => {
-      const imageLeft = (CROP_WIDTH - displayWidth) / 2 + clampedOffset.x;
-      const imageTop = (CROP_HEIGHT - displayHeight) / 2 + clampedOffset.y;
-      const cropX = (0 - imageLeft) / totalScale;
-      const cropY = (0 - imageTop) / totalScale;
-      const cropW = CROP_WIDTH / totalScale;
-      const cropH = CROP_HEIGHT / totalScale;
-      void (async () => {
-        try {
-          const preview = await cropImageToDataUrl(
-            imageSrc,
-            { x: cropX, y: cropY, width: cropW, height: cropH },
-            {
-              width: PHOTO_CROP_PREVIEW_RENDER_WIDTH_PX,
-              height: PHOTO_CROP_PREVIEW_RENDER_HEIGHT_PX,
-            },
-            0.85,
-          );
-          if (!cancelled) setPreviewDataUrl(preview);
-        } catch {
-          // best-effort preview only
-        }
-      })();
-    }, 90);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [clampedOffset.x, clampedOffset.y, displayHeight, displayWidth, imageSrc, naturalSize, open, totalScale]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setDragging(true);
@@ -141,7 +112,7 @@ export function PhotoCropModal({
   };
 
   const handleConfirm = async () => {
-    if (!imageSrc || !naturalSize || busy) return;
+    if (!imageSrc || !naturalSize || busy || !cropFrameFilled) return;
     setBusy(true);
     try {
       const imageLeft = (CROP_WIDTH - displayWidth) / 2 + clampedOffset.x;
@@ -162,6 +133,8 @@ export function PhotoCropModal({
       setBusy(false);
     }
   };
+
+  const canUseCrop = cropFrameFilled && !!naturalSize;
 
   return (
     <AnimatePresence>
@@ -187,10 +160,13 @@ export function PhotoCropModal({
           >
             <h2 className="font-display text-xl mb-3" style={{ color: '#FFE66D' }}>{title}</h2>
             <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Preview before publish: adjust crop and zoom to control what matches see first.
+              Drag to position, zoom until the frame is filled, then confirm.
             </p>
 
-            {/* Crop viewport: same aspect as Discover ProfileCard photo strip. */}
+            <p className="font-body text-xs font-bold mb-2 text-center" style={{ color: '#4EFFC4' }}>
+              This is what matches will see
+            </p>
+
             <div
               className="mx-auto rounded-xl overflow-hidden relative touch-none cursor-grab active:cursor-grabbing"
               style={{ width: CROP_WIDTH, height: CROP_HEIGHT, background: '#0A0A1E' }}
@@ -207,10 +183,8 @@ export function PhotoCropModal({
                   width: displayWidth,
                   height: displayHeight,
                   transform: `translate(calc(-50% + ${clampedOffset.x}px), calc(-50% + ${clampedOffset.y}px))`,
-                  objectFit: 'fill',
                 }}
               />
-              {/* Frame matches export bounds */}
               <div
                 className="absolute inset-0 pointer-events-none z-10 rounded-xl"
                 style={{
@@ -221,27 +195,11 @@ export function PhotoCropModal({
               />
             </div>
 
-            <div className="mt-4">
-              <p className="font-body text-xs font-bold mb-2 text-center" style={{ color: '#4EFFC4' }}>
-                This is how you'll appear on Discover
+            {!cropFrameFilled && naturalSize && (
+              <p className="font-body text-xs text-center mt-2" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                Zoom in to fill frame
               </p>
-              <div className="mx-auto rounded-2xl overflow-hidden"
-                style={{
-                  width: PHOTO_CROP_PREVIEW_MAX_WIDTH_PX,
-                  height: PHOTO_CROP_PREVIEW_HEIGHT_PX,
-                  background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)',
-                  border: '2px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 12px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)',
-                }}>
-                <img
-                  src={previewDataUrl ?? imageSrc}
-                  alt="Discover preview"
-                  className="w-full h-full"
-                  style={{ objectFit: 'fill' }}
-                  draggable={false}
-                />
-              </div>
-            </div>
+            )}
 
             <div className="mt-3">
               <label className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
@@ -250,7 +208,7 @@ export function PhotoCropModal({
               <input
                 type="range"
                 min={1}
-                max={3}
+                max={Math.min(25, Math.max(3, minZoomToFillFrame * 1.02))}
                 step={0.01}
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
@@ -268,13 +226,13 @@ export function PhotoCropModal({
               </button>
               <button
                 onClick={() => { void handleConfirm(); }}
-                disabled={busy || !naturalSize}
+                disabled={busy || !canUseCrop}
                 className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
                 style={{
                   background: 'rgba(78,255,196,0.15)',
                   border: '1.5px solid rgba(78,255,196,0.3)',
                   color: '#4EFFC4',
-                  opacity: busy || !naturalSize ? 0.6 : 1,
+                  opacity: busy || !canUseCrop ? 0.6 : 1,
                 }}
               >
                 {busy ? 'Cropping...' : 'Use Crop'}

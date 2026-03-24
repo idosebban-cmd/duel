@@ -43,9 +43,7 @@ export function BioStep() {
             ))}
           </div>
         </div>
-        <motion.button onClick={handleContinue} className="font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
-          Skip →
-        </motion.button>
+        <div className="w-[72px] flex-shrink-0" aria-hidden />
       </div>
 
       <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">

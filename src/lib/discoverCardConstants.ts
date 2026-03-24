@@ -1,6 +1,6 @@
 /**
  * Discover stack card geometry at max width — single source of truth for the main
- * photo strip aspect (ProfileCard in DiscoverScreen). Crop/export/preview must match.
+ * photo strip aspect (ProfileCard in DiscoverScreen). Crop/export must match.
  */
 export const DISCOVER_CARD_WIDTH = 340;
 export const DISCOVER_CARD_HEIGHT = 460;
@@ -24,16 +24,4 @@ export const PHOTO_CROP_VIEWPORT_HEIGHT_PX = Math.round(
 export const PHOTO_CROP_EXPORT_WIDTH_PX = 1200;
 export const PHOTO_CROP_EXPORT_HEIGHT_PX = Math.round(
   PHOTO_CROP_EXPORT_WIDTH_PX * DISCOVER_PHOTO_AREA_HEIGHT_PX / DISCOVER_CARD_WIDTH,
-);
-
-/** Small “Discover preview” thumbnail in PhotoCropModal (same aspect). */
-export const PHOTO_CROP_PREVIEW_MAX_WIDTH_PX = 220;
-export const PHOTO_CROP_PREVIEW_HEIGHT_PX = Math.round(
-  PHOTO_CROP_PREVIEW_MAX_WIDTH_PX / DISCOVER_PHOTO_ASPECT_WH,
-);
-
-/** Debounced preview render resolution (same aspect as crop). */
-export const PHOTO_CROP_PREVIEW_RENDER_WIDTH_PX = 680;
-export const PHOTO_CROP_PREVIEW_RENDER_HEIGHT_PX = Math.round(
-  PHOTO_CROP_PREVIEW_RENDER_WIDTH_PX / DISCOVER_PHOTO_ASPECT_WH,
 );
