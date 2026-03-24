@@ -121,7 +121,7 @@ export function DotDashResult() {
                 {opp.name} wins!
               </h1>
               <p className="font-body text-white/50 mt-2">
-                {forfeit ? 'They disconnected — you win!' : 'Better luck next time!'}
+                {forfeit ? 'You disconnected — they win by forfeit.' : 'Better luck next time!'}
               </p>
             </>
           )}
