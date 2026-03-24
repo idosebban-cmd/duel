@@ -4,19 +4,32 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getMatches, getLastMessages, getChallengesForMatch } from '../lib/database';
+import { getMatches, getLastMessages, getChallengesForMatch, getPhotos } from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo, ChallengeRow } from '../lib/database';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
+import { ProfileDetailSheet, type ProfileDetailData } from '../components/profile/ProfileDetailSheet';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Match {
   id: string;
+  userId: string;
   name: string;
   age: number;
+  location: string;
+  bio: string;
   character: string;
   element: string;
   affiliation: string;
+  gameTypes: string[];
+  favoriteGames: string[];
+  lookingFor: string;
+  kids: string;
+  drinking: string;
+  smoking: string;
+  cannabis: string;
+  pets: string;
+  exercise: string;
   matchedAt: string;
   lastMessage?: LastMessageInfo;
   intent?: 'romance' | 'play' | 'both';
@@ -67,11 +80,23 @@ function timeAgo(dateStr: string): string {
 function rowFromMatch(m: MatchWithProfile): Match {
   return {
     id:          m.matchId,
+    userId:      m.partner.id,
     name:        m.partner.name        ?? 'Player',
     age:         m.partner.age         ?? 0,
+    location:    m.partner.location    ?? '',
+    bio:         m.partner.bio         ?? 'No bio available yet.',
     character:   m.partner.character   ?? 'ghost',
     element:     m.partner.element     ?? 'fire',
     affiliation: m.partner.affiliation ?? 'city',
+    gameTypes:   m.partner.game_types  ?? [],
+    favoriteGames: m.partner.favorite_games ?? [],
+    lookingFor:  m.partner.looking_for?.[0] ?? 'open',
+    kids:        m.partner.kids        ?? 'Not set',
+    drinking:    m.partner.drinking    ?? 'Not set',
+    smoking:     m.partner.smoking     ?? 'Not set',
+    cannabis:    m.partner.cannabis    ?? 'Not set',
+    pets:        m.partner.pets        ?? 'Not set',
+    exercise:    m.partner.exercise    ?? 'Not set',
     matchedAt:   m.matchedAt,
     intent:      (m.partner.intent as 'romance' | 'play' | 'both') ?? undefined,
   };
@@ -111,11 +136,25 @@ function AvatarStack({ character, element, size = 60 }: {
 
 // ─── Match card ───────────────────────────────────────────────────────────────
 
-function MatchCard({ match, onTap, isNew, hasPendingChallenge }: { match: Match; onTap: () => void; isNew: boolean; hasPendingChallenge?: boolean }) {
+function MatchCard({
+  match,
+  onTap,
+  onProfileTap,
+  isNew,
+  hasPendingChallenge,
+  photoUrl,
+}: {
+  match: Match;
+  onTap: () => void;
+  onProfileTap: () => void;
+  isNew: boolean;
+  hasPendingChallenge?: boolean;
+  photoUrl?: string;
+}) {
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
-    <motion.button
+    <motion.div
       onClick={onTap}
       className="w-full flex items-center gap-3.5 px-4 py-3.5 text-left relative overflow-hidden"
       style={{
@@ -131,20 +170,52 @@ function MatchCard({ match, onTap, isNew, hasPendingChallenge }: { match: Match;
       )}
 
       {/* Avatar */}
-      <div className="relative">
-        <AvatarStack character={match.character} element={match.element} size={58} />
+      <motion.button
+        className="relative flex-shrink-0"
+        onClick={(e) => { e.stopPropagation(); onProfileTap(); }}
+        whileTap={{ scale: 0.96 }}
+        aria-label={`View ${match.name} profile`}
+      >
+        <div
+          className="w-[62px] h-[62px] rounded-xl overflow-hidden relative"
+          style={{
+            background: 'rgba(78,255,196,0.06)',
+            border: '1.5px solid rgba(78,255,196,0.25)',
+            boxShadow: '0 0 10px rgba(78,255,196,0.15)',
+          }}
+        >
+          {photoUrl ? (
+            <img src={photoUrl} alt={match.name} className="w-full h-full object-cover" draggable={false} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center" style={{ background: '#0E0E22' }}>
+              <img
+                src={characterImages[match.character] ?? characterImages.ghost}
+                alt={match.character}
+                className="w-12 h-12 object-contain"
+                draggable={false}
+              />
+            </div>
+          )}
+          <div className="absolute -bottom-2 -right-2">
+            <AvatarStack character={match.character} element={match.element} size={30} />
+          </div>
+        </div>
         {isNew && (
           <motion.div
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-xl"
             style={{ border: '2px solid #4EFFC4' }}
             animate={{ scale: [1, 1.18, 1], opacity: [0.7, 0, 0.7] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
-      </div>
+      </motion.button>
 
       {/* Text */}
-      <div className="flex-1 min-w-0">
+      <button
+        className="flex-1 min-w-0 text-left bg-transparent border-0 p-0 m-0 cursor-pointer"
+        onClick={(e) => { e.stopPropagation(); onProfileTap(); }}
+        aria-label={`Open ${match.name} profile`}
+      >
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
@@ -186,7 +257,7 @@ function MatchCard({ match, onTap, isNew, hasPendingChallenge }: { match: Match;
             )
           : <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Matched {timeAgo(match.matchedAt)}</span>
         }
-      </div>
+      </button>
 
       {/* Time + unread */}
       <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
@@ -224,7 +295,7 @@ function MatchCard({ match, onTap, isNew, hasPendingChallenge }: { match: Match;
           />
         ) : null}
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
@@ -362,6 +433,9 @@ export function MatchesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [challengedMatchIds, setChallengedMatchIds] = useState<Set<string>>(new Set());
+  const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
+  const [selectedProfile, setSelectedProfile] = useState<ProfileDetailData | null>(null);
+  const [selectedProfilePhotos, setSelectedProfilePhotos] = useState<string[] | undefined>(undefined);
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
   const refreshPendingChallengeIndicators = async (matchList: Match[]) => {
@@ -421,6 +495,35 @@ export function MatchesScreen() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  // Load first photo for each visible match partner.
+  useEffect(() => {
+    if (matches.length === 0) return;
+    let cancelled = false;
+    const missingUserIds = Array.from(new Set(matches.map((m) => m.userId))).filter(
+      (userId) => matchPhotosByUserId[userId] === undefined,
+    );
+    if (missingUserIds.length === 0) return;
+
+    (async () => {
+      const entries = await Promise.all(
+        missingUserIds.map(async (partnerId) => {
+          const photos = await getPhotos(partnerId);
+          return [partnerId, photos[0]] as const;
+        }),
+      );
+      if (cancelled) return;
+      setMatchPhotosByUserId((prev) => {
+        const next = { ...prev };
+        entries.forEach(([partnerId, firstPhoto]) => {
+          if (next[partnerId] === undefined) next[partnerId] = firstPhoto;
+        });
+        return next;
+      });
+    })();
+
+    return () => { cancelled = true; };
+  }, [matches, matchPhotosByUserId]);
+
   // Realtime: refresh challenge indicators when a new incoming challenge is inserted.
   useEffect(() => {
     if (!supabase || !user?.id) return;
@@ -453,6 +556,34 @@ export function MatchesScreen() {
 
   const handleTap = (m: Match) => {
     navigate(`/match/${m.id}`);
+  };
+
+  const openMatchProfile = async (m: Match) => {
+    const profile: ProfileDetailData = {
+      id: m.userId,
+      name: m.name,
+      age: m.age,
+      location: m.location,
+      distance: '',
+      character: m.character,
+      element: m.element,
+      affiliation: m.affiliation,
+      bio: m.bio,
+      games: m.gameTypes,
+      favoriteGames: m.favoriteGames,
+      lookingFor: m.lookingFor,
+      kids: m.kids,
+      drinking: m.drinking,
+      smoking: m.smoking,
+      cannabis: m.cannabis,
+      pets: m.pets,
+      exercise: m.exercise,
+      prompts: [],
+    };
+    setSelectedProfile(profile);
+    setSelectedProfilePhotos(undefined);
+    const photos = await getPhotos(m.userId);
+    setSelectedProfilePhotos(photos);
   };
 
   return (
@@ -528,7 +659,14 @@ export function MatchesScreen() {
                 <SectionLabel label="New" />
                 {newMatches.map((m, i) => (
                   <motion.div key={m.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06, duration: 0.25 }}>
-                    <MatchCard match={m} isNew={true} onTap={() => handleTap(m)} hasPendingChallenge={challengedMatchIds.has(m.id)} />
+                    <MatchCard
+                      match={m}
+                      isNew={true}
+                      onTap={() => handleTap(m)}
+                      onProfileTap={() => { void openMatchProfile(m); }}
+                      hasPendingChallenge={challengedMatchIds.has(m.id)}
+                      photoUrl={matchPhotosByUserId[m.userId]}
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -539,7 +677,14 @@ export function MatchesScreen() {
                 <SectionLabel label="Matches" />
                 {olderMatches.map((m, i) => (
                   <motion.div key={m.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: newMatches.length * 0.06 + i * 0.06, duration: 0.25 }}>
-                    <MatchCard match={m} isNew={false} onTap={() => handleTap(m)} hasPendingChallenge={challengedMatchIds.has(m.id)} />
+                    <MatchCard
+                      match={m}
+                      isNew={false}
+                      onTap={() => handleTap(m)}
+                      onProfileTap={() => { void openMatchProfile(m); }}
+                      hasPendingChallenge={challengedMatchIds.has(m.id)}
+                      photoUrl={matchPhotosByUserId[m.userId]}
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -549,6 +694,19 @@ export function MatchesScreen() {
           </AnimatePresence>
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedProfile && (
+          <ProfileDetailSheet
+            profile={selectedProfile}
+            photoUrls={selectedProfilePhotos}
+            onClose={() => {
+              setSelectedProfile(null);
+              setSelectedProfilePhotos(undefined);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <BottomNav hasIncomingChallenge={hasIncomingChallenge} />
     </div>
