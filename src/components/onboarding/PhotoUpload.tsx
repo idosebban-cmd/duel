@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Camera, AlertCircle } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { fileToDataUrl } from '../../lib/imageCrop';
+import { PhotoCropModal } from '../profile/PhotoCropModal';
 
 const MAX_PHOTOS = 5;
 const MIN_PHOTOS = 2;
@@ -27,6 +29,9 @@ export function PhotoUpload() {
   const [errors, setErrors] = useState<string[]>([]);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragSourceIndex, setDragSourceIndex] = useState<number | null>(null);
+  const [cropQueue, setCropQueue] = useState<string[]>([]);
+  const [activeCropSrc, setActiveCropSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +52,7 @@ export function PhotoUpload() {
       newErrors.push(`Only ${available} more photo${available !== 1 ? 's' : ''} allowed (max ${MAX_PHOTOS})`);
     }
 
-    const newPhotos: PhotoSlot[] = [];
+    const dataUrlsToCrop: string[] = [];
 
     for (const file of toProcess) {
       const error = validateFile(file);
@@ -55,21 +60,19 @@ export function PhotoUpload() {
         newErrors.push(error);
         continue;
       }
-      const dataUrl = await readFileAsDataURL(file);
-      newPhotos.push({ id: `${Date.now()}-${Math.random()}`, dataUrl, name: file.name });
+      const dataUrl = await fileToDataUrl(file);
+      dataUrlsToCrop.push(dataUrl);
     }
 
     setErrors(newErrors);
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    if (dataUrlsToCrop.length > 0) {
+      setCropQueue((prev) => [...prev, ...dataUrlsToCrop]);
+      if (!activeCropSrc) {
+        setActiveCropSrc(dataUrlsToCrop[0]);
+        setCropOpen(true);
+      }
+    }
   }, [photos.length]);
-
-  const readFileAsDataURL = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -112,6 +115,20 @@ export function PhotoUpload() {
     updatePhotos(photos.map((p) => p.dataUrl));
     completeStep(3);
     navigate('/onboarding/games');
+  };
+
+  // Consume crop queue sequentially.
+  useEffect(() => {
+    if (!cropOpen && cropQueue.length > 0 && !activeCropSrc) {
+      setActiveCropSrc(cropQueue[0]);
+      setCropOpen(true);
+    }
+  }, [activeCropSrc, cropOpen, cropQueue]);
+
+  const advanceCropQueue = () => {
+    setCropQueue((prev) => prev.slice(1));
+    setActiveCropSrc(null);
+    setCropOpen(false);
   };
 
   const canContinue = photos.length >= MIN_PHOTOS;
@@ -304,6 +321,22 @@ export function PhotoUpload() {
 
       {/* Neon bottom bar */}
       <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
+
+      <PhotoCropModal
+        open={cropOpen}
+        imageSrc={activeCropSrc}
+        title="Crop your photo"
+        onCancel={() => {
+          advanceCropQueue();
+        }}
+        onConfirm={(croppedDataUrl) => {
+          setPhotos((prev) => [
+            ...prev,
+            { id: `${Date.now()}-${Math.random()}`, dataUrl: croppedDataUrl, name: `Photo ${prev.length + 1}` },
+          ]);
+          advanceCropQueue();
+        }}
+      />
     </div>
   );
 }
