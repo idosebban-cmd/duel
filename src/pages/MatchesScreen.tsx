@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 import { getMatches, getLastMessages, getChallengesForMatch } from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo, ChallengeRow } from '../lib/database';
+import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -241,7 +243,7 @@ function SectionLabel({ label }: { label: string }) {
 
 // ─── Bottom nav ───────────────────────────────────────────────────────────────
 
-function BottomNav() {
+function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) {
   const navigate = useNavigate();
   const activeColor = '#4EFFC4';
   const inactiveColor = 'rgba(255,255,255,0.35)';
@@ -263,6 +265,12 @@ function BottomNav() {
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
           <path d="M11 19.25C11 19.25 2.75 14.667 2.75 9.167C2.75 6.728 4.728 4.75 7.167 4.75C8.574 4.75 9.828 5.4 10.657 6.427L11 6.844L11.343 6.427C12.172 5.4 13.426 4.75 14.833 4.75C17.272 4.75 19.25 6.728 19.25 9.167C19.25 14.667 11 19.25 11 19.25Z" fill="currentColor"/>
         </svg>
+        {hasIncomingChallenge && (
+          <span
+            className="absolute top-2 right-[32%] w-2.5 h-2.5 rounded-full"
+            style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.8)' }}
+          />
+        )}
         <span className="font-body text-xs font-bold">Matches</span>
       </button>
 
@@ -354,6 +362,33 @@ export function MatchesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [challengedMatchIds, setChallengedMatchIds] = useState<Set<string>>(new Set());
+  const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
+
+  const refreshPendingChallengeIndicators = async (matchList: Match[]) => {
+    if (!user?.id || matchList.length === 0) {
+      setChallengedMatchIds(new Set());
+      return;
+    }
+    try {
+      const allChallenges = await Promise.all(
+        matchList.map((m) => getChallengesForMatch(m.id)),
+      );
+      const now = Date.now();
+      const ids = new Set<string>();
+      allChallenges.forEach((challs, i) => {
+        const hasIncoming = challs.some(
+          (c: ChallengeRow) =>
+            c.to_user === user.id &&
+            c.status === 'pending' &&
+            (!c.expires_at || new Date(c.expires_at).getTime() > now),
+        );
+        if (hasIncoming) ids.add(matchList[i].id);
+      });
+      setChallengedMatchIds(ids);
+    } catch {
+      // best-effort
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -371,26 +406,9 @@ export function MatchesScreen() {
           const lm = await getLastMessages(matchList.map((m) => m.id), user.id);
           if (!cancelled) setMatches((prev) => prev.map((m) => ({ ...m, lastMessage: lm.get(m.id) })));
 
-          // Fetch pending incoming challenges across all matches
-          try {
-            const allChallenges = await Promise.all(
-              matchList.map((m) => getChallengesForMatch(m.id)),
-            );
-            if (!cancelled) {
-              const now = Date.now();
-              const ids = new Set<string>();
-              allChallenges.forEach((challs, i) => {
-                const hasIncoming = challs.some(
-                  (c: ChallengeRow) =>
-                    c.to_user === user.id &&
-                    c.status === 'pending' &&
-                    (!c.expires_at || new Date(c.expires_at).getTime() > now),
-                );
-                if (hasIncoming) ids.add(matchList[i].id);
-              });
-              setChallengedMatchIds(ids);
-            }
-          } catch { /* best-effort */ }
+          if (!cancelled) {
+            await refreshPendingChallengeIndicators(matchList);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -402,6 +420,31 @@ export function MatchesScreen() {
 
     return () => { cancelled = true; };
   }, [user?.id]);
+
+  // Realtime: refresh challenge indicators when a new incoming challenge is inserted.
+  useEffect(() => {
+    if (!supabase || !user?.id) return;
+
+    const channel = supabase
+      .channel(`matches-challenges-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'challenges',
+          filter: `to_user=eq.${user.id}`,
+        },
+        async () => {
+          await refreshPendingChallengeIndicators(matches);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase?.removeChannel(channel);
+    };
+  }, [matches, user?.id]);
 
   const isNew = (m: Match) => Date.now() - new Date(m.matchedAt).getTime() < NEW_THRESHOLD_MS;
 
@@ -507,7 +550,7 @@ export function MatchesScreen() {
         )}
       </div>
 
-      <BottomNav />
+      <BottomNav hasIncomingChallenge={hasIncomingChallenge} />
     </div>
   );
 }
