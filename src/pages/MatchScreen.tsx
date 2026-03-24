@@ -196,6 +196,7 @@ export function MatchScreen() {
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesLenRef = useRef(0);
   const navigatedToGameRef = useRef(false);
+  const openedPickerFromStateRef = useRef(false);
 
   const theirAvatar = charImg(theirProfile?.character ?? null);
   const myAvatar = charImg(myProfile?.character ?? null);
@@ -215,6 +216,15 @@ export function MatchScreen() {
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
   }, [matchId]);
+
+  // ── Optional deep-link: open game picker from navigation state ─────
+  useEffect(() => {
+    if (!matchId || openedPickerFromStateRef.current) return;
+    const shouldOpen = (location.state as { openGamePicker?: boolean } | null)?.openGamePicker === true;
+    if (!shouldOpen) return;
+    openedPickerFromStateRef.current = true;
+    navigate('/play', { state: { matchId }, replace: true });
+  }, [location.state, matchId, navigate]);
 
   // ── Load profiles + games + messages on mount ──────────────────
   useEffect(() => {

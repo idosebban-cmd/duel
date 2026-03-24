@@ -118,11 +118,13 @@ export function ProfileDetailSheet({
   photoUrls,
   onClose,
   onAction,
+  actionVariant = 'discover',
 }: {
   profile: ProfileDetailData;
   photoUrls?: string[];
   onClose: () => void;
   onAction?: (dir: 'left' | 'right') => void;
+  actionVariant?: 'discover' | 'challenge';
 }) {
   const [idx, setIdx] = useState(0);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -257,7 +259,7 @@ export function ProfileDetailSheet({
         </div>
       </div>
 
-      {onAction && (
+      {onAction && actionVariant === 'discover' && (
         <div className="fixed bottom-0 left-0 right-0 flex gap-3 px-5 py-4 z-10"
           style={{ background: 'rgba(12,12,28,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <motion.button onClick={() => onAction('left')} className="flex-1 py-4 rounded-2xl font-display text-lg"
@@ -267,6 +269,27 @@ export function ProfileDetailSheet({
           <motion.button onClick={() => onAction('right')} className="flex-1 py-4 rounded-2xl font-display text-lg"
             style={{ background: 'rgba(78,255,196,0.12)', border: '2px solid rgba(78,255,196,0.4)', color: '#4EFFC4' }} whileTap={{ scale: 0.95 }}>
             Like
+          </motion.button>
+        </div>
+      )}
+      {onAction && actionVariant === 'challenge' && (
+        <div className="fixed bottom-0 left-0 right-0 px-5 py-4 z-10"
+          style={{ background: 'rgba(12,12,28,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <motion.button
+            onClick={() => onAction('right')}
+            className="w-full py-4 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
+              border: '3px solid black',
+              boxShadow: '6px 6px 0px 0px #B565FF',
+              color: '#1a1a2e',
+            }}
+            whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+          >
+            <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
+            Challenge to a Game
           </motion.button>
         </div>
       )}
