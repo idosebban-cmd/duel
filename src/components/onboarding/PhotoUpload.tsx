@@ -68,6 +68,9 @@ export function PhotoUpload() {
     if (dataUrlsToCrop.length > 0) {
       setCropQueue((prev) => [...prev, ...dataUrlsToCrop]);
       if (!activeCropSrc) {
+        if (import.meta.env.DEV) {
+          console.log('[PhotoUpload] opening PhotoCropModal (first file(s) from picker or drop)');
+        }
         setActiveCropSrc(dataUrlsToCrop[0]);
         setCropOpen(true);
       }
@@ -120,6 +123,9 @@ export function PhotoUpload() {
   // Consume crop queue sequentially.
   useEffect(() => {
     if (!cropOpen && cropQueue.length > 0 && !activeCropSrc) {
+      if (import.meta.env.DEV) {
+        console.log('[PhotoUpload] opening PhotoCropModal (next image in queue)');
+      }
       setActiveCropSrc(cropQueue[0]);
       setCropOpen(true);
     }

@@ -33,13 +33,18 @@ export function PhotoCropModal({
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const dragStartRef = useRef<Point>({ x: 0, y: 0 });
   const dragOffsetStartRef = useRef<Point>({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!open || !imageSrc) return;
+    if (import.meta.env.DEV) {
+      console.log('[PhotoCropModal] opened with image');
+    }
     setZoom(1);
     setOffset({ x: 0, y: 0 });
+    setPreviewDataUrl(null);
     const img = new Image();
     img.onload = () => {
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
@@ -69,6 +74,36 @@ export function PhotoCropModal({
     }),
     [offset.x, offset.y, offsetLimits.maxX, offsetLimits.maxY, offsetLimits.minX, offsetLimits.minY],
   );
+
+  useEffect(() => {
+    if (!open || !imageSrc || !naturalSize) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      const imageLeft = (CROP_WIDTH - displayWidth) / 2 + clampedOffset.x;
+      const imageTop = (CROP_HEIGHT - displayHeight) / 2 + clampedOffset.y;
+      const cropX = (0 - imageLeft) / totalScale;
+      const cropY = (0 - imageTop) / totalScale;
+      const cropW = CROP_WIDTH / totalScale;
+      const cropH = CROP_HEIGHT / totalScale;
+      void (async () => {
+        try {
+          const preview = await cropImageToDataUrl(
+            imageSrc,
+            { x: cropX, y: cropY, width: cropW, height: cropH },
+            { width: 680, height: 850 },
+            0.85,
+          );
+          if (!cancelled) setPreviewDataUrl(preview);
+        } catch {
+          // best-effort preview only
+        }
+      })();
+    }, 90);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [clampedOffset.x, clampedOffset.y, displayHeight, displayWidth, imageSrc, naturalSize, open, totalScale]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setDragging(true);
@@ -140,27 +175,58 @@ export function PhotoCropModal({
           >
             <h2 className="font-display text-xl mb-3" style={{ color: '#FFE66D' }}>{title}</h2>
             <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Drag to position and use zoom. Final crop is 4:5.
+              Preview before publish: adjust crop and zoom to control what matches see first.
             </p>
 
-            <div className="mx-auto rounded-xl overflow-hidden" style={{ width: CROP_WIDTH, height: CROP_HEIGHT, background: '#0A0A1E' }}>
+            {/* Crop viewport: 4:5. object-fit must not apply a second "cover" crop — layout
+                dimensions already match natural aspect × scale, so fill maps 1:1 to pixels. */}
+            <div
+              className="mx-auto rounded-xl overflow-hidden relative touch-none cursor-grab active:cursor-grabbing"
+              style={{ width: CROP_WIDTH, height: CROP_HEIGHT, background: '#0A0A1E' }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+            >
+              <img
+                src={imageSrc}
+                alt="Crop preview"
+                draggable={false}
+                className="absolute left-1/2 top-1/2 select-none"
+                style={{
+                  width: displayWidth,
+                  height: displayHeight,
+                  transform: `translate(calc(-50% + ${clampedOffset.x}px), calc(-50% + ${clampedOffset.y}px))`,
+                  objectFit: 'fill',
+                }}
+              />
+              {/* Clear 4:5 frame; clipped image pixels are not drawable — border matches export bounds */}
               <div
-                className="relative w-full h-full touch-none cursor-grab active:cursor-grabbing"
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-              >
+                className="absolute inset-0 pointer-events-none z-10 rounded-xl"
+                style={{
+                  boxShadow:
+                    'inset 0 0 0 2px rgba(78,255,196,0.95), inset 0 0 28px rgba(0,0,0,0.28)',
+                }}
+                aria-hidden
+              />
+            </div>
+
+            <div className="mt-4">
+              <p className="font-body text-xs font-bold mb-2 text-center" style={{ color: '#4EFFC4' }}>
+                This is how you'll appear on Discover
+              </p>
+              <div className="mx-auto rounded-2xl overflow-hidden"
+                style={{
+                  width: 220,
+                  height: 300,
+                  background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)',
+                  border: '2px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)',
+                }}>
                 <img
-                  src={imageSrc}
-                  alt="Crop preview"
+                  src={previewDataUrl ?? imageSrc}
+                  alt="Discover preview"
+                  className="w-full h-full object-cover"
                   draggable={false}
-                  className="absolute left-1/2 top-1/2 select-none"
-                  style={{
-                    width: displayWidth,
-                    height: displayHeight,
-                    transform: `translate(calc(-50% + ${clampedOffset.x}px), calc(-50% + ${clampedOffset.y}px))`,
-                    objectFit: 'cover',
-                  }}
                 />
               </div>
             </div>
