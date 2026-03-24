@@ -8,6 +8,7 @@ import { getProfile, getPhotos, savePhotos, updateProfileField } from '../lib/da
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
+import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
 
@@ -339,7 +340,7 @@ function DeleteModal({ visible, onClose, onDelete }: { visible: boolean; onClose
 
 // ─── Bottom nav (shared pattern) ──────────────────────────────────────────────
 
-function BottomNav() {
+function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) {
   const navigate = useNavigate();
   const activeColor = '#4EFFC4';
   const inactiveColor = 'rgba(255,255,255,0.35)';
@@ -350,13 +351,19 @@ function BottomNav() {
       style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(10,22,40,0.97)' }}
     >
       <button
-        className="flex-1 flex flex-col items-center justify-center gap-1 py-3"
+        className="flex-1 flex flex-col items-center justify-center gap-1 py-3 relative"
         onClick={() => navigate('/matches')}
         style={{ color: inactiveColor }}
       >
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
           <path d="M11 19.25C11 19.25 2.75 14.667 2.75 9.167C2.75 6.728 4.728 4.75 7.167 4.75C8.574 4.75 9.828 5.4 10.657 6.427L11 6.844L11.343 6.427C12.172 5.4 13.426 4.75 14.833 4.75C17.272 4.75 19.25 6.728 19.25 9.167C19.25 14.667 11 19.25 11 19.25Z" fill="currentColor"/>
         </svg>
+        {hasIncomingChallenge && (
+          <span
+            className="absolute top-2 right-[32%] w-2.5 h-2.5 rounded-full"
+            style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.8)' }}
+          />
+        )}
         <span className="font-body text-xs">Matches</span>
       </button>
 
@@ -397,6 +404,7 @@ export function ProfileScreen() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
   const { user } = useAuthStore();
+  const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
   // DB state
   const [dbProfile, setDbProfile] = useState<UserProfile | null>(null);
@@ -1922,7 +1930,7 @@ export function ProfileScreen() {
       </div>
 
       {/* Bottom nav */}
-      <BottomNav />
+      <BottomNav hasIncomingChallenge={hasIncomingChallenge} />
     </div>
   );
 }

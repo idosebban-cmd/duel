@@ -110,6 +110,26 @@ function GlobalChallengeListener() {
     });
   }, [runSetup, showSuccessToast]);
 
+  const showIncomingChallengeToast = useCallback(async (challenge: ChallengeEventRow) => {
+    let name = 'Someone';
+    try {
+      const profile = await getProfile(challenge.from_user);
+      if (profile.data?.name) name = profile.data.name;
+    } catch {
+      // Best-effort only.
+    }
+
+    setToast({
+      kind: 'success',
+      message: `${name} challenged you to a game!`,
+      actionLabel: 'View',
+      onAction: () => {
+        setToast(null);
+        navigate(`/match/${challenge.match_id}`);
+      },
+    });
+  }, [navigate]);
+
   useEffect(() => {
     if (!supabase || !user?.id) return;
     const sb = supabase;
@@ -149,12 +169,33 @@ function GlobalChallengeListener() {
           }
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'challenges',
+          filter: `to_user=eq.${user.id}`,
+        },
+        async (payload) => {
+          const inserted = payload.new as ChallengeEventRow;
+          if (!inserted || inserted.status !== 'pending') return;
+
+          const dedupeKey = `${inserted.match_id}:${inserted.game_type}`;
+          const now = Date.now();
+          const last = dedupeRef.current.get(dedupeKey) ?? 0;
+          if (now - last < 5000) return;
+          dedupeRef.current.set(dedupeKey, now);
+
+          await showIncomingChallengeToast(inserted);
+        },
+      )
       .subscribe();
 
     return () => {
       sb.removeChannel(channel);
     };
-  }, [runSetup, showRetryToast, showSuccessToast, user?.id]);
+  }, [runSetup, showIncomingChallengeToast, showRetryToast, showSuccessToast, user?.id]);
 
   if (!toast) return null;
 
