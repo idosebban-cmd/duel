@@ -31,10 +31,18 @@ export async function cropImageToDataUrl(
   quality = 0.9,
 ): Promise<string> {
   const img = await loadImage(imageSrc);
-  const sx = clamp(Math.round(crop.x), 0, Math.max(0, img.naturalWidth - 1));
-  const sy = clamp(Math.round(crop.y), 0, Math.max(0, img.naturalHeight - 1));
-  const sw = clamp(Math.round(crop.width), 1, img.naturalWidth - sx);
-  const sh = clamp(Math.round(crop.height), 1, img.naturalHeight - sy);
+  const nw = img.naturalWidth;
+  const nh = img.naturalHeight;
+
+  // Keep sub-pixel precision so the 4:5 source rect matches the UI math; rounding
+  // each edge independently can skew aspect ratio and clip the wrong band.
+  let sx = clamp(crop.x, 0, Math.max(0, nw - 1e-6));
+  let sy = clamp(crop.y, 0, Math.max(0, nh - 1e-6));
+  let sw = clamp(crop.width, 1e-6, nw - sx);
+  let sh = clamp(crop.height, 1e-6, nh - sy);
+
+  if (sx + sw > nw) sw = nw - sx;
+  if (sy + sh > nh) sh = nh - sy;
 
   const canvas = document.createElement('canvas');
   canvas.width = outputSize.width;

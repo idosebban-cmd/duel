@@ -446,6 +446,9 @@ export function ProfileScreen() {
 
     try {
       const base64 = await fileToDataUrl(file);
+      if (import.meta.env.DEV) {
+        console.log('[ProfileScreen] opening PhotoCropModal after file select');
+      }
       setPendingCropSrc(base64);
       setCropModalOpen(true);
     } catch {
@@ -1330,9 +1333,8 @@ export function ProfileScreen() {
           transition={{ duration: 0.4 }}
         >
           <div
-            className="w-full max-w-[340px] rounded-2xl overflow-hidden relative"
+            className="w-full max-w-[340px] aspect-[4/5] rounded-2xl overflow-hidden relative"
             style={{
-              height: 230,
               background: '#0E0E22',
               border: '2px solid rgba(255,255,255,0.1)',
               boxShadow: '0 18px 40px rgba(0,0,0,0.45)',
