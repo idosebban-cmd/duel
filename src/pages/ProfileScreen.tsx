@@ -9,6 +9,8 @@ import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
+import { fileToDataUrl } from '../lib/imageCrop';
+import { PhotoCropModal } from '../components/profile/PhotoCropModal';
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
 
@@ -442,26 +444,15 @@ export function ProfileScreen() {
       return;
     }
 
-    setUploading(true);
-
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        const newPhotos = [...dbPhotos, base64];
-        await savePhotos(user.id, newPhotos);
-        const refreshed = await getPhotos(user.id);
-        setDbPhotos(refreshed);
-        showToast('Photo uploaded!');
-      };
-      reader.readAsDataURL(file);
+      const base64 = await fileToDataUrl(file);
+      setPendingCropSrc(base64);
+      setCropModalOpen(true);
     } catch {
       showToast('Failed to upload photo');
-    } finally {
-      setUploading(false);
-      // Reset file input so the same file can be selected again
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
+    // Reset file input so the same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // Merge DB → store → null (no mock fallbacks)
@@ -492,6 +483,8 @@ export function ProfileScreen() {
   const [toastMsg, setToastMsg] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [showIntentModal, setShowIntentModal] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [pendingCropSrc, setPendingCropSrc] = useState<string | null>(null);
 
   // Edit modal state
   const [editModal, setEditModal] = useState<string | null>(null);
@@ -1955,6 +1948,35 @@ export function ProfileScreen() {
 
       {/* Bottom nav */}
       <BottomNav hasIncomingChallenge={hasIncomingChallenge} />
+
+      <PhotoCropModal
+        open={cropModalOpen}
+        imageSrc={pendingCropSrc}
+        title="Crop your profile photo"
+        onCancel={() => {
+          setCropModalOpen(false);
+          setPendingCropSrc(null);
+        }}
+        onConfirm={(croppedDataUrl) => {
+          if (!user) return;
+          setUploading(true);
+          void (async () => {
+            try {
+              const newPhotos = [...dbPhotos, croppedDataUrl];
+              await savePhotos(user.id, newPhotos);
+              const refreshed = await getPhotos(user.id);
+              setDbPhotos(refreshed);
+              showToast('Photo uploaded!');
+            } catch {
+              showToast('Failed to upload photo');
+            } finally {
+              setUploading(false);
+              setCropModalOpen(false);
+              setPendingCropSrc(null);
+            }
+          })();
+        }}
+      />
     </div>
   );
 }
