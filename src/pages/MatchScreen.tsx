@@ -10,6 +10,7 @@ import {
   getChallengesForMatch,
   acceptChallenge,
   declineChallenge,
+  cancelChallenge,
   getMessages,
   sendMessage,
   markMessagesRead,
@@ -188,6 +189,7 @@ export function MatchScreen() {
   const [loading, setLoading] = useState(true);
   const [challenges, setChallenges] = useState<ChallengeRow[]>([]);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [cancellingOutgoingId, setCancellingOutgoingId] = useState<string | null>(null);
   const [challengeError, setChallengeError] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -375,6 +377,7 @@ export function MatchScreen() {
   const outgoingChallenges = challenges.filter(
     (c) => c.from_user === myUserId && isPendingAndValid(c),
   );
+  const primaryOutgoingChallenge = outgoingChallenges[0] ?? null;
 
   // ── Accept / decline handlers ──────────────────────────────────
   const handleAccept = async (c: ChallengeRow) => {
@@ -403,6 +406,22 @@ export function MatchScreen() {
       setChallenges((prev) => prev.filter((ch) => ch.id !== c.id));
     } catch (err) {
       console.error('[MatchScreen] decline challenge error:', err);
+    }
+  };
+
+  const handleCancelOutgoing = async (c: ChallengeRow) => {
+    if (cancellingOutgoingId) return;
+    setCancellingOutgoingId(c.id);
+    setChallengeError(null);
+    try {
+      await cancelChallenge(c.id);
+      // Remove immediately from local UI.
+      setChallenges((prev) => prev.filter((ch) => ch.id !== c.id));
+    } catch (err) {
+      console.error('[MatchScreen] cancel outgoing challenge error:', err);
+      setChallengeError('Failed to cancel challenge. Please try again.');
+    } finally {
+      setCancellingOutgoingId(null);
     }
   };
 
@@ -579,14 +598,34 @@ export function MatchScreen() {
         <div className="px-4 pt-4 pb-2">
           {outgoingChallenges.length > 0 ? (
             <div
-              className="w-full py-3 rounded-2xl font-display font-extrabold text-base text-center"
+              className="w-full px-4 py-3 rounded-2xl"
               style={{
                 background: 'linear-gradient(135deg, rgba(78,255,196,0.12), rgba(0,217,255,0.12))',
                 border: '2px solid rgba(78,255,196,0.25)',
                 color: 'rgba(255,255,255,0.5)',
               }}
             >
-              ⏳ Challenge sent — waiting for {theirProfile?.name ?? 'opponent'}...
+              <div className="flex items-center gap-3">
+                <p className="flex-1 min-w-0 font-display font-extrabold text-base text-left">
+                  ⏳ Challenge sent — waiting for {theirProfile?.name ?? 'opponent'}...
+                </p>
+                {primaryOutgoingChallenge && (
+                  <motion.button
+                    onClick={() => handleCancelOutgoing(primaryOutgoingChallenge)}
+                    disabled={cancellingOutgoingId === primaryOutgoingChallenge.id}
+                    className="px-3 py-1.5 rounded-lg font-display font-bold text-xs flex-shrink-0"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      color: 'rgba(255,255,255,0.78)',
+                      opacity: cancellingOutgoingId === primaryOutgoingChallenge.id ? 0.7 : 1,
+                    }}
+                    whileTap={{ scale: 0.93 }}
+                  >
+                    {cancellingOutgoingId === primaryOutgoingChallenge.id ? 'Cancelling...' : 'Cancel'}
+                  </motion.button>
+                )}
+              </div>
             </div>
           ) : (
             <motion.button
