@@ -904,7 +904,8 @@ export async function createChallenge(
 
   // No mutual match — insert new challenge
   const isDotDash = gameType === 'dot-dash' || gameType === 'dot_dash';
-  const expiresAt = new Date(Date.now() + (isDotDash ? 10 * 60_000 : 24 * 60 * 60_000)).toISOString();
+  const challengeExpiryMs = isDotDash ? 10 * 60_000 : 30 * 60_000;
+  const expiresAt = new Date(Date.now() + challengeExpiryMs).toISOString();
 
   try {
     const { data } = await supabase
