@@ -377,7 +377,6 @@ export function MatchScreen() {
   const outgoingChallenges = challenges.filter(
     (c) => c.from_user === myUserId && isPendingAndValid(c),
   );
-  const primaryOutgoingChallenge = outgoingChallenges[0] ?? null;
 
   // ── Accept / decline handlers ──────────────────────────────────
   const handleAccept = async (c: ChallengeRow) => {
@@ -594,57 +593,24 @@ export function MatchScreen() {
         className="flex-1 overflow-y-auto flex flex-col"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {/* ── Challenge button / pending state ─────────────────── */}
+        {/* ── Challenge button ─────────────────────────────────── */}
         <div className="px-4 pt-4 pb-2">
-          {outgoingChallenges.length > 0 ? (
-            <div
-              className="w-full px-4 py-3 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(78,255,196,0.12), rgba(0,217,255,0.12))',
-                border: '2px solid rgba(78,255,196,0.25)',
-                color: 'rgba(255,255,255,0.5)',
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <p className="flex-1 min-w-0 font-display font-extrabold text-base text-left">
-                  ⏳ Challenge sent — waiting for {theirProfile?.name ?? 'opponent'}...
-                </p>
-                {primaryOutgoingChallenge && (
-                  <motion.button
-                    onClick={() => handleCancelOutgoing(primaryOutgoingChallenge)}
-                    disabled={cancellingOutgoingId === primaryOutgoingChallenge.id}
-                    className="px-3 py-1.5 rounded-lg font-display font-bold text-xs flex-shrink-0"
-                    style={{
-                      background: 'rgba(255,255,255,0.08)',
-                      border: '1px solid rgba(255,255,255,0.18)',
-                      color: 'rgba(255,255,255,0.78)',
-                      opacity: cancellingOutgoingId === primaryOutgoingChallenge.id ? 0.7 : 1,
-                    }}
-                    whileTap={{ scale: 0.93 }}
-                  >
-                    {cancellingOutgoingId === primaryOutgoingChallenge.id ? 'Cancelling...' : 'Cancel'}
-                  </motion.button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <motion.button
-              onClick={() => navigate('/play', { state: { matchId } })}
-              className="w-full py-3 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
-                border: '3px solid black',
-                boxShadow: '6px 6px 0px 0px #B565FF',
-                color: '#1a1a2e',
-              }}
-              whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-            >
-              <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
-              Challenge to a Game
-            </motion.button>
-          )}
+          <motion.button
+            onClick={() => navigate('/play', { state: { matchId } })}
+            className="w-full py-3 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
+              border: '3px solid black',
+              boxShadow: '6px 6px 0px 0px #B565FF',
+              color: '#1a1a2e',
+            }}
+            whileHover={{ scale: 1.02, boxShadow: '8px 8px 0px 0px #B565FF' }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+          >
+            <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
+            Challenge to a Game
+          </motion.button>
         </div>
 
         {/* ── Pending challenges ───────────────────────────────── */}
@@ -741,9 +707,20 @@ export function MatchScreen() {
                       {timeRemaining(c.expires_at)}
                     </p>
                   </div>
-                  <span className="font-body text-xs flex-shrink-0" style={{ color: 'rgba(78,255,196,0.5)' }}>
-                    Waiting...
-                  </span>
+                  <motion.button
+                    onClick={() => handleCancelOutgoing(c)}
+                    disabled={cancellingOutgoingId === c.id}
+                    className="px-3 py-1.5 rounded-lg font-display font-bold text-xs flex-shrink-0"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      color: 'rgba(255,255,255,0.78)',
+                      opacity: cancellingOutgoingId === c.id ? 0.7 : 1,
+                    }}
+                    whileTap={{ scale: 0.93 }}
+                  >
+                    {cancellingOutgoingId === c.id ? 'Cancelling...' : 'Cancel'}
+                  </motion.button>
                 </div>
               ))}
             </div>
