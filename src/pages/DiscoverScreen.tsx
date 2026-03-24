@@ -413,8 +413,9 @@ const PROFILES: Profile[] = [
 
 // ─── Profile card content (compact, for stack) ───────────────────────────────
 
-function ProfileCard({ profile }: { profile: Profile }) {
+function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl?: string }) {
   const lfColor = lookingForColors[profile.lookingFor] ?? '#4EFFC4';
+  const hasRealPhoto = !!mainPhotoUrl;
   return (
     <div
       className="w-full h-full rounded-2xl overflow-hidden flex flex-col"
@@ -427,11 +428,13 @@ function ProfileCard({ profile }: { profile: Profile }) {
       {/* Avatar area */}
       <div className="relative flex-shrink-0" style={{ height: '54%', background: '#0E0E22' }}>
         <img
-          src={characterImages[profile.character] ?? '/characters/Ghost.png'}
+          src={mainPhotoUrl ?? characterImages[profile.character] ?? '/characters/Ghost.png'}
           alt={profile.character}
-          className="w-full h-full object-contain"
+          className={`w-full h-full ${hasRealPhoto ? 'object-cover' : 'object-contain'}`}
           draggable={false}
-          style={{ padding: '10px', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}
+          style={hasRealPhoto
+            ? { filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.45))' }
+            : { padding: '10px', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}
         />
         {profile.intent && (
           <div
@@ -534,13 +537,20 @@ function ProfileCard({ profile }: { profile: Profile }) {
 
 // ─── Photo carousel (for full profile view) ───────────────────────────────────
 
-function PhotoCarousel({ profile }: { profile: Profile }) {
+function PhotoCarousel({ profile, photoUrls }: { profile: Profile; photoUrls?: string[] }) {
   const [idx, setIdx] = useState(0);
-  const slides = [
-    { img: characterImages[profile.character], label: profile.character },
-    { img: affiliationImages[profile.affiliation], label: profile.affiliation },
-    { img: elementImages[profile.element], label: profile.element },
-  ];
+  const hasUploadedPhotos = !!photoUrls && photoUrls.length > 0;
+  const slides = hasUploadedPhotos
+    ? photoUrls!.map((img, i) => ({ img, label: `photo-${i + 1}` }))
+    : [
+        { img: characterImages[profile.character], label: profile.character },
+        { img: affiliationImages[profile.affiliation], label: profile.affiliation },
+        { img: elementImages[profile.element], label: profile.element },
+      ];
+
+  useEffect(() => {
+    setIdx(0);
+  }, [profile.id, photoUrls?.length]);
 
   return (
     <div className="relative w-full select-none" style={{ height: 260, background: '#0A0A1E' }}>
@@ -556,9 +566,11 @@ function PhotoCarousel({ profile }: { profile: Profile }) {
           <img
             src={slides[idx].img}
             alt=""
-            className="h-full w-full object-contain"
+            className={`h-full w-full ${hasUploadedPhotos ? 'object-cover' : 'object-contain'}`}
             draggable={false}
-            style={{ padding: 24, filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.8))' }}
+            style={hasUploadedPhotos
+              ? { filter: 'drop-shadow(0 10px 24px rgba(0,0,0,0.45))' }
+              : { padding: 24, filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.8))' }}
           />
         </motion.div>
       </AnimatePresence>
@@ -614,10 +626,12 @@ function StatRow({ iconKey, label, value }: { iconKey: string; label: string; va
 
 function ProfileDetailView({
   profile,
+  photoUrls,
   onClose,
   onAction,
 }: {
   profile: Profile;
+  photoUrls?: string[];
   onClose: () => void;
   onAction: (dir: 'left' | 'right') => void;
 }) {
@@ -664,7 +678,7 @@ function ProfileDetailView({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         {/* Photo carousel */}
-        <PhotoCarousel profile={profile} />
+        <PhotoCarousel profile={profile} photoUrls={photoUrls} />
 
         {/* Identity header */}
         <div className="px-5 pt-5 pb-1">
@@ -1188,7 +1202,15 @@ function FilterModal({ initialFilters, onApply, onClose }: {
 
 // ─── Background card (static stack) ──────────────────────────────────────────
 
-function BackgroundCard({ profile, stackIndex }: { profile: Profile; stackIndex: 1 | 2 }) {
+function BackgroundCard({
+  profile,
+  stackIndex,
+  mainPhotoUrl,
+}: {
+  profile: Profile;
+  stackIndex: 1 | 2;
+  mainPhotoUrl?: string;
+}) {
   const scale = stackIndex === 1 ? 0.96 : 0.92;
   const yPx = stackIndex === 1 ? 12 : 24;
   return (
@@ -1196,7 +1218,7 @@ function BackgroundCard({ profile, stackIndex }: { profile: Profile; stackIndex:
       className="absolute inset-0"
       style={{ transform: `scale(${scale}) translateY(${yPx}px)`, transformOrigin: 'center bottom' }}
     >
-      <ProfileCard profile={profile} />
+      <ProfileCard profile={profile} mainPhotoUrl={mainPhotoUrl} />
     </div>
   );
 }
@@ -1205,6 +1227,7 @@ function BackgroundCard({ profile, stackIndex }: { profile: Profile; stackIndex:
 
 function TopCard({
   profile,
+  mainPhotoUrl,
   swipeCommand,
   onCommandConsumed,
   onSwipeStart,
@@ -1213,6 +1236,7 @@ function TopCard({
   disabled,
 }: {
   profile: Profile;
+  mainPhotoUrl?: string;
   swipeCommand: 'left' | 'right' | null;
   onCommandConsumed: () => void;
   onSwipeStart: () => void;
@@ -1302,7 +1326,7 @@ function TopCard({
         NOPE
       </motion.div>
 
-      <ProfileCard profile={profile} />
+      <ProfileCard profile={profile} mainPhotoUrl={mainPhotoUrl} />
     </motion.div>
   );
 }
@@ -1524,6 +1548,8 @@ export function DiscoverScreen() {
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
+  const [profilePhotosById, setProfilePhotosById] = useState<Record<string, string[]>>({});
+  const photoFetchInFlightRef = useRef<Set<string>>(new Set());
 
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
@@ -1608,8 +1634,33 @@ export function DiscoverScreen() {
   const filteredProfiles = useMemo(() => applyFilters(profiles, activeFilters), [profiles, activeFilters]);
   const activeFilterCount = useMemo(() => countActiveFilters(activeFilters), [activeFilters]);
 
+  const ensurePhotosForProfile = useMemo(() => {
+    return async (profile: Profile) => {
+      if (typeof profile.id !== 'string') return;
+      const id = profile.id;
+      if (profilePhotosById[id] !== undefined) return;
+      if (photoFetchInFlightRef.current.has(id)) return;
+      photoFetchInFlightRef.current.add(id);
+      try {
+        const photoUrls = await getPhotos(id);
+        setProfilePhotosById((prev) => (prev[id] !== undefined ? prev : { ...prev, [id]: photoUrls }));
+      } finally {
+        photoFetchInFlightRef.current.delete(id);
+      }
+    };
+  }, [profilePhotosById]);
+
   const remaining = filteredProfiles.length - currentIndex;
   const showEmpty = currentIndex >= filteredProfiles.length;
+
+  // Lazy-load photos for visible stack cards and expanded profile only.
+  useEffect(() => {
+    const visible = filteredProfiles.slice(currentIndex, currentIndex + 3);
+    visible.forEach((p) => { void ensurePhotosForProfile(p); });
+    if (expandedProfile) {
+      void ensurePhotosForProfile(expandedProfile);
+    }
+  }, [currentIndex, ensurePhotosForProfile, expandedProfile, filteredProfiles]);
 
   const handleApplyFilters = (filters: FilterState) => {
     setActiveFilters(filters);
@@ -1755,11 +1806,30 @@ export function DiscoverScreen() {
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
         ) : (
           <div className="relative w-full" style={{ maxWidth: 340, height: 460 }}>
-            {stackDepth >= 3 && <BackgroundCard profile={filteredProfiles[currentIndex + 2]} stackIndex={2} />}
-            {stackDepth >= 2 && <BackgroundCard profile={filteredProfiles[currentIndex + 1]} stackIndex={1} />}
+            {stackDepth >= 3 && (
+              <BackgroundCard
+                profile={filteredProfiles[currentIndex + 2]}
+                stackIndex={2}
+                mainPhotoUrl={typeof filteredProfiles[currentIndex + 2].id === 'string'
+                  ? profilePhotosById[filteredProfiles[currentIndex + 2].id]?.[0]
+                  : undefined}
+              />
+            )}
+            {stackDepth >= 2 && (
+              <BackgroundCard
+                profile={filteredProfiles[currentIndex + 1]}
+                stackIndex={1}
+                mainPhotoUrl={typeof filteredProfiles[currentIndex + 1].id === 'string'
+                  ? profilePhotosById[filteredProfiles[currentIndex + 1].id]?.[0]
+                  : undefined}
+              />
+            )}
             <TopCard
               key={filteredProfiles[currentIndex].id}
               profile={filteredProfiles[currentIndex]}
+              mainPhotoUrl={typeof filteredProfiles[currentIndex].id === 'string'
+                ? profilePhotosById[filteredProfiles[currentIndex].id]?.[0]
+                : undefined}
               swipeCommand={swipeCommand}
               onCommandConsumed={() => setSwipeCommand(null)}
               onSwipeStart={() => setDisabled(true)}
@@ -1807,6 +1877,7 @@ export function DiscoverScreen() {
           <ProfileDetailView
             key={expandedProfile.id}
             profile={expandedProfile}
+            photoUrls={typeof expandedProfile.id === 'string' ? profilePhotosById[expandedProfile.id] : undefined}
             onClose={() => setExpandedProfile(null)}
             onAction={handleDetailAction}
           />
