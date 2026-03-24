@@ -9,6 +9,11 @@ import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 import { ProfileDetailSheet } from '../components/profile/ProfileDetailSheet';
+import {
+  DISCOVER_CARD_HEIGHT,
+  DISCOVER_CARD_WIDTH,
+  DISCOVER_PHOTO_HEIGHT_PCT,
+} from '../lib/discoverCardConstants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -404,7 +409,10 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
       }}
     >
       {/* Avatar area */}
-      <div className="relative flex-shrink-0" style={{ height: '54%', background: '#0E0E22' }}>
+      <div
+        className="relative flex-shrink-0"
+        style={{ height: `${DISCOVER_PHOTO_HEIGHT_PCT * 100}%`, background: '#0E0E22' }}
+      >
         <img
           src={mainPhotoUrl ?? characterImages[profile.character] ?? '/characters/Ghost.png'}
           alt={profile.character}
@@ -1439,7 +1447,7 @@ export function DiscoverScreen() {
         {showEmpty ? (
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
         ) : (
-          <div className="relative w-full" style={{ maxWidth: 340, height: 460 }}>
+          <div className="relative w-full" style={{ maxWidth: DISCOVER_CARD_WIDTH, height: DISCOVER_CARD_HEIGHT }}>
             {stackDepth >= 3 && (
               <BackgroundCard
                 profile={filteredProfiles[currentIndex + 2]}

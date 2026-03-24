@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  PHOTO_CROP_EXPORT_HEIGHT_PX,
+  PHOTO_CROP_EXPORT_WIDTH_PX,
+  PHOTO_CROP_PREVIEW_HEIGHT_PX,
+  PHOTO_CROP_PREVIEW_MAX_WIDTH_PX,
+  PHOTO_CROP_PREVIEW_RENDER_HEIGHT_PX,
+  PHOTO_CROP_PREVIEW_RENDER_WIDTH_PX,
+  PHOTO_CROP_VIEWPORT_HEIGHT_PX,
+  PHOTO_CROP_VIEWPORT_WIDTH_PX,
+} from '../../lib/discoverCardConstants';
 import { cropImageToDataUrl } from '../../lib/imageCrop';
 
-const CROP_ASPECT = 4 / 5;
-const CROP_WIDTH = 280;
-const CROP_HEIGHT = Math.round(CROP_WIDTH / CROP_ASPECT); // 350
+const CROP_WIDTH = PHOTO_CROP_VIEWPORT_WIDTH_PX;
+const CROP_HEIGHT = PHOTO_CROP_VIEWPORT_HEIGHT_PX;
 
 interface Point {
   x: number;
@@ -90,7 +99,10 @@ export function PhotoCropModal({
           const preview = await cropImageToDataUrl(
             imageSrc,
             { x: cropX, y: cropY, width: cropW, height: cropH },
-            { width: 680, height: 850 },
+            {
+              width: PHOTO_CROP_PREVIEW_RENDER_WIDTH_PX,
+              height: PHOTO_CROP_PREVIEW_RENDER_HEIGHT_PX,
+            },
             0.85,
           );
           if (!cancelled) setPreviewDataUrl(preview);
@@ -142,7 +154,7 @@ export function PhotoCropModal({
       const cropped = await cropImageToDataUrl(
         imageSrc,
         { x: cropX, y: cropY, width: cropW, height: cropH },
-        { width: 1200, height: 1500 },
+        { width: PHOTO_CROP_EXPORT_WIDTH_PX, height: PHOTO_CROP_EXPORT_HEIGHT_PX },
         0.9,
       );
       onConfirm(cropped);
@@ -178,8 +190,7 @@ export function PhotoCropModal({
               Preview before publish: adjust crop and zoom to control what matches see first.
             </p>
 
-            {/* Crop viewport: 4:5. object-fit must not apply a second "cover" crop — layout
-                dimensions already match natural aspect × scale, so fill maps 1:1 to pixels. */}
+            {/* Crop viewport: same aspect as Discover ProfileCard photo strip. */}
             <div
               className="mx-auto rounded-xl overflow-hidden relative touch-none cursor-grab active:cursor-grabbing"
               style={{ width: CROP_WIDTH, height: CROP_HEIGHT, background: '#0A0A1E' }}
@@ -199,7 +210,7 @@ export function PhotoCropModal({
                   objectFit: 'fill',
                 }}
               />
-              {/* Clear 4:5 frame; clipped image pixels are not drawable — border matches export bounds */}
+              {/* Frame matches export bounds */}
               <div
                 className="absolute inset-0 pointer-events-none z-10 rounded-xl"
                 style={{
@@ -216,8 +227,8 @@ export function PhotoCropModal({
               </p>
               <div className="mx-auto rounded-2xl overflow-hidden"
                 style={{
-                  width: 220,
-                  height: 300,
+                  width: PHOTO_CROP_PREVIEW_MAX_WIDTH_PX,
+                  height: PHOTO_CROP_PREVIEW_HEIGHT_PX,
                   background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)',
                   border: '2px solid rgba(255,255,255,0.1)',
                   boxShadow: '0 12px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04)',
@@ -225,7 +236,8 @@ export function PhotoCropModal({
                 <img
                   src={previewDataUrl ?? imageSrc}
                   alt="Discover preview"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
+                  style={{ objectFit: 'fill' }}
                   draggable={false}
                 />
               </div>
