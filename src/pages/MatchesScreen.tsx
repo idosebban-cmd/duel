@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getMatches, getLastMessages, getChallengesForMatch, getPhotos } from '../lib/database';
+import { getMatches, getLastMessages, getChallengesForMatch, getGamesByMatch, getPhotos } from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo, ChallengeRow } from '../lib/database';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 import { ProfileDetailSheet, type ProfileDetailData } from '../components/profile/ProfileDetailSheet';
@@ -140,6 +140,8 @@ function MatchCard({
   match,
   onTap,
   onProfileTap,
+  onChallengeTap,
+  isFirstGame,
   isNew,
   hasPendingChallenge,
   photoUrl,
@@ -147,6 +149,8 @@ function MatchCard({
   match: Match;
   onTap: () => void;
   onProfileTap: () => void;
+  onChallengeTap: () => void;
+  isFirstGame: boolean;
   isNew: boolean;
   hasPendingChallenge?: boolean;
   photoUrl?: string;
@@ -294,6 +298,28 @@ function MatchCard({
             transition={{ duration: 1.5, repeat: Infinity }}
           />
         ) : null}
+        <motion.button
+          onClick={(e) => { e.stopPropagation(); onChallengeTap(); }}
+          className="px-2.5 py-1 rounded-lg font-display font-bold text-[10px] leading-none"
+          style={isFirstGame
+            ? {
+                background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
+                border: '1px solid rgba(78,255,196,0.6)',
+                color: '#10202A',
+                boxShadow: '0 0 10px rgba(78,255,196,0.35)',
+              }
+            : {
+                background: 'rgba(78,255,196,0.1)',
+                border: '1px solid rgba(78,255,196,0.35)',
+                color: '#4EFFC4',
+              }}
+          whileTap={{ scale: 0.94 }}
+          animate={isFirstGame ? { scale: [1, 1.04, 1] } : undefined}
+          transition={isFirstGame ? { duration: 1.6, repeat: Infinity } : undefined}
+          aria-label={isFirstGame ? `Play first game with ${match.name}` : `Challenge ${match.name} to a game`}
+        >
+          {isFirstGame ? 'Play first game' : 'Challenge'}
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -436,6 +462,8 @@ export function MatchesScreen() {
   const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
   const [selectedProfile, setSelectedProfile] = useState<ProfileDetailData | null>(null);
   const [selectedProfilePhotos, setSelectedProfilePhotos] = useState<string[] | undefined>(undefined);
+  const [selectedProfileMatchId, setSelectedProfileMatchId] = useState<string | null>(null);
+  const [hasPlayedByMatchId, setHasPlayedByMatchId] = useState<Record<string, boolean | undefined>>({});
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
   const refreshPendingChallengeIndicators = async (matchList: Match[]) => {
@@ -524,6 +552,34 @@ export function MatchesScreen() {
     return () => { cancelled = true; };
   }, [matches, matchPhotosByUserId]);
 
+  // Load whether each match has at least one completed game.
+  useEffect(() => {
+    if (matches.length === 0) return;
+    let cancelled = false;
+    const missingMatchIds = matches.map((m) => m.id).filter((id) => hasPlayedByMatchId[id] === undefined);
+    if (missingMatchIds.length === 0) return;
+
+    (async () => {
+      const entries = await Promise.all(
+        missingMatchIds.map(async (id) => {
+          const rows = await getGamesByMatch(id);
+          const hasCompleted = rows.some((g) => g.winner !== null);
+          return [id, hasCompleted] as const;
+        }),
+      );
+      if (cancelled) return;
+      setHasPlayedByMatchId((prev) => {
+        const next = { ...prev };
+        entries.forEach(([id, hasPlayed]) => {
+          if (next[id] === undefined) next[id] = hasPlayed;
+        });
+        return next;
+      });
+    })();
+
+    return () => { cancelled = true; };
+  }, [hasPlayedByMatchId, matches]);
+
   // Realtime: refresh challenge indicators when a new incoming challenge is inserted.
   useEffect(() => {
     if (!supabase || !user?.id) return;
@@ -558,6 +614,10 @@ export function MatchesScreen() {
     navigate(`/match/${m.id}`);
   };
 
+  const handleChallengeTap = (m: Match) => {
+    navigate(`/match/${m.id}`, { state: { openGamePicker: true } });
+  };
+
   const openMatchProfile = async (m: Match) => {
     const profile: ProfileDetailData = {
       id: m.userId,
@@ -581,6 +641,7 @@ export function MatchesScreen() {
       prompts: [],
     };
     setSelectedProfile(profile);
+    setSelectedProfileMatchId(m.id);
     setSelectedProfilePhotos(undefined);
     const photos = await getPhotos(m.userId);
     setSelectedProfilePhotos(photos);
@@ -664,6 +725,8 @@ export function MatchesScreen() {
                       isNew={true}
                       onTap={() => handleTap(m)}
                       onProfileTap={() => { void openMatchProfile(m); }}
+                      onChallengeTap={() => handleChallengeTap(m)}
+                      isFirstGame={hasPlayedByMatchId[m.id] === false}
                       hasPendingChallenge={challengedMatchIds.has(m.id)}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
@@ -682,6 +745,8 @@ export function MatchesScreen() {
                       isNew={false}
                       onTap={() => handleTap(m)}
                       onProfileTap={() => { void openMatchProfile(m); }}
+                      onChallengeTap={() => handleChallengeTap(m)}
+                      isFirstGame={hasPlayedByMatchId[m.id] === false}
                       hasPendingChallenge={challengedMatchIds.has(m.id)}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
@@ -700,9 +765,19 @@ export function MatchesScreen() {
           <ProfileDetailSheet
             profile={selectedProfile}
             photoUrls={selectedProfilePhotos}
+            actionVariant="challenge"
+            onAction={() => {
+              if (selectedProfileMatchId) {
+                navigate(`/match/${selectedProfileMatchId}`, { state: { openGamePicker: true } });
+              }
+              setSelectedProfile(null);
+              setSelectedProfilePhotos(undefined);
+              setSelectedProfileMatchId(null);
+            }}
             onClose={() => {
               setSelectedProfile(null);
               setSelectedProfilePhotos(undefined);
+              setSelectedProfileMatchId(null);
             }}
           />
         )}
