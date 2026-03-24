@@ -150,7 +150,7 @@ export function GameBoard() {
     titleCardActiveRef.current = true;
   }, [gs, mp.loading, titleCardComplete]);
 
-  // ── Insert secret on mount (moved from lobby) ─────────────────
+  // ── Insert secret on mount (board-level setup) ─────────────────
   useEffect(() => {
     if (!mp.gameId || !mp.gameRow || !matchId || !myUserId) return;
     let cancelled = false;
