@@ -9,6 +9,10 @@ import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
+import {
+  DISCOVER_CARD_WIDTH,
+  DISCOVER_PHOTO_AREA_HEIGHT_PX,
+} from '../lib/discoverCardConstants';
 import { fileToDataUrl } from '../lib/imageCrop';
 import { PhotoCropModal } from '../components/profile/PhotoCropModal';
 
@@ -1333,8 +1337,10 @@ export function ProfileScreen() {
           transition={{ duration: 0.4 }}
         >
           <div
-            className="w-full max-w-[340px] aspect-[4/5] rounded-2xl overflow-hidden relative"
+            className="w-full rounded-2xl overflow-hidden relative"
             style={{
+              maxWidth: DISCOVER_CARD_WIDTH,
+              aspectRatio: `${DISCOVER_CARD_WIDTH} / ${DISCOVER_PHOTO_AREA_HEIGHT_PX}`,
               background: '#0E0E22',
               border: '2px solid rgba(255,255,255,0.1)',
               boxShadow: '0 18px 40px rgba(0,0,0,0.45)',
