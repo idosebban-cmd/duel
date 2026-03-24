@@ -971,6 +971,18 @@ export async function declineChallenge(challengeId: string): Promise<void> {
   }
 }
 
+/** Cancel an outgoing pending challenge (maps to status='declined'). */
+export async function cancelChallenge(challengeId: string): Promise<void> {
+  try {
+    await supabase
+      .from('challenges')
+      .update({ status: 'declined', resolved_at: new Date().toISOString() })
+      .eq('id', challengeId);
+  } catch (err) {
+    console.error('[cancelChallenge]', err);
+  }
+}
+
 // ─── Photos ───────────────────────────────────────────────────────────────────
 
 async function uploadPhotoToStorage(
