@@ -237,7 +237,7 @@ test.describe('Duel App — Full Game Flow', () => {
             await guessWhoBtn.click();
             await page.waitForTimeout(2000);
 
-            // Should either go to lobby (mutual) or back to match with flash
+            // Should either navigate toward game board or back to match with flash
             expect(page.url()).toMatch(/\/(match|game)/);
           }
         }

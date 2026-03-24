@@ -560,9 +560,8 @@ export async function createOrJoinGame(
     ? [myUserId, opponentId]
     : [opponentId, myUserId];
 
-  // 1. Check if a game already exists for this match+type
-  try {
-    const { data: existing } = await supabase
+  const selectExistingActiveGame = async (): Promise<GameRow | null> => {
+    const { data } = await supabase
       .from('games')
       .select('*')
       .eq('match_id', matchId)
@@ -570,7 +569,13 @@ export async function createOrJoinGame(
       .is('winner', null)
       .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .maybeSingle();
-    if (existing) return existing as GameRow;
+    return (data as GameRow) ?? null;
+  };
+
+  // 1. Check if a game already exists for this match+type
+  try {
+    const existing = await selectExistingActiveGame();
+    if (existing) return existing;
   } catch {
     // Fall through to INSERT
   }
@@ -592,24 +597,27 @@ export async function createOrJoinGame(
       .select()
       .maybeSingle();
     if (!error && inserted) return inserted as GameRow;
+    if (error?.code && (error.code === '23505' || error.code === '409')) {
+      // Unique-index race: other player inserted first.
+      // Treat this as success path and resolve via fallback SELECT below.
+    } else if (error) {
+      console.error('[createOrJoinGame] insert failed:', error.message);
+    }
   } catch {
     // 409 conflict — other player inserted first
   }
 
-  // 3. Fallback SELECT (always reachable)
-  try {
-    const { data } = await supabase
-      .from('games')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('game_type', gameType)
-      .is('winner', null)
-      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
-      .maybeSingle();
-    return (data as GameRow) ?? null;
-  } catch {
-    return null;
+  // 3. Fallback SELECT with short retries for commit visibility
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const existing = await selectExistingActiveGame();
+      if (existing) return existing;
+    } catch {
+      // keep retrying
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150));
   }
+  return null;
 }
 
 /** Initialize a newly created/joined game row via RPC. */
@@ -693,7 +701,7 @@ export async function getGameByMatchId(matchId: string): Promise<GameRow | null>
 
 // ─── Game Secrets ─────────────────────────────────────────────────────────────
 
-/** Insert a player's secret character. ON CONFLICT DO NOTHING for lobby re-joins. Returns false on failure. */
+/** Insert a player's secret character. ON CONFLICT DO NOTHING for duplicate setup attempts. Returns false on failure. */
 export async function insertGameSecret(
   gameId: string,
   playerId: string,
@@ -804,7 +812,7 @@ export async function abandonGame(gameId: string): Promise<{ abandoned_by: strin
   }
 }
 
-/** Delete a game row (used when cancelling from the lobby). */
+/** Delete a game row while still pending (pre-start cancel path). */
 export async function deleteGame(gameId: string): Promise<void> {
   try {
     await supabase.from('games').delete().eq('id', gameId).eq('status', 'pending');
