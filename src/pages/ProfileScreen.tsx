@@ -548,6 +548,7 @@ export function ProfileScreen() {
   // Photos: real DB photos, fall back to session photos
   const sessionPhotos = store.photos;
   const displayPhotos = dbPhotos.length > 0 ? dbPhotos : sessionPhotos;
+  const heroPhoto = dbPhotos.length > 0 ? dbPhotos[0] : null;
 
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -1328,55 +1329,44 @@ export function ProfileScreen() {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
 
-        {/* ── Avatar hero ─────────────────────────────────────────────── */}
+        {/* ── Hero (photo-first, avatar-secondary) ───────────────────── */}
         <motion.div
           className="flex flex-col items-center gap-3 pt-2 pb-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {/* Avatar ring */}
-          <div className="relative">
-            <div
-              className="w-28 h-28 rounded-full flex items-center justify-center"
-              style={{
-                background: 'rgba(78,255,196,0.08)',
-                border: '3px solid rgba(78,255,196,0.4)',
-                boxShadow: '0 0 30px rgba(78,255,196,0.2), inset 0 0 20px rgba(78,255,196,0.05)',
-              }}
-            >
-              {character && characterImages[character] ? (
-                <img
-                  src={characterImages[character]}
-                  alt={character}
-                  className="w-20 h-20 object-contain"
-                  draggable={false}
-                />
-              ) : (
-                <span className="font-body text-3xl" style={{ color: 'rgba(255,255,255,0.2)' }}>?</span>
-              )}
-            </div>
-
-            {/* Element badge */}
-            {element && elementImages[element] && (
-              <div
-                className="absolute bottom-0 right-0 w-9 h-9 rounded-full flex items-center justify-center"
-                style={{ background: '#0A1628', border: '2px solid rgba(255,255,255,0.15)' }}
-              >
-                <img src={elementImages[element]} alt={element} className="w-6 h-6 object-contain" draggable={false} />
+          <div
+            className="w-full max-w-[340px] rounded-2xl overflow-hidden relative"
+            style={{
+              height: 230,
+              background: '#0E0E22',
+              border: '2px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 18px 40px rgba(0,0,0,0.45)',
+            }}
+          >
+            {heroPhoto ? (
+              <img
+                src={heroPhoto}
+                alt={name ? `${name} profile` : 'Profile photo'}
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                {character && characterImages[character] ? (
+                  <img
+                    src={characterImages[character]}
+                    alt={character}
+                    className="w-36 h-36 object-contain"
+                    draggable={false}
+                    style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}
+                  />
+                ) : (
+                  <span className="font-body text-5xl" style={{ color: 'rgba(255,255,255,0.2)' }}>?</span>
+                )}
               </div>
             )}
-
-            {/* Edit avatar button */}
-            <button
-              onClick={() => setEditModal('character')}
-              className="absolute -bottom-1 left-0 w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(78,255,196,0.15)', border: '2px solid rgba(78,255,196,0.35)' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M9.5 2L12 4.5L4.5 12H2V9.5L9.5 2Z" stroke="#4EFFC4" strokeWidth="1.5" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
 
           {/* Name + age */}
@@ -1384,6 +1374,40 @@ export function ProfileScreen() {
             <button onClick={() => openTextEdit('name', name)} className="font-display text-2xl" style={{ color: name ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {name || PLACEHOLDER.name}{age != null ? `, ${age}` : ''}
             </button>
+            <div className="mt-2 flex items-center justify-center gap-2.5">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden"
+                style={{
+                  background: 'rgba(78,255,196,0.08)',
+                  border: '2px solid rgba(78,255,196,0.35)',
+                  boxShadow: '0 0 18px rgba(78,255,196,0.18)',
+                }}
+              >
+                {character && characterImages[character] ? (
+                  <img src={characterImages[character]} alt={character} className="w-11 h-11 object-contain" draggable={false} />
+                ) : (
+                  <span className="font-body text-xl" style={{ color: 'rgba(255,255,255,0.2)' }}>?</span>
+                )}
+              </div>
+              {element && elementImages[element] && (
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: '#0A1628', border: '1.5px solid rgba(255,255,255,0.15)' }}
+                >
+                  <img src={elementImages[element]} alt={element} className="w-5 h-5 object-contain" draggable={false} />
+                </div>
+              )}
+              <button
+                onClick={() => setEditModal('character')}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.35)' }}
+                aria-label="Edit avatar"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M9.5 2L12 4.5L4.5 12H2V9.5L9.5 2Z" stroke="#4EFFC4" strokeWidth="1.5" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
             <button onClick={() => openTextEdit('location', location)} className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
