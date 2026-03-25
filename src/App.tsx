@@ -38,8 +38,12 @@ import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
 import { getProfile } from './lib/database';
-import { prepareAcceptedChallenge, resolveGameRoute } from './lib/challengeGameFlow';
+import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL
+  || (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
 
 interface ChallengeEventRow {
   id: string;
@@ -90,12 +94,60 @@ function GlobalChallengeListener() {
       kind: 'success',
       message: `${name} accepted your challenge!`,
       actionLabel: 'Join game',
-      onAction: () => {
+      onAction: async () => {
         setToast(null);
-        navigate(route.path);
+
+        const normalizedType = normalizeGameType(challenge.game_type);
+        if (normalizedType !== 'dot_dash') {
+          navigate(route.path);
+          return;
+        }
+
+        // Dot Dash uses in-memory game state on the Socket.IO server.
+        // Create (idempotently) first, keyed by the Duel matchId.
+        try {
+          const myUserId = user?.id;
+          if (!myUserId) throw new Error('Missing user identity');
+
+          const opponentId = challenge.to_user;
+          const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
+
+          // Best-effort: fetch my profile name for the lobby.
+          let myName = 'Player 1';
+          try {
+            const myProfile = await getProfile(myUserId);
+            if (myProfile.data?.name) myName = myProfile.data.name;
+          } catch {
+            // ignore
+          }
+
+          const p1Name = p1Id === myUserId ? myName : name;
+          const p2Name = p2Id === myUserId ? myName : name;
+
+          const res = await fetch(`${SERVER_URL}/api/dotdash/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gameId: challenge.match_id,
+              player1Id: p1Id,
+              player1Name: p1Name,
+              player2Id: p2Id,
+              player2Name: p2Name,
+            }),
+          });
+
+          if (!res.ok) throw new Error(`DotDash create failed: ${res.status}`);
+          const created = await res.json().catch(() => null) as { gameId?: string } | null;
+          const ddGameId = created?.gameId ?? challenge.match_id;
+          navigate(`/dotdash/${ddGameId}/play`);
+        } catch (err) {
+          console.error('[App] DotDash create failed:', err);
+          // Fall back to the resolved route so at least navigation happens.
+          navigate(route.path);
+        }
       },
     });
-  }, [navigate]);
+  }, [navigate, user?.id]);
 
   const showRetryToast = useCallback((challenge: ChallengeEventRow) => {
     setToast({

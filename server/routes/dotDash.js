@@ -6,20 +6,41 @@ const { v4: uuidv4 } = require('uuid');
 const dotDash = require('../services/dotDashService');
 
 // POST /api/dotdash/create
-// Body: { player1Id, player1Name, player1Avatar?, player2Id?, player2Name? }
+// Body:
+//   { gameId?, player1Id, player1Name, player1Avatar?, player2Id?, player2Name? }
+// If gameId is provided, the in-memory lobby will be keyed by that id.
+// The endpoint is idempotent for a given gameId.
 router.post('/create', (req, res) => {
-  const { player1Id, player1Name, player1Avatar, player2Id, player2Name, player2Avatar } = req.body;
+  const {
+    gameId: requestedGameId,
+    player1Id,
+    player1Name,
+    player1Avatar,
+    player2Id,
+    player2Name,
+    player2Avatar,
+  } = req.body;
 
   if (!player1Id) return res.status(400).json({ error: 'player1Id required' });
 
-  const gameId = uuidv4();
-  const game = dotDash.createGame(
+  if (requestedGameId) {
+    const existing = dotDash.getGame(requestedGameId);
+    if (existing) {
+      return res.json({
+        gameId: existing.gameId,
+        message: 'Dot Dash lobby already exists',
+      });
+    }
+  }
+
+  const gameId = requestedGameId || uuidv4();
+  dotDash.createGame(
     gameId,
     { userId: player1Id, name: player1Name || 'Player 1', avatar: player1Avatar || null },
     { userId: player2Id || 'player2', name: player2Name || 'Opponent', avatar: player2Avatar || null },
   );
 
-  res.json({ gameId: game.gameId, message: 'Dot Dash lobby created' });
+  res.json({ gameId, message: 'Dot Dash lobby created' });
 });
 
 // POST /api/dotdash/:gameId/join

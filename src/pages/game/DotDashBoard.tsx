@@ -4,8 +4,10 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { connectSocket } from '../../lib/socket';
+import { useAuthStore } from '../../store/authStore';
 import { useDotDashStore } from '../../store/dotDashStore';
 import type { DDGameState, DDPlayer, DDGhost, Direction } from '../../types/dotDash';
+import { getProfile } from '../../lib/database';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -212,6 +214,7 @@ export function DotDashBoard() {
   const { gameId }  = useParams<{ gameId: string }>();
   const navigate    = useNavigate();
   const store       = useDotDashStore();
+  const { user }    = useAuthStore();
   const socketRef   = useRef(connectSocket());
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
@@ -226,19 +229,53 @@ export function DotDashBoard() {
 
   const myId  = store.myUserId;
   const game  = store.gameState;
+  const setIdentity = store.setIdentity;
+  const readySentForGameIdRef = useRef<string | null>(null);
 
   // Sync stateRef on every render (avoids stale closure in rAF loop)
   stateRef.current = store.gameState;
 
+  // ── Identity initialization ────────────────────────────────────────────
+  // Challenge flow can navigate straight to /dotdash/:matchId/play
+  // without passing through DotDashSetup (which normally sets identity).
+  useEffect(() => {
+    if (!gameId || myId) return;
+    if (!user?.id) return;
+
+    let cancelled = false;
+    (async () => {
+      const { data: profile } = await getProfile(user.id);
+      if (cancelled) return;
+
+      const name = profile?.name ?? user.id;
+      const character = profile?.character ?? null;
+      const avatar = character
+        ? `/characters/${character.charAt(0).toUpperCase()}${character.slice(1)}.png`
+        : '/characters/Robot.png';
+
+      setIdentity(user.id, name, avatar);
+    })();
+
+    return () => { cancelled = true; };
+  }, [gameId, myId, user?.id, setIdentity]);
+
   // ── Socket setup ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!gameId || !myId) {
+    if (!gameId) {
       navigate('/dotdash');
       return;
     }
+    if (!myId) return;
 
     const socket = socketRef.current;
     socket.emit('dd_join_lobby', { gameId, userId: myId });
+
+    // If we enter /dotdash/:matchId/play directly (challenge flow),
+    // we're bypassing DotDashLobby's READY button. Auto-ready here.
+    if (readySentForGameIdRef.current !== gameId) {
+      socket.emit('dd_player_ready', { gameId, userId: myId });
+      readySentForGameIdRef.current = gameId;
+    }
 
     socket.on('dd_game_tick', ({ gameState }: { gameState: DDGameState }) => {
       store.setGameState(gameState);

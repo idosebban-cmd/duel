@@ -28,6 +28,10 @@ import { GAME_LABELS } from '../lib/gameConstants';
 const CHAT_POLL_MS = 5_000;
 const CHALLENGE_POLL_MS = 5_000;
 
+const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL
+  || (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
+
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
   robot: '/characters/Robot.png', phoenix: '/characters/Phoenix.png',
@@ -300,9 +304,50 @@ export function MatchScreen() {
       return false;
     }
 
+    // Dot Dash uses an in-memory Socket.IO server state.
+    // Create the in-memory lobby keyed by the Duel matchId before navigating.
+    if (normalizedType === 'dot_dash') {
+      try {
+        const opponentId = challenge.from_user === myUserId ? challenge.to_user : challenge.from_user;
+        const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
+
+        const p1Profile = p1Id === myUserId ? myProfile : theirProfile;
+        const p2Profile = p2Id === myUserId ? myProfile : theirProfile;
+
+        const p1Name = p1Profile?.name ?? 'Player 1';
+        const p2Name = p2Profile?.name ?? 'Opponent';
+
+        const res = await fetch(`${SERVER_URL}/api/dotdash/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            // Key the in-memory server game by the Duel matchId,
+            // since our routes/results are already using matchId.
+            gameId: challenge.match_id,
+            player1Id: p1Id,
+            player1Name: p1Name,
+            player2Id: p2Id,
+            player2Name: p2Name,
+          }),
+        });
+
+        if (!res.ok) throw new Error(`DotDash create failed: ${res.status}`);
+        const created = await res.json().catch(() => null) as { gameId?: string } | null;
+        const ddGameId = created?.gameId ?? null;
+        if (!ddGameId) throw new Error('DotDash create did not return gameId');
+
+        navigate(`/dotdash/${ddGameId}/play`);
+        return true;
+      } catch (err) {
+        console.error('[MatchScreen] DotDash create failed:', err);
+        setChallengeError('Failed to start Dot Dash. Please try again.');
+        return false;
+      }
+    }
+
     navigate(resolvedRoute.path);
     return true;
-  }, [myUserId, navigate]);
+  }, [myUserId, navigate, myProfile, theirProfile]);
 
   // ── Challenges: mount check + Supabase Realtime ─────────────────
   useEffect(() => {
