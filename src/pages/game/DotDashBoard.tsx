@@ -603,20 +603,82 @@ export function DotDashBoard() {
         <p className="font-body text-xs text-white/30">
           Swipe or ← ↑ → ↓ to move
         </p>
-        <div className="flex gap-3">
-          {(['↑','↓','←','→'] as const).map((arrow) => (
-            <button
-              key={arrow}
-              className="w-8 h-8 rounded-lg font-display font-bold text-sm text-white/60 flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,255,255,0.12)' }}
-              onPointerDown={() => {
-                const map = { '↑':'up','↓':'down','←':'left','→':'right' } as const;
-                sendMove(map[arrow]);
-              }}
-            >
-              {arrow}
-            </button>
-          ))}
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: '56px 20px 56px',
+            gridTemplateRows: '56px 14px 56px 14px 56px',
+            alignItems: 'center',
+            justifyItems: 'center',
+          }}
+        >
+          {/* Up */}
+          <button
+            type="button"
+            aria-label="Move up"
+            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              background: 'rgba(255,255,255,0.08)',
+              border: '2px solid rgba(255,255,255,0.14)',
+            }}
+            onPointerDown={() => sendMove('up')}
+          >
+            ↑
+          </button>
+
+          {/* Left / Right */}
+          <button
+            type="button"
+            aria-label="Move left"
+            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              background: 'rgba(255,255,255,0.08)',
+              border: '2px solid rgba(255,255,255,0.14)',
+              gridColumn: 1,
+              gridRow: 3,
+            }}
+            onPointerDown={() => sendMove('left')}
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            aria-label="Move right"
+            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              background: 'rgba(255,255,255,0.08)',
+              border: '2px solid rgba(255,255,255,0.14)',
+              gridColumn: 3,
+              gridRow: 3,
+            }}
+            onPointerDown={() => sendMove('right')}
+          >
+            →
+          </button>
+
+          {/* Down */}
+          <button
+            type="button"
+            aria-label="Move down"
+            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              background: 'rgba(255,255,255,0.08)',
+              border: '2px solid rgba(255,255,255,0.14)',
+              gridColumn: 2,
+              gridRow: 5,
+            }}
+            onPointerDown={() => sendMove('down')}
+          >
+            ↓
+          </button>
         </div>
       </div>
 
