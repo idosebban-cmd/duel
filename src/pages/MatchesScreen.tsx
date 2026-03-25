@@ -3,10 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getMatches, getLastMessages, getChallengesForMatch, getGamesByMatch, getPhotos } from '../lib/database';
+import { getMatches, getLastMessages, getChallengesForMatch, getPhotos } from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo, ChallengeRow } from '../lib/database';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
-import { ProfileDetailSheet, type ProfileDetailData } from '../components/profile/ProfileDetailSheet';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,17 +129,11 @@ function AvatarStack({ character, element, size = 60 }: {
 function MatchCard({
   match,
   onTap,
-  onProfileTap,
-  onChallengeTap,
-  isFirstGame,
   isNew,
   photoUrl,
 }: {
   match: Match;
   onTap: () => void;
-  onProfileTap: () => void;
-  onChallengeTap: () => void;
-  isFirstGame: boolean;
   isNew: boolean;
   photoUrl?: string;
 }) {
@@ -167,12 +160,7 @@ function MatchCard({
       )}
 
       {/* Avatar */}
-      <motion.button
-        className="relative flex-shrink-0"
-        onClick={(e) => { e.stopPropagation(); onProfileTap(); }}
-        whileTap={{ scale: 0.96 }}
-        aria-label={`View ${match.name} profile`}
-      >
+      <div className="relative flex-shrink-0" aria-label={`${match.name} avatar`}>
         <div
           className="w-[62px] h-[62px] rounded-xl overflow-hidden relative"
           style={{
@@ -205,69 +193,45 @@ function MatchCard({
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
-      </motion.button>
-
-      {/* Timestamp + online dot (top-right) */}
-      <div
-        className="absolute right-4 top-3 flex items-center gap-2"
-        style={{ color: 'rgba(255,255,255,0.35)' }}
-      >
-        <span className="font-body text-xs">
-          {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
-        </span>
-        <span
-          className="w-2 h-2 rounded-full"
-          style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
-        />
       </div>
 
-      {/* CTA (right aligned, vertically centered) */}
-      <motion.button
-        onClick={(e) => { e.stopPropagation(); onChallengeTap(); }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl font-display font-bold text-xs leading-none"
-        style={isFirstGame
-          ? {
-              background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
-              border: '2px solid rgba(78,255,196,0.7)',
-              color: '#10202A',
-              boxShadow: '0 0 16px rgba(78,255,196,0.25)',
-            }
-          : {
-              background: 'rgba(255,255,255,0.04)',
-              border: '2px solid rgba(255,255,255,0.10)',
-              color: 'rgba(255,255,255,0.80)',
-            }}
-        whileTap={{ scale: 0.96 }}
-        aria-label={isFirstGame ? `Play 1st game with ${match.name}` : `Open ${match.name} match`}
-      >
-        {isFirstGame ? 'Play 1st game' : 'Open'}
-      </motion.button>
-
-      {/* Text */}
-      <button
-        className="flex-1 min-w-0 text-left bg-transparent border-0 p-0 m-0 cursor-pointer"
-        style={{ paddingRight: 120 }}
-        onClick={(e) => { e.stopPropagation(); onProfileTap(); }}
-        aria-label={`Open ${match.name} profile`}
-      >
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Right content */}
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        {/* Row 1: Name, Age */}
+        <div className="flex items-center min-w-0">
           <span className="font-body text-[15px] leading-tight whitespace-nowrap truncate min-w-0" style={{ color: 'rgba(255,255,255,0.92)' }}>
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
           </span>
-          {match.intent && (
-            <span
-              className="inline-flex items-center px-2 py-1 rounded-full font-body text-[11px] font-bold leading-none flex-shrink-0 whitespace-nowrap"
-              style={{
-                color: '#0A1628',
-                background: intentMeta[match.intent].color,
-                boxShadow: `0 0 14px ${intentMeta[match.intent].color}33`,
-              }}
-            >
-              {intentMeta[match.intent].label}
-            </span>
-          )}
         </div>
-      </button>
+
+        {/* Row 2: Intent | dot + timestamp */}
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <div className="min-w-0">
+            {match.intent && (
+              <span
+                className="inline-flex items-center px-2 py-1 rounded-full font-body text-[11px] font-bold leading-none flex-shrink-0 whitespace-nowrap"
+                style={{
+                  color: '#0A1628',
+                  background: intentMeta[match.intent].color,
+                  boxShadow: `0 0 14px ${intentMeta[match.intent].color}33`,
+                }}
+              >
+                {intentMeta[match.intent].label}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
+            />
+            <span className="font-body text-xs whitespace-nowrap">
+              {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
+            </span>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -406,10 +370,6 @@ export function MatchesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
-  const [selectedProfile, setSelectedProfile] = useState<ProfileDetailData | null>(null);
-  const [selectedProfilePhotos, setSelectedProfilePhotos] = useState<string[] | undefined>(undefined);
-  const [selectedProfileMatchId, setSelectedProfileMatchId] = useState<string | null>(null);
-  const [hasPlayedByMatchId, setHasPlayedByMatchId] = useState<Record<string, boolean | undefined>>({});
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
   const refreshPendingChallengeIndicators = async (matchList: Match[]) => {
@@ -495,34 +455,6 @@ export function MatchesScreen() {
     return () => { cancelled = true; };
   }, [matches, matchPhotosByUserId]);
 
-  // Load whether each match has at least one completed game.
-  useEffect(() => {
-    if (matches.length === 0) return;
-    let cancelled = false;
-    const missingMatchIds = matches.map((m) => m.id).filter((id) => hasPlayedByMatchId[id] === undefined);
-    if (missingMatchIds.length === 0) return;
-
-    (async () => {
-      const entries = await Promise.all(
-        missingMatchIds.map(async (id) => {
-          const rows = await getGamesByMatch(id);
-          const hasCompleted = rows.some((g) => g.winner !== null);
-          return [id, hasCompleted] as const;
-        }),
-      );
-      if (cancelled) return;
-      setHasPlayedByMatchId((prev) => {
-        const next = { ...prev };
-        entries.forEach(([id, hasPlayed]) => {
-          if (next[id] === undefined) next[id] = hasPlayed;
-        });
-        return next;
-      });
-    })();
-
-    return () => { cancelled = true; };
-  }, [hasPlayedByMatchId, matches]);
-
   // Realtime: refresh challenge indicators when a new incoming challenge is inserted.
   useEffect(() => {
     if (!supabase || !user?.id) return;
@@ -555,39 +487,6 @@ export function MatchesScreen() {
 
   const handleTap = (m: Match) => {
     navigate(`/match/${m.id}`);
-  };
-
-  const handleChallengeTap = (m: Match) => {
-    navigate(`/match/${m.id}`, { state: { openGamePicker: true } });
-  };
-
-  const openMatchProfile = async (m: Match) => {
-    const profile: ProfileDetailData = {
-      id: m.userId,
-      name: m.name,
-      age: m.age,
-      location: m.location,
-      distance: '',
-      character: m.character,
-      element: m.element,
-      affiliation: m.affiliation,
-      bio: m.bio,
-      games: m.gameTypes,
-      favoriteGames: m.favoriteGames,
-      lookingFor: m.lookingFor,
-      kids: m.kids,
-      drinking: m.drinking,
-      smoking: m.smoking,
-      cannabis: m.cannabis,
-      pets: m.pets,
-      exercise: m.exercise,
-      prompts: [],
-    };
-    setSelectedProfile(profile);
-    setSelectedProfileMatchId(m.id);
-    setSelectedProfilePhotos(undefined);
-    const photos = await getPhotos(m.userId);
-    setSelectedProfilePhotos(photos);
   };
 
   return (
@@ -657,9 +556,6 @@ export function MatchesScreen() {
                       match={m}
                       isNew={true}
                       onTap={() => handleTap(m)}
-                      onProfileTap={() => { void openMatchProfile(m); }}
-                      onChallengeTap={() => handleChallengeTap(m)}
-                      isFirstGame={hasPlayedByMatchId[m.id] === false}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
                   </motion.div>
@@ -676,9 +572,6 @@ export function MatchesScreen() {
                       match={m}
                       isNew={false}
                       onTap={() => handleTap(m)}
-                      onProfileTap={() => { void openMatchProfile(m); }}
-                      onChallengeTap={() => handleChallengeTap(m)}
-                      isFirstGame={hasPlayedByMatchId[m.id] === false}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
                   </motion.div>
@@ -690,29 +583,6 @@ export function MatchesScreen() {
           </AnimatePresence>
         )}
       </div>
-
-      <AnimatePresence>
-        {selectedProfile && (
-          <ProfileDetailSheet
-            profile={selectedProfile}
-            photoUrls={selectedProfilePhotos}
-            actionVariant="challenge"
-            onAction={() => {
-              if (selectedProfileMatchId) {
-                navigate(`/match/${selectedProfileMatchId}`, { state: { openGamePicker: true } });
-              }
-              setSelectedProfile(null);
-              setSelectedProfilePhotos(undefined);
-              setSelectedProfileMatchId(null);
-            }}
-            onClose={() => {
-              setSelectedProfile(null);
-              setSelectedProfilePhotos(undefined);
-              setSelectedProfileMatchId(null);
-            }}
-          />
-        )}
-      </AnimatePresence>
 
       <BottomNav hasIncomingChallenge={hasIncomingChallenge} />
     </div>
