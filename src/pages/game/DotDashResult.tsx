@@ -73,7 +73,16 @@ export function DotDashResult() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payload, isFirstGame, matchId]);
 
-  if (!payload) return null;
+  if (!payload) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ background: '#12122A' }}
+      >
+        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
+      </div>
+    );
+  }
 
   const { winner, forfeit, finalScores, gameState } = payload;
   const didWin = winner === myId;

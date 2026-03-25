@@ -275,6 +275,7 @@ export function DotDashBoard() {
   // ── Keyboard controls ────────────────────────────────────────────────────────
   const sendMove = useCallback((dir: Direction) => {
     if (!gameId || !myId) return;
+    if (!stateRef.current) return; // Don't emit moves until the game state has arrived
     socketRef.current.emit('dd_move', { gameId, userId: myId, direction: dir });
   }, [gameId, myId]);
 
@@ -451,6 +452,25 @@ export function DotDashBoard() {
           ref={canvasRef}
           style={{ display: 'block', imageRendering: 'pixelated' }}
         />
+
+        {/* Waiting for initial game state */}
+        <AnimatePresence>
+          {!disconnected && !game && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: 'rgba(18,18,42,0.85)', backdropFilter: 'blur(4px)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="text-center px-6">
+                <div className="mx-auto w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin" />
+                <p className="font-display font-bold text-white text-lg mt-3">Waiting for game state...</p>
+                <p className="font-body text-white/50 text-sm mt-1">Connecting you to the match.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Disconnected overlay */}
         <AnimatePresence>

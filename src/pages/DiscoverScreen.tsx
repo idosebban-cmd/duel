@@ -1190,6 +1190,7 @@ export function DiscoverScreen() {
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [profilePhotosById, setProfilePhotosById] = useState<Record<string, string[]>>({});
   const photoFetchInFlightRef = useRef<Set<string>>(new Set());
 
@@ -1236,9 +1237,13 @@ export function DiscoverScreen() {
 
   // Load real profiles from DB; keep fake ones as fallback if DB is empty
   useEffect(() => {
-    if (!user) return;
-
     const loadProfiles = async () => {
+      if (!user) {
+        setLoadingProfiles(false);
+        return;
+      }
+
+      setLoadingProfiles(true);
       try {
         // Get current user profile for distance calculation + preference pre-population
         const { data: currentProfile } = await getProfile(user.id);
@@ -1274,6 +1279,8 @@ export function DiscoverScreen() {
         }
       } catch {
         // Keep showing seed profiles — DB unavailable
+      } finally {
+        setLoadingProfiles(false);
       }
     };
 
@@ -1301,6 +1308,7 @@ export function DiscoverScreen() {
 
   const remaining = filteredProfiles.length - currentIndex;
   const showEmpty = currentIndex >= filteredProfiles.length;
+  const showEmptyState = !loadingProfiles && showEmpty;
 
   // Lazy-load photos for visible stack cards and expanded profile only.
   useEffect(() => {
@@ -1365,7 +1373,7 @@ export function DiscoverScreen() {
   };
 
   const executeButtonSwipe = (dir: 'left' | 'right') => {
-    if (!emailConfirmed || disabled || showEmpty) return;
+    if (!emailConfirmed || disabled || loadingProfiles || showEmpty) return;
     setDisabled(true);
     setSwipeCommand(dir);
   };
@@ -1416,7 +1424,7 @@ export function DiscoverScreen() {
           DUEL
         </div>
         <div className="flex items-center gap-2.5">
-          {!showEmpty && (
+          {!showEmptyState && (
             <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>
               {filteredProfiles.length} nearby
             </span>
@@ -1483,7 +1491,15 @@ export function DiscoverScreen() {
       {/* Card stack */}
       {!showIncompleteModal && (
       <div className="flex-1 flex items-center justify-center px-5 overflow-hidden">
-        {showEmpty ? (
+        {loadingProfiles ? (
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div
+              className="w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin"
+              aria-hidden="true"
+            />
+            <p className="font-body text-white/60 text-sm">Loading nearby profiles...</p>
+          </div>
+        ) : showEmpty ? (
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
         ) : (
           <div className="relative w-full" style={{ maxWidth: DISCOVER_CARD_WIDTH, height: DISCOVER_CARD_HEIGHT }}>
@@ -1525,7 +1541,7 @@ export function DiscoverScreen() {
       )}
 
       {/* Action buttons */}
-      {!showEmpty && !showIncompleteModal && (
+      {!loadingProfiles && !showEmpty && !showIncompleteModal && (
         <div className="flex-none flex items-center justify-center gap-10 py-3">
           <motion.button onClick={() => executeButtonSwipe('left')} disabled={disabled}
             className="w-16 h-16 rounded-full flex items-center justify-center"

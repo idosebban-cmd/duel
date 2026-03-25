@@ -942,19 +942,14 @@ export async function getChallengesForMatch(matchId: string): Promise<ChallengeR
 }
 
 export async function acceptChallenge(challengeId: string): Promise<void> {
-  try {
-    const { data, error } = await supabase
-      .from('challenges')
-      .update({ status: 'accepted', resolved_at: new Date().toISOString() })
-      .eq('id', challengeId)
-      .select('id');
+  const { data, error } = await supabase
+    .from('challenges')
+    .update({ status: 'accepted', resolved_at: new Date().toISOString() })
+    .eq('id', challengeId)
+    .select('id');
 
-    if (error) throw error;
-    if (!Array.isArray(data) || data.length === 0) throw new Error('Challenge not found');
-  } catch (err) {
-    console.error('[acceptChallenge] Failed to accept challenge:', err);
-    throw err instanceof Error ? err : new Error(String(err));
-  }
+  if (error) throw error;
+  if (!Array.isArray(data) || data.length === 0) throw new Error('Challenge not found');
 }
 
 export async function declineChallenge(challengeId: string): Promise<void> {

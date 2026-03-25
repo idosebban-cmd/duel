@@ -49,7 +49,7 @@ const GAMES: GameOption[] = [
   {
     id: 'draughts',
     name: 'Draughts',
-    imgSrc: '/game-icons/Strategy.png',
+    imgSrc: '/game-icons/checkers.png',
     description: 'Classic strategy. Capture all opponent pieces or block their moves to win.',
     route: '/games/draughts',
     gradient: 'linear-gradient(135deg, #FFE66D, #FF9F1C)',
@@ -58,7 +58,7 @@ const GAMES: GameOption[] = [
   {
     id: 'connect_four',
     name: 'Connect Four',
-    imgSrc: '/game-icons/Boardgames.png',
+    imgSrc: '/game-icons/connect4.png',
     description: 'Connect 4 in a row. Strategy meets speed.',
     route: '/games/connect-four',
     gradient: 'linear-gradient(135deg, #4EFFC4, #0099FF)',
@@ -67,7 +67,7 @@ const GAMES: GameOption[] = [
   {
     id: 'battleship',
     name: 'Battleship',
-    imgSrc: '/game-icons/Competative%20games.png',
+    imgSrc: '/game-icons/battleship.png',
     description: 'Sink their fleet. Strategy and luck.',
     route: '/games/battleship',
     gradient: 'linear-gradient(135deg, #4AC8FF, #0055AA)',
