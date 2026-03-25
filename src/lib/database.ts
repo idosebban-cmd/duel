@@ -596,7 +596,7 @@ export async function createOrJoinGame(
         // uq_games_match_type_active: (match_id, game_type) WHERE winner IS NULL
         // By upserting with ignoreDuplicates, we avoid REST 409 errors when both
         // players race to create the same active game.
-        { onConflict: 'match_id,game_type', ignoreDuplicates: true },
+        { onConflict: 'uq_games_match_type_active', ignoreDuplicates: true },
       )
       .select()
       .maybeSingle();
