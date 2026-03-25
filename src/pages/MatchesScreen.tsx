@@ -238,9 +238,9 @@ function MatchCard({
               color: 'rgba(255,255,255,0.80)',
             }}
         whileTap={{ scale: 0.96 }}
-        aria-label={isFirstGame ? `Play first game with ${match.name}` : `Open ${match.name} match`}
+        aria-label={isFirstGame ? `Play 1st game with ${match.name}` : `Open ${match.name} match`}
       >
-        {isFirstGame ? 'Play first game' : 'Open'}
+        {isFirstGame ? 'Play 1st game' : 'Open'}
       </motion.button>
 
       {/* Text */}
@@ -250,13 +250,13 @@ function MatchCard({
         onClick={(e) => { e.stopPropagation(); onProfileTap(); }}
         aria-label={`Open ${match.name} profile`}
       >
-        <div className="flex items-center gap-2">
-          <span className="font-display text-base leading-tight" style={{ color: 'rgba(255,255,255,0.92)' }}>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-display text-[15px] leading-tight whitespace-nowrap truncate min-w-0" style={{ color: 'rgba(255,255,255,0.92)' }}>
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
           </span>
           {match.intent && (
             <span
-              className="inline-flex items-center px-2 py-1 rounded-full font-body text-[11px] font-bold leading-none"
+              className="inline-flex items-center px-2 py-1 rounded-full font-body text-[11px] font-bold leading-none flex-shrink-0 whitespace-nowrap"
               style={{
                 color: '#0A1628',
                 background: intentMeta[match.intent].color,
@@ -275,9 +275,10 @@ function MatchCard({
 // ─── Section header ───────────────────────────────────────────────────────────
 
 function SectionLabel({ label }: { label: string }) {
+  const isNew = label.trim().toLowerCase() === 'new';
   return (
     <div className="px-4 pt-5 pb-2 flex items-center gap-2">
-      <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+      <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
         {label.toUpperCase()}
       </span>
       <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
