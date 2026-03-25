@@ -511,6 +511,81 @@ export async function getLastMessages(
   }
 }
 
+/** Single highest-priority card action: challenge → your turn → unread. */
+export type MatchPendingActivity =
+  | { kind: 'challenge' }
+  | { kind: 'your_turn' }
+  | { kind: 'unread'; count: number };
+
+/**
+ * Batch-fetch pending challenge (incoming), active game (my turn), and merge unread counts
+ * from getLastMessages. Priority: challenge > your_turn > unread.
+ */
+export async function getMatchPendingActivity(
+  rows: MatchWithProfile[],
+  myUserId: string,
+  lastMessages: Map<string, LastMessageInfo>,
+): Promise<Map<string, MatchPendingActivity | null>> {
+  const out = new Map<string, MatchPendingActivity | null>();
+  if (!rows.length) return out;
+
+  const matchIds = rows.map((r) => r.matchId);
+  const partnerByMatch = new Map(rows.map((r) => [r.matchId, r.partner.id]));
+  for (const id of matchIds) out.set(id, null);
+
+  const now = Date.now();
+
+  try {
+    const { data: challRows } = await supabase
+      .from('challenges')
+      .select('match_id, from_user, to_user, status, expires_at')
+      .in('match_id', matchIds)
+      .eq('to_user', myUserId)
+      .eq('status', 'pending');
+
+    const incomingChallenge = new Set<string>();
+    for (const c of (challRows ?? []) as {
+      match_id: string;
+      from_user: string;
+      expires_at: string | null;
+    }[]) {
+      if (c.expires_at && new Date(c.expires_at).getTime() <= now) continue;
+      const partnerId = partnerByMatch.get(c.match_id);
+      if (partnerId && c.from_user === partnerId) incomingChallenge.add(c.match_id);
+    }
+
+    const { data: gameRows } = await supabase
+      .from('games')
+      .select('match_id, updated_at')
+      .in('match_id', matchIds)
+      .eq('status', 'playing')
+      .eq('current_turn', myUserId)
+      .order('updated_at', { ascending: false });
+
+    const myTurnMatch = new Set<string>();
+    for (const g of (gameRows ?? []) as { match_id: string }[]) {
+      if (!myTurnMatch.has(g.match_id)) myTurnMatch.add(g.match_id);
+    }
+
+    for (const mid of matchIds) {
+      if (incomingChallenge.has(mid)) {
+        out.set(mid, { kind: 'challenge' });
+        continue;
+      }
+      if (myTurnMatch.has(mid)) {
+        out.set(mid, { kind: 'your_turn' });
+        continue;
+      }
+      const unread = lastMessages.get(mid)?.unread ?? 0;
+      if (unread > 0) out.set(mid, { kind: 'unread', count: unread });
+    }
+  } catch {
+    // leave all null
+  }
+
+  return out;
+}
+
 // ─── Games ────────────────────────────────────────────────────────────────────
 
 export interface GameRow {

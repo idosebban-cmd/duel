@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Swords, MessageCircle, Gamepad2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getMatches, getLastMessages, getChallengesForMatch, getPhotos } from '../lib/database';
-import type { MatchWithProfile, LastMessageInfo, ChallengeRow } from '../lib/database';
+import { getMatches, getLastMessages, getPhotos, getMatchPendingActivity } from '../lib/database';
+import type { MatchWithProfile, LastMessageInfo, MatchPendingActivity } from '../lib/database';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,6 +34,8 @@ interface Match {
   intent?: 'romance' | 'play' | 'both';
   /** Opponent profile last_seen (ISO); used for presence dot. */
   opponentLastSeen?: string | null;
+  /** Highest-priority pending action (challenge > your turn > unread). */
+  pendingActivity?: MatchPendingActivity | null;
 }
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
@@ -152,6 +155,33 @@ function AvatarStack({ character, element, size = 60 }: {
   );
 }
 
+function PendingActivityIcon({ activity }: { activity: MatchPendingActivity }) {
+  const iconClass = 'w-5 h-5 flex-shrink-0';
+  const color = '#FF6BA8';
+  if (activity.kind === 'challenge') {
+    return (
+      <Swords className={iconClass} style={{ color }} aria-hidden />
+    );
+  }
+  if (activity.kind === 'your_turn') {
+    return (
+      <Gamepad2 className={iconClass} style={{ color }} aria-hidden />
+    );
+  }
+  const n = activity.count > 99 ? '99+' : String(activity.count);
+  return (
+    <div className="relative flex-shrink-0" aria-label={`${activity.count} unread messages`}>
+      <MessageCircle className={iconClass} style={{ color }} aria-hidden />
+      <span
+        className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-body text-[10px] font-bold leading-none"
+        style={{ background: '#FF6BA8', color: '#0A1628' }}
+      >
+        {n}
+      </span>
+    </div>
+  );
+}
+
 // ─── Match card ───────────────────────────────────────────────────────────────
 
 function MatchCard({
@@ -166,6 +196,8 @@ function MatchCard({
   photoUrl?: string;
 }) {
   const presence = presenceTier(match.opponentLastSeen);
+  const pending = match.pendingActivity ?? null;
+  const hasPending = pending != null;
   const intentMeta: Record<NonNullable<Match['intent']>, { label: string; color: string }> = {
     romance: { label: 'Romance', color: '#FF6BA8' },
     play: { label: 'Just Play', color: '#00D9FF' },
@@ -183,8 +215,11 @@ function MatchCard({
       whileTap={{ scale: 0.98, backgroundColor: 'rgba(78,255,196,0.08)' }}
       transition={{ duration: 0.12 }}
     >
-      {/* New match left-edge accent */}
-      {isNew && (
+      {/* Pending action (hot pink) or new match (mint) left-edge accent */}
+      {hasPending && (
+        <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: '#FF6BA8' }} />
+      )}
+      {isNew && !hasPending && (
         <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: '#4EFFC4' }} />
       )}
 
@@ -250,24 +285,30 @@ function MatchCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            {presence === 'green' && (
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
-                aria-hidden
-              />
+          <div className="flex items-center gap-2 flex-shrink-0 justify-end min-w-[72px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            {hasPending && pending ? (
+              <PendingActivityIcon activity={pending} />
+            ) : (
+              <>
+                {presence === 'green' && (
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
+                    aria-hidden
+                  />
+                )}
+                {presence === 'dim' && (
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.28)' }}
+                    aria-hidden
+                  />
+                )}
+                <span className="font-body text-xs whitespace-nowrap">
+                  {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
+                </span>
+              </>
             )}
-            {presence === 'dim' && (
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: 'rgba(255,255,255,0.28)' }}
-                aria-hidden
-              />
-            )}
-            <span className="font-body text-xs whitespace-nowrap">
-              {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
-            </span>
           </div>
         </div>
       </div>
@@ -411,28 +452,24 @@ export function MatchesScreen() {
   const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
-  const refreshPendingChallengeIndicators = async (matchList: Match[]) => {
-    if (!user?.id || matchList.length === 0) {
+  const fetchMatchesData = useCallback(async () => {
+    if (!user?.id) return;
+    const rows = await getMatches(user.id);
+    const matchList = rows.map(rowFromMatch);
+    if (matchList.length === 0) {
+      setMatches([]);
       return;
     }
-    try {
-      const allChallenges = await Promise.all(
-        matchList.map((m) => getChallengesForMatch(m.id)),
-      );
-      const now = Date.now();
-      allChallenges.forEach((challs, i) => {
-        const hasIncoming = challs.some(
-          (c: ChallengeRow) =>
-            c.to_user === user.id &&
-            c.status === 'pending' &&
-            (!c.expires_at || new Date(c.expires_at).getTime() > now),
-        );
-        void (hasIncoming && matchList[i]);
-      });
-    } catch {
-      // best-effort
-    }
-  };
+    const lm = await getLastMessages(matchList.map((m) => m.id), user.id);
+    const pendingMap = await getMatchPendingActivity(rows, user.id, lm);
+    setMatches(
+      matchList.map((m) => ({
+        ...m,
+        lastMessage: lm.get(m.id),
+        pendingActivity: pendingMap.get(m.id) ?? undefined,
+      })),
+    );
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -440,20 +477,8 @@ export function MatchesScreen() {
 
     (async () => {
       try {
-        const rows = await getMatches(user.id);
-        if (cancelled) return;
-        const matchList = rows.map(rowFromMatch);
-        setMatches(matchList);
-        setLoading(false);
-
-        if (matchList.length > 0) {
-          const lm = await getLastMessages(matchList.map((m) => m.id), user.id);
-          if (!cancelled) setMatches((prev) => prev.map((m) => ({ ...m, lastMessage: lm.get(m.id) })));
-
-          if (!cancelled) {
-            await refreshPendingChallengeIndicators(matchList);
-          }
-        }
+        await fetchMatchesData();
+        if (!cancelled) setLoading(false);
       } catch {
         if (!cancelled) {
           setError('Could not load matches. Check your connection.');
@@ -463,7 +488,7 @@ export function MatchesScreen() {
     })();
 
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, fetchMatchesData]);
 
   // Load first photo for each visible match partner.
   useEffect(() => {
@@ -509,7 +534,11 @@ export function MatchesScreen() {
           filter: `to_user=eq.${user.id}`,
         },
         async () => {
-          await refreshPendingChallengeIndicators(matches);
+          try {
+            await fetchMatchesData();
+          } catch {
+            // best-effort
+          }
         },
       )
       .subscribe();
@@ -517,7 +546,7 @@ export function MatchesScreen() {
     return () => {
       supabase?.removeChannel(channel);
     };
-  }, [matches, user?.id]);
+  }, [user?.id, fetchMatchesData]);
 
   const isNew = (m: Match) => Date.now() - new Date(m.matchedAt).getTime() < NEW_THRESHOLD_MS;
 
@@ -574,7 +603,11 @@ export function MatchesScreen() {
           <div className="flex flex-col items-center gap-3 py-12 px-8 text-center">
             <p className="font-body text-sm" style={{ color: 'rgba(255,107,168,0.8)' }}>{error}</p>
             <motion.button
-              onClick={() => { setError(null); setLoading(true); }}
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                void fetchMatchesData().finally(() => setLoading(false));
+              }}
               className="px-5 py-2 rounded-xl font-display text-sm"
               style={{ background: 'rgba(255,107,168,0.1)', border: '1.5px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
               whileTap={{ scale: 0.95 }}
