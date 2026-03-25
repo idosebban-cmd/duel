@@ -39,6 +39,7 @@ import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
 import { getProfile } from './lib/database';
 import { prepareAcceptedChallenge, resolveGameRoute } from './lib/challengeGameFlow';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 interface ChallengeEventRow {
   id: string;
@@ -290,7 +291,8 @@ export default function App() {
     <BrowserRouter>
       <GlobalChallengeListener />
       <AnimatePresence mode="wait">
-        <Routes>
+        <ErrorBoundary>
+          <Routes>
           {/* Landing page */}
           <Route path="/landing" element={<LandingPage />} />
 
@@ -323,7 +325,7 @@ export default function App() {
 
           {/* Guess Who game */}
           <Route path="/game" element={<ProtectedRoute><GameSetup /></ProtectedRoute>} />
-          <Route path="/game/:gameId/play" element={<ProtectedRoute><GameBoard /></ProtectedRoute>} />
+          <Route path="/game/:gameId/play" element={<ProtectedRoute><ErrorBoundary><GameBoard /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/game/:gameId/result" element={<ProtectedRoute><GameResult /></ProtectedRoute>} />
 
           {/* Word Blitz */}
@@ -331,25 +333,26 @@ export default function App() {
           <Route path="/games/word-blitz" element={<ProtectedRoute><WordBlitz /></ProtectedRoute>} />
 
           {/* Draughts */}
-          <Route path="/games/draughts/:matchId" element={<ProtectedRoute><Draughts /></ProtectedRoute>} />
-          <Route path="/games/draughts" element={<ProtectedRoute><Draughts /></ProtectedRoute>} />
+          <Route path="/games/draughts/:matchId" element={<ProtectedRoute><ErrorBoundary><Draughts /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/games/draughts" element={<ProtectedRoute><ErrorBoundary><Draughts /></ErrorBoundary></ProtectedRoute>} />
 
           {/* Connect Four */}
-          <Route path="/games/connect-four/:matchId" element={<ProtectedRoute><ConnectFour /></ProtectedRoute>} />
-          <Route path="/games/connect-four" element={<ProtectedRoute><ConnectFour /></ProtectedRoute>} />
+          <Route path="/games/connect-four/:matchId" element={<ProtectedRoute><ErrorBoundary><ConnectFour /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/games/connect-four" element={<ProtectedRoute><ErrorBoundary><ConnectFour /></ErrorBoundary></ProtectedRoute>} />
 
           {/* Battleship */}
-          <Route path="/games/battleship/:matchId" element={<ProtectedRoute><Battleship /></ProtectedRoute>} />
-          <Route path="/games/battleship" element={<ProtectedRoute><Battleship /></ProtectedRoute>} />
+          <Route path="/games/battleship/:matchId" element={<ProtectedRoute><ErrorBoundary><Battleship /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/games/battleship" element={<ProtectedRoute><ErrorBoundary><Battleship /></ErrorBoundary></ProtectedRoute>} />
 
           {/* Dot Dash */}
           <Route path="/dotdash" element={<ProtectedRoute><DotDashSetup /></ProtectedRoute>} />
           <Route path="/dotdash/:gameId/lobby" element={<ProtectedRoute><DotDashLobby /></ProtectedRoute>} />
-          <Route path="/dotdash/:gameId/play" element={<ProtectedRoute><DotDashBoard /></ProtectedRoute>} />
+          <Route path="/dotdash/:gameId/play" element={<ProtectedRoute><ErrorBoundary><DotDashBoard /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/dotdash/:gameId/result" element={<ProtectedRoute><DotDashResult /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
-        </Routes>
+          </Routes>
+        </ErrorBoundary>
       </AnimatePresence>
     </BrowserRouter>
   );
