@@ -598,7 +598,7 @@ export async function createOrJoinGame(
       player1_id: p1,
       player2_id: p2,
       owner: p1,
-      state: { ready: {} },
+      state: { ready: {}, present: {} },
       current_turn: null,
       status: 'pending',
     })
