@@ -449,6 +449,12 @@ function PoolTile({ pl, selected, onClick }: {
   );
 }
 
+function poolIndexFromId(id: string): number {
+  const parts = id.split('-');
+  const parsed = Number(parts[parts.length - 1]);
+  return Number.isFinite(parsed) ? parsed : -1;
+}
+
 // ─── Main game screen ─────────────────────────────────────────────────────────
 
 export function WordBlitz() {
@@ -848,26 +854,52 @@ export function WordBlitz() {
           className="flex-none px-3 py-2.5"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}
         >
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            {pool.length === 0 ? (
-              <div className="flex items-center justify-center w-full h-11">
-                <span className="font-body text-xs" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
-                  {allUsed ? '✓ All letters placed! +50 bonus' : 'No letters left'}
-                </span>
-              </div>
-            ) : pool.map((pl) => (
-              <PoolTile
-                key={pl.id}
-                pl={pl}
-                selected={selectedPoolId === pl.id}
-                onClick={() => handlePoolTap(pl.id)}
-              />
-            ))}
+          <div
+            className="grid justify-center gap-2 pb-1"
+            style={{ gridTemplateColumns: 'repeat(7, 44px)' }}
+          >
+            {Array.from({ length: 21 }, (_, idx) => {
+              const slot = pool.find((pl) => poolIndexFromId(pl.id) === idx);
+              if (!slot) {
+                return (
+                  <div
+                    key={`slot-${idx}`}
+                    className="w-11 h-11 rounded-lg"
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1.5px dashed rgba(255,255,255,0.08)',
+                    }}
+                  />
+                );
+              }
+              return (
+                <PoolTile
+                  key={slot.id}
+                  pl={slot}
+                  selected={selectedPoolId === slot.id}
+                  onClick={() => handlePoolTap(slot.id)}
+                />
+              );
+            })}
           </div>
+          {pool.length === 0 && (
+            <div className="flex items-center justify-center pt-1">
+              <span className="font-body text-xs" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
+                {allUsed ? '✓ All letters placed! +50 bonus' : 'No letters left'}
+              </span>
+            </div>
+          )}
+          {pool.length > 0 && (
+            <div className="flex items-center justify-center pt-1">
+              <span className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                {selectedPoolId ? 'Tap a grid cell to place' : 'All 21 letters visible'}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* ── My Grid ──────────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-auto flex items-start justify-center p-3" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        {/* ── Grid board area ──────────────────────────────────────────────── */}
+        <div className="flex-1 min-h-0 overflow-auto flex items-start justify-center p-3" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           <div className="relative">
             <AnimatePresence>
               {scorePopups.map((popup) => (
