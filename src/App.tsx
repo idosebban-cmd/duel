@@ -308,7 +308,7 @@ function GlobalChallengeListener() {
       style={{ width: 'min(92vw, 460px)' }}
     >
       <div
-        className="rounded-2xl px-3 py-3 flex items-center gap-2"
+        className="rounded-2xl pl-3 pr-2 py-2.5 flex items-center gap-2 min-w-0"
         style={{
           background: toast.kind === 'success'
             ? 'linear-gradient(135deg, rgba(78,255,196,0.2), rgba(0,217,255,0.2))'
@@ -319,7 +319,7 @@ function GlobalChallengeListener() {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <div className="flex-1 min-w-0 font-body text-sm text-white/90 pr-1">
+        <div className="flex-1 min-w-0 font-body text-sm text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">
           {toast.message}
         </div>
         <button
@@ -339,18 +339,11 @@ function GlobalChallengeListener() {
           type="button"
           onClick={() => setToast(null)}
           aria-label="Dismiss challenge toast"
-          className="shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl flex items-center justify-center font-display font-bold text-lg leading-none touch-manipulation"
-          style={{
-            background: toast.kind === 'success'
-              ? 'rgba(78,255,196,0.12)'
-              : 'rgba(255,61,113,0.12)',
-            color: toast.kind === 'success' ? '#4EFFC4' : '#FF3D71',
-            border: toast.kind === 'success'
-              ? '1px solid rgba(78,255,196,0.45)'
-              : '1px solid rgba(255,61,113,0.45)',
-          }}
+          className="shrink-0 flex h-11 w-11 items-center justify-center rounded-lg border-0 bg-transparent p-0 text-white/45 hover:text-white/75 active:text-white/90 touch-manipulation"
         >
-          X
+          <span className="text-[22px] leading-none font-light select-none" aria-hidden>
+            ×
+          </span>
         </button>
       </div>
     </div>
