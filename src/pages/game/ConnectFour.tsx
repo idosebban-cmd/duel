@@ -363,7 +363,8 @@ export function ConnectFour() {
   // ── Player tap handler ────────────────────────────────────────────────────
   const handleColumnTap = (col: number) => {
     if (turn !== 'player' || phase !== 'playing' || winCells) return;
-    if (isMultiplayer && (!mp.isMyTurn || !mp.bothPresent)) return;
+    // Mirror Battleship: don't hard-block on bothPresent until at least one move happened.
+    if (isMultiplayer && (!mp.isMyTurn || (moveCount > 0 && !mp.bothPresent))) return;
     if (getDropRow(boardRef.current, col) === -1) {
       setShakeCol(col);
       setTimeout(() => setShakeCol(null), 450);
@@ -379,7 +380,11 @@ export function ConnectFour() {
         if (checkWin(boardRef.current, 'player')) winner = myRole;
         else if (isBoardFull(boardRef.current)) winner = 'draw';
       }
-      mp.submitMove({ column: col }, { board: dbBoard, moveCount: mc }, winner);
+      mp.submitMove(
+        { column: col },
+        { ...(mp.gameState ?? {}), board: dbBoard, moveCount: mc } as CF4State,
+        winner,
+      );
       setTurn('bot'); // show "waiting" UI; actual bot AI is gated below
       return;
     }

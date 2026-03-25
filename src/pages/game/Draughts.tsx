@@ -572,7 +572,7 @@ export function Draughts() {
       )) winner = myRole;
       mp.submitMove(
         { pieceId, dest },
-        { pieces: dbPieces, moveCount: newMoves },
+        { ...(mp.gameState ?? {}), pieces: dbPieces, moveCount: newMoves } as DraughtsState,
         winner,
       );
       setTurn('bot'); // show "waiting" UI
@@ -585,7 +585,8 @@ export function Draughts() {
   // ── Cell tap handler ──────────────────────────────────────────────────────
   const handleCellTap = (row: number, col: number) => {
     if (turn !== 'player' || phase !== 'playing') return;
-    if (isMultiplayer && (!mp.isMyTurn || !mp.bothPresent)) return;
+    // Mirror Battleship: don't hard-block on bothPresent until at least one move happened.
+    if (isMultiplayer && (!mp.isMyTurn || (moves > 0 && !mp.bothPresent))) return;
 
     if (chainJumpId) {
       const d = validDests.find(d => d.row === row && d.col === col);
