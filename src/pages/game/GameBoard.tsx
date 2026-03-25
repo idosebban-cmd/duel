@@ -77,7 +77,6 @@ function WaitingDots() {
 export function GameBoard() {
   // Route param is currently the matchId for multiplayer game routes.
   const { gameId: matchId } = useParams<{ gameId: string }>();
-  console.log('[GameBoard] mounted — matchId from useParams:', matchId);
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const store = useGameStore();

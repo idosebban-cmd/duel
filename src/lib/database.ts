@@ -258,7 +258,6 @@ export async function recordSwipe(
   // Bot profiles never swipe back, so simulate a 25% match rate
   const BOT_PREFIX = 'a0000000-0000-0000-0000-00000000';
   const isBot = targetId.startsWith(BOT_PREFIX);
-  if (isBot) console.log('[recordSwipe] Bot detected:', targetId);
 
   // Attempt to record the swipe (non-blocking for bots)
   let swipeResult = false;
@@ -295,14 +294,12 @@ export async function recordSwipe(
   } else {
     // Bot: 25% random match chance — independent of DB success
     const roll = Math.random();
-    console.log('[recordSwipe] Roll result:', roll, '— match?', roll < 0.25);
     if (roll >= 0.25) return { matched: false };
   }
 
   // Persist the match to the database — check-then-insert (upsert requires
   // an UPDATE RLS policy which we intentionally omit; match rows are immutable).
   const [user1Id, user2Id] = userId < targetId ? [userId, targetId] : [targetId, userId];
-  console.log('[recordSwipe] Checking for existing match:', user1Id, user2Id);
 
   try {
     // Check if match already exists
@@ -313,22 +310,18 @@ export async function recordSwipe(
       .eq('user_b', user2Id)
       .maybeSingle();
 
-    console.log('[recordSwipe] Existing match found:', existing);
 
     if (existing) {
       return { matched: true, matchId: (existing as { id: string }).id };
     }
 
     // Insert new match (retry once on failure)
-    console.log('[recordSwipe] Attempting match insert...');
     for (let attempt = 0; attempt < 2; attempt++) {
       const { data: match, error } = await supabase
         .from('matches')
         .insert({ user_a: user1Id, user_b: user2Id, status: 'active' })
         .select('id')
         .maybeSingle();
-
-      console.log('[recordSwipe] Insert result — match:', match, 'error:', error);
       if (error) {
         console.error(`[recordSwipe] Match insert attempt ${attempt + 1} failed:`, error.message);
         if (attempt === 0) continue;
@@ -530,14 +523,12 @@ export interface GameRow {
 
 /** Returns the match row so games can derive opponentId. */
 export async function getMatchById(matchId: string): Promise<{ user_a: string; user_b: string } | null> {
-  console.log('[getMatchById] querying matchId:', matchId);
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('matches')
       .select('user_a, user_b')
       .eq('id', matchId)
       .maybeSingle();
-    console.log('[getMatchById] response — data:', data, 'error:', error);
     return data as { user_a: string; user_b: string } | null;
   } catch (err) {
     console.error('[getMatchById] caught exception:', err);
@@ -946,15 +937,12 @@ export async function getChallengesForMatch(matchId: string): Promise<ChallengeR
 }
 
 export async function acceptChallenge(challengeId: string): Promise<void> {
-  console.log('[acceptChallenge] Updating challenge ID:', challengeId);
   try {
-    const { data, error, status, statusText } = await supabase
+    await supabase
       .from('challenges')
       .update({ status: 'accepted', resolved_at: new Date().toISOString() })
       .eq('id', challengeId)
       .select();
-    console.log('[acceptChallenge] Supabase response — data:', data, 'error:', error, 'status:', status, statusText);
-    console.log('[acceptChallenge] Update succeeded:', !error);
   } catch (err) {
     console.error('[acceptChallenge] Exception thrown:', err);
   }

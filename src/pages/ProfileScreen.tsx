@@ -450,9 +450,6 @@ export function ProfileScreen() {
 
     try {
       const base64 = await fileToDataUrl(file);
-      if (import.meta.env.DEV) {
-        console.log('[ProfileScreen] opening PhotoCropModal after file select');
-      }
       setPendingCropSrc(base64);
       setCropModalOpen(true);
     } catch {

@@ -43,9 +43,6 @@ export function PhotoCropModal({
 
   useEffect(() => {
     if (!open || !imageSrc) return;
-    if (import.meta.env.DEV) {
-      console.log('[PhotoCropModal] opened with image');
-    }
     setZoom(1);
     setOffset({ x: 0, y: 0 });
     const img = new Image();
