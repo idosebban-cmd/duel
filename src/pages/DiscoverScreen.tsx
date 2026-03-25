@@ -1202,6 +1202,13 @@ export function DiscoverScreen() {
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
   const emailConfirmed = !!session;
 
+  const [swipeToast, setSwipeToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!swipeToast) return;
+    const t = setTimeout(() => setSwipeToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [swipeToast]);
+
   // Check profile completeness on mount
   useEffect(() => {
     if (!user) return;
@@ -1338,9 +1345,16 @@ export function DiscoverScreen() {
               window.setTimeout(() => setMatchProfile(profile), 100);
             }
           })
-          .catch((err) => console.error('[Discover] recordSwipe failed:', err));
+          .catch((err) => {
+            console.error('[Discover] recordSwipe failed:', err);
+            setSwipeToast('Something went wrong recording your swipe. Please try again.');
+          });
       } else {
-        recordSwipe(user.id, profile.id, 'pass').catch((err) => console.error('[Discover] pass swipe failed:', err));
+        recordSwipe(user.id, profile.id, 'pass')
+          .catch((err) => {
+            console.error('[Discover] pass swipe failed:', err);
+            setSwipeToast('Something went wrong recording your swipe. Please try again.');
+          });
       }
     } else if (dir === 'right' && profile.willMatch) {
       // Fallback for fake seed profiles – generate a local matchId so chat/games work
@@ -1370,6 +1384,31 @@ export function DiscoverScreen() {
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.025]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
       />
+
+      {/* Non-blocking swipe error toast */}
+      <AnimatePresence>
+        {swipeToast && (
+          <motion.div
+            className="fixed top-20 left-1/2 z-[100] -translate-x-1/2 px-4 py-3 rounded-2xl font-body text-sm font-bold"
+            style={{
+              background: 'rgba(14,22,48,0.95)',
+              border: '1.5px solid rgba(255,107,168,0.6)',
+              color: '#FF6BA8',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(10px)',
+              width: 'min(92vw, 460px)',
+            }}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            role="status"
+            aria-live="polite"
+          >
+            {swipeToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <header className="flex-none flex items-center justify-between px-5 pt-5 pb-3">

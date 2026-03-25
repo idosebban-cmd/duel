@@ -52,6 +52,8 @@ export interface MultiplayerGame<S> {
   opponentLeft: boolean;
   /** Increments when a non-self game row update is applied (for no-show timer reset). */
   opponentActivityTick: number;
+  /** Set when a move fails RPC and the canonical re-fetch also fails. */
+  moveError: string | null;
   /**
    * Optimistically update local state then persist to DB.
    * @param moveData  logged to the moves table for audit / replay
@@ -86,6 +88,7 @@ export function useMultiplayerGame<S>({
   const [loading, setLoading] = useState(true);
   const [fallbackToBotMode, setFallbackToBotMode] = useState(false);
   const [opponentActivityTick, setOpponentActivityTick] = useState(0);
+  const [moveError, setMoveError] = useState<string | null>(null);
 
   // Stable ref so effects always see the latest row without re-subscribing
   const gameRowRef = useRef<GameRow | null>(null);
@@ -183,6 +186,8 @@ export function useMultiplayerGame<S>({
         }
         gameRowRef.current = updated;
         setGameRow({ ...updated });
+        // If we successfully applied any remote update, clear move error.
+        setMoveError(null);
       }
     }
 
@@ -288,7 +293,9 @@ export function useMultiplayerGame<S>({
       const row = gameRowRef.current;
       if (!row) return;
 
+      setMoveError(null);
       expectingOwnMoveEchoRef.current = true;
+      const previousStable = row;
 
       const nextTurn =
         row.current_turn === row.player1_id ? row.player2_id : row.player1_id;
@@ -322,9 +329,19 @@ export function useMultiplayerGame<S>({
           if (canonical) {
             gameRowRef.current = canonical;
             setGameRow({ ...canonical });
+            setMoveError(null);
+          } else {
+            // Both RPC and canonical fetch failed (returned empty/null) — revert to last stable row.
+            gameRowRef.current = previousStable;
+            setGameRow({ ...previousStable });
+            setMoveError('Move failed — please check your connection and try again.');
           }
         } catch (fetchErr) {
           console.error('[useMultiplayerGame] Failed to fetch canonical state:', fetchErr);
+          // Both RPC and canonical fetch failed — revert to last stable row and show an in-game error.
+          gameRowRef.current = previousStable;
+          setGameRow({ ...previousStable });
+          setMoveError('Move failed — please check your connection and try again.');
         }
       }
     },
@@ -346,6 +363,7 @@ export function useMultiplayerGame<S>({
       bothPresent: false,
       opponentLeft: false,
       opponentActivityTick: 0,
+      moveError: null,
       submitMove: () => {},
     };
   }
@@ -363,6 +381,7 @@ export function useMultiplayerGame<S>({
     bothPresent,
     opponentLeft,
     opponentActivityTick,
+    moveError,
     submitMove,
   };
 }
