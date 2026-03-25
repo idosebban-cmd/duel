@@ -92,37 +92,96 @@ const getPieceAt = (ps: Piece[], r: number, c: number) =>
   ps.find(p => p.row === r && p.col === c);
 
 function getJumps(ps: Piece[], piece: Piece): Dest[] {
-  const dirs: [number, number][] = piece.isKing
-    ? [[-1,-1],[-1,1],[1,-1],[1,1]]
-    : piece.player === 'player' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
   const out: Dest[] = [];
-  for (const [dr, dc] of dirs) {
-    const er = piece.row + dr, ec = piece.col + dc;
-    const lr = piece.row + dr * 2, lc = piece.col + dc * 2;
-    if (lr < 0 || lr > 7 || lc < 0 || lc > 7) continue;
-    const enemy = getPieceAt(ps, er, ec);
-    if (enemy && enemy.player !== piece.player && !getPieceAt(ps, lr, lc))
-      out.push({ row: lr, col: lc, capturedId: enemy.id });
+
+  // Men: jump 1 enemy + land 1 square beyond (adjacent jump rules).
+  if (!piece.isKing) {
+    const dirs: [number, number][] = piece.player === 'player'
+      ? [[-1,-1],[-1,1]]
+      : [[1,-1],[1,1]];
+
+    for (const [dr, dc] of dirs) {
+      const er = piece.row + dr, ec = piece.col + dc;               // enemy square
+      const lr = piece.row + dr * 2, lc = piece.col + dc * 2;      // landing square
+      if (lr < 0 || lr > 7 || lc < 0 || lc > 7) continue;
+      const enemy = getPieceAt(ps, er, ec);
+      if (enemy && enemy.player !== piece.player && !getPieceAt(ps, lr, lc)) {
+        out.push({ row: lr, col: lc, capturedId: enemy.id });
+      }
+    }
+
+    return out;
   }
+
+  // Kings:
+  // - Simple moves are flying (handled in getSimpleMoves)
+  // - Captures allow approaching an enemy from any distance along a diagonal
+  //   but the king must land on the single empty square immediately beyond
+  //   the captured piece.
+  const dirs: [number, number][] = [[-1,-1],[-1,1],[1,-1],[1,1]];
+  for (const [dr, dc] of dirs) {
+    let r = piece.row + dr;
+    let c = piece.col + dc;
+
+    // Walk until we hit the first piece in this direction.
+    while (r >= 0 && r <= 7 && c >= 0 && c <= 7) {
+      const target = getPieceAt(ps, r, c);
+      if (!target) {
+        r += dr;
+        c += dc;
+        continue;
+      }
+
+      // Blocked by own piece => no capture in this direction.
+      if (target.player === piece.player) break;
+
+      // Enemy found => capture landing is exactly one step beyond the enemy.
+      const lr = r + dr;
+      const lc = c + dc;
+      if (lr >= 0 && lr <= 7 && lc >= 0 && lc <= 7 && !getPieceAt(ps, lr, lc)) {
+        out.push({ row: lr, col: lc, capturedId: target.id });
+      }
+      break; // Only the first encountered piece can be captured.
+    }
+  }
+
   return out;
 }
 
 function getSimpleMoves(ps: Piece[], piece: Piece): Dest[] {
-  const dirs: [number, number][] = piece.isKing
-    ? [[-1,-1],[-1,1],[1,-1],[1,1]]
-    : piece.player === 'player' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
+  // Kings can fly any number of squares diagonally for simple moves.
+  if (piece.isKing) {
+    const out: Dest[] = [];
+    const dirs: [number, number][] = [[-1,-1],[-1,1],[1,-1],[1,1]];
+
+    for (const [dr, dc] of dirs) {
+      let r = piece.row + dr;
+      let c = piece.col + dc;
+      while (r >= 0 && r <= 7 && c >= 0 && c <= 7) {
+        if (getPieceAt(ps, r, c)) break;
+        out.push({ row: r, col: c, capturedId: null });
+        r += dr;
+        c += dc;
+      }
+    }
+
+    return out;
+  }
+
+  // Men: move 1 square diagonally forward.
+  const dirs: [number, number][] = piece.player === 'player'
+    ? [[-1,-1],[-1,1]]
+    : [[1,-1],[1,1]];
+
   return dirs
     .map(([dr, dc]) => ({ row: piece.row+dr, col: piece.col+dc, capturedId: null }))
     .filter(d => d.row >= 0 && d.row <= 7 && d.col >= 0 && d.col <= 7 && !getPieceAt(ps, d.row, d.col));
 }
 
-const hasAnyJump = (ps: Piece[], player: Player) =>
-  ps.filter(p => p.player === player).some(p => getJumps(ps, p).length > 0);
-
-function getValidDests(ps: Piece[], piece: Piece, forceCapture: boolean): Dest[] {
-  if (forceCapture) return getJumps(ps, piece);
-  const jumps = getJumps(ps, piece);
-  return jumps.length > 0 ? jumps : getSimpleMoves(ps, piece);
+function getValidDests(ps: Piece[], piece: Piece): Dest[] {
+  // No forced capture rule:
+  // any legal move is allowed, whether it's a simple move or a capture.
+  return [...getJumps(ps, piece), ...getSimpleMoves(ps, piece)];
 }
 
 function applyMove(ps: Piece[], pieceId: string, dest: Dest): Piece[] {
@@ -157,24 +216,6 @@ function buildCaptureChain(ps: Piece[], pieceId: string, dest: Dest): Array<{pie
 
 function computeBotMoveChain(ps: Piece[]): Array<{pieceId: string; dest: Dest}> {
   const botPieces = ps.filter(p => p.player === 'bot');
-  const mustCapture = hasAnyJump(ps, 'bot');
-
-  if (mustCapture) {
-    let bestChain: Array<{pieceId: string; dest: Dest}> = [];
-    const allChains: Array<Array<{pieceId: string; dest: Dest}>> = [];
-    for (const piece of botPieces) {
-      for (const j of getJumps(ps, piece)) {
-        const chain = buildCaptureChain(ps, piece.id, j);
-        allChains.push(chain);
-        if (chain.length > bestChain.length) bestChain = chain;
-      }
-    }
-    // 20% chance: pick a random chain instead of the best
-    if (Math.random() < 0.2 && allChains.length > 1) {
-      return allChains[Math.floor(Math.random() * allChains.length)];
-    }
-    return bestChain;
-  }
 
   const options: Array<{pieceId: string; dest: Dest; score: number}> = [];
   for (const piece of botPieces) {
@@ -186,7 +227,39 @@ function computeBotMoveChain(ps: Piece[]): Array<{pieceId: string; dest: Dest}> 
       options.push({ pieceId: piece.id, dest, score });
     }
   }
-  if (!options.length) return [];
+
+  const captureChains: Array<Array<{pieceId: string; dest: Dest}>> = [];
+  for (const piece of botPieces) {
+    for (const j of getJumps(ps, piece)) {
+      captureChains.push(buildCaptureChain(ps, piece.id, j));
+    }
+  }
+
+  // If no simple moves exist, fall back to captures (if any).
+  if (!options.length) {
+    if (!captureChains.length) return [];
+    captureChains.sort((a, b) => b.length - a.length);
+    return captureChains[0];
+  }
+
+  // If captures exist, still allow non-captures (no forced capture rule).
+  if (captureChains.length) {
+    // Prefer captures, but keep some chance for simple moves.
+    const pickSimple = Math.random() < 0.35;
+    if (pickSimple) {
+      options.sort((a, b) => b.score - a.score);
+      const best = options[0];
+      return [{ pieceId: best.pieceId, dest: best.dest }];
+    }
+
+    captureChains.sort((a, b) => b.length - a.length);
+    // 20% chance: pick a random chain among top-ish options
+    if (Math.random() < 0.2 && captureChains.length > 1) {
+      return captureChains[Math.floor(Math.random() * Math.min(3, captureChains.length))];
+    }
+    return captureChains[0];
+  }
+
   options.sort((a, b) => b.score - a.score);
   return [{ pieceId: options[0].pieceId, dest: options[0].dest }];
 }
@@ -432,7 +505,7 @@ export function Draughts() {
       const executeStep = (i: number) => {
         if (i >= chain.length) {
           const playerHasMoves = pcs.filter(p => p.player === 'player').some(p =>
-            getValidDests(pcs, p, hasAnyJump(pcs, 'player')).length > 0
+            getValidDests(pcs, p).length > 0
           );
           setPieces([...pcs]);
           if (!pcs.some(p => p.player === 'player') || !playerHasMoves) {
@@ -479,7 +552,7 @@ export function Draughts() {
       const botAlive = newPieces.some(p => p.player === 'bot');
       if (!botAlive) { setResult('player_wins'); setPhase('result'); return; }
       const botHasMoves = newPieces.filter(p => p.player === 'bot').some(p =>
-        getValidDests(newPieces, p, hasAnyJump(newPieces, 'bot')).length > 0
+        getValidDests(newPieces, p).length > 0
       );
       if (!botHasMoves) { setResult('player_wins'); setPhase('result'); return; }
     }
@@ -495,7 +568,7 @@ export function Draughts() {
       let winner: string | null = null;
       if (!newPieces.some(p => p.player === 'bot')) winner = myRole;
       else if (!newPieces.filter(p => p.player === 'bot').some(p =>
-        getValidDests(newPieces, p, hasAnyJump(newPieces, 'bot')).length > 0
+        getValidDests(newPieces, p).length > 0
       )) winner = myRole;
       mp.submitMove(
         { pieceId, dest },
@@ -527,9 +600,7 @@ export function Draughts() {
 
     if (tapped?.player === 'player') {
       if (tapped.id === selectedId) { setSelectedId(null); setValidDests([]); return; }
-      const mustCap = hasAnyJump(pieces, 'player');
-      if (mustCap && getJumps(pieces, tapped).length === 0) return;
-      const dests = getValidDests(pieces, tapped, mustCap);
+      const dests = getValidDests(pieces, tapped);
       if (dests.length) { setSelectedId(tapped.id); setValidDests(dests); }
       return;
     }
@@ -574,10 +645,6 @@ export function Draughts() {
   }, [mp.gameRow?.updated_at, mp.isMyTurn]);
 
   // ── Derived state ─────────────────────────────────────────────────────────
-  const mustCapture     = turn === 'player' && phase === 'playing' && hasAnyJump(pieces, 'player');
-  const capturablePieces = mustCapture
-    ? new Set(pieces.filter(p => p.player === 'player' && getJumps(pieces, p).length > 0).map(p => p.id))
-    : new Set<string>();
   const playerCount  = pieces.filter(p => p.player === 'player').length;
   const botCount     = pieces.filter(p => p.player === 'bot').length;
   const playerKings  = pieces.filter(p => p.player === 'player' && p.isKing).length;
@@ -778,8 +845,6 @@ export function Draughts() {
               const isPlayer   = piece.player === 'player';
               const isSelected = piece.id === selectedId;
               const isChain    = piece.id === chainJumpId;
-              const isMustCap  = mustCapture && isPlayer && capturablePieces.has(piece.id);
-              const isDimmed   = mustCapture && isPlayer && !capturablePieces.has(piece.id);
 
               return (
                 <motion.div
@@ -793,8 +858,8 @@ export function Draughts() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: isPlayer && turn === 'player' ? 'pointer' : 'default',
                     zIndex: isSelected ? 10 : 5,
-                    opacity: isDimmed ? 0.28 : 1,
-                    pointerEvents: isDimmed ? 'none' : 'auto',
+                    opacity: 1,
+                    pointerEvents: 'auto',
                   }}
                   onClick={() => handleCellTap(piece.row, piece.col)}
                 >
@@ -805,14 +870,9 @@ export function Draughts() {
                         ? '0 0 0 3.5px rgba(78,255,196,0.95), 0 0 22px rgba(78,255,196,0.7)'
                         : isChain
                         ? '0 0 0 3.5px rgba(255,230,109,0.95), 0 0 18px rgba(255,230,109,0.7)'
-                        : isMustCap
-                        ? '0 0 0 2.5px rgba(255,61,113,0.8), 0 0 14px rgba(255,61,113,0.55)'
                         : '0 4px 10px rgba(0,0,0,0.6)',
                     }}
-                    transition={isMustCap && !isSelected
-                      ? { duration: 0.85, repeat: Infinity, ease: 'easeInOut' }
-                      : { type: 'spring', stiffness: 350, damping: 28 }
-                    }
+                    transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                     style={{
                       width: CELL - 8, height: CELL - 8,
                       borderRadius: '50%',
@@ -857,10 +917,7 @@ export function Draughts() {
           </button>
         )}
         <div className="font-body text-xs text-center" style={{ color: 'rgba(255,255,255,0.22)' }}>
-          {mustCapture && turn === 'player' && phase === 'playing'
-            ? <span style={{ color: '#FF9F1C' }}>Capture required!</span>
-            : 'Tap a piece to move'
-          }
+          Tap a piece to move
         </div>
         <div className="font-display text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>DUEL</div>
       </div>
