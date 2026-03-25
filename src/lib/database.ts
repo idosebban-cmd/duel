@@ -35,6 +35,8 @@ export interface UserProfile {
   latitude: number | null;
   longitude: number | null;
   created_at: string;
+  /** ISO timestamp; client-updated when app is active (throttled). Omitted until DB column exists. */
+  last_seen?: string | null;
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────

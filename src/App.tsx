@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { preloadImages } from './utils/preloadImages';
 import { supabase } from './lib/supabase';
@@ -38,6 +38,7 @@ import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
 import { getProfile } from './lib/database';
+import { supabase as supabaseClient } from './lib/supabase';
 import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -59,6 +60,55 @@ interface GlobalChallengeToastState {
   actionLabel: string;
   kind: 'success' | 'error';
   onAction: () => void;
+}
+
+const LAST_SEEN_MIN_INTERVAL_MS = 60_000;
+
+/** Updates profiles.last_seen while the app is active; throttled to avoid spamming the DB. */
+function LastSeenHeartbeat() {
+  const location = useLocation();
+  const { user } = useAuthStore();
+  const lastSentAtRef = useRef(0);
+  const inFlightRef = useRef(false);
+
+  const bumpLastSeen = useCallback(async () => {
+    if (!supabaseClient || !user?.id) return;
+    const now = Date.now();
+    if (now - lastSentAtRef.current < LAST_SEEN_MIN_INTERVAL_MS) return;
+    if (inFlightRef.current) return;
+    lastSentAtRef.current = now;
+    inFlightRef.current = true;
+    try {
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', user.id);
+      if (error) console.error('[LastSeenHeartbeat] update failed:', error);
+    } catch (err) {
+      console.error('[LastSeenHeartbeat]', err);
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    void bumpLastSeen();
+  }, [location.pathname, bumpLastSeen]);
+
+  useEffect(() => {
+    const onFocus = () => { void bumpLastSeen(); };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void bumpLastSeen();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [bumpLastSeen]);
+
+  return null;
 }
 
 function GlobalChallengeListener() {
@@ -357,6 +407,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <LastSeenHeartbeat />
       <GlobalChallengeListener />
       <AnimatePresence mode="wait">
         <ErrorBoundary>

@@ -31,6 +31,8 @@ interface Match {
   matchedAt: string;
   lastMessage?: LastMessageInfo;
   intent?: 'romance' | 'play' | 'both';
+  /** Opponent profile last_seen (ISO); used for presence dot. */
+  opponentLastSeen?: string | null;
 }
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
@@ -67,6 +69,18 @@ function timeAgo(dateStr: string): string {
   return `${days} days ago`;
 }
 
+/** Green if active within 5m, dim 5–30m, no dot after 30m or if unknown. */
+function presenceTier(lastSeenIso: string | null | undefined): 'green' | 'dim' | 'none' {
+  if (!lastSeenIso) return 'none';
+  const age = Date.now() - new Date(lastSeenIso).getTime();
+  if (age < 0) return 'none';
+  const five = 5 * 60_000;
+  const thirty = 30 * 60_000;
+  if (age <= five) return 'green';
+  if (age <= thirty) return 'dim';
+  return 'none';
+}
+
 function rowFromMatch(m: MatchWithProfile): Match {
   return {
     id:          m.matchId,
@@ -89,6 +103,7 @@ function rowFromMatch(m: MatchWithProfile): Match {
     exercise:    m.partner.exercise    ?? 'Not set',
     matchedAt:   m.matchedAt,
     intent:      (m.partner.intent as 'romance' | 'play' | 'both') ?? undefined,
+    opponentLastSeen: m.partner.last_seen ?? null,
   };
 }
 
@@ -137,6 +152,7 @@ function MatchCard({
   isNew: boolean;
   photoUrl?: string;
 }) {
+  const presence = presenceTier(match.opponentLastSeen);
   const intentMeta: Record<NonNullable<Match['intent']>, { label: string; color: string }> = {
     romance: { label: 'Romance', color: '#FF6BA8' },
     play: { label: 'Just Play', color: '#00D9FF' },
@@ -222,10 +238,20 @@ function MatchCard({
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
-            />
+            {presence === 'green' && (
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
+                aria-hidden
+              />
+            )}
+            {presence === 'dim' && (
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.28)' }}
+                aria-hidden
+              />
+            )}
             <span className="font-body text-xs whitespace-nowrap">
               {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
             </span>
