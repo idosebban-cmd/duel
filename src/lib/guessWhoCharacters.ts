@@ -2,7 +2,7 @@
  * Deterministic character board generation for Guess Who.
  *
  * Both clients generate the identical board + secret picks by seeding
- * the PRNG with the matchId. No server required.
+ * the PRNG with (matchId + gameId). No server required.
  */
 import type { Character, CharacterAttributes } from '../types/game';
 
@@ -95,11 +95,11 @@ export interface GuessWhoBoard {
 }
 
 /**
- * Generate a deterministic Guess Who board from a matchId.
- * Both clients calling this with the same matchId get the same result.
+ * Generate a deterministic Guess Who board from matchId + gameId.
+ * Both clients calling this with the same inputs get the same result.
  */
-export function generateGuessWhoBoard(matchId: string): GuessWhoBoard {
-  const seed = hashString(matchId);
+export function generateGuessWhoBoard(matchId: string, gameId: string): GuessWhoBoard {
+  const seed = hashString(`${matchId}:${gameId}`);
   const rng = mulberry32(seed);
 
   // Shuffle character order (cosmetic — same set of 18)

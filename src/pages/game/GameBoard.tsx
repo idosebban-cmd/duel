@@ -83,12 +83,28 @@ export function GameBoard() {
   const store = useGameStore();
   const myUserId = user?.id ?? '';
 
-  // Generate the deterministic board from matchId
-  const boardRef = useRef(matchId ? generateGuessWhoBoard(matchId) : null);
+  const mp = useMultiplayerGame<GuessWhoState>({
+    matchId: matchId ?? '',
+    gameType: 'guess_who',
+    enabled: !!matchId,
+  });
+
+  // Generate the deterministic board from matchId + gameId (unique per game, same for both players)
+  const boardRef = useRef<{
+    matchId: string;
+    gameId: string;
+    board: ReturnType<typeof generateGuessWhoBoard>;
+  } | null>(null);
+
+  if (matchId && mp.gameId) {
+    if (!boardRef.current || boardRef.current.matchId !== matchId || boardRef.current.gameId !== mp.gameId) {
+      boardRef.current = { matchId, gameId: mp.gameId, board: generateGuessWhoBoard(matchId, mp.gameId) };
+    }
+  }
 
   const initialState: GuessWhoState = boardRef.current
     ? {
-        characters: boardRef.current.characters,
+        characters: boardRef.current.board.characters,
         p1Flipped: [],
         p2Flipped: [],
         turnPhase: 'ask',
@@ -107,12 +123,6 @@ export function GameBoard() {
         turnHistory: [],
         moveCount: 0,
       };
-
-  const mp = useMultiplayerGame<GuessWhoState>({
-    matchId: matchId ?? '',
-    gameType: 'guess_who',
-    enabled: !!matchId,
-  });
 
   const myRole = mp.myRole;
   const gs = mp.gameState;
@@ -156,9 +166,9 @@ export function GameBoard() {
     let cancelled = false;
 
     (async () => {
-      const board = generateGuessWhoBoard(matchId);
+      const boardDef = generateGuessWhoBoard(matchId, mp.gameId!);
       const isP1 = mp.gameRow!.player1_id === myUserId;
-      const charId = isP1 ? board.p1SecretId : board.p2SecretId;
+      const charId = isP1 ? boardDef.p1SecretId : boardDef.p2SecretId;
 
       for (let attempt = 0; attempt < 3; attempt++) {
         if (cancelled) return;

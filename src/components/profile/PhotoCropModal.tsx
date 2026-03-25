@@ -55,24 +55,15 @@ export function PhotoCropModal({
     img.src = imageSrc;
   }, [open, imageSrc]);
 
-  /** Contain at zoom 1: whole image visible; zoom scales up from there. */
-  const { baseScale, minZoomToFillFrame } = useMemo(() => {
-    if (!naturalSize) return { baseScale: 1, minZoomToFillFrame: 1 };
-    const bs = Math.min(CROP_WIDTH / naturalSize.width, CROP_HEIGHT / naturalSize.height);
-    const needW = CROP_WIDTH / (naturalSize.width * bs);
-    const needH = CROP_HEIGHT / (naturalSize.height * bs);
-    return { baseScale: bs, minZoomToFillFrame: Math.max(1, needW, needH) };
+  /** Cover at zoom 1: image fills the crop frame (no letterboxing); zoom scales up from there. */
+  const baseScale = useMemo(() => {
+    if (!naturalSize) return 1;
+    return Math.max(CROP_WIDTH / naturalSize.width, CROP_HEIGHT / naturalSize.height);
   }, [naturalSize]);
 
   const totalScale = baseScale * zoom;
   const displayWidth = (naturalSize?.width ?? CROP_WIDTH) * totalScale;
   const displayHeight = (naturalSize?.height ?? CROP_HEIGHT) * totalScale;
-
-  /** Image must cover the crop viewport (no letterboxing) before export. */
-  const cropFrameFilled =
-    naturalSize != null &&
-    displayWidth >= CROP_WIDTH - 0.5 &&
-    displayHeight >= CROP_HEIGHT - 0.5;
 
   const offsetLimits = useMemo(() => {
     const maxX = Math.max(0, (displayWidth - CROP_WIDTH) / 2);
@@ -112,7 +103,7 @@ export function PhotoCropModal({
   };
 
   const handleConfirm = async () => {
-    if (!imageSrc || !naturalSize || busy || !cropFrameFilled) return;
+    if (!imageSrc || !naturalSize || busy) return;
     setBusy(true);
     try {
       const imageLeft = (CROP_WIDTH - displayWidth) / 2 + clampedOffset.x;
@@ -133,8 +124,6 @@ export function PhotoCropModal({
       setBusy(false);
     }
   };
-
-  const canUseCrop = cropFrameFilled && !!naturalSize;
 
   return (
     <AnimatePresence>
@@ -160,7 +149,7 @@ export function PhotoCropModal({
           >
             <h2 className="font-display text-xl mb-3" style={{ color: '#FFE66D' }}>{title}</h2>
             <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Drag to position, zoom until the frame is filled, then confirm.
+              Drag to adjust framing, zoom to get closer, then confirm.
             </p>
 
             <p className="font-body text-xs font-bold mb-2 text-center" style={{ color: '#4EFFC4' }}>
@@ -195,12 +184,6 @@ export function PhotoCropModal({
               />
             </div>
 
-            {!cropFrameFilled && naturalSize && (
-              <p className="font-body text-xs text-center mt-2" style={{ color: 'rgba(255,255,255,0.38)' }}>
-                Zoom in to fill frame
-              </p>
-            )}
-
             <div className="mt-3">
               <label className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 Zoom
@@ -208,7 +191,7 @@ export function PhotoCropModal({
               <input
                 type="range"
                 min={1}
-                max={Math.min(25, Math.max(3, minZoomToFillFrame * 1.02))}
+                max={3}
                 step={0.01}
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
@@ -226,13 +209,13 @@ export function PhotoCropModal({
               </button>
               <button
                 onClick={() => { void handleConfirm(); }}
-                disabled={busy || !canUseCrop}
+                disabled={busy || !naturalSize}
                 className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
                 style={{
                   background: 'rgba(78,255,196,0.15)',
                   border: '1.5px solid rgba(78,255,196,0.3)',
                   color: '#4EFFC4',
-                  opacity: busy || !canUseCrop ? 0.6 : 1,
+                  opacity: busy || !naturalSize ? 0.6 : 1,
                 }}
               >
                 {busy ? 'Cropping...' : 'Use Crop'}
