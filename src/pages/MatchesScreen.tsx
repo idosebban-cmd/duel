@@ -251,7 +251,7 @@ function MatchCard({
         aria-label={`Open ${match.name} profile`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-display text-[15px] leading-tight whitespace-nowrap truncate min-w-0" style={{ color: 'rgba(255,255,255,0.92)' }}>
+          <span className="font-body text-[15px] leading-tight whitespace-nowrap truncate min-w-0" style={{ color: 'rgba(255,255,255,0.92)' }}>
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
           </span>
           {match.intent && (
