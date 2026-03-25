@@ -1,0 +1,15 @@
+Source: SCOWL-derived Hunspell dictionary (en_US)
+Project: https://github.com/en-wl/wordlist
+Release: rel-2026.02.25
+Asset used: hunspell-en_US-2026.02.25.zip (en_US.dic)
+Download URL: https://github.com/en-wl/wordlist/releases/download/rel-2026.02.25/hunspell-en_US-2026.02.25.zip
+
+Processing for Word Blitz:
+- removed Hunspell affix flags (text after '/')
+- kept alphabetic entries only (A-Z)
+- normalized to lowercase
+- length filtered to 3..15 characters
+- de-duplicated and sorted
+
+Final word count is represented by the line count in words-scowl-50k.txt.
+See SCOWL_COPYRIGHT.txt for upstream copyright/license details.

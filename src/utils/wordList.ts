@@ -1,255 +1,44 @@
-// Common English words for Word Blitz validation (3–10 letters)
-export const WORD_LIST = new Set([
-  // 3-letter
-  "ace","act","add","age","ago","aid","aim","air","all","and","ant","any","ape","apt",
-  "arc","are","ark","arm","art","ash","ask","ate","awe","axe","aye",
-  "bad","bag","ban","bar","bat","bay","bed","beg","bet","big","bit","bow","box","boy","bud",
-  "bug","bun","bus","but","buy",
-  "cab","can","cap","car","cat","caw","cob","cod","cog","cop","cow","cry","cub","cup","cut",
-  "dam","day","den","dew","did","dig","dim","dip","dog","dot","dry","dub","due","dug","dun","dye",
-  "ear","eat","egg","ego","elf","elm","end","era","eve","eye",
-  "fad","fan","far","fat","fax","fez","fig","fin","fit","fix","fly","fog","for","fox","fry","fun","fur",
-  "gag","gap","gas","gel","gem","get","gig","gin","gnu","god","got","gum","gun","gut","guy",
-  "had","ham","has","hat","hay","hem","hen","her","him","hip","his","hit","hob","hog","hop","hot","how","hub","hug","hum","hut",
-  "ice","ill","imp","ink","inn","ion","ivy",
-  "jab","jag","jam","jar","jaw","jay","jet","jig","job","jot","joy","jug","jut",
-  "keg","key","kid","kin","kit",
-  "lab","lag","lap","law","lay","leg","let","lid","lip","lit","log","lot","low",
-  "mad","man","map","mar","mat","maw","men","met","mob","mod","mom","mop","mud","mug","nap","nip","nod","nor","not","now","nun","nut",
-  "oak","oar","oat","odd","ode","off","oil","old","one","opt","orb","ore","our","out","owe","owl","own",
-  "pad","pal","pan","pap","par","pat","paw","pay","pea","peg","pen","pep","pet","pie","pig","pin","pit","ply","pod","pop","pot","pow","pro","pub","pun","pup","pus","put",
-  "rag","ram","ran","rap","rat","raw","ray","red","ref","rep","rev","rib","rid","rig","rim","rip","rob","rod","rot","row","rub","rug","rum","run","rut","rye",
-  "sac","sad","sag","sap","sat","saw","say","set","sew","shy","sin","sip","sir","sis","sit","six","ski","sky","sly","sob","sod","son","sop","sot","sow","soy","spa","spy","sty","sub","sue","sum","sun","sup",
-  "tab","tan","tap","tar","tea","ten","the","tie","tin","tip","toe","ton","too","top","tow","toy","tub","tug","two",
-  "urn","use",
-  "van","vat","vet","vex","via","vie","vow",
-  "wad","war","was","wax","web","wed","who","why","wig","win","wit","woe","wok","won","woo","wow",
-  "yam","yap","yew","you","yow",
-  "zap","zip","zoo",
+const WORD_LIST_URL = '/wordblitz/words-scowl-50k.txt';
 
-  // 4-letter
-  "able","ache","acid","acre","aged","aide","ails","aims","airy","ajar","akin","aloe","also","alto","amok","amps","anew","ante","arch","area","army","atom","avid","awry","axes","axle",
-  "back","bail","bait","bale","ball","balm","band","bane","bang","bank","bare","bark","barn","base","bash","bass","bask","bath","bead","beak","beam","bean","bear","beat","beef","been","beer","bees","bell","belt","bend","best","bile","bill","bird","bite","blow","blue","blur","boar","boat","bold","bolt","bomb","bond","bone","book","boom","boot","bore","born","both","bulk","bull","bunk","burn","burp","burr","bush","buzz",
-  "cafe","cage","cake","calf","call","calm","came","cane","cape","care","cart","case","cash","cast","cave","cell","cent","chad","chef","chip","chop","clam","clap","claw","clay","clip","club","clue","coal","coat","coil","coin","cold","colt","comb","come","cook","cool","cope","copy","cord","core","cork","corn","cost","cozy","cram","crow","cube","curb","cure","curl","cute",
-  "daft","damp","dare","dark","dart","dash","dawn","daze","dead","deaf","deal","dear","deck","deed","deep","deft","deny","desk","dial","died","diet","dirt","disk","dive","dock","doll","dome","done","doom","door","dose","dove","down","drag","draw","drip","drop","drum","duck","dull","dumb","dump","dung","dusk","dust",
-  "each","earl","earn","ease","east","easy","edge","edit","else","emit","epic","even","ever","evil","exam","exit",
-  "face","fact","fail","fair","fall","fame","fang","farm","fast","fate","fear","feat","feed","feel","feet","fell","felt","fend","fern","feud","fill","film","find","fine","fire","firm","fish","fist","five","flag","flat","flaw","flea","fled","flew","flex","flip","flit","flock","flow","foam","fold","fond","font","food","fool","foot","ford","fore","fork","form","fort","foul","four","free","from","fudge","fume","fuse","fuss",
-  "gale","gall","game","gang","gave","gaze","gear","give","glad","glen","glow","glue","gnaw","goat","gold","golf","gone","good","goon","gore","gown","grab","grade","graft","gram","gray","grew","grin","grip","grit","grow","gulf","gull","gulp","gust",
-  "hack","hail","hair","hale","hall","halt","hand","hang","hard","hare","harm","harp","harsh","haze","head","heal","heap","heat","heel","held","help","herb","here","hide","high","hike","hill","hint","hire","hiss","hold","hole","home","hood","hoop","hope","horn","hose","hour","huge","hulk","hull","hump","hunt","hurl","hurt",
-  "icon","idea","idle","inch","into","iron",
-  "jack","jade","jail","jazz","jest","join","joke","jolt","jump","junk","just",
-  "keen","keep","kill","kind","king","kiss","knit","knob","knot","know",
-  "lace","lack","lake","lamb","lamp","land","lane","lark","lash","last","late","lava","lawn","lazy","lead","leaf","leak","lean","leap","left","lend","lens","lest","lick","life","lift","lime","line","link","lion","list","live","load","loan","lock","loft","lone","long","look","loom","loop","lore","lose","loss","lost","loud","love","luck","lull","lump","lung","lure","lurk",
-  "made","mail","main","make","male","mall","mane","many","mark","mars","mast","mate","maze","meal","mean","meat","meet","meld","melt","memo","mend","menu","mere","mesh","mild","milk","mill","mime","mind","mine","mint","miss","mist","mode","mold","mole","molt","mood","moon","more","most","moth","move","much","mull","must","mute",
-  "nail","name","nape","navy","near","neat","need","nest","next","nice","nine","node","none","noon","norm","note","noun","numb",
-  "oath","oboe","once","only","open","oval","oven","over",
-  "pace","pack","page","paid","pail","pain","pair","pale","palm","pane","park","part","pass","past","path","pave","peak","peal","pear","peel","peer","pent","pick","pile","pine","pink","pipe","plan","play","plea","plod","plot","plow","plum","plus","poem","poet","pole","pond","pool","pore","port","pose","pour","prey","prod","prop","pull","pump","pure","push",
-  "quay","quit","quiz",
-  "race","rack","raft","rage","raid","rail","rain","rake","ramp","rang","rank","rant","rash","rate","rave","read","real","reap","reed","reel","rein","rely","rent","rest","rice","rich","ride","rife","ring","riot","rise","risk","road","roam","roar","robe","rock","role","roll","roof","rook","room","root","rope","rose","rout","rove","rude","ruin","rule",
-  "sack","safe","sage","sail","sake","sale","salt","same","sand","sane","sang","sank","sash","save","scan","scar","scum","seal","seam","seen","self","sell","semi","sent","shed","shin","ship","shot","show","shut","sick","side","sigh","silk","sill","silo","sing","sink","site","size","skip","slam","slap","slew","slid","slim","slip","slot","slow","slug","smog","snap","snow","soak","soap","soar","sock","soft","soil","sold","sole","some","song","soon","soot","sort","soul","soup","sour","span","spar","spin","spit","spot","spur","stab","star","stay","stem","step","stew","stir","stop","stub","stun","such","suit","sure","swam","swat","swim","swam",
-  "tack","tail","tale","tall","tame","tank","tape","task","taut","teal","team","tear","teem","tell","tend","tent","term","test","than","that","thee","them","then","they","thin","this","thorn","tick","tide","tier","tile","till","tilt","time","tiny","tire","toil","toll","tomb","tone","took","tool","tore","torn","toss","tour","town","trek","trim","trio","trip","trod","true","tuck","tuft","tune","turf","tusk","twin","twit",
-  "ugly","undo","unit","upon","used","user",
-  "vale","vast","veil","vein","vent","verb","very","view","vine","volt","vote",
-  "wade","wage","wake","walk","wall","wand","want","ward","warm","warn","warp","wart","wash","wave","weak","wear","weed","week","weep","weld","well","went","were","west","whip","wide","wife","wild","wile","will","wilt","wind","wine","wing","wink","wire","wise","wish","with","woke","wolf","womb","wood","wool","word","wore","work","worm","worn","wove","wrap","wren","writ",
-  "yard","year","yell","your",
-  "zeal","zero","zinc","zone",
+let loadedWords: Set<string> | null = null;
+let loadingPromise: Promise<Set<string>> | null = null;
 
-  // 5-letter
-  "abide","about","above","abuse","acute","admit","adopt","adult","after","again","agent","agree","ahead","alarm","album","alert","alike","align","alive","allay","allow","alone","along","alter","angel","anger","angle","angry","anguish","anime","annoy","anvil","apart","apple","apply","arise","array","aside","asked","aspen","asset","attic","audio","audit","avoid","awake","aware","awful",
-  "badly","baker","basic","basin","basis","beach","beard","begin","being","below","bench","berry","black","blade","blame","bland","blank","blast","blaze","bleed","bless","blind","block","blood","bloom","blown","blues","blunt","board","braid","brain","brand","brave","bread","break","brick","bride","brief","bring","broad","broke","brook","broth","brown","brush","built","bunch","burst",
-  "cabin","camel","candy","carry","catch","cause","cease","chain","chair","chaos","charm","chart","chase","cheap","check","cheek","cheer","chest","chief","child","choir","chord","civil","clamp","clash","class","clean","clear","clerk","click","climb","cling","clock","clone","close","cloud","clown","clump","coast","comet","comma","coral","could","count","court","cover","crack","craft","crane","crave","crawl","crazy","cream","creek","crime","crimp","crisp","cross","crowd","crown","cruel","crush","crust","curve",
-  "daily","dance","daunt","death","debut","delay","delta","demon","dense","depth","derby","devil","dirty","discs","disco","dizzy","doing","doubt","dough","draft","drain","drama","drank","drape","dream","dress","dried","drink","drive","drove","drawn","dwarf","dwell",
-  "eager","early","earth","eight","elite","empty","ended","enemy","enjoy","enter","equal","error","essay","event","exact","excel","exist","extra",
-  "faint","fairy","faith","fancy","fatal","fault","feast","fetch","fever","fewer","fiber","field","fifth","fifty","fight","final","first","fixed","flame","flash","flask","flick","fling","float","flock","flood","floor","flour","flute","focus","force","forge","found","frame","frank","freak","fresh","front","frost","froth","fruit","fully","funny",
-  "gains","giant","given","glass","gloss","glove","grace","grade","grail","grain","grand","grant","grape","grasp","grass","grave","great","greed","green","greet","grief","gripe","groan","groom","gross","group","grove","guard","guess","guest","guide","guild","guile","guise","gusto",
-  "habit","happy","hardy","harsh","haunt","haven","heart","heavy","heist","hence","herbs","hippo","hoard","hobby","honor","horse","hotel","house","humid","humor","hurry",
-  "ideal","image","imply","index","inner","input","inter","ivory",
-  "joust","judge","juice","juicy","jumpy",
-  "karma","knock","known",
-  "label","large","laser","later","laugh","layer","learn","lease","least","leave","legal","level","light","limit","linen","liner","liver","local","lodge","logic","loose","lover","lower","lucky","lunar",
-  "magic","major","maker","march","masse","match","maxim","metal","media","merit","mercy","might","miles","mimic","minor","minus","mixed","model","money","month","moral","mouth","muggy","music","nadir",
-  "naive","nerve","never","night","nine","nicer","noble","noise","north","noted","novel","nurse",
-  "ocean","offer","often","olive","onset","orbit","order","other","outer","owned","owner",
-  "paint","panic","paper","peace","pearl","pedal","penny","peril","perky","petty","phase","phone","photo","piano","pitch","pixel","place","plain","plane","plant","plate","plaza","plead","pluck","plumb","point","poker","polar","poser","power","press","price","pride","prime","print","prior","prize","probe","prone","proof","proud","prove","prowl","pulse",
-  "queen","quest","queue","quite",
-  "radar","radio","raise","rally","range","reach","realm","rebel","refer","reign","relax","remit","repay","reply","rider","ridge","right","rigid","rival","river","roast","robin","robot","rocky","rouge","rough","round","route","royal","rugby","ruler","rural",
-  "sadly","saint","salad","sandy","sauce","scale","scene","scope","score","scout","screw","seize","sense","serve","seven","shake","shall","shame","shape","share","sharp","shelf","shell","shift","shore","short","shout","sight","since","sixth","sixty","skill","skull","slate","sleep","slice","slide","slope","smart","smell","smile","smoke","snake","solar","solid","solve","sorry","sound","south","space","spare","spark","speak","speed","spell","spend","spire","spite","spoke","spoon","sport","spray","squad","stack","staff","stage","stain","stake","stale","stamp","stand","stare","stark","start","state","steam","steel","steep","steer","stick","stiff","still","stone","stood","store","storm","story","stove","strap","straw","stray","strip","stuck","study","style","sugar","super","surge","surge","swear","sweet","swept","swift","sword",
-  "table","taste","taunt","teach","tense","their","there","these","thick","thing","think","third","three","threw","throw","tiger","tight","tired","title","today","token","total","touch","tough","tower","toxic","trace","track","trade","trail","train","trait","tramp","trash","treat","trend","tribe","trick","tried","trite","troop","trout","trove","truck","truly","trump","trunk","trust","truth","tulip","tummy","tumor","tutor","twice","twist","tying",
-  "udder","ultra","under","unify","union","until","upper","urban","utter",
-  "valid","value","valve","video","vigor","viral","visit","vital","vivid","voice","voter",
-  "waste","watch","water","weave","weigh","weird","whole","whose","width","woman","women","world","worry","worse","worst","worth","would","wound","wrath","write","wrote",
-  "yacht","young","youth",
-  "zonal",
+function parseWordList(raw: string): Set<string> {
+  const words = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim().toLowerCase())
+    .filter((line) => line.length > 0);
+  return new Set(words);
+}
 
-  // 6-letter
-  "accept","across","action","active","actual","advice","affect","afford","afraid","agency","agenda","almost","always","amount","animal","answer","anyone","around","arrive","artist","asking","attack","attend","august","avenue","baking","battle","beauty","became","become","before","behind","belief","belong","beside","better","beyond","bitter","bounce","bridge","bright","broken","burden","button","camera","cancel","candle","cannot","castle","caught","center","chance","change","charge","choose","chosen","circle","closet","couple","create","credit","crisis","damage","dancer","daring","darken","decide","define","degree","design","desire","detail","differ","direct","divide","donkey","double","driven","during","easily","effect","effort","eighth","enable","engine","enough","entire","escape","expect","extend","factor","failed","fallen","family","famous","father","figure","finger","finish","flight","flower","flying","follow","formal","format","foster","fourth","friday","friend","frozen","gadget","garden","gather","gentle","giving","global","happen","health","heaven","hidden","higher","hiring","holder","honest","income","indeed","insect","inside","jungle","keeper","kernel","ladder","latter","launch","leader","lesson","letter","little","lonely","longer","losing","luxury","making","manage","manner","market","matter","maybe","mental","method","mighty","mister","modern","moment","monthly","mother","moving","muscle","myself","nation","nature","nearby","needed","normal","notice","number","object","obtain","online","opened","orange","origin","output","palace","parent","partly","pepper","person","plenty","police","policy","prefer","pretty","prince","prison","profit","proper","proven","purple","python","rabbit","random","rather","reason","recent","record","reduce","refuse","region","relate","remove","repeat","rescue","resist","return","review","reward","riding","rubber","safety","sample","saving","saying","season","secret","select","settle","shadow","should","simple","single","sister","slight","smooth","social","source","spirit","spoken","spread","spring","square","stable","string","stroke","strong","struck","studio","stupid","supply","switch","system","taking","talent","target","taught","ticket","trying","twelve","twenty","unless","useful","utmost","valley","varied","virtue","vision","walker","warmth","wealth","weapon","winter","wisdom","wonder","wooden","wording","worsen","yellow",
+export async function preloadWordList(): Promise<Set<string>> {
+  if (loadedWords) return loadedWords;
+  if (loadingPromise) return loadingPromise;
 
-  // game-specific common words
-  "cat","cats","cast","mast","last","fast","mask","task","bask","past",
-  "smart","start","stark","stars","parts","march","charm","chart","marsh","charms",
-  "master","stream","basket","castle","grants","plants","flames",
+  loadingPromise = fetch(WORD_LIST_URL)
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`Failed to load word list: ${res.status}`);
+      const text = await res.text();
+      loadedWords = parseWordList(text);
+      return loadedWords;
+    })
+    .finally(() => {
+      loadingPromise = null;
+    });
 
-  // 6-letter words (40 pts)
-  "abling","absorb","affect","affirm","afford","agency","agreed","alight","allure","almost",
-  "ambled","amends","amount","anchor","angled","animal","answer","antics","anvils","anyone",
-  "argued","arisen","around","artist","asking","aspect","assent","assert","attach","attend",
-  "august","avenge","avenue","avoids","awaken","awards","babies","backed","ballot","barely",
-  "barked","basket","battle","beacon","beamed","beauty","became","before","behind","belong",
-  "billow","biting","blanch","blazed","blends","blight","blocks","blonde","blooms","blouse",
-  "blower","boards","boasts","bodies","bolted","bonded","boosts","bounce","bounds","bowing",
-  "brawny","breads","breaks","breath","breeds","bribed","bricks","bridge","bright","brings",
-  "broken","bronze","brooms","browse","budget","builds","burrow","butter","buying","called",
-  "candid","candle","cannon","cannot","canter","canopy","capers","caring","casing","casket",
-  "castle","caught","causes","caving","center","chafed","chance","change","charge","chased",
-  "chaste","checks","cheers","cherry","chimed","claims","clamor","clasps","cleans","clears",
-  "clever","clicks","climbs","clings","closed","closer","clouds","clumps","coarse","coiled",
-  "coined","combat","coming","commit","convoy","cooled","costly","crafts","craned","crawls",
-  "credit","creeps","crowds","crunch","curbed","curled","dagger","damage","dancer","dangle",
-  "daring","darken","darted","dawned","deadly","decade","decent","depths","derive","desert",
-  "detail","devise","differ","digest","direct","dishes","divide","donkey","dotted","double",
-  "drifts","driven","earned","easily","edging","effort","eighth","enable","engine","enough",
-  "entire","erased","escape","evaded","evolve","expand","expect","extend","fabled","failed",
-  "fallen","famine","fatten","faults","fewest","fierce","fights","filled","filmed","filter",
-  "finder","finish","fitted","fixing","flames","flawed","fledge","flinch","fluent","follow",
-  "forces","forged","formal","formed","fought","fourth","framed","freely","frozen","gained",
-  "gamble","gamete","garble","gentle","gifted","gilded","glance","glared","glints","global",
-  "glossy","gloved","gloomy","golden","grabbed","graced","grains","grants","gravel","grease",
-  "greedy","greets","grieve","grills","grinds","ground","groves","growth","guards","guided",
-  "hamlet","handle","happen","hardly","harmed","heated","helped","herbal","hidden","higher",
-  "highly","hiring","holder","honest","horned","hunted","hustle","impact","indoor","inform",
-  "inject","inland","insist","intent","invest","invite","ironed","issued","jammed","jested",
-  "joined","jostle","jumped","jungle","keeper","kernel","kindle","knotty","lacked","landed",
-  "lasting","launch","lavish","layers","leader","leaped","lessen","lifted","linked","liquid",
-  "lively","logged","longer","looked","loomed","looped","louder","loving","lowest","lustre",
-  "mangle","manner","marble","marked","marvel","masked","meadow","mental","method","middle",
-  "mingle","mirror","missed","mobile","modern","modest","molten","mortal","motion","mostly",
-  "movers","moving","muscle","mutual","myself","mystic","narrow","nation","nearly","needed",
-  "nested","nettle","nimble","nodded","normal","notion","nourish","object","obtain","online",
-  "onward","opened","orange","origin","ousted","output","packed","palace","parted","passed",
-  "paving","pepper","picked","pillar","pirate","placed","plains","planed","plants","played",
-  "pledge","plunge","poised","polish","portal","posted","potent","powder","prized","proved",
-  "public","pulled","purple","pushed","racial","raised","raking","ranged","ransom","rather",
-  "really","reason","recent","refine","reform","refuse","relish","remain","rental","rescue",
-  "rested","review","riding","rifled","rising","robust","rolled","rooted","rotate","ruling",
-  "rushed","rustle","safely","sample","scaled","scarce","scenic","scored","season","seeing",
-  "select","senile","serene","settle","shadow","shaped","shared","shines","shovel","shriek",
-  "simple","single","sister","sketch","skills","slight","smoked","smooth","soaked","social",
-  "soften","solved","source","spoken","spread","spring","stable","staged","stands","stayed",
-  "steals","steers","sticks","stifle","stolen","stored","straps","stream","strict","stride",
-  "strike","string","stripe","strive","struck","studio","sturdy","subtle","suited","sunset",
-  "surely","surged","symbol","system","taking","talent","tangle","target","tested","theory",
-  "thirds","threat","thrill","thrown","timber","tipped","titled","traced","tracks","traded",
-  "travel","trawls","treats","tremble","trendy","tribal","triple","trusts","trying","twelve",
-  "tweaks","twists","unable","unique","unless","untied","useful","values","varied","velvet",
-  "verbal","verify","vessel","victim","vision","voiced","wander","warmed","wealth","weekly",
-  "wholly","wicked","widely","wilder","willed","window","winged","wisdom","wished","wonder",
-  "wooden","worked","writer","yellow","yields","zealot",
+  return loadingPromise;
+}
 
-  // 7-letter words (40 pts)
-  "abandon","ability","absence","academy","account","achieve","acquire","adapter","address",
-  "advance","advised","against","ancient","another","anxiety","applied","appoint","arrange",
-  "assured","attract","audited","awesome","balance","bargain","cabinet","capable","captain",
-  "captive","careful","casting","catalog","certain","chamber","chapter","claimed","clarity",
-  "classic","climate","comfort","command","company","compile","complex","concern","conduct",
-  "confirm","connect","consent","contain","content","context","control","cooling","correct",
-  "council","country","crafted","creator","culture","curious","current","cutting","decided",
-  "declare","defense","delayed","deleted","deliver","density","deposit","deserve","develop",
-  "digital","discord","dismiss","display","distant","dragged","drawing","driving","dropped",
-  "earning","edition","elected","element","emotion","enforce","entered","excited","exhibit",
-  "existed","explain","exploit","exposed","extract","feature","fertile","fiction","finally",
-  "finance","foreign","freedom","funeral","general","greatly","habitat","harmony","history",
-  "however","imagine","improve","include","initial","install","instant","instead","justice",
-  "kingdom","labeled","landing","largely","lasting","learned","liberal","limited","linking",
-  "located","looking","machine","managed","mapping","maximum","medical","mention","message",
-  "mission","mistake","mixture","modular","monitor","morning","mounted","network","nominal",
-  "notable","nothing","noticed","nucleus","obvious","offered","officer","opinion","optimal",
-  "ordered","organic","outcome","outdoor","outlook","outside","overall","overlap","partner",
-  "patient","percent","perfect","perhaps","placing","planned","playing","pointed","popular",
-  "portion","possess","prevent","primary","private","process","product","promote","protect",
-  "provide","pursuit","quality","quarter","quickly","radical","rapidly","reached","realize",
-  "rebuild","recover","reduced","related","release","remains","replace","require","resolve",
-  "respond","restore","results","revenue","revised","routine","running","scandal","science",
-  "scratch","section","segment","serious","service","session","several","similar","society",
-  "someone","species","stable","started","stating","station","staying","stomach","storage",
-  "strange","support","surface","surgery","survive","sustain","teacher","testing","through",
-  "tonight","trouble","turning","typical","unified","unknown","updated","upgrade","usually",
-  "utilize","version","village","violent","virtual","visible","visited","walking","warning",
-  "weather","website","welcome","whether","working","written",
-
-  // 8-letter words (40 pts)
-  "absolute","abstract","accepted","accessed","accurate","achieved","acquired","activity",
-  "addition","adequate","admitted","affected","afforded","approach","approval","argument",
-  "arranged","assembly","balanced","building","campaign","capacity","captured","carrying",
-  "category","centered","changing","claiming","cleaning","clearing","clinical","combined",
-  "complete","computer","consider","consumer","contains","continue","contract","contrast",
-  "convince","creating","creative","critical","cultural","customer","database","deadline",
-  "decision","declared","defeated","delivery","demanded","describe","designed","detailed",
-  "detected","directed","disabled","distinct","division","document","dominant","economic",
-  "educated","election","embrace","emerging","employed","enhanced","enormous","entitled",
-  "estimate","evaluate","evidence","exceeded","expected","exported","extended","external",
-  "faithful","familiar","finished","flexible","followed","footstep","fraction","fragment",
-  "function","generate","glossary","graceful","grateful","greatest","guidance","handbook",
-  "happened","identify","included","increase","indicate","industry","informal","instance",
-  "internal","involved","isolated","launched","learning","leverage","lifetime","literary",
-  "location","matching","material","maximize","measured","medicine","midnight","minimize",
-  "moderate","modified","momentum","moreover","movement","multiple","national","negative",
-  "notation","official","operated","optional","ordinary","oriented","original","overcome",
-  "overlook","overview","personal","physical","platform","positive","possible","powerful",
-  "practice","presence","previous","priority","probably","produced","promoted","proposed",
-  "provides","publicly","purchase","received","recently","recovery","referred","relative",
-  "released","remember","replaced","required","research","resource","response","returned",
-  "revealed","reviewed","rotation","scenario","schedule","scramble","security","selected",
-  "sequence","separate","shortage","siblings","situation","skeleton","somebody","somewhat",
-  "specific","splendid","standard","standing","strategy","strength","struggle","suitable",
-  "supplied","syllabus","targeted","together","tomorrow","transfer","triangle","ultimate",
-  "umbrella","universe","variable","versatile","vertical","whatever","whenever","wherever",
-  "wildlife","workshop","yourself",
-
-  // 9-letter words (40 pts)
-  "abandoned","according","adventure","ambitious","beautiful","challenge","character",
-  "community","completed","connected","construct","container","continued","corporate",
-  "databases","dedicated","described","developed","direction","discovery","discussed",
-  "education","effective","efficient","elaborate","emergency","emotional","establish",
-  "excellent","exclaimed","exclusive","existence","framework","geography","gradually",
-  "guarantee","happily","highlight","important","impressed","including","indicated",
-  "initially","instantly","introduce","landscape","lightning","maintains","mastered",
-  "narrative","naturally","objective","otherwise","perfectly","plentiful","positions",
-  "practiced","presented","principal","privilege","processed","productively","projected",
-  "protected","published","purchased","qualified","reasoning","rectangle","reduction",
-  "redundant","referring","releasing","remaining","represent","resources","responded",
-  "scattered","searching","selecting","sensitive","sequences","seriously","situation",
-  "snowstorm","something","somewhere","spaghetti","spiritual","spotlight","stretched",
-  "structure","suffering","suggested","supported","technical","therefore","thumbnail",
-  "translate","treatment","trembling","unrelated","validated","varieties","vegetable",
-  "wandering","watchword","wonderful",
-
-  // 10-letter words (40 pts)
-  "absolutely","accomplish","achievement","adjustment","advantages","apparently","applicable",
-  "appreciate","approaching","assistance","authorized","background","bandwagon","basketball",
-  "borderline","breakpoint","brotherhood","calculator","capability","celebrated","challenges",
-  "chromosome","completely","confidence","considered","contribute","controlled","coordinate",
-  "creativity","demolished","demonstrate","dependency","deployment","descriptions","determined",
-  "difference","dimensions","discovered","discussion","disturbing","efficiency","eliminated",
-  "employment","encouraged","engineering","enthusiasm","eventually","everything","everywhere",
-  "experience","experiment","expression","functional","generation","government","identified",
-  "impossible","increasing","individual","influences","initiative","innovation","inspection",
-  "integrated","interested","investment","leadership","legitimate","liberating","limitation",
-  "literature","magnificently","management","masterwork","meaningful","meditative","monitoring",
-  "mysterious","negotiated","networking","operations","originally","overcoming","persistence",
-  "philosophy","plantation","population","positioned","practicing","predictable","procedures",
-  "processing","production","protecting","psychology","purchasing","realignment","recognized",
-  "recovering","referenced","registered","regulation","reinforced","remarkable","remembered",
-  "reputation","researched","responding","simplified","smartphone","spiralling","stakeholder",
-  "strategies","structured","subsequent","successful","supportive","surrounded","suspension",
-  "technology","thoughtful","throughout","transience","ultimately","understand","unexpected",
-  "university","validation","variations","vocabulary","vulnerable","wanderlust","widespread",
-]);
+export function isWordListLoaded(): boolean {
+  return loadedWords !== null;
+}
 
 /**
  * Check if a string is a valid word
  */
 export function isValidWord(word: string): boolean {
-  return WORD_LIST.has(word.toLowerCase());
+  if (!loadedWords) return false;
+  return loadedWords.has(word.toLowerCase());
 }
 
 /**

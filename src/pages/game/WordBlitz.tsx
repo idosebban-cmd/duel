@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
-import { isValidWord, scoreWord } from '../../utils/wordList';
+import { isValidWord, isWordListLoaded, preloadWordList, scoreWord } from '../../utils/wordList';
 import { abandonGame } from '../../lib/database';
 import {
   WaitingForOpponentOverlay,
@@ -506,6 +506,7 @@ export function WordBlitz() {
       rotation: (Math.random() - 0.5) * 10,
     }))
   );
+  const [dictionaryReady, setDictionaryReady] = useState(isWordListLoaded());
   const [grid, setGrid] = useState<GridCell[][]>(emptyGrid);
 
   // ── Selection ─────────────────────────────────────────────────────────────
@@ -579,12 +580,36 @@ export function WordBlitz() {
     }, 1000);
   }, [isMultiplayer]);
 
+  // Preload dictionary during setup/route entry.
+  useEffect(() => {
+    let active = true;
+    preloadWordList()
+      .then(() => {
+        if (active) setDictionaryReady(true);
+      })
+      .catch((err) => {
+        console.error('[WordBlitz] Failed to preload dictionary', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // ─── Start game ───────────────────────────────────────────────────────────
-  const startGame = useCallback(() => {
+  const startGame = useCallback(async () => {
+    if (!dictionaryReady) {
+      try {
+        await preloadWordList();
+        setDictionaryReady(true);
+      } catch (err) {
+        console.error('[WordBlitz] Dictionary unavailable; cannot start game', err);
+        return;
+      }
+    }
     setPhase('playing');
     // Solo: start timer immediately. MP: timer starts when bothPresent (see effect below).
     if (!isMultiplayer) startTimer();
-  }, [isMultiplayer, startTimer]);
+  }, [dictionaryReady, isMultiplayer, startTimer]);
 
   // ─── MP: start timer once both players are present ─────────────────────────
   useEffect(() => {
