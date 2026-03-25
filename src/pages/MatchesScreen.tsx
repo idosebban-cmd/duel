@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { getMatches, getLastMessages, getChallengesForMatch, getGamesByMatch, getPhotos } from '../lib/database';
@@ -53,14 +52,6 @@ const elementImages: Record<string, string> = {
   fire: '/elements/Fire.png', water: '/elements/Water.png',
   earth: '/elements/Earth.png', air: '/elements/Wind.png',
   electric: '/elements/Electricity.png',
-};
-
-const affiliationImages: Record<string, string> = {
-  city: '/affiliation/City.png', country: '/affiliation/Country.png',
-  nature: '/affiliation/Nature.png', fitness: '/affiliation/Sports.png',
-  academia: '/affiliation/Library.png', music: '/affiliation/Music.png',
-  art: '/affiliation/Art.png', tech: '/affiliation/Tech.png',
-  cosmic: '/affiliation/Cosmos.png', travel: '/affiliation/Travel.png',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -143,7 +134,6 @@ function MatchCard({
   onChallengeTap,
   isFirstGame,
   isNew,
-  hasPendingChallenge,
   photoUrl,
 }: {
   match: Match;
@@ -152,15 +142,18 @@ function MatchCard({
   onChallengeTap: () => void;
   isFirstGame: boolean;
   isNew: boolean;
-  hasPendingChallenge?: boolean;
   photoUrl?: string;
 }) {
-  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const intentMeta: Record<NonNullable<Match['intent']>, { label: string; color: string }> = {
+    romance: { label: 'Romance', color: '#FF6BA8' },
+    play: { label: 'Just Play', color: '#00D9FF' },
+    both: { label: 'Both', color: '#B565FF' },
+  };
 
   return (
     <motion.div
       onClick={onTap}
-      className="w-full flex items-center gap-3.5 px-4 py-3.5 text-left relative overflow-hidden"
+      className="w-full flex items-center gap-3.5 px-4 py-4 text-left relative overflow-hidden"
       style={{
         background: isNew ? 'rgba(78,255,196,0.04)' : 'rgba(255,255,255,0.02)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -214,113 +207,67 @@ function MatchCard({
         )}
       </motion.button>
 
+      {/* Timestamp + online dot (top-right) */}
+      <div
+        className="absolute right-4 top-3 flex items-center gap-2"
+        style={{ color: 'rgba(255,255,255,0.35)' }}
+      >
+        <span className="font-body text-xs">
+          {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
+        </span>
+        <span
+          className="w-2 h-2 rounded-full"
+          style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.6)' }}
+        />
+      </div>
+
+      {/* CTA (right aligned, vertically centered) */}
+      <motion.button
+        onClick={(e) => { e.stopPropagation(); onChallengeTap(); }}
+        className="absolute right-4 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl font-display font-bold text-xs leading-none"
+        style={isFirstGame
+          ? {
+              background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
+              border: '2px solid rgba(78,255,196,0.7)',
+              color: '#10202A',
+              boxShadow: '0 0 16px rgba(78,255,196,0.25)',
+            }
+          : {
+              background: 'rgba(255,255,255,0.04)',
+              border: '2px solid rgba(255,255,255,0.10)',
+              color: 'rgba(255,255,255,0.80)',
+            }}
+        whileTap={{ scale: 0.96 }}
+        aria-label={isFirstGame ? `Play first game with ${match.name}` : `Open ${match.name} match`}
+      >
+        {isFirstGame ? 'Play first game' : 'Open'}
+      </motion.button>
+
       {/* Text */}
       <button
         className="flex-1 min-w-0 text-left bg-transparent border-0 p-0 m-0 cursor-pointer"
+        style={{ paddingRight: 120 }}
         onClick={(e) => { e.stopPropagation(); onProfileTap(); }}
         aria-label={`Open ${match.name} profile`}
       >
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.92)' }}>
+        <div className="flex items-center gap-2">
+          <span className="font-display text-base leading-tight" style={{ color: 'rgba(255,255,255,0.92)' }}>
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
           </span>
           {match.intent && (
             <span
-              className="font-body text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+              className="inline-flex items-center px-2 py-1 rounded-full font-body text-[11px] font-bold leading-none"
               style={{
-                color: match.intent === 'play' ? '#00F5FF' : match.intent === 'romance' ? '#FF6BA8' : '#B565FF',
-                background: match.intent === 'play' ? 'rgba(0,245,255,0.12)' : match.intent === 'romance' ? 'rgba(255,107,168,0.12)' : 'rgba(181,101,255,0.12)',
-                border: `1px solid ${match.intent === 'play' ? 'rgba(0,245,255,0.25)' : match.intent === 'romance' ? 'rgba(255,107,168,0.25)' : 'rgba(181,101,255,0.25)'}`,
+                color: '#0A1628',
+                background: intentMeta[match.intent].color,
+                boxShadow: `0 0 14px ${intentMeta[match.intent].color}33`,
               }}
             >
-              {match.intent === 'play' ? '🎮' : match.intent === 'romance' ? '💜' : '✨'}
+              {intentMeta[match.intent].label}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 mb-1">
-          {affiliationImages[match.affiliation] && (
-            <img src={affiliationImages[match.affiliation]} alt="" className="w-3.5 h-3.5 object-contain" draggable={false} />
-          )}
-          <span className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            {cap(match.element)} {cap(match.affiliation)} {cap(match.character)}
-          </span>
-        </div>
-        {isNew && !match.lastMessage
-          ? <span className="font-body text-xs font-bold" style={{ color: '#4EFFC4' }}>
-              {match.intent === 'romance' ? '💬 New match! Say hello' : '✨ New match! Pick a game to play'}
-            </span>
-          : match.lastMessage
-            ? (
-              <span
-                className="font-body text-xs truncate max-w-[180px] block"
-                style={{ color: match.lastMessage.unread > 0 ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
-                         fontWeight: match.lastMessage.unread > 0 ? 600 : 400 }}
-              >
-                {match.lastMessage.content}
-              </span>
-            )
-          : <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Matched {timeAgo(match.matchedAt)}</span>
-        }
       </button>
-
-      {/* Time + unread */}
-      <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
-        <span className="font-body text-xs" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
-          {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
-        </span>
-        {match.lastMessage && match.lastMessage.unread > 0 ? (
-          <motion.div
-            className="min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
-            style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.7)' }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <span className="font-body text-[10px] font-bold" style={{ color: '#12122A' }}>
-              {match.lastMessage.unread > 9 ? '9+' : match.lastMessage.unread}
-            </span>
-          </motion.div>
-        ) : hasPendingChallenge ? (
-          <motion.div
-            className="min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
-            style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.7)' }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <span className="font-body text-[9px] font-bold" style={{ color: '#fff' }}>
-              !
-            </span>
-          </motion.div>
-        ) : isNew && !match.lastMessage ? (
-          <motion.div
-            className="w-2.5 h-2.5 rounded-full"
-            style={{ background: '#4EFFC4', boxShadow: '0 0 8px rgba(78,255,196,0.7)' }}
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          />
-        ) : null}
-        <motion.button
-          onClick={(e) => { e.stopPropagation(); onChallengeTap(); }}
-          className="px-2.5 py-1 rounded-lg font-display font-bold text-[10px] leading-none"
-          style={isFirstGame
-            ? {
-                background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
-                border: '1px solid rgba(78,255,196,0.6)',
-                color: '#10202A',
-                boxShadow: '0 0 10px rgba(78,255,196,0.35)',
-              }
-            : {
-                background: 'rgba(78,255,196,0.1)',
-                border: '1px solid rgba(78,255,196,0.35)',
-                color: '#4EFFC4',
-              }}
-          whileTap={{ scale: 0.94 }}
-          animate={isFirstGame ? { scale: [1, 1.04, 1] } : undefined}
-          transition={isFirstGame ? { duration: 1.6, repeat: Infinity } : undefined}
-          aria-label={isFirstGame ? `Play first game with ${match.name}` : `Challenge ${match.name} to a game`}
-        >
-          {isFirstGame ? 'Play first game' : 'Challenge'}
-        </motion.button>
-      </div>
     </motion.div>
   );
 }
@@ -329,9 +276,9 @@ function MatchCard({
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="px-4 py-2 flex items-center gap-2">
+    <div className="px-4 pt-5 pb-2 flex items-center gap-2">
       <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
-        {label}
+        {label.toUpperCase()}
       </span>
       <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
     </div>
@@ -452,13 +399,11 @@ const NEW_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48 hours
 
 export function MatchesScreen() {
   const navigate = useNavigate();
-  const { character } = useOnboardingStore();
   const { user } = useAuthStore();
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [challengedMatchIds, setChallengedMatchIds] = useState<Set<string>>(new Set());
   const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
   const [selectedProfile, setSelectedProfile] = useState<ProfileDetailData | null>(null);
   const [selectedProfilePhotos, setSelectedProfilePhotos] = useState<string[] | undefined>(undefined);
@@ -468,7 +413,6 @@ export function MatchesScreen() {
 
   const refreshPendingChallengeIndicators = async (matchList: Match[]) => {
     if (!user?.id || matchList.length === 0) {
-      setChallengedMatchIds(new Set());
       return;
     }
     try {
@@ -476,7 +420,6 @@ export function MatchesScreen() {
         matchList.map((m) => getChallengesForMatch(m.id)),
       );
       const now = Date.now();
-      const ids = new Set<string>();
       allChallenges.forEach((challs, i) => {
         const hasIncoming = challs.some(
           (c: ChallengeRow) =>
@@ -484,9 +427,8 @@ export function MatchesScreen() {
             c.status === 'pending' &&
             (!c.expires_at || new Date(c.expires_at).getTime() > now),
         );
-        if (hasIncoming) ids.add(matchList[i].id);
+        void (hasIncoming && matchList[i]);
       });
-      setChallengedMatchIds(ids);
     } catch {
       // best-effort
     }
@@ -681,16 +623,6 @@ export function MatchesScreen() {
             </span>
           )}
         </div>
-
-        <div
-          className="w-8 h-8 rounded-full overflow-hidden border-2 flex-shrink-0"
-          style={{ borderColor: '#4EFFC4', background: '#0E0E22', boxShadow: '0 0 8px rgba(78,255,196,0.3)' }}
-        >
-          {character
-            ? <img src={characterImages[character]} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
-            : <div className="w-full h-full" style={{ background: 'rgba(78,255,196,0.2)' }} />
-          }
-        </div>
       </header>
 
       {/* Scrollable content */}
@@ -727,7 +659,6 @@ export function MatchesScreen() {
                       onProfileTap={() => { void openMatchProfile(m); }}
                       onChallengeTap={() => handleChallengeTap(m)}
                       isFirstGame={hasPlayedByMatchId[m.id] === false}
-                      hasPendingChallenge={challengedMatchIds.has(m.id)}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
                   </motion.div>
@@ -747,7 +678,6 @@ export function MatchesScreen() {
                       onProfileTap={() => { void openMatchProfile(m); }}
                       onChallengeTap={() => handleChallengeTap(m)}
                       isFirstGame={hasPlayedByMatchId[m.id] === false}
-                      hasPendingChallenge={challengedMatchIds.has(m.id)}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
                   </motion.div>
