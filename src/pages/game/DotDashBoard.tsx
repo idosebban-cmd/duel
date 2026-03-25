@@ -224,6 +224,7 @@ export function DotDashBoard() {
   const [elapsed,      setElapsed]      = useState(0);
   const [showExit,     setShowExit]     = useState(false);
   const [disconnected, setDisconnected] = useState(false);
+  const [pressedDir,   setPressedDir]   = useState<Direction | null>(null);
 
   // Touch swipe tracking
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -597,89 +598,72 @@ export function DotDashBoard() {
       </div>
 
       {/* ── Controls hint ── */}
-      <div className="w-full max-w-[456px] px-4 py-2 flex items-center justify-between"
+      <div
+        className="w-full max-w-[456px] px-4 py-3 relative flex items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
-        <p className="font-body text-xs text-white/30">
+        <p className="font-body text-xs text-white/30 absolute left-4">
           Swipe or ← ↑ → ↓ to move
         </p>
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: '56px 20px 56px',
-            gridTemplateRows: '56px 14px 56px 14px 56px',
-            alignItems: 'center',
-            justifyItems: 'center',
-          }}
-        >
-          {/* Up */}
-          <button
-            type="button"
-            aria-label="Move up"
-            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
-            style={{
-              width: 56,
-              height: 56,
-              background: 'rgba(255,255,255,0.08)',
-              border: '2px solid rgba(255,255,255,0.14)',
-            }}
-            onPointerDown={() => sendMove('up')}
-          >
-            ↑
-          </button>
+        {(() => {
+          const border = '#4EFFC4';
+          const baseBg = 'rgba(10, 16, 28, 0.55)';
+          const pressedBg = 'rgba(78, 255, 196, 0.18)';
+          const baseShadow = '0 0 14px rgba(78,255,196,0.22), 0 0 26px rgba(0,217,255,0.10)';
+          const pressedShadow = '0 0 18px rgba(78,255,196,0.42), 0 0 34px rgba(0,217,255,0.18)';
 
-          {/* Left / Right */}
-          <button
-            type="button"
-            aria-label="Move left"
-            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
-            style={{
-              width: 56,
-              height: 56,
-              background: 'rgba(255,255,255,0.08)',
-              border: '2px solid rgba(255,255,255,0.14)',
-              gridColumn: 1,
-              gridRow: 3,
-            }}
-            onPointerDown={() => sendMove('left')}
-          >
-            ←
-          </button>
-          <button
-            type="button"
-            aria-label="Move right"
-            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
-            style={{
-              width: 56,
-              height: 56,
-              background: 'rgba(255,255,255,0.08)',
-              border: '2px solid rgba(255,255,255,0.14)',
-              gridColumn: 3,
-              gridRow: 3,
-            }}
-            onPointerDown={() => sendMove('right')}
-          >
-            →
-          </button>
+          const mkBtn = (dir: Direction, arrow: string) => {
+            const isPressed = pressedDir === dir;
+            return (
+              <button
+                key={dir}
+                type="button"
+                aria-label={`Move ${dir}`}
+                className="rounded-2xl flex items-center justify-center select-none"
+                style={{
+                  width: 56,
+                  height: 56,
+                  background: isPressed ? pressedBg : baseBg,
+                  border: `2px solid ${border}`,
+                  boxShadow: isPressed ? pressedShadow : baseShadow,
+                  color: 'white',
+                  fontSize: 26,
+                  lineHeight: 1,
+                  transition: 'background 120ms ease, box-shadow 120ms ease, transform 120ms ease',
+                  transform: isPressed ? 'scale(0.98)' : 'scale(1)',
+                  touchAction: 'none',
+                }}
+                onPointerDown={() => {
+                  setPressedDir(dir);
+                  sendMove(dir);
+                }}
+                onPointerUp={() => setPressedDir(null)}
+                onPointerCancel={() => setPressedDir(null)}
+                onPointerLeave={() => setPressedDir(null)}
+              >
+                {arrow}
+              </button>
+            );
+          };
 
-          {/* Down */}
-          <button
-            type="button"
-            aria-label="Move down"
-            className="rounded-2xl font-display font-extrabold text-xl text-white/80 flex items-center justify-center"
-            style={{
-              width: 56,
-              height: 56,
-              background: 'rgba(255,255,255,0.08)',
-              border: '2px solid rgba(255,255,255,0.14)',
-              gridColumn: 2,
-              gridRow: 5,
-            }}
-            onPointerDown={() => sendMove('down')}
-          >
-            ↓
-          </button>
-        </div>
+          return (
+            <div
+              className="grid place-items-center"
+              style={{
+                gridTemplateColumns: '56px 56px 56px',
+                gridTemplateRows: '56px 56px 56px',
+                columnGap: 18,
+                rowGap: 12,
+              }}
+            >
+              <div style={{ gridColumn: 2, gridRow: 1 }}>{mkBtn('up', '↑')}</div>
+              <div style={{ gridColumn: 1, gridRow: 2 }}>{mkBtn('left', '←')}</div>
+              {/* center gap intentionally empty */}
+              <div style={{ gridColumn: 3, gridRow: 2 }}>{mkBtn('right', '→')}</div>
+              <div style={{ gridColumn: 2, gridRow: 3 }}>{mkBtn('down', '↓')}</div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Exit confirmation ── */}
