@@ -224,6 +224,7 @@ export function DotDashBoard() {
   const [elapsed,      setElapsed]      = useState(0);
   const [showExit,     setShowExit]     = useState(false);
   const [disconnected, setDisconnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const [pressedDir,   setPressedDir]   = useState<Direction | null>(null);
 
   // Touch swipe tracking
@@ -233,6 +234,7 @@ export function DotDashBoard() {
   const game  = store.gameState;
   const setIdentity = store.setIdentity;
   const readySentForGameIdRef = useRef<string | null>(null);
+  const keepaliveFailureLoggedRef = useRef(false);
 
   // Persist DotDash end state to Supabase so `games.winner` is never left NULL.
   // Without this, the partial unique index (winner IS NULL) keeps treating old
@@ -322,14 +324,31 @@ export function DotDashBoard() {
     if (!myId) return;
 
     const socket = socketRef.current;
-    socket.emit('dd_join_lobby', { gameId, userId: myId });
-
-    // If we enter /dotdash/:matchId/play directly (challenge flow),
-    // we're bypassing DotDashLobby's READY button. Auto-ready here.
-    if (readySentForGameIdRef.current !== gameId) {
+    const rejoinIfNeeded = () => {
+      // If the game is already over, we navigate away (dd_game_over) so don't spam rejoin.
+      if (store.gameOverPayload) return;
+      socket.emit('dd_join_lobby', { gameId, userId: myId });
+      // Auto-ready (idempotent) so reconnects re-attach us to the running game loop room.
       socket.emit('dd_player_ready', { gameId, userId: myId });
       readySentForGameIdRef.current = gameId;
-    }
+    };
+
+    const handleConnect = () => {
+      setReconnecting(false);
+      rejoinIfNeeded();
+    };
+
+    const handleDisconnect = () => {
+      if (store.gameOverPayload) return;
+      setReconnecting(true);
+    };
+
+    // Connect fires on initial connect and reconnect.
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+
+    // Join immediately (covers first mount before 'connect' handler fires in some timing cases).
+    rejoinIfNeeded();
 
     socket.on('dd_game_tick', ({ gameState }: { gameState: DDGameState }) => {
       store.setGameState(gameState);
@@ -337,6 +356,7 @@ export function DotDashBoard() {
 
     socket.on('dd_game_over', (payload: any) => {
       store.setGameOver(payload);
+      setReconnecting(false);
       // Fire-and-forget: if it fails we still show result screen, but the
       // unique-index cleanup relies on this write succeeding.
       void finalizeDotDashInSupabase(payload);
@@ -352,13 +372,36 @@ export function DotDashBoard() {
     });
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
       socket.off('dd_game_tick');
       socket.off('dd_game_over');
       socket.off('dd_opponent_disconnected');
       socket.off('dd_opponent_reconnected');
       socket.off('dd_error');
     };
-  }, [gameId, myId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gameId, myId, navigate, store, finalizeDotDashInSupabase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Keepalive ping (Render free tier anti-sleep) ────────────────────────────
+  useEffect(() => {
+    if (!gameId) return;
+
+    const url = 'https://duel-fast.onrender.com/health';
+    const id = window.setInterval(() => {
+      void fetch(url, { method: 'GET', cache: 'no-store' })
+        .then(() => {
+          keepaliveFailureLoggedRef.current = false;
+        })
+        .catch(() => {
+          if (!keepaliveFailureLoggedRef.current) {
+            keepaliveFailureLoggedRef.current = true;
+            console.warn('[DotDashBoard] keepalive /health failed (will retry)');
+          }
+        });
+    }, 30_000);
+
+    return () => window.clearInterval(id);
+  }, [gameId]);
 
   // ── Elapsed timer ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -547,9 +590,28 @@ export function DotDashBoard() {
           style={{ display: 'block', imageRendering: 'pixelated' }}
         />
 
+        {/* Socket reconnecting overlay */}
+        <AnimatePresence>
+          {reconnecting && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: 'rgba(18,18,42,0.82)', backdropFilter: 'blur(4px)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="text-center px-6">
+                <div className="mx-auto w-10 h-10 rounded-full border-2 border-white/10 border-t-[#FFE66D] animate-spin" />
+                <p className="font-display font-bold text-white text-lg mt-3">Reconnecting…</p>
+                <p className="font-body text-white/50 text-sm mt-1">Hang tight — resyncing the match.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Waiting for initial game state */}
         <AnimatePresence>
-          {!disconnected && !game && (
+          {!reconnecting && !disconnected && !game && (
             <motion.div
               className="absolute inset-0 flex items-center justify-center"
               style={{ background: 'rgba(18,18,42,0.85)', backdropFilter: 'blur(4px)' }}
