@@ -8,7 +8,8 @@ import { motion } from 'framer-motion';
 import { useDotDashStore } from '../../store/dotDashStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || window.location.origin;
+const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
 
 function makeUserId(name: string) {
   const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16);
