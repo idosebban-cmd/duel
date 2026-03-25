@@ -246,52 +246,47 @@ export async function recordSwipe(
   targetId: string,
   action: 'like' | 'pass',
 ): Promise<{ matched: boolean; matchId?: string }> {
-  if (action === 'pass') {
-    // Fire-and-forget for passes
-    supabase
-      .from('swipes')
-      .upsert({ from_user: userId, to_user: targetId, direction: action }, { onConflict: 'from_user,to_user' })
-      .then(() => {});
-    return { matched: false };
-  }
-
   // Bot profiles never swipe back, so simulate a 25% match rate
   const BOT_PREFIX = 'a0000000-0000-0000-0000-00000000';
   const isBot = targetId.startsWith(BOT_PREFIX);
   if (isBot) console.log('[recordSwipe] Bot detected:', targetId);
 
-  // Attempt to record the swipe (non-blocking for bots)
-  let swipeResult = false;
+  // Attempt to record the swipe (best-effort for bots; throw for real users)
+  let swipeRecorded = false;
   try {
     const { error } = await supabase
       .from('swipes')
       .upsert({ from_user: userId, to_user: targetId, direction: action }, { onConflict: 'from_user,to_user' });
     if (error) {
       console.error('[recordSwipe] Swipe record failed:', error.message);
+      if (!isBot) throw error;
     }
-    swipeResult = !error;
+    swipeRecorded = true;
   } catch (err) {
     console.error('[recordSwipe] Swipe record threw:', err);
-    swipeResult = false;
+    if (!isBot) throw err;
+    swipeRecorded = false;
+  }
+
+  if (action === 'pass') {
+    // Passes never immediately create a match — but failures should still be user-visible.
+    if (!isBot && !swipeRecorded) throw new Error('Failed to record swipe');
+    return { matched: false };
   }
 
   if (!isBot) {
     // Real user: need successful swipe record + mutual like check
-    if (!swipeResult) return { matched: false };
+    if (!swipeRecorded) throw new Error('Failed to record swipe');
 
-    try {
-      const { data: mutual } = await supabase
-        .from('swipes')
-        .select('id')
-        .eq('from_user', targetId)
-        .eq('to_user', userId)
-        .eq('direction', 'like')
-        .maybeSingle();
+    const { data: mutual } = await supabase
+      .from('swipes')
+      .select('id')
+      .eq('from_user', targetId)
+      .eq('to_user', userId)
+      .eq('direction', 'like')
+      .maybeSingle();
 
-      if (!mutual) return { matched: false };
-    } catch {
-      return { matched: false };
-    }
+    if (!mutual) return { matched: false };
   } else {
     // Bot: 25% random match chance — independent of DB success
     const roll = Math.random();
@@ -332,13 +327,14 @@ export async function recordSwipe(
       if (error) {
         console.error(`[recordSwipe] Match insert attempt ${attempt + 1} failed:`, error.message);
         if (attempt === 0) continue;
-        return { matched: false };
+        throw error;
       }
 
       return { matched: true, matchId: (match as { id: string } | null)?.id };
     }
   } catch (err) {
     console.error('[recordSwipe] Match creation threw:', err);
+    if (!isBot) throw err;
   }
 
   return { matched: false };
@@ -946,40 +942,51 @@ export async function getChallengesForMatch(matchId: string): Promise<ChallengeR
 }
 
 export async function acceptChallenge(challengeId: string): Promise<void> {
-  console.log('[acceptChallenge] Updating challenge ID:', challengeId);
   try {
-    const { data, error, status, statusText } = await supabase
+    const { data, error } = await supabase
       .from('challenges')
       .update({ status: 'accepted', resolved_at: new Date().toISOString() })
       .eq('id', challengeId)
-      .select();
-    console.log('[acceptChallenge] Supabase response — data:', data, 'error:', error, 'status:', status, statusText);
-    console.log('[acceptChallenge] Update succeeded:', !error);
+      .select('id');
+
+    if (error) throw error;
+    if (!Array.isArray(data) || data.length === 0) throw new Error('Challenge not found');
   } catch (err) {
-    console.error('[acceptChallenge] Exception thrown:', err);
+    console.error('[acceptChallenge] Failed to accept challenge:', err);
+    throw err instanceof Error ? err : new Error(String(err));
   }
 }
 
 export async function declineChallenge(challengeId: string): Promise<void> {
   try {
-    await supabase
+    const { data, error } = await supabase
       .from('challenges')
       .update({ status: 'declined', resolved_at: new Date().toISOString() })
-      .eq('id', challengeId);
+      .eq('id', challengeId)
+      .select('id');
+
+    if (error) throw error;
+    if (!Array.isArray(data) || data.length === 0) throw new Error('Challenge not found');
   } catch (err) {
-    console.error('[declineChallenge]', err);
+    console.error('[declineChallenge] Failed to decline challenge:', err);
+    throw err instanceof Error ? err : new Error(String(err));
   }
 }
 
 /** Cancel an outgoing pending challenge (maps to status='declined'). */
 export async function cancelChallenge(challengeId: string): Promise<void> {
   try {
-    await supabase
+    const { data, error } = await supabase
       .from('challenges')
       .update({ status: 'declined', resolved_at: new Date().toISOString() })
-      .eq('id', challengeId);
+      .eq('id', challengeId)
+      .select('id');
+
+    if (error) throw error;
+    if (!Array.isArray(data) || data.length === 0) throw new Error('Challenge not found');
   } catch (err) {
-    console.error('[cancelChallenge]', err);
+    console.error('[cancelChallenge] Failed to cancel outgoing challenge:', err);
+    throw err instanceof Error ? err : new Error(String(err));
   }
 }
 

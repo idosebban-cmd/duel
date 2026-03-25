@@ -514,6 +514,17 @@ export function GameBoard() {
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
             {/* Error */}
             <AnimatePresence>
+              {mp.moveError && (
+                <motion.div
+                  className="px-4 py-2 rounded-xl font-body text-sm text-white text-center"
+                  style={{ background: 'rgba(255,61,113,0.18)', border: '2px solid #FF3D71' }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {mp.moveError}
+                </motion.div>
+              )}
               {errorMsg && (
                 <motion.div
                   className="px-4 py-2 rounded-xl font-body text-sm text-white text-center"

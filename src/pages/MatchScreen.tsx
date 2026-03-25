@@ -187,6 +187,7 @@ export function MatchScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<ChallengeRow[]>([]);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [cancellingOutgoingId, setCancellingOutgoingId] = useState<string | null>(null);
@@ -229,13 +230,19 @@ export function MatchScreen() {
   // ── Load profiles + games + messages on mount ──────────────────
   useEffect(() => {
     if (!matchId || !myUserId) return;
+    setLoadError(null);
     let cancelled = false;
 
     (async () => {
       try {
         // Resolve opponent from match
         const match = await getMatchById(matchId);
-        if (cancelled || !match) { setLoading(false); return; }
+        if (cancelled) return;
+        if (!match) {
+          setLoadError('This match could not be found. It may have expired.');
+          setLoading(false);
+          return;
+        }
 
         const opponentId = match.user_a === myUserId ? match.user_b : match.user_a;
 
@@ -259,6 +266,7 @@ export function MatchScreen() {
         markMessagesRead(matchId);
       } catch (err) {
         console.error('[MatchScreen] load error:', err);
+        if (!cancelled) setLoadError('Failed to load match details. Please try again.');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -415,6 +423,7 @@ export function MatchScreen() {
       setChallenges((prev) => prev.filter((ch) => ch.id !== c.id));
     } catch (err) {
       console.error('[MatchScreen] decline challenge error:', err);
+      setChallengeError('Failed to decline challenge. Please try again.');
     }
   };
 
@@ -514,6 +523,65 @@ export function MatchScreen() {
 
   const canSend = !!input.trim() && !!matchId && !!myUserId;
   const theirName = theirProfile?.name ?? 'Match';
+
+  if (!loading && loadError) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
+        <header
+          className="flex-none px-4 pt-4 pb-3 z-10"
+          style={{
+            background: 'rgba(18,18,42,0.96)',
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <motion.button
+              onClick={() => navigate('/matches', { replace: true })}
+              className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              whileTap={{ scale: 0.88 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11 4L6 9L11 14" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </motion.button>
+            <span className="font-display font-extrabold text-sm" style={{ color: '#FFE66D' }}>
+              Match not available
+            </span>
+          </div>
+        </header>
+
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div
+            className="w-full max-w-sm rounded-2xl px-6 py-7 text-center"
+            style={{
+              background: 'rgba(14,22,48,0.9)',
+              border: '1.5px solid rgba(255,107,168,0.35)',
+              boxShadow: '0 12px 48px rgba(0,0,0,0.45)',
+            }}
+          >
+            <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              {loadError}
+            </p>
+            <motion.button
+              onClick={() => navigate('/matches', { replace: true })}
+              className="mt-5 w-full py-3 rounded-xl font-display font-bold text-sm"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,61,113,0.95), rgba(181,101,255,0.95))',
+                color: '#12122A',
+                boxShadow: '0 0 18px rgba(255,107,168,0.25)',
+                border: '2px solid rgba(0,0,0,0.35)',
+              }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Back to Matches
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ═══════════════════════════════════════════════════════════════
   // RENDER

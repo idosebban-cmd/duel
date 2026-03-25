@@ -726,6 +726,26 @@ export function WordBlitz() {
           <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
           <ReconnectOverlay visible={graceActive} opponentName="opponent" />
           <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <AnimatePresence>
+            {mp.moveError && (
+              <motion.div
+                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-xs font-bold text-white text-center"
+                style={{
+                  background: 'rgba(255,61,113,0.18)',
+                  border: '1.5px solid rgba(255,61,113,0.55)',
+                  backdropFilter: 'blur(10px)',
+                }}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                role="status"
+                aria-live="polite"
+              >
+                {mp.moveError}
+              </motion.div>
+            )}
+          </AnimatePresence>
           <LeaveGameDialog visible={showLeaveDialog} opponentName="opponent" onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
         </>
       )}
