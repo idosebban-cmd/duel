@@ -450,8 +450,10 @@ export async function markMessagesRead(matchId: string): Promise<void> {
       p_room_id: matchId,
     });
     if (error) throw error;
-  } catch {
-    // Non-critical — delivery status can be stale
+  } catch (err) {
+    // Non-critical — delivery status can be stale.
+    // Still log so production 404s/misnamed RPCs are observable.
+    console.warn('[markMessagesRead] rpc failed:', err);
   }
 }
 
@@ -578,29 +580,36 @@ export async function createOrJoinGame(
 
   // 2. No existing game — INSERT with owner column
   try {
-    const { data: inserted, error } = await supabase
+    const { data: upserted, error } = await supabase
       .from('games')
-      .insert({
-        match_id: matchId,
-        game_type: gameType,
-        player1_id: p1,
-        player2_id: p2,
-        owner: p1,
-        state: { ready: {} },
-        current_turn: null,
-        status: 'pending',
-      })
+      .upsert(
+        {
+          match_id: matchId,
+          game_type: gameType,
+          player1_id: p1,
+          player2_id: p2,
+          owner: p1,
+          state: { ready: {} },
+          current_turn: null,
+          status: 'pending',
+        },
+        // uq_games_match_type_active: (match_id, game_type) WHERE winner IS NULL
+        // By upserting with ignoreDuplicates, we avoid REST 409 errors when both
+        // players race to create the same active game.
+        { onConflict: 'match_id,game_type', ignoreDuplicates: true },
+      )
       .select()
       .maybeSingle();
-    if (!error && inserted) return inserted as GameRow;
-    if (error?.code && (error.code === '23505' || error.code === '409')) {
-      // Unique-index race: other player inserted first.
-      // Treat this as success path and resolve via fallback SELECT below.
-    } else if (error) {
-      console.error('[createOrJoinGame] insert failed:', error.message);
+
+    if (!error && upserted) return upserted as GameRow;
+
+    // If a race still occurs, fall through to the fallback SELECT below.
+    if (error?.message) {
+      console.error('[createOrJoinGame] upsert failed:', error.message);
     }
-  } catch {
-    // 409 conflict — other player inserted first
+  } catch (err) {
+    // Network/RLS errors — fall through to fallback SELECT below.
+    console.error('[createOrJoinGame] upsert threw:', err);
   }
 
   // 3. Fallback SELECT with short retries for commit visibility
