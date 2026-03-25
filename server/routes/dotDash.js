@@ -26,10 +26,16 @@ router.post('/create', (req, res) => {
   if (requestedGameId) {
     const existing = dotDash.getGame(requestedGameId);
     if (existing) {
-      return res.json({
-        gameId: existing.gameId,
-        message: 'Dot Dash lobby already exists',
-      });
+      // If the previous game is finished, treat it as stale and recreate
+      // a fresh lobby for rematches. Otherwise, return the existing lobby.
+      if (existing.phase === 'finished') {
+        dotDash.deleteGame(requestedGameId);
+      } else {
+        return res.json({
+          gameId: existing.gameId,
+          message: 'Dot Dash lobby already exists',
+        });
+      }
     }
   }
 
