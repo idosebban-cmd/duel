@@ -176,12 +176,13 @@ export function MatchScreen() {
   // ── Flash message from navigation state ────────────────────────
   const flash = (location.state as { flash?: string } | null)?.flash ?? null;
   const [showFlash, setShowFlash] = useState(!!flash);
+  const [flashDismissed, setFlashDismissed] = useState(false);
   useEffect(() => {
-    if (!flash) return;
+    if (!flash || flashDismissed) return;
     setShowFlash(true);
     const t = setTimeout(() => setShowFlash(false), 3000);
     return () => clearTimeout(t);
-  }, [flash]);
+  }, [flash, flashDismissed]);
 
   // ── State ──────────────────────────────────────────────────────
   const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
@@ -196,6 +197,7 @@ export function MatchScreen() {
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [cancellingOutgoingId, setCancellingOutgoingId] = useState<string | null>(null);
   const [challengeError, setChallengeError] = useState<string | null>(null);
+  const [isGameHistoryExpanded, setIsGameHistoryExpanded] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -439,6 +441,22 @@ export function MatchScreen() {
   );
   const outgoingChallenges = challenges.filter(
     (c) => c.from_user === myUserId && isPendingAndValid(c),
+  );
+
+  const finishedGames = games.filter((g) => g.winner !== null);
+  const gameRecord = finishedGames.reduce(
+    (acc, g) => {
+      if (g.winner === 'draw') {
+        acc.draws += 1;
+        return acc;
+      }
+      const isP1 = g.player1_id === myUserId;
+      const iWon = (g.winner === 'player1' && isP1) || (g.winner === 'player2' && !isP1);
+      if (iWon) acc.wins += 1;
+      else acc.losses += 1;
+      return acc;
+    },
+    { wins: 0, losses: 0, draws: 0 },
   );
 
   // ── Accept / decline handlers ──────────────────────────────────
@@ -693,7 +711,7 @@ export function MatchScreen() {
       <AnimatePresence>
         {showFlash && flash && (
           <motion.div
-            className="absolute top-20 left-1/2 z-50 px-5 py-2.5 rounded-2xl font-display font-bold text-sm pointer-events-none"
+            className="absolute top-20 left-1/2 z-50 px-4 py-2.5 rounded-2xl flex items-center gap-3"
             style={{
               background: 'linear-gradient(135deg, rgba(78,255,196,0.25), rgba(0,217,255,0.25))',
               border: '1.5px solid rgba(78,255,196,0.5)',
@@ -705,7 +723,23 @@ export function MatchScreen() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
-            {flash}
+            <span className="font-display font-bold text-sm whitespace-nowrap">{flash}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setFlashDismissed(true);
+                setShowFlash(false);
+              }}
+              className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{
+                border: '1px solid rgba(78,255,196,0.55)',
+                background: 'rgba(10,22,40,0.35)',
+                color: '#4EFFC4',
+              }}
+              aria-label="Dismiss challenge toast"
+            >
+              <span className="font-body text-xs leading-none">x</span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -854,39 +888,62 @@ export function MatchScreen() {
         {games.length > 0 && (
           <div className="px-4 pt-3 pb-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                Game History
-              </span>
+              <button
+                type="button"
+                onClick={() => setIsGameHistoryExpanded((prev) => !prev)}
+                className="flex items-center gap-2 min-w-0"
+                aria-label={isGameHistoryExpanded ? 'Collapse game history' : 'Expand game history'}
+              >
+                <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                  Game History
+                </span>
+                <span className="font-body text-[11px] font-bold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                  {`${gameRecord.wins}W · ${gameRecord.losses}L · ${gameRecord.draws}D`}
+                </span>
+                <span className="font-body text-[11px] font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  {isGameHistoryExpanded ? '▲' : '▼'}
+                </span>
+              </button>
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
             </div>
-            <div className="flex flex-col gap-2">
-              {games.map((g) => (
-                <div
-                  key={g.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            <AnimatePresence initial={false}>
+              {isGameHistoryExpanded && (
+                <motion.div
+                  className="flex flex-col gap-2"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                      {GAME_LABELS[g.game_type] ?? g.game_type}
-                    </p>
-                    <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                      {formatDate(g.created_at)}
-                    </p>
-                  </div>
-                  <span
-                    className="font-display font-bold text-xs px-2 py-0.5 rounded-full"
-                    style={{
-                      color: winnerColor(g, myUserId),
-                      background: `${winnerColor(g, myUserId)}18`,
-                      border: `1px solid ${winnerColor(g, myUserId)}44`,
-                    }}
-                  >
-                    {winnerLabel(g, myUserId)}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  {games.map((g) => (
+                    <div
+                      key={g.id}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          {GAME_LABELS[g.game_type] ?? g.game_type}
+                        </p>
+                        <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                          {formatDate(g.created_at)}
+                        </p>
+                      </div>
+                      <span
+                        className="font-display font-bold text-xs px-2 py-0.5 rounded-full"
+                        style={{
+                          color: winnerColor(g, myUserId),
+                          background: `${winnerColor(g, myUserId)}18`,
+                          border: `1px solid ${winnerColor(g, myUserId)}44`,
+                        }}
+                      >
+                        {winnerLabel(g, myUserId)}
+                      </span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
