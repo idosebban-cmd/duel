@@ -287,6 +287,28 @@ export function useMultiplayerGame<S>({
     && !!gameRow.winner
     && gameRow.winner !== myRole;
 
+  // ── Temporary debug logging: identity + role snapshot ────────────────────
+  const debugLoggedGameIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!gameRow?.id) return;
+    if (debugLoggedGameIdRef.current === gameRow.id) return;
+    debugLoggedGameIdRef.current = gameRow.id;
+    console.log(
+      '[useMultiplayerGame] myUserId:',
+      myUserId,
+      'player1_id:',
+      gameRow.player1_id,
+      'player2_id:',
+      gameRow.player2_id,
+      'myRole:',
+      myRole,
+      'isMyTurn:',
+      isMyTurn,
+      'bothPresent:',
+      bothPresent,
+    );
+  }, [gameRow?.id, myUserId, myRole, isMyTurn, bothPresent, gameRow?.player1_id, gameRow?.player2_id]);
+
   // ── submitMove ──────────────────────────────────────────────────────────
   const submitMove = useCallback(
     async (moveData: object, newState: S, winner?: string | null) => {
