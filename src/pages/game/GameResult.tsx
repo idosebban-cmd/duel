@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { useGameStore } from '../../store/gameStore';
-import { getGameByMatchId, revealSecrets } from '../../lib/database';
+import { createChallenge, getGame, getGameByMatchId, revealSecrets } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import type { Character } from '../../types/game';
@@ -54,6 +54,23 @@ export function GameResult() {
   const [p1SecretId, setP1SecretId] = useState<string | null>(null);
   const [p2SecretId, setP2SecretId] = useState<string | null>(null);
   const [secretsError, setSecretsError] = useState(false);
+  const [rematchBusy, setRematchBusy] = useState(false);
+  const [rematchError, setRematchError] = useState<string | null>(null);
+  const [gameType, setGameType] = useState<string | null>(null);
+
+  const firstGameUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstGameRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearFirstGameTimers = () => {
+    if (firstGameUnlockTimerRef.current) {
+      clearTimeout(firstGameUnlockTimerRef.current);
+      firstGameUnlockTimerRef.current = null;
+    }
+    if (firstGameRedirectTimerRef.current) {
+      clearTimeout(firstGameRedirectTimerRef.current);
+      firstGameRedirectTimerRef.current = null;
+    }
+  };
 
   // ── All useEffect hooks (before any early returns) ───────────────
 
@@ -99,6 +116,22 @@ export function GameResult() {
 
   const result = s ?? dbResult;
 
+  // Load gameType from DB so Rematch works on refresh (and stays correct for non-GuessWho games).
+  useEffect(() => {
+    const gId = result?.gameId;
+    if (!gId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const g = await getGame(gId);
+        if (!cancelled) setGameType(g?.game_type ?? null);
+      } catch {
+        if (!cancelled) setGameType(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [result?.gameId]);
+
   // Reveal secrets via RPC (with retry)
   useEffect(() => {
     const gId = result?.gameId;
@@ -138,16 +171,16 @@ export function GameResult() {
   useEffect(() => {
     if (!isFirstGame || !matchId || !p1SecretId || !p2SecretId) return;
 
-    const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
-    const redirectTimer = setTimeout(() => {
+    clearFirstGameTimers();
+    firstGameUnlockTimerRef.current = setTimeout(() => setShowChatUnlock(true), 2000);
+    firstGameRedirectTimerRef.current = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
       store.reset();
       navigate(`/match/${matchId}`);
     }, 3000);
 
     return () => {
-      clearTimeout(unlockTimer);
-      clearTimeout(redirectTimer);
+      clearFirstGameTimers();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFirstGame, matchId, p1SecretId, p2SecretId]);
@@ -368,6 +401,7 @@ export function GameResult() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
+                clearFirstGameTimers();
                 store.reset();
                 navigate(matchId ? `/match/${matchId}` : '/matches');
               }}
@@ -381,17 +415,57 @@ export function GameResult() {
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: '3px solid rgba(255,255,255,0.15)',
+              color: 'rgba(255,255,255,0.85)',
+            }}
+            whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.1)' }}
+            whileTap={{ scale: 0.97 }}
+            disabled={rematchBusy || !matchId || !result?.myUserId || !result?.opponentId || !gameType}
+            onClick={() => {
+              if (!matchId || !result?.myUserId || !result?.opponentId || !gameType) return;
+              clearFirstGameTimers();
+              setRematchError(null);
+              setRematchBusy(true);
+              void (async () => {
+                try {
+                  store.reset();
+                  await createChallenge(matchId, result.myUserId, result.opponentId, gameType);
+                  navigate(`/match/${matchId}`);
+                } catch {
+                  setRematchError('Failed to start rematch');
+                } finally {
+                  setRematchBusy(false);
+                }
+              })();
+            }}
+          >
+            {rematchBusy ? 'Starting rematch…' : 'Rematch'}
+          </motion.button>
+
+          <motion.button
+            className="w-full py-3 rounded-2xl font-display font-bold text-base"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '3px solid rgba(255,255,255,0.15)',
               color: 'rgba(255,255,255,0.6)',
             }}
             whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.1)' }}
             whileTap={{ scale: 0.97 }}
+            disabled={!matchId}
             onClick={() => {
+              if (!matchId) return;
+              clearFirstGameTimers();
               store.reset();
-              navigate(matchId ? `/match/${matchId}` : '/matches');
+              navigate(`/match/${matchId}`, { state: { openGamePicker: true } });
             }}
           >
-            Play Again
+            Play another game
           </motion.button>
+
+          {rematchError && (
+            <p className="font-body text-xs text-center" style={{ color: 'rgba(255,107,168,0.9)' }}>
+              {rematchError}
+            </p>
+          )}
         </motion.div>
       </div>
     </div>

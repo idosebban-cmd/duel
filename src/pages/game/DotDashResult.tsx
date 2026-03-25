@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDotDashStore } from '../../store/dotDashStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { createChallenge } from '../../lib/database';
 
 function ConfettiPiece({ color, delay }: { color: string; delay: number }) {
   const x   = Math.random() * 100;
@@ -38,20 +39,36 @@ export function DotDashResult() {
 
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const [showChatUnlock, setShowChatUnlock] = useState(false);
+  const [rematchBusy, setRematchBusy] = useState(false);
+  const [rematchError, setRematchError] = useState<string | null>(null);
+
+  const firstGameUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstGameRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearFirstGameTimers = () => {
+    if (firstGameUnlockTimerRef.current) {
+      clearTimeout(firstGameUnlockTimerRef.current);
+      firstGameUnlockTimerRef.current = null;
+    }
+    if (firstGameRedirectTimerRef.current) {
+      clearTimeout(firstGameRedirectTimerRef.current);
+      firstGameRedirectTimerRef.current = null;
+    }
+  };
 
   // Auto-redirect to match screen after 3s for first game with this match
   useEffect(() => {
     if (!payload || !isFirstGame || !matchId) return;
 
-    const unlockTimer = setTimeout(() => setShowChatUnlock(true), 2000);
-    const redirectTimer = setTimeout(() => {
+    clearFirstGameTimers();
+    firstGameUnlockTimerRef.current = setTimeout(() => setShowChatUnlock(true), 2000);
+    firstGameRedirectTimerRef.current = setTimeout(() => {
       localStorage.setItem(`first_game_played_${matchId}`, 'true');
       navigate(`/match/${matchId}`);
     }, 3000);
 
     return () => {
-      clearTimeout(unlockTimer);
-      clearTimeout(redirectTimer);
+      clearFirstGameTimers();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payload, isFirstGame, matchId]);
@@ -248,6 +265,7 @@ export function DotDashResult() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
+                clearFirstGameTimers();
                 if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
               }}
             >
@@ -257,19 +275,50 @@ export function DotDashResult() {
 
           <motion.button
             className="w-full py-3 rounded-2xl font-display font-bold text-base"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '3px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)' }}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '3px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.85)' }}
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            onClick={() => { store.reset(); navigate('/dotdash'); }}
+            disabled={rematchBusy || !matchId || !myId || !opp?.userId}
+            onClick={() => {
+              if (!matchId || !myId || !opp?.userId) return;
+              clearFirstGameTimers();
+              setRematchError(null);
+              setRematchBusy(true);
+              void (async () => {
+                try {
+                  store.reset();
+                  await createChallenge(matchId, myId, opp.userId, 'dot_dash');
+                  navigate(`/match/${matchId}`);
+                } catch {
+                  setRematchError('Failed to start rematch');
+                } finally {
+                  setRematchBusy(false);
+                }
+              })();
+            }}
           >
-            🔄 Play Again
+            {rematchBusy ? 'Starting rematch…' : 'Rematch'}
           </motion.button>
 
           <motion.button
-            className="font-body text-sm text-white/30 text-center hover:text-white/60 transition-colors"
-            onClick={() => { store.reset(); navigate('/'); }}
+            className="w-full py-3 rounded-2xl font-display font-bold text-base"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '3px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)' }}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            disabled={!matchId}
+            onClick={() => {
+              if (!matchId) return;
+              clearFirstGameTimers();
+              store.reset();
+              navigate(`/match/${matchId}`, { state: { openGamePicker: true } });
+            }}
           >
-            Back to home
+            Play another game
           </motion.button>
+
+          {rematchError && (
+            <p className="font-body text-sm text-white/40 text-center">
+              {rematchError}
+            </p>
+          )}
         </motion.div>
       </div>
 
