@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useDotDashStore } from '../../store/dotDashStore';
 import type { DDGameState, DDPlayer, DDGhost, Direction } from '../../types/dotDash';
 import { getProfile } from '../../lib/database';
+import { supabase } from '../../lib/supabase';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -232,6 +233,58 @@ export function DotDashBoard() {
   const setIdentity = store.setIdentity;
   const readySentForGameIdRef = useRef<string | null>(null);
 
+  // Persist DotDash end state to Supabase so `games.winner` is never left NULL.
+  // Without this, the partial unique index (winner IS NULL) keeps treating old
+  // abandoned games as "active", causing duplicate lobby/409 issues.
+  const finalizeDotDashInSupabase = useCallback(async (payload: any) => {
+    if (!supabase) return;
+    if (!gameId) return;
+
+    const winnerUserId: string | undefined = payload?.winner;
+    if (!winnerUserId) return;
+
+    const status = payload?.forfeit ? 'abandoned' : 'finished';
+
+    try {
+      // Active DotDash game row is keyed by (match_id, game_type) with winner IS NULL.
+      const { data: gameRow, error } = await supabase
+        .from('games')
+        .select('id, player1_id, player2_id')
+        .eq('match_id', gameId)
+        .eq('game_type', 'dot_dash')
+        .is('winner', null)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[DotDashBoard] failed to load active games row:', error.message);
+        return;
+      }
+      if (!gameRow) return; // Already finalized or game row not present.
+
+      const winnerRole =
+        gameRow.player1_id === winnerUserId
+          ? 'player1'
+          : gameRow.player2_id === winnerUserId
+            ? 'player2'
+            : null;
+
+      const { error: updateError } = await supabase
+        .from('games')
+        .update({
+          winner: winnerRole ?? winnerUserId, // fallback to non-null to unblock unique index
+          status,
+          current_turn: null,
+        })
+        .eq('id', gameRow.id);
+
+      if (updateError) {
+        console.error('[DotDashBoard] failed to update games row:', updateError.message);
+      }
+    } catch (err) {
+      console.error('[DotDashBoard] finalizeDotDashInSupabase threw:', err);
+    }
+  }, [gameId]);
+
   // Sync stateRef on every render (avoids stale closure in rAF loop)
   stateRef.current = store.gameState;
 
@@ -283,6 +336,9 @@ export function DotDashBoard() {
 
     socket.on('dd_game_over', (payload: any) => {
       store.setGameOver(payload);
+      // Fire-and-forget: if it fails we still show result screen, but the
+      // unique-index cleanup relies on this write succeeding.
+      void finalizeDotDashInSupabase(payload);
       navigate(`/dotdash/${gameId}/result`);
     });
 

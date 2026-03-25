@@ -554,10 +554,10 @@ export async function createOrJoinGame(
   myUserId: string,
   opponentId: string,
 ): Promise<GameRow | null> {
-  const [p1, p2] = myUserId < opponentId
-    ? [myUserId, opponentId]
-    : [opponentId, myUserId];
+  const [p1, p2] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
 
+  // SELECT for an existing ACTIVE game:
+  // match_id + game_type + winner IS NULL + status NOT IN ('abandoned', 'finished')
   const selectExistingActiveGame = async (): Promise<GameRow | null> => {
     const { data } = await supabase
       .from('games')
@@ -565,63 +565,55 @@ export async function createOrJoinGame(
       .eq('match_id', matchId)
       .eq('game_type', gameType)
       .is('winner', null)
-      .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
+      .neq('status', 'abandoned')
+      .neq('status', 'finished')
       .maybeSingle();
     return (data as GameRow) ?? null;
   };
 
-  // 1. Check if a game already exists for this match+type
-  try {
-    const existing = await selectExistingActiveGame();
-    if (existing) return existing;
-  } catch {
-    // Fall through to INSERT
-  }
-
-  // 2. No existing game — INSERT with owner column
-  try {
-    const { data: upserted, error } = await supabase
+  // Final SELECT after a uniqueness race:
+  // return whatever row exists for winner IS NULL (no status filter),
+  // because the DB conflict predicate is winner IS NULL.
+  const selectWinnerNullGame = async (): Promise<GameRow | null> => {
+    const { data } = await supabase
       .from('games')
-      .upsert(
-        {
-          match_id: matchId,
-          game_type: gameType,
-          player1_id: p1,
-          player2_id: p2,
-          owner: p1,
-          state: { ready: {} },
-          current_turn: null,
-          status: 'pending',
-        },
-        // uq_games_match_type_active: (match_id, game_type) WHERE winner IS NULL
-        // By upserting with ignoreDuplicates, we avoid REST 409 errors when both
-        // players race to create the same active game.
-        { onConflict: 'uq_games_match_type_active', ignoreDuplicates: true },
-      )
-      .select()
+      .select('*')
+      .eq('match_id', matchId)
+      .eq('game_type', gameType)
+      .is('winner', null)
       .maybeSingle();
+    return (data as GameRow) ?? null;
+  };
 
-    if (!error && upserted) return upserted as GameRow;
+  // 1) If found, return it
+  const existing = await selectExistingActiveGame();
+  if (existing) return existing;
 
-    // If a race still occurs, fall through to the fallback SELECT below.
-    if (error?.message) {
-      console.error('[createOrJoinGame] upsert failed:', error.message);
-    }
-  } catch (err) {
-    // Network/RLS errors — fall through to fallback SELECT below.
-    console.error('[createOrJoinGame] upsert threw:', err);
+  // 2) If not found, INSERT new game row
+  const { data: inserted, error } = await supabase
+    .from('games')
+    .insert({
+      match_id: matchId,
+      game_type: gameType,
+      player1_id: p1,
+      player2_id: p2,
+      owner: p1,
+      state: { ready: {} },
+      current_turn: null,
+      status: 'pending',
+    })
+    .select()
+    .maybeSingle();
+
+  if (!error && inserted) return inserted as GameRow;
+
+  // 3) If INSERT fails with Postgres unique violation 23505 (race),
+  // do a final SELECT and return whatever is already there.
+  if (error?.code === '23505') {
+    return await selectWinnerNullGame();
   }
 
-  // 3. Fallback SELECT with short retries for commit visibility
-  for (let attempt = 0; attempt < 4; attempt++) {
-    try {
-      const existing = await selectExistingActiveGame();
-      if (existing) return existing;
-    } catch {
-      // keep retrying
-    }
-    await new Promise((resolve) => setTimeout(resolve, 150));
-  }
+  if (error) console.error('[createOrJoinGame] insert failed:', error.message);
   return null;
 }
 
