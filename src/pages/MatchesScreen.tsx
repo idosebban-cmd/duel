@@ -69,11 +69,24 @@ function timeAgo(dateStr: string): string {
   return `${days} days ago`;
 }
 
-/** Green if active within 5m, dim 5–30m, no dot after 30m or if unknown. */
+/** Only trust a real ISO string from profiles.last_seen — never infer from message time. */
+function opponentLastSeenFromProfile(
+  lastSeen: string | null | undefined,
+): string | null {
+  if (lastSeen == null || typeof lastSeen !== 'string') return null;
+  const s = lastSeen.trim();
+  if (!s) return null;
+  const t = Date.parse(s);
+  if (Number.isNaN(t)) return null;
+  return s;
+}
+
+/** Green if active within 5m, dim 5–30m, no dot after 30m or if unknown / invalid. */
 function presenceTier(lastSeenIso: string | null | undefined): 'green' | 'dim' | 'none' {
-  if (!lastSeenIso) return 'none';
-  const age = Date.now() - new Date(lastSeenIso).getTime();
-  if (age < 0) return 'none';
+  const iso = opponentLastSeenFromProfile(lastSeenIso);
+  if (!iso) return 'none';
+  const age = Date.now() - new Date(iso).getTime();
+  if (age < 0 || Number.isNaN(age)) return 'none';
   const five = 5 * 60_000;
   const thirty = 30 * 60_000;
   if (age <= five) return 'green';
@@ -103,7 +116,7 @@ function rowFromMatch(m: MatchWithProfile): Match {
     exercise:    m.partner.exercise    ?? 'Not set',
     matchedAt:   m.matchedAt,
     intent:      (m.partner.intent as 'romance' | 'play' | 'both') ?? undefined,
-    opponentLastSeen: m.partner.last_seen ?? null,
+    opponentLastSeen: opponentLastSeenFromProfile(m.partner.last_seen),
   };
 }
 

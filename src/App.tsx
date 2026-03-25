@@ -304,11 +304,11 @@ function GlobalChallengeListener() {
 
   return (
     <div
-      className="fixed top-4 left-1/2 z-[100] -translate-x-1/2 px-4"
+      className="fixed top-4 left-1/2 z-[300] -translate-x-1/2 px-4 pointer-events-auto"
       style={{ width: 'min(92vw, 460px)' }}
     >
       <div
-        className="rounded-2xl px-4 py-3 flex items-center gap-3"
+        className="rounded-2xl px-3 py-3 flex items-center gap-2"
         style={{
           background: toast.kind === 'success'
             ? 'linear-gradient(135deg, rgba(78,255,196,0.2), rgba(0,217,255,0.2))'
@@ -319,28 +319,13 @@ function GlobalChallengeListener() {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <div className="flex-1 min-w-0 font-body text-sm text-white/90">
+        <div className="flex-1 min-w-0 font-body text-sm text-white/90 pr-1">
           {toast.message}
         </div>
-          <button
-            onClick={() => setToast(null)}
-            aria-label="Dismiss challenge toast"
-            className="w-7 h-7 rounded-lg flex items-center justify-center font-display font-bold text-xs"
-            style={{
-              background: toast.kind === 'success'
-                ? 'rgba(78,255,196,0.12)'
-                : 'rgba(255,61,113,0.12)',
-              color: toast.kind === 'success' ? '#4EFFC4' : '#FF3D71',
-              border: toast.kind === 'success'
-                ? '1px solid rgba(78,255,196,0.45)'
-                : '1px solid rgba(255,61,113,0.45)',
-            }}
-          >
-            X
-          </button>
         <button
+          type="button"
           onClick={toast.onAction}
-          className="px-3 py-1.5 rounded-lg font-display font-bold text-xs"
+          className="shrink-0 px-3 py-2 rounded-lg font-display font-bold text-xs touch-manipulation"
           style={{
             background: toast.kind === 'success'
               ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)'
@@ -349,6 +334,23 @@ function GlobalChallengeListener() {
           }}
         >
           {toast.actionLabel}
+        </button>
+        <button
+          type="button"
+          onClick={() => setToast(null)}
+          aria-label="Dismiss challenge toast"
+          className="shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl flex items-center justify-center font-display font-bold text-lg leading-none touch-manipulation"
+          style={{
+            background: toast.kind === 'success'
+              ? 'rgba(78,255,196,0.12)'
+              : 'rgba(255,61,113,0.12)',
+            color: toast.kind === 'success' ? '#4EFFC4' : '#FF3D71',
+            border: toast.kind === 'success'
+              ? '1px solid rgba(78,255,196,0.45)'
+              : '1px solid rgba(255,61,113,0.45)',
+          }}
+        >
+          X
         </button>
       </div>
     </div>
