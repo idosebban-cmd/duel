@@ -618,6 +618,8 @@ export function Draughts() {
     setPieces(local);
     setMoves(mp.gameState.moveCount);
     setTurn(mp.isMyTurn ? 'player' : 'bot');
+    // Multiplayer has no setup countdown overlay, so enter interactive play immediately.
+    setPhase('playing');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mp.loading]);
 
