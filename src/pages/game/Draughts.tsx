@@ -929,13 +929,12 @@ export function Draughts() {
         {titleCardComplete && noShow.waitingLineVisible && !noShow.promptVisible && phase === 'playing' && (
           <motion.div
             key="no-show-line-draughts"
-            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4 pointer-events-none"
-            style={{ width: 'min(92vw, 420px)' }}
+            className="fixed inset-x-0 bottom-4 z-[55] flex justify-center px-4 pointer-events-none"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <p className="text-center font-body text-sm text-white/45">
+            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-sm text-white/45">
               Waiting for {opponentName ?? 'Opponent'}...
             </p>
           </motion.div>
@@ -945,24 +944,23 @@ export function Draughts() {
         {titleCardComplete && noShow.promptVisible && phase === 'playing' && (
           <motion.div
             key="no-show-prompt-draughts"
-            className="fixed bottom-4 left-1/2 z-[55] -translate-x-1/2 px-4"
-            style={{ width: 'min(92vw, 420px)' }}
+            className="fixed inset-x-0 bottom-4 z-[55] flex justify-center px-4 pointer-events-none"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
             <div
-              className="rounded-2xl px-4 py-3"
+              className="w-full max-w-[min(92vw,420px)] min-w-0 pointer-events-auto rounded-2xl px-4 py-3 box-border"
               style={{
                 background: 'rgba(15,23,42,0.95)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <p className="font-body text-sm text-center text-white/75 mb-3">
+              <p className="font-body text-sm text-center text-white/75 mb-3 break-words">
                 {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
               </p>
-              <div className="flex gap-2 justify-center">
+              <div className="flex flex-wrap gap-2 justify-center">
                 <button
                   type="button"
                   onClick={() => void noShow.cancelWaiting()}
