@@ -25,7 +25,7 @@ import {
 const GRID_SIZE    = 9;          // 9×9 grid
 const CELL_PX      = 40;         // px per cell (my grid)
 const OPP_CELL_PX  = 36;         // px per cell (opponent grid – slightly smaller)
-const GAME_SECONDS = 180;        // 3 minutes
+const GAME_SECONDS = 120;        // 2 minutes
 
 // Letter pool: 21 letters with Scrabble-like distribution
 const LETTER_POOL = [
