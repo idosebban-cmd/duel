@@ -122,6 +122,11 @@ function lettersToGridLettersOnly(letters: (string | null)[][] | undefined | nul
   return base.map((row, r) => row.map((cell, c) => (cell ? { letterId: `opp-${r}-${c}`, letter: cell } : null)));
 }
 
+function lettersToGridWithPrefix(prefix: string, letters: (string | null)[][] | undefined | null): GridCell[][] {
+  const base = letters ?? emptyLetterMatrix();
+  return base.map((row, r) => row.map((cell, c) => (cell ? { letterId: `${prefix}-${r}-${c}`, letter: cell } : null)));
+}
+
 /** Extract all horizontal runs of 2+ placed letters */
 function getHorizontalRuns(grid: GridCell[][]): { word: string; row: number; col: number; len: number }[] {
   const runs: { word: string; row: number; col: number; len: number }[] = [];
@@ -699,6 +704,56 @@ export function WordBlitz() {
     startTimer();
   }, [isMultiplayer, phase, mp.bothPresent, startTimer]);
 
+  // ── Multiplayer: hydrate local state from DB + enter play (mirrors Draughts) ──
+  useEffect(() => {
+    if (!isMultiplayer || mp.loading || !mp.gameState) return;
+    const gs = mp.gameState as GWState;
+
+    const mySlice = gs[mp.myRole];
+    if (mySlice?.grid) {
+      setGrid(lettersToGridWithPrefix('me', mySlice.grid));
+      setMyScore(typeof mySlice.score === 'number' ? mySlice.score : 0);
+    }
+
+    const oppRole = mp.myRole === 'player1' ? 'player2' : 'player1';
+    const oppSlice = gs[oppRole];
+    if (oppSlice?.grid) {
+      oppSliceRef.current = oppSlice;
+      setOppScore(typeof oppSlice.score === 'number' ? oppSlice.score : 0);
+      setOppGrid(lettersToGridLettersOnly(oppSlice.grid));
+    }
+
+    setPhase('playing');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mp.loading]);
+
+  // ── Multiplayer: ensure state.present exists + persist my presence ─────────
+  useEffect(() => {
+    if (!isMultiplayer || mp.loading || !mp.gameRow?.id || !mp.gameState || !myUserId) return;
+    const gs = mp.gameState as GWState;
+    const present = (gs.present ?? {}) as Record<string, boolean>;
+    if (present[myUserId]) return;
+
+    (async () => {
+      try {
+        if (!supabase) return;
+        const merged: GWState = {
+          ...gs,
+          present: { ...present, [myUserId]: true },
+        };
+        const { error } = await supabase
+          .from('games')
+          .update({ state: merged as unknown as Record<string, unknown> })
+          .eq('id', mp.gameRow!.id);
+        if (error) {
+          console.error('[WordBlitz] ensure present failed:', error.message);
+        }
+      } catch (err) {
+        console.error('[WordBlitz] ensure present threw:', err);
+      }
+    })();
+  }, [isMultiplayer, mp.loading, mp.gameRow?.id, mp.gameState, myUserId]);
+
   // Cleanup timer
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
@@ -780,7 +835,19 @@ export function WordBlitz() {
         console.error('[WordBlitz] updateWordBlitzPlayerSlice failed:', err);
         try {
           if (!supabase) return;
-          const baseState = (mp.gameState ?? { ready: {}, present: {} }) as GWState;
+          let baseState = mp.gameState as GWState | null;
+          if (!baseState) {
+            const { data, error } = await supabase
+              .from('games')
+              .select('state')
+              .eq('id', gameId)
+              .single();
+            if (error) {
+              console.error('[WordBlitz] fallback games.select(state) failed:', error.message);
+              return;
+            }
+            baseState = (data?.state ?? { ready: {}, present: {} }) as GWState;
+          }
           const merged: GWState = {
             ...baseState,
             [mp.myRole]: { grid: latest.letters, score: latest.score },
