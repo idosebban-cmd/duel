@@ -11,6 +11,7 @@ import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, isWordListLoaded, preloadWordList, scoreWord } from '../../utils/wordList';
 import { abandonGame, getProfile, updateWordBlitzPlayerSlice, finishWordBlitzGame } from '../../lib/database';
+import { supabase } from '../../lib/supabase';
 import {
   WaitingForOpponentOverlay,
   LeaveGameDialog,
@@ -777,6 +778,23 @@ export function WordBlitz() {
         await updateWordBlitzPlayerSlice(gameId, latest.letters, latest.score);
       } catch (err) {
         console.error('[WordBlitz] updateWordBlitzPlayerSlice failed:', err);
+        try {
+          if (!supabase) return;
+          const baseState = (mp.gameState ?? { ready: {}, present: {} }) as GWState;
+          const merged: GWState = {
+            ...baseState,
+            [mp.myRole]: { grid: latest.letters, score: latest.score },
+          };
+          const { error } = await supabase
+            .from('games')
+            .update({ state: merged as unknown as Record<string, unknown> })
+            .eq('id', gameId);
+          if (error) {
+            console.error('[WordBlitz] fallback games.update failed:', error.message);
+          }
+        } catch (fallbackErr) {
+          console.error('[WordBlitz] fallback games.update threw:', fallbackErr);
+        }
       }
     };
 
@@ -879,31 +897,7 @@ export function WordBlitz() {
     }
   };
 
-  const handleShuffle = () => {
-    setPool((p) => {
-      const copy = [...p];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-        copy[i] = { ...copy[i], rotation: (Math.random()-0.5)*10 };
-      }
-      return copy;
-    });
-  };
-
-  const handleClear = () => {
-    // Return all grid letters to pool
-    const returned: PoolLetter[] = [];
-    for (let r = 0; r < GRID_SIZE; r++)
-      for (let c = 0; c < GRID_SIZE; c++)
-        if (grid[r][c]) {
-          const cell = grid[r][c]!;
-          returned.push({ id: cell.letterId, letter: cell.letter, rotation: (Math.random()-0.5)*10 });
-        }
-    setGrid(emptyGrid());
-    setPool((p) => [...p, ...returned]);
-    setSelectedPoolId(null);
-  };
+  // Shuffle/Clear removed — keep controls minimal/obvious.
 
   // ─── Timer display ────────────────────────────────────────────────────────
   const mins = Math.floor(timeLeft / 60);
@@ -1131,7 +1125,7 @@ export function WordBlitz() {
           {pool.length > 0 && (
             <div className="flex items-center justify-center pt-1">
               <span className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
-                {selectedPoolId ? 'Tap a grid cell to place' : 'All 21 letters visible'}
+                Tap a letter to start
               </span>
             </div>
           )}
@@ -1212,66 +1206,9 @@ export function WordBlitz() {
         </div>
 
         {/* ── Controls bar ─────────────────────────────────────────────────── */}
-        <div className="flex-none flex items-center gap-3 px-4 py-2.5"
+        <div className="flex-none flex items-center justify-end px-4 py-2.5"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.97)' }}
         >
-          {/* Words found */}
-          <div className="flex-1 min-w-0">
-            {validWords.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {validWords.slice(-4).map((w) => {
-                  const pts = scoreWord(w);
-                  const isBig = w.length >= 6;
-                  return (
-                    <span key={w}
-                      className="font-body text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
-                      style={{
-                        background: isBig ? 'rgba(78,255,196,0.18)' : 'rgba(78,255,196,0.08)',
-                        color: isBig ? '#4EFFC4' : 'rgba(78,255,196,0.7)',
-                        border: `1px solid ${isBig ? 'rgba(78,255,196,0.45)' : 'rgba(78,255,196,0.2)'}`,
-                        boxShadow: isBig ? '0 0 8px rgba(78,255,196,0.25)' : 'none',
-                      }}
-                    >
-                      {w.toUpperCase()}
-                      <span style={{ opacity: 0.65, fontSize: '0.65rem' }}>+{pts}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <span className="font-body text-xs relative -top-2" style={{ color: 'rgba(255,255,255,0.58)' }}>
-                {selectedPoolId ? 'Tap a grid cell to place letter' : 'Tap a letter to start'}
-              </span>
-            )}
-          </div>
-
-          {/* Shuffle */}
-          <motion.button
-            onClick={handleShuffle}
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)' }}
-            whileTap={{ scale: 0.9, rotate: 180 }}
-            transition={{ duration: 0.3 }}
-            aria-label="Shuffle letters"
-            title="Shuffle letters"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M2 6h10.5M2 12h10.5M10 3l3 3-3 3M10 9l3 3-3 3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </motion.button>
-
-          {/* Clear */}
-          <motion.button
-            onClick={handleClear}
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(255,107,168,0.07)', border: '1.5px solid rgba(255,107,168,0.2)' }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M3 3l12 12M15 3L3 15" stroke="rgba(255,107,168,0.7)" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-          </motion.button>
-
           {/* Score total */}
           <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl"
             style={{ background: myScore > 0 ? 'rgba(78,255,196,0.1)' : 'rgba(255,255,255,0.04)', border: `1.5px solid ${myScore > 0 ? 'rgba(78,255,196,0.3)' : 'rgba(255,255,255,0.08)'}` }}
