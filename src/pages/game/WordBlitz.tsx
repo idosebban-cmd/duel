@@ -9,7 +9,7 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, isWordListLoaded, preloadWordList, scoreWord } from '../../utils/wordList';
-import { abandonGame } from '../../lib/database';
+import { abandonGame, updateWordBlitzPlayerSlice, finishWordBlitzGame } from '../../lib/database';
 import {
   WaitingForOpponentOverlay,
   LeaveGameDialog,
@@ -60,6 +60,15 @@ interface PoolLetter {
 
 type GridCell = { letterId: string; letter: string } | null;
 
+type GWPlayerSlice = { grid: (string | null)[][]; score: number };
+
+type GWState = {
+  ready: Record<string, unknown>;
+  present: Record<string, boolean>;
+  player1?: GWPlayerSlice;
+  player2?: GWPlayerSlice;
+};
+
 interface ScorePopup {
   id: string;
   text: string;
@@ -96,6 +105,19 @@ const OPPONENT = { name: 'Zara', character: 'phoenix', element: 'fire' };
 
 function emptyGrid(): GridCell[][] {
   return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
+}
+
+function emptyLetterMatrix(): (string | null)[][] {
+  return Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
+}
+
+function gridToLetterMatrix(grid: GridCell[][]): (string | null)[][] {
+  return grid.map((row) => row.map((cell) => (cell ? cell.letter : null)));
+}
+
+function lettersToGridLettersOnly(letters: (string | null)[][] | undefined | null): GridCell[][] {
+  const base = letters ?? emptyLetterMatrix();
+  return base.map((row, r) => row.map((cell, c) => (cell ? { letterId: `opp-${r}-${c}`, letter: cell } : null)));
 }
 
 /** Extract all horizontal runs of 2+ placed letters */
@@ -470,7 +492,7 @@ export function WordBlitz() {
   const isMultiplayer = !!matchId && matchId !== 'demo';
   const [phase, setPhase] = useState<Phase>('setup');
 
-  const mp = useMultiplayerGame<object>({
+  const mp = useMultiplayerGame<GWState>({
     matchId: matchId ?? '',
     gameType: 'word_blitz',
     enabled: isMultiplayer,
@@ -508,6 +530,10 @@ export function WordBlitz() {
   );
   const [dictionaryReady, setDictionaryReady] = useState(isWordListLoaded());
   const [grid, setGrid] = useState<GridCell[][]>(emptyGrid);
+  const gridRef = useRef<GridCell[][]>(grid);
+  useEffect(() => {
+    gridRef.current = grid;
+  }, [grid]);
 
   // ── Selection ─────────────────────────────────────────────────────────────
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
@@ -515,6 +541,13 @@ export function WordBlitz() {
   // ── Scores ────────────────────────────────────────────────────────────────
   const [myScore, setMyScore] = useState(0);
   const [oppScore, setOppScore] = useState(0);
+  const oppSliceRef = useRef<GWPlayerSlice | null>(null);
+  const finishHandledRef = useRef(false);
+
+  // Throttled Word Blitz DB writes (multiplayer only)
+  const wordBlitzLastWriteAtRef = useRef(0);
+  const wordBlitzPendingWriteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wordBlitzLatestSliceRef = useRef<{ letters: (string | null)[][]; score: number } | null>(null);
   const [validWords, setValidWords] = useState<string[]>([]);
 
   // ── Popups ────────────────────────────────────────────────────────────────
@@ -575,6 +608,11 @@ export function WordBlitz() {
       if (GAME_SECONDS - elapsed <= 0) {
         clearInterval(timerRef.current!);
         timerRef.current = null;
+        if (isMultiplayer) {
+          const { score } = validateGrid(gridRef.current);
+          setMyScore(score);
+          setOppScore(oppSliceRef.current?.score ?? 0);
+        }
         setPhase('result');
       }
     }, 1000);
@@ -646,6 +684,128 @@ export function WordBlitz() {
     setValidWords(vw);
     setInvalidCells(ic);
   }, [grid, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Multiplayer: extract opponent slice from games.state ───────────────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'playing') return;
+    const gs = mp.gameState;
+    if (!gs) return;
+
+    const oppRole = mp.myRole === 'player1' ? 'player2' : 'player1';
+    const slice = (gs as GWState)[oppRole];
+
+    if (!slice || !slice.grid) {
+      oppSliceRef.current = null;
+      setOppScore(0);
+      setOppGrid(emptyGrid());
+      return;
+    }
+
+    oppSliceRef.current = slice;
+    setOppScore(typeof slice.score === 'number' ? slice.score : 0);
+    setOppGrid(lettersToGridLettersOnly(slice.grid));
+  }, [isMultiplayer, phase, mp.gameState, mp.myRole]);
+
+  // ── Multiplayer: throttle-save my slice into games.state ────────────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'playing' || !mp.gameRow?.id) return;
+
+    const gameId = mp.gameRow.id;
+    const letters = gridToLetterMatrix(grid);
+    const { score } = validateGrid(grid);
+
+    wordBlitzLatestSliceRef.current = { letters, score };
+
+    const minIntervalMs = 2000; // max once per 2 seconds
+    const now = Date.now();
+    const sinceLast = now - wordBlitzLastWriteAtRef.current;
+
+    // Clear any scheduled write; we'll either execute immediately or re-schedule below.
+    if (wordBlitzPendingWriteTimeoutRef.current) {
+      clearTimeout(wordBlitzPendingWriteTimeoutRef.current);
+      wordBlitzPendingWriteTimeoutRef.current = null;
+    }
+
+    const executeWrite = async () => {
+      const latest = wordBlitzLatestSliceRef.current;
+      if (!latest) return;
+      wordBlitzLastWriteAtRef.current = Date.now();
+      try {
+        await updateWordBlitzPlayerSlice(gameId, latest.letters, latest.score);
+      } catch (err) {
+        console.error('[WordBlitz] updateWordBlitzPlayerSlice failed:', err);
+      }
+    };
+
+    if (sinceLast >= minIntervalMs) {
+      void executeWrite();
+      return;
+    }
+
+    const remaining = minIntervalMs - sinceLast;
+    wordBlitzPendingWriteTimeoutRef.current = setTimeout(() => {
+      wordBlitzPendingWriteTimeoutRef.current = null;
+      void executeWrite();
+    }, remaining);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grid, phase, isMultiplayer, mp.gameRow?.id]);
+
+  useEffect(() => {
+    if (!isMultiplayer || phase === 'playing') return;
+    if (wordBlitzPendingWriteTimeoutRef.current) {
+      clearTimeout(wordBlitzPendingWriteTimeoutRef.current);
+      wordBlitzPendingWriteTimeoutRef.current = null;
+    }
+  }, [isMultiplayer, phase]);
+
+  // ─── Multiplayer: guarded game finish (writes winner once) ─────────────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'result' || !mp.gameRow?.id) return;
+    if (finishHandledRef.current) return;
+    finishHandledRef.current = true;
+
+    const runFinish = async () => {
+      try {
+        const gameId = mp.gameRow!.id;
+        const myGrid = gridRef.current;
+        const { score: myFinalScore } = validateGrid(myGrid);
+        const myLetters = gridToLetterMatrix(myGrid);
+
+        const oppSlice = oppSliceRef.current;
+        const oppLetters = oppSlice?.grid ?? emptyLetterMatrix();
+        const oppFinalScore = typeof oppSlice?.score === 'number' ? oppSlice.score : 0;
+
+        const myRoleKey = mp.myRole;
+        const oppRoleKey = myRoleKey === 'player1' ? 'player2' : 'player1';
+
+        const mySlice: GWPlayerSlice = { grid: myLetters, score: myFinalScore };
+        const opponentSlice: GWPlayerSlice = { grid: oppLetters, score: oppFinalScore };
+
+        const baseState = (mp.gameState ?? { ready: {}, present: {} }) as GWState;
+        const finalState: GWState = {
+          ...baseState,
+          player1: myRoleKey === 'player1' ? mySlice : opponentSlice,
+          player2: myRoleKey === 'player2' ? mySlice : opponentSlice,
+        };
+
+        const winner: 'player1' | 'player2' | 'draw' =
+          myFinalScore > oppFinalScore ? myRoleKey
+            : myFinalScore < oppFinalScore ? oppRoleKey
+              : 'draw';
+
+        // Push final slice immediately to reduce "missing last update" races.
+        await updateWordBlitzPlayerSlice(gameId, myLetters, myFinalScore);
+        await finishWordBlitzGame(gameId, finalState, winner);
+      } catch (err) {
+        console.error('[WordBlitz] finishWordBlitzGame failed:', err);
+      }
+    };
+
+    void runFinish();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMultiplayer, phase, mp.gameRow?.id, mp.myRole, mp.gameState]);
+
 
   // ─── Pool → Grid interaction ───────────────────────────────────────────────
   const handlePoolTap = (id: string) => {

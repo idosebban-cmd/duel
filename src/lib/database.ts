@@ -926,6 +926,48 @@ export async function submitGameMove(
   }
 }
 
+export async function updateWordBlitzPlayerSlice(
+  gameId: string,
+  gridLetters: (string | null)[][],
+  score: number,
+): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('update_word_blitz_player_slice', {
+      p_game_id: gameId,
+      p_grid: gridLetters,
+      p_score: score,
+    });
+    if (error) {
+      console.error('[updateWordBlitzPlayerSlice]', error.message);
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('[updateWordBlitzPlayerSlice] threw:', err);
+    throw err;
+  }
+}
+
+export async function finishWordBlitzGame(
+  gameId: string,
+  finalState: object,
+  winner: 'player1' | 'player2' | 'draw',
+): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('finish_word_blitz_game', {
+      p_game_id: gameId,
+      p_state: finalState,
+      p_winner: winner,
+    });
+    if (error) {
+      console.error('[finishWordBlitzGame]', error.message);
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('[finishWordBlitzGame] threw:', err);
+    throw err;
+  }
+}
+
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
 export interface ChallengeRow {
