@@ -1,15 +1,16 @@
 /**
  * Word Blitz – fast-paced crossword builder
- * 3-minute timer, most points wins
+ * 2-minute timer, most points wins
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { useAuthStore } from '../../store/authStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, isWordListLoaded, preloadWordList, scoreWord } from '../../utils/wordList';
-import { abandonGame, updateWordBlitzPlayerSlice, finishWordBlitzGame } from '../../lib/database';
+import { abandonGame, getProfile, updateWordBlitzPlayerSlice, finishWordBlitzGame } from '../../lib/database';
 import {
   WaitingForOpponentOverlay,
   LeaveGameDialog,
@@ -99,7 +100,7 @@ const characterImages: Record<string, string> = {
   ninja: '/characters/Ninja.png', mermaid: '/characters/Mermaid.png',
 };
 
-const OPPONENT = { name: 'Zara', character: 'phoenix', element: 'fire' };
+const BOT_OPPONENT = { name: 'Zara', character: 'phoenix' };
 
 // ─── Grid utilities ───────────────────────────────────────────────────────────
 
@@ -232,10 +233,12 @@ function validateGrid(grid: GridCell[][]): {
 
 // ─── Setup countdown screen ───────────────────────────────────────────────────
 
-function SetupScreen({ onGo, myCharacter, myName }: {
+function SetupScreen({ onGo, myCharacter, myName, opponentCharacter, opponentName }: {
   onGo: () => void;
   myCharacter: string;
   myName: string;
+  opponentCharacter: string;
+  opponentName: string;
 }) {
   const [count, setCount] = useState(3);
 
@@ -289,9 +292,9 @@ function SetupScreen({ onGo, myCharacter, myName }: {
           <div className="w-20 h-20 rounded-full flex items-center justify-center"
             style={{ background: 'rgba(255,107,168,0.12)', border: '3px solid rgba(255,107,168,0.4)' }}
           >
-            <img src={characterImages[OPPONENT.character]} alt="" className="w-14 h-14 object-contain" draggable={false} />
+            <img src={characterImages[opponentCharacter]} alt="" className="w-14 h-14 object-contain" draggable={false} />
           </div>
-          <span className="font-body text-sm font-bold" style={{ color: '#FF6BA8' }}>{OPPONENT.name}</span>
+          <span className="font-body text-sm font-bold" style={{ color: '#FF6BA8' }}>{opponentName}</span>
         </motion.div>
       </div>
 
@@ -312,7 +315,7 @@ function SetupScreen({ onGo, myCharacter, myName }: {
           Build connecting words from your letters
         </p>
         <p className="font-body text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          3 minutes · Most points wins
+          2 minutes · Most points wins
         </p>
       </motion.div>
 
@@ -345,9 +348,10 @@ function SetupScreen({ onGo, myCharacter, myName }: {
 
 // ─── Result screen ────────────────────────────────────────────────────────────
 
-function ResultScreen({ myScore, oppScore, myName, myCharacter, onPlayAgain, onChat }: {
+function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppCharacter, onPlayAgain, onChat }: {
   myScore: number; oppScore: number;
   myName: string; myCharacter: string;
+  oppName: string; oppCharacter: string;
   onPlayAgain: () => void; onChat: () => void;
 }) {
   const won = myScore >= oppScore;
@@ -394,8 +398,8 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, onPlayAgain, onC
         </div>
         <div className="font-display text-2xl" style={{ color: 'rgba(255,255,255,0.2)' }}>vs</div>
         <div className="flex flex-col items-center gap-2">
-          <img src={characterImages[OPPONENT.character]} alt="" className="w-14 h-14 object-contain" draggable={false} />
-          <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{OPPONENT.name}</span>
+          <img src={characterImages[oppCharacter]} alt="" className="w-14 h-14 object-contain" draggable={false} />
+          <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{oppName}</span>
           <span className="font-display text-3xl" style={{ color: !won ? '#FF6BA8' : 'rgba(255,255,255,0.8)' }}>{oppScore}</span>
         </div>
       </motion.div>
@@ -482,7 +486,9 @@ function poolIndexFromId(id: string): number {
 export function WordBlitz() {
   const navigate = useNavigate();
   const { matchId } = useParams();
+  const { user } = useAuthStore();
   const { character, name } = useOnboardingStore();
+  const myUserId = user?.id ?? '';
 
   const myChar = character || 'fox';
   const myName = name || 'Alex';
@@ -497,6 +503,43 @@ export function WordBlitz() {
     gameType: 'word_blitz',
     enabled: isMultiplayer,
   });
+  const [myProfileName, setMyProfileName] = useState<string | null>(null);
+  const [myProfileCharacter, setMyProfileCharacter] = useState<string | null>(null);
+  const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [opponentCharacter, setOpponentCharacter] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isMultiplayer || !myUserId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await getProfile(myUserId);
+      if (cancelled || !data) return;
+      if (data.name) setMyProfileName(data.name);
+      if (data.character) setMyProfileCharacter(data.character);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMultiplayer, myUserId]);
+
+  useEffect(() => {
+    if (!isMultiplayer || !mp.opponentId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await getProfile(mp.opponentId);
+      if (cancelled || !data) return;
+      if (data.name) setOpponentName(data.name);
+      if (data.character) setOpponentCharacter(data.character);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMultiplayer, mp.opponentId]);
+
+  const myDisplayName = isMultiplayer ? (myProfileName ?? myName) : myName;
+  const myDisplayCharacter = isMultiplayer ? (myProfileCharacter ?? myChar) : myChar;
+  const opponentDisplayName = isMultiplayer ? (opponentName ?? 'Opponent') : BOT_OPPONENT.name;
+  const opponentDisplayCharacter = isMultiplayer ? (opponentCharacter ?? BOT_OPPONENT.character) : BOT_OPPONENT.character;
 
   usePostGameRedirect({ isMultiplayer, matchId: matchId ?? null, phase });
 
@@ -881,14 +924,25 @@ export function WordBlitz() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   if (phase === 'setup') {
-    return <SetupScreen onGo={startGame} myCharacter={myChar} myName={myName} />;
+    return (
+      <SetupScreen
+        onGo={startGame}
+        myCharacter={myDisplayCharacter}
+        myName={myDisplayName}
+        opponentCharacter={opponentDisplayCharacter}
+        opponentName={opponentDisplayName}
+      />
+    );
   }
 
   if (phase === 'result') {
     return (
       <ResultScreen
         myScore={myScore} oppScore={oppScore}
-        myName={myName} myCharacter={myChar}
+        myName={myDisplayName}
+        myCharacter={myDisplayCharacter}
+        oppName={opponentDisplayName}
+        oppCharacter={opponentDisplayCharacter}
         onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
         onChat={() => {
           if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
@@ -914,9 +968,9 @@ export function WordBlitz() {
       {/* Multiplayer overlays */}
       {isMultiplayer && (
         <>
-          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
-          <ReconnectOverlay visible={graceActive} opponentName="opponent" />
-          <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
+          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName={opponentDisplayName} matchId={matchId!} />
+          <ReconnectOverlay visible={graceActive} opponentName={opponentDisplayName} />
+          <OpponentLeftOverlay visible={showForfeit} opponentName={opponentDisplayName} />
           <AnimatePresence>
             {mp.moveError && (
               <motion.div
@@ -937,7 +991,7 @@ export function WordBlitz() {
               </motion.div>
             )}
           </AnimatePresence>
-          <LeaveGameDialog visible={showLeaveDialog} opponentName="opponent" onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
+          <LeaveGameDialog visible={showLeaveDialog} opponentName={opponentDisplayName} onStay={() => setShowLeaveDialog(false)} onLeave={handleLeaveConfirm} />
         </>
       )}
 
@@ -953,7 +1007,7 @@ export function WordBlitz() {
             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(78,255,196,0.1)', border: '2px solid rgba(78,255,196,0.35)' }}
             >
-              <img src={characterImages[myChar]} alt="" className="w-6 h-6 object-contain" draggable={false} />
+              <img src={characterImages[myDisplayCharacter]} alt="" className="w-6 h-6 object-contain" draggable={false} />
             </div>
             <div>
               <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
@@ -974,7 +1028,7 @@ export function WordBlitz() {
           {/* Opponent avatar + score */}
           <div className="flex items-center gap-2">
             <div>
-              <p className="font-body text-[10px] text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{OPPONENT.name.toUpperCase()}</p>
+              <p className="font-body text-[10px] text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{opponentDisplayName.toUpperCase()}</p>
               <div className="flex items-center gap-1">
                 <p className="font-display text-xl leading-none text-right" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
                 <AnimatePresence>
@@ -993,7 +1047,7 @@ export function WordBlitz() {
             <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(255,107,168,0.1)', border: '2px solid rgba(255,107,168,0.35)' }}
             >
-              <img src={characterImages[OPPONENT.character]} alt="" className="w-6 h-6 object-contain" draggable={false} />
+              <img src={characterImages[opponentDisplayCharacter]} alt="" className="w-6 h-6 object-contain" draggable={false} />
             </div>
           </div>
         </header>
@@ -1006,7 +1060,7 @@ export function WordBlitz() {
               style={{ background: 'rgba(255,107,168,0.15)', border: '1.5px solid rgba(255,107,168,0.4)', color: '#FF6BA8' }}
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
             >
-              {OPPONENT.name}: {oppPopup} 🔥
+              {opponentDisplayName}: {oppPopup} 🔥
             </motion.div>
           )}
         </AnimatePresence>
@@ -1185,7 +1239,7 @@ export function WordBlitz() {
                 })}
               </div>
             ) : (
-              <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <span className="font-body text-xs relative -top-2" style={{ color: 'rgba(255,255,255,0.58)' }}>
                 {selectedPoolId ? 'Tap a grid cell to place letter' : 'Tap a letter to start'}
               </span>
             )}
@@ -1198,6 +1252,8 @@ export function WordBlitz() {
             style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)' }}
             whileTap={{ scale: 0.9, rotate: 180 }}
             transition={{ duration: 0.3 }}
+            aria-label="Shuffle letters"
+            title="Shuffle letters"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M2 6h10.5M2 12h10.5M10 3l3 3-3 3M10 9l3 3-3 3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1235,7 +1291,7 @@ export function WordBlitz() {
           transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         >
           <span className="font-body text-xs font-semibold" style={{ color: '#4EFFC4' }}>
-            They're building words too! Peek at {OPPONENT.name}'s board
+            They're building words too! Peek at {opponentDisplayName}'s board
           </span>
           <motion.span
             className="text-base leading-none"
@@ -1262,11 +1318,11 @@ export function WordBlitz() {
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(255,107,168,0.1)', border: '2px solid rgba(255,107,168,0.4)' }}
             >
-              <img src={characterImages[OPPONENT.character]} alt="" className="w-7 h-7 object-contain" draggable={false} />
+              <img src={characterImages[opponentDisplayCharacter]} alt="" className="w-7 h-7 object-contain" draggable={false} />
             </div>
             <div>
               <p className="font-display text-sm" style={{ color: '#FF6BA8', letterSpacing: '0.1em' }}>
-                {OPPONENT.name.toUpperCase()}'S BOARD
+                {opponentDisplayName.toUpperCase()}'S BOARD
               </p>
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6BA8', boxShadow: '0 0 4px #FF6BA8' }} />
