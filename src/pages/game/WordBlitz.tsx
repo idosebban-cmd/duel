@@ -1272,20 +1272,6 @@ export function WordBlitz() {
           </div>
         </div>
 
-        {/* ── Controls bar ─────────────────────────────────────────────────── */}
-        <div className="flex-none flex items-center justify-end px-4 py-2.5"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.97)' }}
-        >
-          {/* Score total */}
-          <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl"
-            style={{ background: myScore > 0 ? 'rgba(78,255,196,0.1)' : 'rgba(255,255,255,0.04)', border: `1.5px solid ${myScore > 0 ? 'rgba(78,255,196,0.3)' : 'rgba(255,255,255,0.08)'}` }}
-          >
-            <span className="font-display text-base" style={{ color: myScore > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
-              {myScore} pts
-            </span>
-          </div>
-        </div>
-
         {/* ── Scroll cue (mobile only) ─────────────────────────────────────── */}
         <motion.button
           onClick={() => oppSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
