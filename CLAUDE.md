@@ -21,11 +21,10 @@
 
 ## Git & deploy workflow
 
-- One branch per session — start fresh from main, never reuse a merged branch
-- Strict pipeline: branch → PR → merge to main → confirm Netlify deploy → then test
+- Push directly to `main` — no branch/PR pipeline required
 - Verify fix is on main before closing a bug — git log main must contain the commit
 - Check Netlify deploy hash matches latest main commit before testing on playduel.app
-- QA against main/production only — never against the feature branch
+- QA against main/production only
 
 ## Tech stack
 
@@ -35,6 +34,27 @@
 - Netlify (auto-deploys from main) — live URL: playduel.app
 - Supabase requires legacy JWT anon key (eyJ... format)
 - RLS is ENABLED on all public app tables (profiles through moves); rollout SQL in `supabase/phase8_rls_rollout/`
+
+## RPC surface area (frontend callers)
+
+- Core gameplay:
+  - `submit_move`
+  - `set_player_ready`
+  - `set_player_present`
+  - `abandon_game`
+- Guess Who:
+  - `check_guess`
+  - `reveal_secrets`
+- Chat:
+  - `mark_messages_read`
+- Word Blitz:
+  - `update_word_blitz_player_slice`
+  - `finish_word_blitz_game`
+
+## Render (DotDash server)
+
+- `render.yaml` service name is `duel-game`
+- Deployed Render URL is `duel-fast.onrender.com`
 
 ## Key files
 

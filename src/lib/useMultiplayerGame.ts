@@ -27,6 +27,12 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type PlayerRole = 'player1' | 'player2';
 
+const devLog = (...args: unknown[]) => {
+  if (!import.meta.env.DEV) return;
+  // eslint-disable-next-line no-console
+  console.log(...args);
+};
+
 export interface MultiplayerGame<S> {
   /** Supabase games.id, null while loading */
   gameId: string | null;
@@ -124,14 +130,14 @@ export function useMultiplayerGame<S>({
         if (!cancelled) setOpponentId(oppId);
 
         // 2. Create or join the game
-        console.log('[useMultiplayerGame] Calling createOrJoinGame — matchId:', matchId, 'gameType:', gameType, 'myUserId:', myUserId, 'oppId:', oppId);
+        devLog('[useMultiplayerGame] Calling createOrJoinGame — matchId:', matchId, 'gameType:', gameType, 'myUserId:', myUserId, 'oppId:', oppId);
         const row = await createOrJoinGame(
           matchId,
           gameType,
           myUserId,
           oppId,
         );
-        console.log('[useMultiplayerGame] createOrJoinGame returned:', row);
+        devLog('[useMultiplayerGame] createOrJoinGame returned:', row);
 
         if (!cancelled && row) {
           gameRowRef.current = row;
@@ -172,11 +178,11 @@ export function useMultiplayerGame<S>({
       const local = gameRowRef.current;
       // Skip if local updated_at is newer (prevents optimistic state being overwritten by self-echo)
       if (local?.updated_at && updated.updated_at && local.updated_at > updated.updated_at) {
-        console.log('[useMultiplayerGame] Realtime: skipping stale update (local is newer)');
+        devLog('[useMultiplayerGame] Realtime: skipping stale update (local is newer)');
         return;
       }
       if (updated.updated_at !== local?.updated_at) {
-        console.log('[useMultiplayerGame] Realtime: STATE CHANGE — current_turn:', updated.current_turn, 'winner:', updated.winner);
+        devLog('[useMultiplayerGame] Realtime: STATE CHANGE — current_turn:', updated.current_turn, 'winner:', updated.winner);
         if (expectingOwnMoveEchoRef.current) {
           expectingOwnMoveEchoRef.current = false;
         } else if (presenceWritePendingRef.current) {
@@ -193,7 +199,7 @@ export function useMultiplayerGame<S>({
 
     function startFallbackPoll() {
       if (fallbackTimer) return;
-      console.log('[useMultiplayerGame] Starting fallback poll');
+      devLog('[useMultiplayerGame] Starting fallback poll');
       fallbackTimer = setInterval(async () => {
         try {
           const updated = await getGame(gameId);
@@ -206,7 +212,7 @@ export function useMultiplayerGame<S>({
 
     function stopFallbackPoll() {
       if (fallbackTimer) {
-        console.log('[useMultiplayerGame] Stopping fallback poll');
+        devLog('[useMultiplayerGame] Stopping fallback poll');
         clearInterval(fallbackTimer);
         fallbackTimer = null;
       }
@@ -235,7 +241,7 @@ export function useMultiplayerGame<S>({
           },
         )
         .subscribe((status) => {
-          console.log('[useMultiplayerGame] Realtime status:', status);
+          devLog('[useMultiplayerGame] Realtime status:', status);
           if (status === 'SUBSCRIBED') {
             // On reconnect: fetch once to reconcile missed events, then stop fallback
             getGame(gameId).then((updated) => {
@@ -293,7 +299,7 @@ export function useMultiplayerGame<S>({
     if (!gameRow?.id) return;
     if (debugLoggedGameIdRef.current === gameRow.id) return;
     debugLoggedGameIdRef.current = gameRow.id;
-    console.log(
+    devLog(
       '[useMultiplayerGame] myUserId:',
       myUserId,
       'player1_id:',
