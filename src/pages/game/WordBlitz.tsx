@@ -1132,7 +1132,7 @@ export function WordBlitz() {
         </div>
 
         {/* ── Grid board area ──────────────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-auto flex items-start justify-center p-3" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        <div className="flex-none overflow-auto flex items-start justify-center p-3" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           <div className="relative">
             <AnimatePresence>
               {scorePopups.map((popup) => (
