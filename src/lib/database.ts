@@ -847,7 +847,16 @@ export async function setPlayerPresent(gameId: string, userId: string): Promise<
       p_game_id: gameId,
       p_user_id: userId,
     });
-    if (error) console.error('[setPlayerPresent]', error.message);
+    if (error) {
+      console.error('[setPlayerPresent] RPC error', {
+        gameId,
+        userId,
+        message: error.message,
+        code: (error as unknown as { code?: string }).code,
+        details: (error as unknown as { details?: string }).details,
+        hint: (error as unknown as { hint?: string }).hint,
+      });
+    }
   } catch (err) {
     console.error('[setPlayerPresent] threw:', err);
   }
