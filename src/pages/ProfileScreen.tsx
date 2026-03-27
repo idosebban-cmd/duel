@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getProfile, getPhotos, savePhotos, updateProfileField } from '../lib/database';
+import { getProfile, getPhotos, savePhotos, updateProfileField, deleteUserAccount } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
@@ -289,7 +289,19 @@ function Toast({ visible, message }: { visible: boolean; message: string }) {
 
 // ─── Delete modal ─────────────────────────────────────────────────────────────
 
-function DeleteModal({ visible, onClose, onDelete }: { visible: boolean; onClose: () => void; onDelete: () => void }) {
+function DeleteModal({
+  visible,
+  onClose,
+  onDelete,
+  loading,
+  error,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onDelete: () => void;
+  loading: boolean;
+  error: string | null;
+}) {
   return (
     <AnimatePresence>
       {visible && (
@@ -316,25 +328,45 @@ function DeleteModal({ visible, onClose, onDelete }: { visible: boolean; onClose
             exit={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
           >
             <div className="text-center">
-              <p className="font-display text-xl mb-2" style={{ color: '#FF6BA8' }}>Delete Account?</p>
+              <p className="font-display text-xl mb-2" style={{ color: '#FF3D71' }}>Delete Account</p>
               <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                This would permanently delete your profile, matches, and game history. This can't be undone.
+                This will permanently delete your account, profile, matches, game history, and all messages. This cannot be undone.
               </p>
             </div>
+            {error && (
+              <p
+                className="font-body text-xs text-center"
+                style={{ color: '#FF6BA8', background: 'rgba(255,61,113,0.1)', border: '1px solid rgba(255,61,113,0.35)', borderRadius: 10, padding: '8px 10px' }}
+              >
+                {error}
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={onClose}
+                disabled={loading}
                 className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1.5px solid rgba(255,255,255,0.16)',
+                  color: 'rgba(255,255,255,0.75)',
+                  opacity: loading ? 0.6 : 1,
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={onDelete}
+                disabled={loading}
                 className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
-                style={{ background: 'rgba(255,107,168,0.15)', color: '#FF6BA8', border: '1.5px solid rgba(255,107,168,0.3)' }}
+                style={{
+                  background: '#FF3D71',
+                  color: '#fff',
+                  border: '1.5px solid rgba(0,0,0,0.3)',
+                  opacity: loading ? 0.75 : 1,
+                }}
               >
-                Delete
+                {loading ? 'Deleting…' : 'Delete Forever'}
               </button>
             </div>
           </motion.div>
@@ -489,6 +521,8 @@ export function ProfileScreen() {
   const [toast, setToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showIntentModal, setShowIntentModal] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingCropSrc, setPendingCropSrc] = useState<string | null>(null);
@@ -509,6 +543,23 @@ export function ProfileScreen() {
     setToastMsg(msg);
     setToast(true);
     setTimeout(() => setToast(false), 2200);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deletingAccount) return;
+    setDeleteError(null);
+    setDeletingAccount(true);
+    try {
+      await deleteUserAccount();
+      await supabase?.auth.signOut();
+      store.reset();
+      navigate('/landing');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete account. Please try again.';
+      setDeleteError(message);
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   // Save a single field to DB + update local state
@@ -566,25 +617,14 @@ export function ProfileScreen() {
       {/* Delete modal */}
       <DeleteModal
         visible={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        onDelete={async () => {
-          if (user && supabase) {
-            // Delete photos from storage
-            try {
-              const { data: files } = await supabase.storage.from('photos').list(user.id);
-              if (files?.length) {
-                await supabase.storage.from('photos').remove(files.map((f) => `${user.id}/${f.name}`));
-              }
-            } catch { /* best effort */ }
-            // Delete photo records, profile, swipes, matches
-            await supabase.from('photos').delete().eq('user_id', user.id);
-            await supabase.from('swipes').delete().eq('from_user', user.id);
-            await supabase.from('profiles').delete().eq('id', user.id);
-          }
-          await supabase?.auth.signOut();
-          store.reset();
-          navigate('/');
+        onClose={() => {
+          if (deletingAccount) return;
+          setDeleteError(null);
+          setDeleteOpen(false);
         }}
+        onDelete={handleDeleteAccount}
+        loading={deletingAccount}
+        error={deleteError}
       />
 
       {/* Intent edit modal */}
@@ -1940,6 +1980,22 @@ export function ProfileScreen() {
                 <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
               </button>
 
+              <motion.button
+                onClick={() => {
+                  setDeleteError(null);
+                  setDeleteOpen(true);
+                }}
+                className="w-full py-3 rounded-full font-body text-sm font-bold"
+                style={{
+                  background: '#FF3D71',
+                  border: '1.5px solid rgba(0,0,0,0.3)',
+                  color: '#FFFFFF',
+                }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Delete My Account
+              </motion.button>
+
               {/* Logout */}
               <motion.button
                 onClick={async () => { await supabase?.auth.signOut(); useOnboardingStore.getState().reset(); navigate('/login'); }}
@@ -1959,19 +2015,6 @@ export function ProfileScreen() {
                 Log Out
               </motion.button>
 
-              {/* Delete */}
-              <motion.button
-                onClick={() => setDeleteOpen(true)}
-                className="w-full py-3 rounded-xl font-body text-sm font-bold"
-                style={{
-                  background: 'rgba(255,107,168,0.06)',
-                  border: '1.5px solid rgba(255,107,168,0.18)',
-                  color: '#FF6BA8',
-                }}
-                whileTap={{ scale: 0.97 }}
-              >
-                Delete Account
-              </motion.button>
             </div>
           </SectionCard>
         </motion.div>

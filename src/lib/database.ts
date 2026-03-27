@@ -980,6 +980,19 @@ export async function finishWordBlitzGame(
   }
 }
 
+export async function deleteUserAccount(): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('delete_user_account');
+    if (error) {
+      console.error('[deleteUserAccount]', error.message);
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('[deleteUserAccount] threw:', err);
+    throw err;
+  }
+}
+
 // ─── Challenges ──────────────────────────────────────────────────────────────
 
 export interface ChallengeRow {
