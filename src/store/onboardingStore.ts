@@ -34,6 +34,8 @@ export interface OnboardingState {
   gender: 'woman' | 'man' | 'non-binary' | null;
   interestedIn: 'men' | 'women' | 'everyone' | null;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
 
   // Bio
   bio: string;
@@ -75,6 +77,7 @@ export interface OnboardingState {
 interface OnboardingActions {
   setUserId: (userId: string | null) => void;
   updateAvatar: (character: string, element: string, affiliation: string) => void;
+  setLocationCoords: (latitude: number | null, longitude: number | null) => void;
   updateBasics: (data: {
     name: string;
     birthday: string;
@@ -82,6 +85,8 @@ interface OnboardingActions {
     gender: 'woman' | 'man' | 'non-binary';
     interestedIn: 'men' | 'women' | 'everyone';
     location: string;
+    latitude: number | null;
+    longitude: number | null;
   }) => void;
   updateBio: (bio: string) => void;
   updatePhotos: (photos: string[]) => void;
@@ -108,6 +113,8 @@ const initialState: OnboardingState = {
   gender: null,
   interestedIn: null,
   location: '',
+  latitude: null,
+  longitude: null,
   bio: '',
   photos: loadSessionPhotos(),
   gameTypes: [],
@@ -138,6 +145,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
       updateAvatar: (character, element, affiliation) =>
         set({ character, element, affiliation }),
 
+      setLocationCoords: (latitude, longitude) => set({ latitude, longitude }),
+
       updateBasics: (data) =>
         set({
           name: data.name,
@@ -146,6 +155,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
           gender: data.gender,
           interestedIn: data.interestedIn,
           location: data.location,
+          latitude: data.latitude,
+          longitude: data.longitude,
         }),
 
       updateBio: (bio) => set({ bio }),
@@ -199,7 +210,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -216,6 +227,9 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         if (s.preferredAgeMin === undefined) s.preferredAgeMin = 18;
         if (s.preferredAgeMax === undefined) s.preferredAgeMax = 65;
         if (s.preferredDistance === undefined) s.preferredDistance = null;
+        // v4 → v5: coordinates for location
+        if (s.latitude === undefined) s.latitude = null;
+        if (s.longitude === undefined) s.longitude = null;
         // Reset completedSteps because indices shifted
         s.completedSteps = [];
         return s;

@@ -73,6 +73,8 @@ export async function upsertProfile(
         preferred_age_min:  data.preferredAgeMin  ?? 18,
         preferred_age_max:  data.preferredAgeMax  ?? 65,
         preferred_distance: data.preferredDistance ?? null,
+        latitude:       data.latitude  ?? null,
+        longitude:      data.longitude ?? null,
       },
       { onConflict: 'id' },
     );
@@ -141,8 +143,18 @@ export interface DiscoveryFilters {
   maxAge?: number;
   gender?: string;
   maxDistance?: number;
+  /** Caller coordinates — required together with maxDistance for RPC distance filtering. */
+  callerLat?: number | null;
+  callerLng?: number | null;
   /** Current user's intent — drives "Just Play" matching behaviour. */
   callerIntent?: 'romance' | 'play' | 'both';
+}
+
+/** Map caller discover intent to RPC intent_filter ('play' | 'romance' | 'all'). */
+function intentFilterForRpc(callerIntent: 'romance' | 'play' | 'both'): string {
+  if (callerIntent === 'play') return 'play';
+  if (callerIntent === 'romance') return 'romance';
+  return 'all';
 }
 
 export async function getDiscoveryUsers(
@@ -150,7 +162,6 @@ export async function getDiscoveryUsers(
   filters: DiscoveryFilters = {},
 ): Promise<UserProfile[]> {
   try {
-    // Get users already swiped on
     const { data: swiped } = await supabase
       .from('swipes')
       .select('to_user')
@@ -163,7 +174,34 @@ export async function getDiscoveryUsers(
     const callerIntent = filters.callerIntent ?? 'romance';
     const isPlayOnly = callerIntent === 'play';
 
-    // Build query — only complete profiles (must have name, age, character)
+    const useDistanceRpc =
+      !isPlayOnly &&
+      filters.maxDistance != null &&
+      filters.maxDistance > 0 &&
+      filters.callerLat != null &&
+      filters.callerLng != null &&
+      !Number.isNaN(filters.callerLat) &&
+      !Number.isNaN(filters.callerLng);
+
+    if (useDistanceRpc) {
+      try {
+        const { data, error } = await supabase.rpc('get_discovery_profiles', {
+          caller_id: currentUserId,
+          caller_lat: filters.callerLat,
+          caller_lng: filters.callerLng,
+          max_distance_km: filters.maxDistance,
+          intent_filter: intentFilterForRpc(callerIntent),
+          min_age: filters.minAge ?? 18,
+          max_age: filters.maxAge ?? 99,
+          gender_filter: filters.gender ?? null,
+        });
+        if (error) throw error;
+        return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
+      } catch {
+        // RPC missing or failed — fall back to table query (deploy get_discovery_profiles on Supabase for distance SQL).
+      }
+    }
+
     let query = supabase
       .from('profiles')
       .select('*')
@@ -174,20 +212,14 @@ export async function getDiscoveryUsers(
       .order('created_at', { ascending: false })
       .limit(100);
 
-    // ── Intent-based filtering ─────────────────────────────────────────────
-    // "play"    → show only 'play' or 'both' users (no age/gender/distance)
-    // "romance" → show only 'romance' or 'both' users (apply normal filters)
-    // "both"    → show everyone (apply normal filters)
     if (isPlayOnly) {
       query = query.in('intent', ['play', 'both']);
-      // No age/gender/distance filters for play-only mode
     } else if (callerIntent === 'romance') {
       query = query.in('intent', ['romance', 'both']);
       if (filters.minAge) query = query.gte('age', filters.minAge);
       if (filters.maxAge) query = query.lte('age', filters.maxAge);
       if (filters.gender) query = query.eq('gender', filters.gender);
     } else {
-      // "both" — see everyone, still respect personal filters
       if (filters.minAge) query = query.gte('age', filters.minAge);
       if (filters.maxAge) query = query.lte('age', filters.maxAge);
       if (filters.gender) query = query.eq('gender', filters.gender);
@@ -196,7 +228,6 @@ export async function getDiscoveryUsers(
     const { data, error } = await query;
     if (error) throw error;
 
-    // Client-side filtering: exclude already-swiped
     return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
   } catch {
     return [];

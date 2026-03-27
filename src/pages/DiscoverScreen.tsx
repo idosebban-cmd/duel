@@ -23,7 +23,7 @@ interface Profile {
   age: number;
   location: string;
   distance: string;
-  distanceKm: number;
+  distanceKm: number | null;
   character: string;
   element: string;
   affiliation: string;
@@ -187,7 +187,7 @@ function countActiveFilters(f: FilterState): number {
 function applyFilters(profiles: Profile[], f: FilterState): Profile[] {
   return profiles.filter(p => {
     if (p.age < f.ageMin || p.age > f.ageMax) return false;
-    if (!f.anyDistance && p.distanceKm > f.distanceMax) return false;
+    if (!f.anyDistance && (p.distanceKm === null || p.distanceKm > f.distanceMax)) return false;
     if (f.gender !== 'everyone') {
       const wantGender = interestedInToGenderFilter(f.gender);
       if (wantGender && p.gender !== wantGender) return false;
@@ -213,8 +213,7 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
   const activityLevel: 'today' | 'week' | 'older' =
     diffMs < 86_400_000 ? 'today' : diffMs < 604_800_000 ? 'week' : 'older';
 
-  // Calculate distance if both users have location data
-  let distanceKm = 0;
+  let distanceKm: number | null = null;
   let distanceLabel = 'Nearby';
   if (
     currentUser?.latitude != null &&
@@ -222,16 +221,17 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
     p.latitude != null &&
     p.longitude != null
   ) {
-    distanceKm = calculateDistance(
+    const km = calculateDistance(
       currentUser.latitude,
       currentUser.longitude,
       p.latitude,
       p.longitude,
     );
+    distanceKm = km;
     distanceLabel =
-      distanceKm < 1
-        ? `${Math.round(distanceKm * 1000)}m`
-        : `${distanceKm.toFixed(1)} km`;
+      km < 1
+        ? `${Math.round(km * 1000)}m`
+        : `${km.toFixed(1)} km`;
   }
 
   return {
@@ -1258,11 +1258,15 @@ export function DiscoverScreen() {
 
         // Try enhanced discovery first
         const callerIntent = (currentProfile?.intent as 'romance' | 'play' | 'both') ?? 'romance';
+        const useDistanceFilter = !filters.anyDistance && callerIntent !== 'play';
         const dbProfiles = await getDiscoveryUsers(user.id, {
           minAge: filters.ageMin,
           maxAge: filters.ageMax,
           gender: interestedInToGenderFilter(filters.gender),
           callerIntent,
+          maxDistance: useDistanceFilter ? filters.distanceMax : undefined,
+          callerLat: useDistanceFilter ? currentProfile?.latitude ?? null : null,
+          callerLng: useDistanceFilter ? currentProfile?.longitude ?? null : null,
         });
 
         if (dbProfiles.length > 0) {

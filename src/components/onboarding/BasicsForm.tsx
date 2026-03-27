@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Locate } from '../ui/Icons';
@@ -27,7 +27,7 @@ const basicsSchema = z.object({
         : age;
       return actualAge >= 18;
     }, 'You must be at least 18 years old'),
-  location: z.string().min(2, 'Please enter your location'),
+  location: z.string().min(1, 'Choose your location'),
 });
 
 type BasicsFormData = z.infer<typeof basicsSchema>;
@@ -59,18 +59,46 @@ function calculateAge(birthday: string): number | null {
     : age;
 }
 
+type BigDataReverse = {
+  city?: string;
+  locality?: string;
+  principalSubdivision?: string;
+};
+
+const mapsKey = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
+
 export function BasicsForm() {
   const navigate = useNavigate();
-  const { name, birthday, gender: storedGender, interestedIn: storedInterest, location, updateBasics, completeStep } = useOnboardingStore();
+  const {
+    name,
+    birthday,
+    gender: storedGender,
+    interestedIn: storedInterest,
+    location,
+    latitude: storedLat,
+    longitude: storedLng,
+    updateBasics,
+    setLocationCoords,
+    completeStep,
+  } = useOnboardingStore();
 
   const [selectedGender, setSelectedGender] = useState<Gender | null>(storedGender);
   const [selectedInterest, setSelectedInterest] = useState<InterestedIn | null>(storedInterest);
   const [currentAge, setCurrentAge] = useState<number | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [mapsReady, setMapsReady] = useState(
+    () => typeof window !== 'undefined' && !!(window as unknown as { google?: { maps?: { places?: unknown } } }).google?.maps?.places,
+  );
+
+  const locationInputRef = useRef<HTMLInputElement | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isValid },
   } = useForm<BasicsFormData>({
     resolver: zodResolver(basicsSchema),
@@ -89,10 +117,123 @@ export function BasicsForm() {
     setCurrentAge(age);
   }, [watchedBirthday]);
 
+  useEffect(() => {
+    if (!mapsKey?.trim()) return;
+    const w = window as unknown as { google?: { maps?: { places?: unknown } } };
+    if (w.google?.maps?.places) {
+      setMapsReady(true);
+      return;
+    }
+    const existing = document.getElementById('duel-google-maps-js');
+    if (existing) {
+      existing.addEventListener('load', () => setMapsReady(true));
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'duel-google-maps-js';
+    s.async = true;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsKey.trim())}&libraries=places`;
+    s.onload = () => setMapsReady(true);
+    s.onerror = () => setLocationError('Could not load location search. Try GPS or check the API key.');
+    document.head.appendChild(s);
+  }, [mapsKey]);
+
+  useEffect(() => {
+    if (!mapsReady || !mapsKey?.trim()) return;
+    const input = locationInputRef.current;
+    if (!input || autocompleteRef.current) return;
+    const w = window as unknown as { google: typeof google };
+    if (!w.google?.maps?.places) return;
+
+    const ac = new w.google.maps.places.Autocomplete(input, {
+      types: ['(cities)'],
+      fields: ['formatted_address', 'geometry', 'name'],
+    });
+    autocompleteRef.current = ac;
+    const listener = ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
+      const loc = place.geometry?.location;
+      if (!loc) return;
+      const lat = loc.lat();
+      const lng = loc.lng();
+      const addr = place.formatted_address ?? place.name ?? '';
+      setValue('location', addr, { shouldValidate: true });
+      setLocationCoords(lat, lng);
+      setLocationError(null);
+    });
+    return () => {
+      listener.remove();
+      autocompleteRef.current = null;
+    };
+  }, [mapsReady, mapsKey, setLocationCoords, setValue]);
+
+  const { ref: locationRefFromForm, onChange: locationOnChange, ...locationRegisterRest } = register('location');
+
+  const bindLocationRef = useCallback(
+    (el: HTMLInputElement | null) => {
+      locationRefFromForm(el);
+      locationInputRef.current = el;
+    },
+    [locationRefFromForm],
+  );
+
+  const handleLocationInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocationCoords(null, null);
+      setLocationError(null);
+      locationOnChange(e);
+    },
+    [locationOnChange, setLocationCoords],
+  );
+
   const allValid = isValid && selectedGender !== null && selectedInterest !== null;
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported in this browser.');
+      return;
+    }
+    setGeoLoading(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLocationCoords(lat, lng);
+        try {
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(String(lat))}&longitude=${encodeURIComponent(String(lng))}&localityLanguage=en`,
+          );
+          if (!res.ok) throw new Error('reverse geocode');
+          const j = (await res.json()) as BigDataReverse;
+          const label = j.city || j.locality || j.principalSubdivision || 'Unknown location';
+          setValue('location', label, { shouldValidate: true });
+        } catch {
+          setValue('location', 'Unknown location', { shouldValidate: true });
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (err) => {
+        setGeoLoading(false);
+        setLocationError(err.message || 'Could not get your location.');
+      },
+      { enableHighAccuracy: true, timeout: 25_000, maximumAge: 0 },
+    );
+  };
 
   const onSubmit = (data: BasicsFormData) => {
     if (!selectedGender || !selectedInterest) return;
+    const lat = useOnboardingStore.getState().latitude;
+    const lng = useOnboardingStore.getState().longitude;
+    if (lat == null || lng == null) {
+      setLocationError(
+        mapsKey?.trim()
+          ? 'Use "Use My Current Location" or pick a city from the suggestions.'
+          : 'Use "Use My Current Location" to set your area (or add VITE_GOOGLE_MAPS_KEY for city search).',
+      );
+      return;
+    }
     const age = calculateAge(data.birthday) ?? 0;
     updateBasics({
       name: data.name,
@@ -101,28 +242,22 @@ export function BasicsForm() {
       gender: selectedGender,
       interestedIn: selectedInterest,
       location: data.location,
+      latitude: lat,
+      longitude: lng,
     });
     completeStep(2);
     navigate('/onboarding/photos');
   };
 
-  const handleGetLocation = () => {
-    // In a real app, use Geolocation API
-    // For demo, we just note it's available
-    alert('Geolocation would be used in production.');
-  };
+  const locationOk = storedLat != null && storedLng != null;
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
-      {/* Grid */}
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      {/* Scanlines */}
       <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
-      {/* Corner brackets */}
       <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-electric-mint/40 pointer-events-none" />
       <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-electric-mint/40 pointer-events-none" />
 
-      {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
         <motion.button onClick={() => navigate('/onboarding/avatar')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
           <ArrowLeft size={18} /><span>Back</span>
@@ -138,13 +273,10 @@ export function BasicsForm() {
         <div className="w-14 flex-shrink-0" />
       </div>
 
-      {/* Form content */}
       <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <motion.div className="max-w-lg mx-auto space-y-7" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          {/* Name */}
           <Input dark label="WHAT SHOULD WE CALL YOU?" placeholder="Your name..." error={errors.name?.message} success={!errors.name && !!watch('name')} {...register('name')} />
 
-          {/* Birthday */}
           <div>
             <Input dark label="WHEN WERE YOU BORN?" type="date" error={errors.birthday?.message} success={!errors.birthday && !!watchedBirthday && (currentAge ?? 0) >= 18} {...register('birthday')} />
             <AnimatePresence>
@@ -156,7 +288,6 @@ export function BasicsForm() {
             </AnimatePresence>
           </div>
 
-          {/* Gender */}
           <div>
             <label className="block font-display font-bold text-sm tracking-wider mb-3" style={{ color: '#FF6BA8' }}>YOU ARE...</label>
             <div className="flex gap-3">
@@ -174,7 +305,6 @@ export function BasicsForm() {
             </div>
           </div>
 
-          {/* Interested in */}
           <div>
             <label className="block font-display font-bold text-sm tracking-wider mb-3" style={{ color: '#4EFFC4' }}>YOU'RE LOOKING FOR...</label>
             <div className="flex gap-3">
@@ -191,28 +321,42 @@ export function BasicsForm() {
             </div>
           </div>
 
-          {/* Location */}
           <div>
-            <Input dark label="WHERE ARE YOU?" placeholder="City or area..." error={errors.location?.message} success={!errors.location && !!watch('location')} leftIcon={<MapPin size={18} />} {...register('location')} />
-            <button type="button" onClick={handleGetLocation} className="mt-2 flex items-center gap-1.5 text-sm font-body font-medium" style={{ color: '#FF9F1C' }}>
+            <Input
+              dark
+              label="WHERE ARE YOU?"
+              placeholder={mapsKey?.trim() ? 'Search for a city...' : 'Use GPS to set your area'}
+              error={errors.location?.message || locationError || undefined}
+              success={!errors.location && !locationError && !!watch('location') && locationOk}
+              leftIcon={<MapPin size={18} />}
+              hint={mapsKey?.trim() ? 'Pick a suggestion, or use GPS.' : 'Tap "Use My Current Location", or set VITE_GOOGLE_MAPS_KEY for city search.'}
+              {...locationRegisterRest}
+              ref={bindLocationRef}
+              onChange={handleLocationInputChange}
+            />
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              disabled={geoLoading}
+              className="mt-2 flex items-center gap-1.5 text-sm font-body font-medium disabled:opacity-50"
+              style={{ color: '#FF9F1C' }}
+            >
               <Locate size={14} />
-              Use My Current Location
+              {geoLoading ? 'Getting location…' : 'Use My Current Location'}
             </button>
           </div>
         </motion.div>
       </form>
 
-      {/* Bottom CTA */}
       <div className="relative z-10 px-4 sm:px-6 py-5" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
         <motion.button onClick={handleSubmit(onSubmit)} disabled={!allValid} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
           style={{ background: allValid ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: allValid ? '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)' : 'none', color: allValid ? '#12122A' : 'rgba(255,255,255,0.2)', cursor: allValid ? 'pointer' : 'not-allowed' }}
-          whileHover={allValid ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } as any : {}} whileTap={allValid ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+          whileHover={allValid ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } : undefined} whileTap={allValid ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
           {allValid && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
           Continue →
         </motion.button>
       </div>
 
-      {/* Neon bottom bar */}
       <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
     </div>
   );

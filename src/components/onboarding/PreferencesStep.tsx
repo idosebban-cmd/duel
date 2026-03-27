@@ -119,13 +119,16 @@ export function PreferencesStep() {
 
   const handleContinue = useCallback(() => {
     // Update interestedIn in Basics (single source of truth)
-    useOnboardingStore.getState().updateBasics({
-      name: useOnboardingStore.getState().name,
-      birthday: useOnboardingStore.getState().birthday ?? '',
-      age: useOnboardingStore.getState().age ?? 0,
-      gender: useOnboardingStore.getState().gender ?? 'man',
+    const st = useOnboardingStore.getState();
+    st.updateBasics({
+      name: st.name,
+      birthday: st.birthday ?? '',
+      age: st.age ?? 0,
+      gender: st.gender ?? 'man',
       interestedIn: showMe,
-      location: useOnboardingStore.getState().location,
+      location: st.location,
+      latitude: st.latitude,
+      longitude: st.longitude,
     });
     updatePreferences({
       preferredAgeMin: ageMin,
