@@ -69,6 +69,7 @@ type GWState = {
   present: Record<string, boolean>;
   player1?: GWPlayerSlice;
   player2?: GWPlayerSlice;
+  started_at?: string;
 };
 
 interface ScorePopup {
@@ -568,6 +569,8 @@ export function WordBlitz() {
   // ── Timer ─────────────────────────────────────────────────────────────────
   const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedAtWriteForGameRef = useRef<string | null>(null);
+  const timerSyncedStartedAtRef = useRef<string | null>(null);
 
   // ── Pool & grid ───────────────────────────────────────────────────────────
   const [pool, setPool] = useState<PoolLetter[]>(() =>
@@ -621,7 +624,6 @@ export function WordBlitz() {
   // ─── Timer logic (extracted so both solo and MP can start it) ─────────────
   const startTimer = useCallback(() => {
     if (timerRef.current) return; // already running
-    elapsedRef.current = 0;
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
       const elapsed = elapsedRef.current;
@@ -667,6 +669,31 @@ export function WordBlitz() {
     }, 1000);
   }, [isMultiplayer]);
 
+  const syncTimerFromStartedAt = useCallback((startedAtIso: string): boolean => {
+    const startedAtMs = Date.parse(startedAtIso);
+    if (!Number.isFinite(startedAtMs)) return false;
+    const elapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+    const elapsedClamped = Math.max(0, elapsed);
+    const remaining = GAME_SECONDS - elapsedClamped;
+    const remainingClamped = Math.max(0, remaining);
+
+    elapsedRef.current = elapsedClamped;
+    setTimeLeft(remainingClamped);
+
+    if (remainingClamped <= 0) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      const { score } = validateGrid(gridRef.current);
+      setMyScore(score);
+      setOppScore(oppSliceRef.current?.score ?? 0);
+      setPhase('result');
+      return true;
+    }
+    return false;
+  }, []);
+
   // Preload dictionary during setup/route entry.
   useEffect(() => {
     let active = true;
@@ -693,16 +720,76 @@ export function WordBlitz() {
         return;
       }
     }
+    elapsedRef.current = 0;
+    setTimeLeft(GAME_SECONDS);
     setPhase('playing');
     // Solo: start timer immediately. MP: timer starts when bothPresent (see effect below).
     if (!isMultiplayer) startTimer();
   }, [dictionaryReady, isMultiplayer, startTimer]);
 
+  // ─── MP: persist started_at once when game starts for both players ──────────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent || !mp.gameRow?.id) return;
+    const gs = mp.gameState as GWState | null;
+    if (gs?.started_at) return;
+    if (startedAtWriteForGameRef.current === mp.gameRow.id) return;
+    startedAtWriteForGameRef.current = mp.gameRow.id;
+
+    const startedAt = new Date().toISOString();
+    (async () => {
+      try {
+        if (!supabase) return;
+        let baseState = gs;
+        if (!baseState) {
+          const { data, error } = await supabase
+            .from('games')
+            .select('state')
+            .eq('id', mp.gameRow!.id)
+            .single();
+          if (error) {
+            console.error('[WordBlitz] load state for started_at failed:', error.message);
+            return;
+          }
+          baseState = (data?.state ?? { ready: {}, present: {} }) as GWState;
+        }
+        if (baseState.started_at) return;
+        const merged: GWState = {
+          ...baseState,
+          started_at: startedAt,
+        };
+        const { error } = await supabase
+          .from('games')
+          .update({ state: merged as unknown as Record<string, unknown> })
+          .eq('id', mp.gameRow!.id);
+        if (error) {
+          console.error('[WordBlitz] write started_at failed:', error.message);
+        }
+      } catch (err) {
+        console.error('[WordBlitz] write started_at threw:', err);
+      }
+    })();
+  }, [isMultiplayer, phase, mp.bothPresent, mp.gameRow?.id, mp.gameState]);
+
+  // ─── MP: hydrate countdown from server start time on refresh/reconnect ──────
+  useEffect(() => {
+    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent) return;
+    const startedAt = (mp.gameState as GWState | null)?.started_at;
+    if (!startedAt) return;
+    if (timerSyncedStartedAtRef.current === startedAt) return;
+    timerSyncedStartedAtRef.current = startedAt;
+    void syncTimerFromStartedAt(startedAt);
+  }, [isMultiplayer, phase, mp.bothPresent, mp.gameState, syncTimerFromStartedAt]);
+
   // ─── MP: start timer once both players are present ─────────────────────────
   useEffect(() => {
     if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent) return;
+    const startedAt = (mp.gameState as GWState | null)?.started_at;
+    if (startedAt) {
+      const expired = syncTimerFromStartedAt(startedAt);
+      if (expired) return;
+    }
     startTimer();
-  }, [isMultiplayer, phase, mp.bothPresent, startTimer]);
+  }, [isMultiplayer, phase, mp.bothPresent, mp.gameState, startTimer, syncTimerFromStartedAt]);
 
   // ── Multiplayer: hydrate local state from DB + enter play (mirrors Draughts) ──
   useEffect(() => {
