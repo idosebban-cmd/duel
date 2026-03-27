@@ -443,6 +443,10 @@ export function MatchScreen() {
     (c) => c.from_user === myUserId && isPendingAndValid(c),
   );
 
+  const rejoinableWordBlitzIdx = games.findIndex(
+    (g) => g.game_type === 'word_blitz' && g.status === 'playing' && g.winner === null,
+  );
+
   const finishedGames = games.filter((g) => g.winner !== null);
   const gameRecord = finishedGames.reduce(
     (acc, g) => {
@@ -915,7 +919,7 @@ export function MatchScreen() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {games.map((g) => (
+                  {games.map((g, idx) => (
                     <div
                       key={g.id}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
@@ -929,16 +933,34 @@ export function MatchScreen() {
                           {formatDate(g.created_at)}
                         </p>
                       </div>
-                      <span
-                        className="font-display font-bold text-xs px-2 py-0.5 rounded-full"
-                        style={{
-                          color: winnerColor(g, myUserId),
-                          background: `${winnerColor(g, myUserId)}18`,
-                          border: `1px solid ${winnerColor(g, myUserId)}44`,
-                        }}
-                      >
-                        {winnerLabel(g, myUserId)}
-                      </span>
+                      {idx === rejoinableWordBlitzIdx ? (
+                        <motion.button
+                          type="button"
+                          onClick={() => navigate(`/games/word-blitz/${matchId}`)}
+                          className="font-display font-bold text-xs px-2 py-0.5 rounded-full animate-pulse flex-shrink-0"
+                          style={{
+                            textTransform: 'uppercase',
+                            color: '#4EFFC4',
+                            background: 'transparent',
+                            border: '1px solid #4EFFC4',
+                            boxShadow: '0 0 12px rgba(78,255,196,0.25)',
+                          }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Rejoin
+                        </motion.button>
+                      ) : (
+                        <span
+                          className="font-display font-bold text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                          style={{
+                            color: winnerColor(g, myUserId),
+                            background: `${winnerColor(g, myUserId)}18`,
+                            border: `1px solid ${winnerColor(g, myUserId)}44`,
+                          }}
+                        >
+                          {winnerLabel(g, myUserId)}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </motion.div>
