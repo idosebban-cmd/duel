@@ -104,12 +104,26 @@ export function WelcomeScreen() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
         >
-          <img
-            src="/logo/Logo.png"
-            alt=""
-            className="h-40 w-auto object-contain select-none mx-auto block"
-            style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
-          />
+          <div className="relative inline-block">
+            <img
+              src="/logo/Logo.png"
+              alt=""
+              className="w-[45vw] max-w-[240px] min-w-[140px] h-auto object-contain select-none mx-auto block"
+              style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
+            />
+            <img
+              src="/characters/Octopus.png"
+              alt=""
+              className="absolute top-1/2 -translate-y-1/2 right-full mr-2 sm:mr-3 w-12 h-12 sm:w-14 sm:h-14 object-contain pointer-events-none select-none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
+            />
+            <img
+              src="/characters/Robot.png"
+              alt=""
+              className="absolute top-1/2 -translate-y-1/2 left-full ml-2 sm:ml-3 w-12 h-12 sm:w-14 sm:h-14 object-contain pointer-events-none select-none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
+            />
+          </div>
           <h1
             className="font-display select-none leading-none mt-2"
             style={{
