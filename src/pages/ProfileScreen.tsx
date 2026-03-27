@@ -1914,6 +1914,19 @@ export function ProfileScreen() {
                 </div>
               ))}
 
+              <button
+                type="button"
+                onClick={() => navigate('/privacy')}
+                className="w-full flex items-center justify-between px-3 py-3 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base" style={{ opacity: 0.6 }}>📄</span>
+                  <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Privacy Policy</span>
+                </div>
+                <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
+              </button>
+
               {/* Logout */}
               <motion.button
                 onClick={async () => { await supabase?.auth.signOut(); useOnboardingStore.getState().reset(); navigate('/login'); }}

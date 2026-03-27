@@ -33,6 +33,7 @@ import { LoginScreen } from './pages/LoginScreen';
 import { MatchesScreen } from './pages/MatchesScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
 import { MatchScreen } from './pages/MatchScreen';
+import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { WordBlitz } from './pages/game/WordBlitz';
 import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
@@ -429,6 +430,7 @@ export default function App() {
 
           {/* Login */}
           <Route path="/login" element={<LoginScreen />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
 
           {/* Protected routes */}
           <Route path="/discover" element={<ProtectedRoute><DiscoverScreen /></ProtectedRoute>} />
