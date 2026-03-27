@@ -6,3 +6,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[secrets_scanning]
+  enabled = true
+  omit_values = ["VITE_GOOGLE_MAPS_KEY"]
