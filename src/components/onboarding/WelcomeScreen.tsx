@@ -99,7 +99,7 @@ export function WelcomeScreen() {
         transition={{ duration: 0.55, ease: 'easeOut' }}
       >
         <motion.div
-          className="mb-2 -mt-6"
+          className="mb-2 -mt-10"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
@@ -114,13 +114,13 @@ export function WelcomeScreen() {
             <img
               src="/characters/Octopus.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 right-full mr-2 sm:mr-3 w-[52px] h-[52px] object-contain pointer-events-none select-none"
+              className="absolute top-1/2 -translate-y-1/2 right-full mr-2 sm:mr-3 w-14 h-14 object-contain pointer-events-none select-none"
               style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
             />
             <img
               src="/characters/Robot.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 left-full ml-2 sm:ml-3 w-[52px] h-[52px] object-contain pointer-events-none select-none"
+              className="absolute top-1/2 -translate-y-1/2 left-full ml-2 sm:ml-3 w-14 h-14 object-contain pointer-events-none select-none"
               style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
             />
           </div>
