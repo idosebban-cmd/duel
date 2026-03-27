@@ -121,12 +121,28 @@ function HeroSection() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 240, damping: 18, delay: 0.1 }}
         >
-          <img
-            src="/logo/Logo.png"
-            alt=""
-            className="h-36 w-auto object-contain select-none mx-auto block"
-            style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
-          />
+          <div className="relative inline-block">
+            <img
+              src="/logo/Logo.png"
+              alt=""
+              className="w-[46vw] max-w-[210px] min-w-[160px] h-auto object-contain select-none mx-auto block"
+              style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
+            />
+
+            {/* Side avatars (leaflet-style) */}
+            <img
+              src="/characters/Octopus.png"
+              alt=""
+              className="absolute top-1/2 -translate-y-1/2 -left-14 sm:-left-16 w-11 h-11 sm:w-12 sm:h-12 object-contain pointer-events-none select-none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
+            />
+            <img
+              src="/characters/Robot.png"
+              alt=""
+              className="absolute top-1/2 -translate-y-1/2 -right-14 sm:-right-16 w-11 h-11 sm:w-12 sm:h-12 object-contain pointer-events-none select-none"
+              style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
+            />
+          </div>
           <h1
             className="font-display select-none leading-none mt-2"
             style={{
