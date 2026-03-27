@@ -361,7 +361,9 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppChar
   oppName: string; oppCharacter: string;
   onPlayAgain: () => void; onChat: () => void;
 }) {
-  const won = myScore >= oppScore;
+  const isDraw = myScore === oppScore;
+  const won = myScore > oppScore;
+  const lost = myScore < oppScore;
   const navigate = useNavigate();
 
   return (
@@ -380,14 +382,16 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppChar
       >
         <div className="font-display text-6xl mb-2"
           style={{
-            color: won ? '#4EFFC4' : '#FF6BA8',
-            textShadow: `0 0 30px ${won ? 'rgba(78,255,196,0.7)' : 'rgba(255,107,168,0.7)'}`,
+            color: isDraw ? '#4EFFC4' : won ? '#4EFFC4' : '#FF6BA8',
+            textShadow: `0 0 30px ${
+              isDraw ? 'rgba(78,255,196,0.7)' : won ? 'rgba(78,255,196,0.7)' : 'rgba(255,107,168,0.7)'
+            }`,
           }}
         >
-          {won ? 'YOU WIN!' : 'THEY WIN!'}
+          {isDraw ? "IT'S A DRAW!" : won ? 'YOU WIN!' : 'THEY WIN!'}
         </div>
         <div className="font-display text-xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
-          {won ? '🏆 Word Master' : '✦ Nice Try!'}
+          {isDraw ? '🤝 Neck and neck' : won ? '🏆 Word Master' : '✦ Nice Try!'}
         </div>
       </motion.div>
 
@@ -401,13 +405,13 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppChar
         <div className="flex flex-col items-center gap-2">
           <img src={characterImages[myCharacter] || characterImages.fox} alt="" className="w-14 h-14 object-contain" draggable={false} />
           <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{myName}</span>
-          <span className="font-display text-3xl" style={{ color: won ? '#4EFFC4' : 'rgba(255,255,255,0.8)' }}>{myScore}</span>
+          <span className="font-display text-3xl" style={{ color: won || isDraw ? '#4EFFC4' : 'rgba(255,255,255,0.8)' }}>{myScore}</span>
         </div>
         <div className="font-display text-2xl" style={{ color: 'rgba(255,255,255,0.2)' }}>vs</div>
         <div className="flex flex-col items-center gap-2">
           <img src={characterImages[oppCharacter]} alt="" className="w-14 h-14 object-contain" draggable={false} />
           <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{oppName}</span>
-          <span className="font-display text-3xl" style={{ color: !won ? '#FF6BA8' : 'rgba(255,255,255,0.8)' }}>{oppScore}</span>
+          <span className="font-display text-3xl" style={{ color: lost ? '#FF6BA8' : 'rgba(255,255,255,0.8)' }}>{oppScore}</span>
         </div>
       </motion.div>
 

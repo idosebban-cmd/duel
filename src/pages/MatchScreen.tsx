@@ -444,7 +444,10 @@ export function MatchScreen() {
   );
 
   const rejoinableWordBlitzIdx = games.findIndex(
-    (g) => g.game_type === 'word_blitz' && g.status === 'playing' && g.winner === null,
+    (g) => g.game_type === 'word_blitz'
+      && g.winner === null
+      && g.status !== 'finished'
+      && g.status !== 'abandoned',
   );
 
   const finishedGames = games.filter((g) => g.winner !== null);
