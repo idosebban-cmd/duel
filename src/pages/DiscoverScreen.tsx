@@ -30,7 +30,6 @@ interface Profile {
   bio: string;
   games: string[];
   lookingFor: string;
-  willMatch: boolean;
   duelGames: string[];
   activityLevel: 'today' | 'week' | 'older';
   // Lifestyle
@@ -248,7 +247,6 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
     bio:           p.bio           ?? '',
     games:         p.game_types    ?? [],
     lookingFor:    p.looking_for?.[0] ?? 'open',
-    willMatch:     false,
     duelGames:     ['guess_who', 'dot_dash', 'word_blitz'],
     activityLevel,
     kids:          p.kids          ?? '',
@@ -264,8 +262,8 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
   };
 }
 
-// ─── Prompt data for fake profiles ───────────────────────────────────────────
-
+// ─── Removed fake profile seed dataset (kept commented for cleanup reference) ─
+/*
 const PROFILE_PROMPTS: Record<number, UserPrompt[]> = {
   1:  [{ id:1,  category:'games',       icon:'🎮', question:"I'll always beat you at...",                   answer:"Pictionary. I see the world in images — you never stood a chance." },
        { id:26, category:'fun',         icon:'🎲', question:"My guilty pleasure is...",                     answer:"Judging other people's wrong trivia answers out loud. Silently. Then loudly." },
@@ -393,6 +391,7 @@ const PROFILES: Profile[] = [
   { id: 29, name: 'Rosa',   age: 24, location: 'Brixton',           distance: '2.6 mi', distanceKm: 4.2,  character: 'cat',     element: 'electric', affiliation: 'music',    bio: "Music journalist and rhythm game addict. I review concerts for a living and lose at Guitar Hero for fun. My Spotify wrapped is embarrassing and I refuse to share it.",              games: ['party', 'video', 'word'],        lookingFor: 'casual',     willMatch: false, duelGames: ['dot_dash', 'word_blitz'],               activityLevel: 'today', kids: "Don't want",    drinking: 'Often',    smoking: 'Socially', cannabis: 'Sometimes', pets: 'Cat',  exercise: 'Rarely',    favoriteGames: ['Guitar Hero', 'Rock Band', 'Just Dance'], intent: 'play' },
   { id: 30, name: 'Ben',    age: 31, location: 'Aldgate',           distance: '1.3 mi', distanceKm: 2.1,  character: 'knight',  element: 'earth',    affiliation: 'academia', bio: "Medieval historian and escape room designer. I literally build the puzzles you play. Good luck. I've never lost at one of my own rooms. I've also never told anyone who has.",           games: ['puzzles', 'strategy', 'board'],  lookingFor: 'long-term',  willMatch: true,  duelGames: ['guess_who', 'dot_dash', 'word_blitz'],  activityLevel: 'week',  kids: 'Want someday',  drinking: 'Rarely',   smoking: 'Never',    cannabis: 'Never',     pets: 'None', exercise: 'Sometimes', favoriteGames: ['Chess', 'Escape room games', 'Catan'], intent: 'both' },
 ].map(p => ({ ...p, gender: '', prompts: PROFILE_PROMPTS[p.id as number] ?? [] })) as Profile[];
+*/
 
 // ─── Profile card content (compact, for stack) ───────────────────────────────
 
@@ -622,14 +621,15 @@ function CheckBox({ checked }: { checked: boolean }) {
 
 // ─── Filter Modal ─────────────────────────────────────────────────────────────
 
-function FilterModal({ initialFilters, onApply, onClose }: {
+function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
   initialFilters: FilterState;
+  previewProfiles: Profile[];
   onApply: (f: FilterState) => void;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<FilterState>({ ...initialFilters });
   const [lifestyleOpen, setLifestyleOpen] = useState(false);
-  const previewCount = useMemo(() => applyFilters(PROFILES, draft).length, [draft]);
+  const previewCount = useMemo(() => applyFilters(previewProfiles, draft).length, [previewProfiles, draft]);
 
   const set = <K extends keyof FilterState>(key: K, val: FilterState[K]) =>
     setDraft(prev => ({ ...prev, [key]: val }));
@@ -982,15 +982,15 @@ function EmptyState({ onReset }: { onReset: () => void }) {
         <img src="/icons/Star.png" alt="" className="w-16 h-16 object-contain" draggable={false} style={{ filter: 'drop-shadow(0 0 12px rgba(255,230,109,0.7))' }} />
       </motion.div>
       <div>
-        <p className="font-display text-3xl mb-2" style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.6)' }}>GAME OVER</p>
-        <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>You've seen everyone nearby.</p>
+        <p className="font-display text-3xl mb-2" style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.6)' }}>NO ONE NEARBY YET</p>
+        <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>No one nearby yet — check back soon.</p>
       </div>
       <button
         onClick={onReset}
         className="font-body font-bold text-sm px-6 py-3 rounded-xl"
         style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)', color: '#12122A', boxShadow: '0 0 20px rgba(78,255,196,0.35), 4px 4px 0 rgba(0,0,0,0.3)' }}
       >
-        INSERT COIN AGAIN →
+        REFRESH
       </button>
     </motion.div>
   );
@@ -1189,7 +1189,7 @@ export function DiscoverScreen() {
   const [expandedProfile, setExpandedProfile] = useState<Profile | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterState>(() => loadFilters());
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [profiles, setProfiles] = useState<Profile[]>(PROFILES);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [profilePhotosById, setProfilePhotosById] = useState<Record<string, string[]>>({});
   const photoFetchInFlightRef = useRef<Set<string>>(new Set());
@@ -1235,7 +1235,7 @@ export function DiscoverScreen() {
     checkProfile();
   }, [user?.id]);
 
-  // Load real profiles from DB; keep fake ones as fallback if DB is empty
+  // Load real profiles from DB only (no fake fallback).
   useEffect(() => {
     const loadProfiles = async () => {
       if (!user) {
@@ -1274,11 +1274,13 @@ export function DiscoverScreen() {
           if (basicProfiles.length > 0) {
             setProfiles(basicProfiles.map((p) => dbProfileToProfile(p, currentProfile)));
             setCurrentIndex(0);
+          } else {
+            setProfiles([]);
+            setCurrentIndex(0);
           }
-          // If still no profiles, keep seed profiles as fallback
         }
       } catch {
-        // Keep showing seed profiles — DB unavailable
+        setProfiles([]);
       } finally {
         setLoadingProfiles(false);
       }
@@ -1364,11 +1366,6 @@ export function DiscoverScreen() {
             setSwipeToast('Something went wrong recording your swipe. Please try again.');
           });
       }
-    } else if (dir === 'right' && profile.willMatch) {
-      // Fallback for fake seed profiles – generate a local matchId so chat/games work
-      const fakeId = crypto.randomUUID();
-      setFakeMatchId(fakeId);
-      window.setTimeout(() => setMatchProfile(profile), 100);
     }
   };
 
@@ -1622,6 +1619,7 @@ export function DiscoverScreen() {
           <FilterModal
             key="filter-modal"
             initialFilters={activeFilters}
+            previewProfiles={profiles}
             onApply={handleApplyFilters}
             onClose={() => setShowFilterModal(false)}
           />

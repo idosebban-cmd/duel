@@ -248,12 +248,6 @@ export async function recordSwipe(
   targetId: string,
   action: 'like' | 'pass',
 ): Promise<{ matched: boolean; matchId?: string }> {
-  // Bot profiles never swipe back, so simulate a 25% match rate
-  const BOT_PREFIX = 'a0000000-0000-0000-0000-00000000';
-  const isBot = targetId.startsWith(BOT_PREFIX);
-  if (isBot) console.log('[recordSwipe] Bot detected:', targetId);
-
-  // Attempt to record the swipe (best-effort for bots; throw for real users)
   let swipeRecorded = false;
   try {
     const { error } = await supabase
@@ -261,40 +255,30 @@ export async function recordSwipe(
       .upsert({ from_user: userId, to_user: targetId, direction: action }, { onConflict: 'from_user,to_user' });
     if (error) {
       console.error('[recordSwipe] Swipe record failed:', error.message);
-      if (!isBot) throw error;
+      throw error;
     }
     swipeRecorded = true;
   } catch (err) {
     console.error('[recordSwipe] Swipe record threw:', err);
-    if (!isBot) throw err;
-    swipeRecorded = false;
+    throw err;
   }
 
   if (action === 'pass') {
-    // Passes never immediately create a match — but failures should still be user-visible.
-    if (!isBot && !swipeRecorded) throw new Error('Failed to record swipe');
+    if (!swipeRecorded) throw new Error('Failed to record swipe');
     return { matched: false };
   }
 
-  if (!isBot) {
-    // Real user: need successful swipe record + mutual like check
-    if (!swipeRecorded) throw new Error('Failed to record swipe');
+  if (!swipeRecorded) throw new Error('Failed to record swipe');
 
-    const { data: mutual } = await supabase
-      .from('swipes')
-      .select('id')
-      .eq('from_user', targetId)
-      .eq('to_user', userId)
-      .eq('direction', 'like')
-      .maybeSingle();
+  const { data: mutual } = await supabase
+    .from('swipes')
+    .select('id')
+    .eq('from_user', targetId)
+    .eq('to_user', userId)
+    .eq('direction', 'like')
+    .maybeSingle();
 
-    if (!mutual) return { matched: false };
-  } else {
-    // Bot: 25% random match chance — independent of DB success
-    const roll = Math.random();
-    console.log('[recordSwipe] Roll result:', roll, '— match?', roll < 0.25);
-    if (roll >= 0.25) return { matched: false };
-  }
+  if (!mutual) return { matched: false };
 
   // Persist the match to the database — check-then-insert (upsert requires
   // an UPDATE RLS policy which we intentionally omit; match rows are immutable).
@@ -336,7 +320,7 @@ export async function recordSwipe(
     }
   } catch (err) {
     console.error('[recordSwipe] Match creation threw:', err);
-    if (!isBot) throw err;
+    throw err;
   }
 
   return { matched: false };
