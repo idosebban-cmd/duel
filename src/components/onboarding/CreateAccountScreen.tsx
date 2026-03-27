@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { upsertProfile, savePhotos } from '../../lib/database';
+import { SignupLegalConsent } from '../legal/SignupLegalConsent';
 
 // Check if URL contains an OAuth redirect hash (access_token, etc.)
 function hasOAuthRedirectHash(): boolean {
@@ -393,6 +394,8 @@ export function CreateAccountScreen() {
                 >
                   SIGN UP WITH EMAIL
                 </motion.button>
+
+                <SignupLegalConsent className="mt-1 px-1" />
               </motion.div>
             ) : (
               <motion.div
@@ -457,6 +460,8 @@ export function CreateAccountScreen() {
                     </div>
                   </div>
 
+                  <SignupLegalConsent className="mt-1" />
+
                   {/* Submit */}
                   <motion.button
                     onClick={handleEmailSignUp}
@@ -488,34 +493,6 @@ export function CreateAccountScreen() {
                       )}
                     </AnimatePresence>
                   </motion.button>
-
-                  <p
-                    className="text-center font-body text-xs mt-3"
-                    style={{
-                      color: 'rgba(255,255,255,0.4)',
-                      fontFamily: '"Balsamiq Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-                    }}
-                  >
-                    By creating an account, you agree to our{' '}
-                    <button
-                      type="button"
-                      onClick={() => navigate('/terms')}
-                      className="font-bold underline underline-offset-4"
-                      style={{ color: '#FFE66D' }}
-                    >
-                      Terms of Use
-                    </button>{' '}
-                    and{' '}
-                    <button
-                      type="button"
-                      onClick={() => navigate('/privacy')}
-                      className="font-bold underline underline-offset-4"
-                      style={{ color: '#FFE66D' }}
-                    >
-                      Privacy Policy
-                    </button>
-                    .
-                  </p>
                 </div>
               </motion.div>
             )}

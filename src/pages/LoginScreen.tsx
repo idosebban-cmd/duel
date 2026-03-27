@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { SignupLegalConsent } from '../components/legal/SignupLegalConsent';
 
 // ─── CRT corner brackets ──────────────────────────────────────────────────────
 
@@ -358,6 +359,8 @@ export function LoginScreen() {
               </motion.p>
             )}
           </AnimatePresence>
+
+          {mode === 'signup' && <SignupLegalConsent className="mt-1" />}
 
           {/* Submit button */}
           <motion.button
