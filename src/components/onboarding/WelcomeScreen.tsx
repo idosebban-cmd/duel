@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const floatingIcons = [
   { icon: '/icons/Star.png',                       x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
   { icon: '/icons/Lightning%20bolt.png',            x: '80%', y: '6%',  size: 48, delay: 0.3, rotate: 12  },
-  { icon: '/icons/Heart.png',                      x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
+  { icon: '/landing-icons/Robot.png',              x: '88%', y: '38%', size: 44, delay: 0.6, rotate: -8  },
   { icon: '/icons/Trivia%20%26%20quizzes.png',     x: '4%',  y: '42%', size: 46, delay: 0.9, rotate: 10  },
   { icon: '/icons/Active%20games.png',             x: '78%', y: '72%', size: 50, delay: 0.4, rotate: -12 },
   { icon: '/icons/Star.png',                       x: '8%',  y: '74%', size: 40, delay: 0.7, rotate: 20  },
@@ -110,18 +110,6 @@ export function WelcomeScreen() {
               alt=""
               className="w-[36vw] max-w-[180px] min-w-[118px] h-auto object-contain select-none mx-auto block"
               style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
-            />
-            <img
-              src="/characters/Octopus.png"
-              alt=""
-              className="absolute top-1/2 -translate-y-1/2 right-full mr-2 sm:mr-3 w-14 h-14 object-contain pointer-events-none select-none"
-              style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
-            />
-            <img
-              src="/characters/Robot.png"
-              alt=""
-              className="absolute top-1/2 -translate-y-1/2 left-full ml-2 sm:ml-3 w-14 h-14 object-contain pointer-events-none select-none"
-              style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
             />
           </div>
           <h1
