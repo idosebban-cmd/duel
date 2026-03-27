@@ -125,7 +125,7 @@ function HeroSection() {
             <img
               src="/logo/Logo.png"
               alt=""
-              className="w-[46vw] max-w-[210px] min-w-[160px] h-auto object-contain select-none mx-auto block"
+              className="w-[45vw] max-w-[240px] min-w-[140px] h-auto object-contain select-none mx-auto block"
               style={{ filter: 'drop-shadow(0 0 24px rgba(255,100,100,0.5)) drop-shadow(4px 4px 0px rgba(0,0,0,0.5))' }}
             />
 
@@ -133,13 +133,13 @@ function HeroSection() {
             <img
               src="/characters/Octopus.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 -left-14 sm:-left-16 w-11 h-11 sm:w-12 sm:h-12 object-contain pointer-events-none select-none"
+              className="absolute top-1/2 -translate-y-1/2 right-full mr-2 sm:mr-3 w-12 h-12 sm:w-14 sm:h-14 object-contain pointer-events-none select-none"
               style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
             />
             <img
               src="/characters/Robot.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 -right-14 sm:-right-16 w-11 h-11 sm:w-12 sm:h-12 object-contain pointer-events-none select-none"
+              className="absolute top-1/2 -translate-y-1/2 left-full ml-2 sm:ml-3 w-12 h-12 sm:w-14 sm:h-14 object-contain pointer-events-none select-none"
               style={{ filter: 'drop-shadow(0 0 8px rgba(78,255,196,0.45))' }}
             />
           </div>
