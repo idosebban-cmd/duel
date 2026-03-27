@@ -749,24 +749,23 @@ export function WordBlitz() {
 
   // ─── MP: hydrate countdown from server start time on refresh/reconnect ──────
   useEffect(() => {
-    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent) return;
+    if (!isMultiplayer || phase !== 'playing') return;
     const startedAt = (mp.gameState as GWState | null)?.started_at;
     if (!startedAt) return;
     if (timerSyncedStartedAtRef.current === startedAt) return;
     timerSyncedStartedAtRef.current = startedAt;
     void syncTimerFromStartedAt(startedAt);
-  }, [isMultiplayer, phase, mp.bothPresent, mp.gameState, syncTimerFromStartedAt]);
+  }, [isMultiplayer, phase, mp.gameState, syncTimerFromStartedAt]);
 
   // ─── MP: start timer once both players are present ─────────────────────────
   useEffect(() => {
-    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent) return;
     const startedAt = (mp.gameState as GWState | null)?.started_at;
-    if (startedAt) {
-      const expired = syncTimerFromStartedAt(startedAt);
-      if (expired) return;
-    }
+    if (!isMultiplayer || phase !== 'playing') return;
+    if (!startedAt) return; // wait until started_at is confirmed
+    const expired = syncTimerFromStartedAt(startedAt);
+    if (expired) return;
     startTimer();
-  }, [isMultiplayer, phase, mp.bothPresent, mp.gameState, startTimer, syncTimerFromStartedAt]);
+  }, [isMultiplayer, phase, mp.gameState, startTimer, syncTimerFromStartedAt]);
 
   // ── Multiplayer: hydrate local state from DB + enter play (mirrors Draughts) ──
   useEffect(() => {
