@@ -10,7 +10,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, isWordListLoaded, preloadWordList, scoreWord } from '../../utils/wordList';
-import { abandonGame, getProfile, updateWordBlitzPlayerSlice, finishWordBlitzGame } from '../../lib/database';
+import { abandonGame, getProfile, updateWordBlitzPlayerSlice, updateWordBlitzStartedAt, finishWordBlitzGame } from '../../lib/database';
 import { supabase } from '../../lib/supabase';
 import {
   WaitingForOpponentOverlay,
@@ -738,34 +738,11 @@ export function WordBlitz() {
     const startedAt = new Date().toISOString();
     (async () => {
       try {
-        if (!supabase) return;
-        let baseState = gs;
-        if (!baseState) {
-          const { data, error } = await supabase
-            .from('games')
-            .select('state')
-            .eq('id', mp.gameRow!.id)
-            .single();
-          if (error) {
-            console.error('[WordBlitz] load state for started_at failed:', error.message);
-            return;
-          }
-          baseState = (data?.state ?? { ready: {}, present: {} }) as GWState;
-        }
-        if (baseState.started_at) return;
-        const merged: GWState = {
-          ...baseState,
-          started_at: startedAt,
-        };
-        const { error } = await supabase
-          .from('games')
-          .update({ state: merged as unknown as Record<string, unknown> })
-          .eq('id', mp.gameRow!.id);
-        if (error) {
-          console.error('[WordBlitz] write started_at failed:', error.message);
-        }
+        await updateWordBlitzStartedAt(mp.gameRow!.id, startedAt);
       } catch (err) {
         console.error('[WordBlitz] write started_at threw:', err);
+        // Allow retry on next effect run if RPC fails transiently.
+        startedAtWriteForGameRef.current = null;
       }
     })();
   }, [isMultiplayer, phase, mp.bothPresent, mp.gameRow?.id, mp.gameState]);

@@ -931,6 +931,25 @@ export async function updateWordBlitzPlayerSlice(
   }
 }
 
+export async function updateWordBlitzStartedAt(
+  gameId: string,
+  startedAt: string,
+): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('update_word_blitz_started_at', {
+      p_game_id: gameId,
+      p_started_at: startedAt,
+    });
+    if (error) {
+      console.error('[updateWordBlitzStartedAt]', error.message);
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('[updateWordBlitzStartedAt] threw:', err);
+    throw err;
+  }
+}
+
 export async function finishWordBlitzGame(
   gameId: string,
   finalState: object,
