@@ -72,6 +72,11 @@ export interface OnboardingState {
   // Navigation
   currentStep: number;
   completedSteps: number[];
+
+  /** True after email/password sign-up when Supabase requires email confirmation (no session yet). */
+  pendingEmailVerification: boolean;
+  /** Email used for sign-up — for resend confirmation. */
+  signupEmailForResend: string | null;
 }
 
 interface OnboardingActions {
@@ -100,6 +105,8 @@ interface OnboardingActions {
   completeStep: (step: number) => void;
   setCurrentStep: (step: number) => void;
   reset: () => void;
+  setPendingEmailVerification: (payload: { userId: string; email: string }) => void;
+  clearPendingEmailVerification: () => void;
 }
 
 const initialState: OnboardingState = {
@@ -133,6 +140,8 @@ const initialState: OnboardingState = {
   userPrompts: [],
   currentStep: 0,
   completedSteps: [],
+  pendingEmailVerification: false,
+  signupEmailForResend: null,
 };
 
 export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
@@ -203,6 +212,16 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 
       setCurrentStep: (step) => set({ currentStep: step }),
 
+      setPendingEmailVerification: (payload) =>
+        set({
+          userId: payload.userId,
+          pendingEmailVerification: true,
+          signupEmailForResend: payload.email,
+        }),
+
+      clearPendingEmailVerification: () =>
+        set({ pendingEmailVerification: false, signupEmailForResend: null }),
+
       reset: () => {
         try { sessionStorage.removeItem('duel-photos'); } catch {}
         set({ ...initialState, photos: [] });
@@ -210,7 +229,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
-      version: 5,
+      version: 6,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -232,6 +251,9 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         if (s.longitude === undefined) s.longitude = null;
         // Reset completedSteps because indices shifted
         s.completedSteps = [];
+        // v5 → v6: email confirmation pending flags
+        if (s.pendingEmailVerification === undefined) s.pendingEmailVerification = false;
+        if (s.signupEmailForResend === undefined) s.signupEmailForResend = null;
         return s;
       },
       partialize: (state) => {

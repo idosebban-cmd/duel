@@ -19,6 +19,7 @@ import { BioStep } from './components/onboarding/BioStep';
 import { PlayerCardPreview } from './components/onboarding/PlayerCardPreview';
 import { PromptsSelection } from './components/onboarding/PromptsSelection';
 import { CreateAccountScreen } from './components/onboarding/CreateAccountScreen';
+import { PostEmailConfirmProfileSync } from './components/onboarding/PostEmailConfirmProfileSync';
 import { GameSetup } from './pages/game/GameSetup';
 import { GameBoard } from './pages/game/GameBoard';
 import { GameResult } from './pages/game/GameResult';
@@ -426,6 +427,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <LastSeenHeartbeat />
+      <PostEmailConfirmProfileSync />
       <GlobalChallengeListener />
       <AnimatePresence mode="wait">
         <ErrorBoundary>

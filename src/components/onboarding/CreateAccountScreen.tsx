@@ -27,6 +27,9 @@ export function CreateAccountScreen() {
   const navigate = useNavigate();
   const { setUser, setSession } = useAuthStore();
   const store = useOnboardingStore();
+  const pendingEmailVerification = useOnboardingStore((s) => s.pendingEmailVerification);
+  const signupEmailForResend = useOnboardingStore((s) => s.signupEmailForResend);
+  const setPendingEmailVerification = useOnboardingStore((s) => s.setPendingEmailVerification);
 
   const [mode, setMode] = useState<'main' | 'email'>('main');
   const [email, setEmail] = useState('');
@@ -35,6 +38,8 @@ export function CreateAccountScreen() {
   const [loading, setLoading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
 
@@ -70,6 +75,7 @@ export function CreateAccountScreen() {
     setError(null);
     setAuthedUser({ id: userId, email: userEmail });
     try {
+      store.clearPendingEmailVerification();
       store.setUserId(userId);
       await saveProfile(userId, userEmail);
       navigate('/discover');
@@ -144,6 +150,26 @@ export function CreateAccountScreen() {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    const addr = signupEmailForResend?.trim();
+    if (!addr || !supabase) return;
+    setResendMessage(null);
+    setError(null);
+    setResendBusy(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email: addr });
+      if (resendError) {
+        setResendMessage(resendError.message);
+      } else {
+        setResendMessage('Another email is on the way — check your inbox.');
+      }
+    } catch {
+      setResendMessage('Could not resend — try again in a minute.');
+    } finally {
+      setResendBusy(false);
+    }
+  };
+
   // ─── Email/Password ──────────────────────────────────────────────────────────
   const handleEmailSignUp = async () => {
     if (loading || savingProfile) return;
@@ -176,13 +202,17 @@ export function CreateAccountScreen() {
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
+        setLoading(false);
+        await finishSignUp(data.session.user.id, data.session.user.email ?? email);
       } else if (data.user) {
         setUser(data.user);
-      }
-
-      if (data.user) {
+        setPendingEmailVerification({
+          userId: data.user.id,
+          email: data.user.email ?? email,
+        });
         setLoading(false);
-        await finishSignUp(data.user.id, data.user.email ?? email);
+      } else {
+        setLoading(false);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong.';
@@ -227,6 +257,78 @@ export function CreateAccountScreen() {
         </motion.div>
 
         <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
+      </div>
+    );
+  }
+
+  if (pendingEmailVerification) {
+    return (
+      <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#0A1628' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
+
+        <div className="relative z-10 flex flex-col flex-1 px-6 py-8 max-w-md mx-auto w-full justify-center">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="text-5xl mb-4" aria-hidden>📬</div>
+            <h1
+              className="font-display font-extrabold text-3xl sm:text-4xl mb-3"
+              style={{
+                background: 'linear-gradient(135deg, #4EFFC4, #FFE66D)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                filter: 'drop-shadow(0 0 14px rgba(78,255,196,0.35))',
+              }}
+            >
+              CHECK YOUR EMAIL
+            </h1>
+            <p className="font-body text-sm mb-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              We sent a confirmation link to
+            </p>
+            <p className="font-display text-base mb-6 break-all" style={{ color: '#FFE66D' }}>
+              {signupEmailForResend ?? 'your inbox'}
+            </p>
+            <p className="font-body text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Tap the link in that email to activate your account. Your player card is saved on this device until then — once you confirm, we will finish setting up your profile and drop you into Duel.
+            </p>
+          </motion.div>
+
+          {resendMessage && (
+            <p className="font-body text-xs text-center mb-4" style={{ color: resendMessage.includes('on the way') ? '#4EFFC4' : '#FF6BA8' }}>
+              {resendMessage}
+            </p>
+          )}
+
+          <motion.button
+            type="button"
+            onClick={() => void handleResendConfirmation()}
+            disabled={resendBusy || !signupEmailForResend}
+            className="w-full py-3.5 rounded-2xl font-display font-bold text-sm mb-4 disabled:opacity-45"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '2px solid rgba(255,255,255,0.18)',
+              color: 'rgba(255,255,255,0.85)',
+            }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {resendBusy ? 'SENDING…' : 'RESEND CONFIRMATION EMAIL'}
+          </motion.button>
+
+          <button
+            type="button"
+            className="font-body text-sm w-full py-2"
+            style={{ color: 'rgba(255,255,255,0.35)' }}
+            onClick={() => navigate('/onboarding/preview')}
+          >
+            ← Back to preview
+          </button>
+        </div>
+
+        <div className="h-[3px] w-full mt-auto" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
       </div>
     );
   }
