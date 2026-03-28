@@ -14,6 +14,7 @@ import {
   getMessages,
   sendMessage,
   markMessagesRead,
+  blockUser,
 } from '../lib/database';
 import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
 import {
@@ -22,6 +23,8 @@ import {
   resolveGameRoute,
 } from '../lib/challengeGameFlow';
 import { GAME_LABELS } from '../lib/gameConstants';
+import { SafetyMenuSheet } from '../components/safety/SafetyMenuSheet';
+import { ReportUserModal } from '../components/safety/ReportUserModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -198,6 +201,9 @@ export function MatchScreen() {
   const [cancellingOutgoingId, setCancellingOutgoingId] = useState<string | null>(null);
   const [challengeError, setChallengeError] = useState<string | null>(null);
   const [isGameHistoryExpanded, setIsGameHistoryExpanded] = useState(false);
+  const [safetyMenuOpen, setSafetyMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockError, setBlockError] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -593,6 +599,24 @@ export function MatchScreen() {
 
   const canSend = !!input.trim() && !!matchId && !!myUserId;
   const theirName = theirProfile?.name ?? 'Match';
+  const theirUserId = theirProfile?.id ?? '';
+
+  const runMatchBlock = async () => {
+    if (!myUserId || !theirUserId) return;
+    setBlockError(null);
+    try {
+      const { error } = await blockUser(myUserId, theirUserId);
+      if (error) {
+        console.error('[MatchScreen] block failed:', error);
+        setBlockError(error.message || 'Could not block user.');
+        return;
+      }
+      navigate('/matches', { replace: true });
+    } catch (e) {
+      console.error('[MatchScreen] block threw:', e);
+      setBlockError(e instanceof Error ? e.message : 'Could not block user.');
+    }
+  };
 
   if (!loading && loadError) {
     return (
@@ -699,8 +723,24 @@ export function MatchScreen() {
             <AvatarBubble src={theirAvatar} size={40} />
           </div>
 
-          {/* Spacer to balance back button */}
-          <div className="w-9" />
+          {theirUserId ? (
+            <motion.button
+              type="button"
+              onClick={() => setSafetyMenuOpen(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              whileTap={{ scale: 0.88 }}
+              aria-label="More options"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+                <circle cx="9" cy="3.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+                <circle cx="9" cy="9" r="1.5" fill="rgba(255,255,255,0.65)" />
+                <circle cx="9" cy="14.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+              </svg>
+            </motion.button>
+          ) : (
+            <div className="w-9 flex-shrink-0" aria-hidden />
+          )}
         </div>
 
         {/* Names below avatars */}
@@ -713,6 +753,16 @@ export function MatchScreen() {
           </span>
         </div>
       </header>
+
+      {blockError && (
+        <div
+          className="flex-none px-4 py-2 z-20 font-body text-xs text-center"
+          style={{ background: 'rgba(255,61,113,0.15)', color: '#FF6BA8', borderBottom: '1px solid rgba(255,61,113,0.25)' }}
+          role="alert"
+        >
+          {blockError}
+        </div>
+      )}
 
       {/* ── Flash toast ─────────────────────────────────────────── */}
       <AnimatePresence>
@@ -1105,6 +1155,23 @@ export function MatchScreen() {
           </div>
         </div>
       )}
+
+      <SafetyMenuSheet
+        open={safetyMenuOpen}
+        targetName={theirName}
+        onClose={() => setSafetyMenuOpen(false)}
+        onBlock={() => void runMatchBlock()}
+        onReport={() => setReportOpen(true)}
+      />
+
+      <ReportUserModal
+        open={reportOpen && !!theirUserId && !!myUserId}
+        onClose={() => setReportOpen(false)}
+        reporterId={myUserId}
+        reportedId={theirUserId}
+        reportedName={theirName}
+        onAfterBlock={() => navigate('/matches', { replace: true })}
+      />
     </div>
   );
 }

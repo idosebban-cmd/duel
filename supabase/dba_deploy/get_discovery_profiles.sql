@@ -36,6 +36,12 @@ AS $$
       WHERE s.from_user = caller_id
         AND s.to_user = p.id
     )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.blocks b
+      WHERE (b.blocker_id = caller_id AND b.blocked_id = p.id)
+         OR (b.blocker_id = p.id AND b.blocked_id = caller_id)
+    )
     AND (
       (intent_filter = 'play' AND p.intent IN ('play', 'both'))
       OR (intent_filter = 'romance' AND p.intent IN ('romance', 'both'))
@@ -63,7 +69,7 @@ $$;
 
 COMMENT ON FUNCTION public.get_discovery_profiles(
   uuid, double precision, double precision, double precision, text, integer, integer, text
-) IS 'Distance-filtered discover list; excludes null lat/lng candidates and outgoing swipes.';
+) IS 'Distance-filtered discover list; excludes swipes, mutual blocks, null lat/lng candidates.';
 
 GRANT EXECUTE ON FUNCTION public.get_discovery_profiles(
   uuid, double precision, double precision, double precision, text, integer, integer, text

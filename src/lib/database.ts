@@ -39,6 +39,17 @@ export interface UserProfile {
   last_seen?: string | null;
 }
 
+/** Must match `reports.reason` CHECK constraint in Supabase. */
+export const REPORT_REASON_VALUES = [
+  'Inappropriate content',
+  'Harassment or abuse',
+  'Fake profile or impersonation',
+  'Underage user',
+  'Spam',
+] as const;
+
+export type ReportReason = (typeof REPORT_REASON_VALUES)[number];
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export async function upsertProfile(
@@ -130,6 +141,8 @@ export async function getProfile(userId: string): Promise<{ data: UserProfile | 
 
 export async function getDiscoverProfiles(userId: string): Promise<UserProfile[]> {
   try {
+    const blockedIds = await getBlockedRelatedUserIds(userId);
+
     const { data: swiped } = await supabase
       .from('swipes')
       .select('to_user')
@@ -144,7 +157,9 @@ export async function getDiscoverProfiles(userId: string): Promise<UserProfile[]
       .order('created_at', { ascending: false })
       .limit(100);
 
-    return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
+    return ((data as UserProfile[]) ?? []).filter(
+      (p) => !swipedIds.has(p.id) && !blockedIds.has(p.id),
+    );
   } catch {
     return [];
   }
@@ -176,6 +191,8 @@ export async function getDiscoveryUsers(
   filters: DiscoveryFilters = {},
 ): Promise<UserProfile[]> {
   try {
+    const blockedIds = await getBlockedRelatedUserIds(currentUserId);
+
     const { data: swiped } = await supabase
       .from('swipes')
       .select('to_user')
@@ -210,7 +227,9 @@ export async function getDiscoveryUsers(
           gender_filter: filters.gender ?? null,
         });
         if (error) throw error;
-        return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
+        return ((data as UserProfile[]) ?? []).filter(
+          (p) => !swipedIds.has(p.id) && !blockedIds.has(p.id),
+        );
       } catch {
         // RPC missing or failed — fall back to table query (deploy get_discovery_profiles on Supabase for distance SQL).
       }
@@ -242,9 +261,32 @@ export async function getDiscoveryUsers(
     const { data, error } = await query;
     if (error) throw error;
 
-    return ((data as UserProfile[]) ?? []).filter((p) => !swipedIds.has(p.id));
+    return ((data as UserProfile[]) ?? []).filter(
+      (p) => !swipedIds.has(p.id) && !blockedIds.has(p.id),
+    );
   } catch {
     return [];
+  }
+}
+
+/** User IDs involved in any block with `userId` (either as blocker or blocked). */
+export async function getBlockedRelatedUserIds(userId: string): Promise<Set<string>> {
+  try {
+    const { data, error } = await supabase
+      .from('blocks')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
+
+    if (error) throw error;
+
+    const set = new Set<string>();
+    for (const row of (data ?? []) as { blocker_id: string; blocked_id: string }[]) {
+      if (row.blocker_id === userId) set.add(row.blocked_id);
+      else set.add(row.blocker_id);
+    }
+    return set;
+  } catch {
+    return new Set();
   }
 }
 
@@ -381,6 +423,8 @@ export interface MatchWithProfile {
 
 export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
   try {
+    const blockedIds = await getBlockedRelatedUserIds(userId);
+
     const { data: rows } = await supabase
       .from('matches')
       .select('id, user_a, user_b, matched_at')
@@ -406,6 +450,7 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
     return matchRows
       .map((m) => {
         const partnerId = m.user_a === userId ? m.user_b : m.user_a;
+        if (blockedIds.has(partnerId)) return null;
         const partner = byId.get(partnerId);
         if (!partner) return null;
         return { matchId: m.id, matchedAt: m.matched_at, partner };
@@ -414,6 +459,92 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
   } catch {
     return [];
   }
+}
+
+async function deleteMatchBetweenUsers(
+  userId: string,
+  otherUserId: string,
+): Promise<{ error: Error | null }> {
+  if (userId === otherUserId) return { error: null };
+  const [a, b] = userId < otherUserId ? [userId, otherUserId] : [otherUserId, userId];
+  try {
+    const { error } = await supabase.from('matches').delete().eq('user_a', a).eq('user_b', b);
+    return { error: error as Error | null };
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
+/** Insert block and remove mutual match row (messages/games cascade via FK). */
+export async function blockUser(
+  blockerId: string,
+  blockedId: string,
+): Promise<{ error: Error | null }> {
+  if (blockerId === blockedId) {
+    return { error: new Error('Cannot block yourself') };
+  }
+  try {
+    const { error: insErr } = await supabase
+      .from('blocks')
+      .insert({ blocker_id: blockerId, blocked_id: blockedId });
+
+    if (insErr) {
+      const code = (insErr as { code?: string }).code;
+      if (code !== '23505') {
+        return { error: insErr as Error };
+      }
+    }
+
+    return await deleteMatchBetweenUsers(blockerId, blockedId);
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
+export async function unblockUser(
+  blockerId: string,
+  blockedId: string,
+): Promise<{ error: Error | null }> {
+  try {
+    const { error } = await supabase
+      .from('blocks')
+      .delete()
+      .eq('blocker_id', blockerId)
+      .eq('blocked_id', blockedId);
+    return { error: error as Error | null };
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
+export async function submitUserReport(
+  reporterId: string,
+  reportedId: string,
+  reason: ReportReason,
+  details: string | null,
+): Promise<{ error: Error | null }> {
+  if (reporterId === reportedId) {
+    return { error: new Error('Invalid report target') };
+  }
+  try {
+    const { error } = await supabase.from('reports').insert({
+      reporter_id: reporterId,
+      reported_id: reportedId,
+      reason,
+      details: details?.trim() ? details.trim() : null,
+    });
+    return { error: error as Error | null };
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
+export interface BlockedUserListItem {
+  blockId: string;
+  userId: string;
+  name: string | null;
+  character: string | null;
+  photoUrl: string | null;
 }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
@@ -1241,6 +1372,52 @@ export async function getPhotos(userId: string): Promise<string[]> {
       .eq('user_id', userId)
       .order('"order"');
     return data?.map((p: { photo_url: string }) => p.photo_url) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Rows where the current user is the blocker (for settings UI). */
+export async function listBlockedUsersForSettings(
+  blockerId: string,
+): Promise<BlockedUserListItem[]> {
+  try {
+    const { data: blockRows, error } = await supabase
+      .from('blocks')
+      .select('id, blocked_id')
+      .eq('blocker_id', blockerId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!blockRows?.length) return [];
+
+    const rows = blockRows as { id: string; blocked_id: string }[];
+    const ids = rows.map((r) => r.blocked_id);
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name, character')
+      .in('id', ids);
+
+    const profileById = new Map(
+      ((profiles as { id: string; name: string | null; character: string | null }[]) ?? []).map(
+        (p) => [p.id, p],
+      ),
+    );
+
+    const out: BlockedUserListItem[] = [];
+    for (const row of rows) {
+      const p = profileById.get(row.blocked_id);
+      const photoUrls = await getPhotos(row.blocked_id);
+      out.push({
+        blockId: row.id,
+        userId: row.blocked_id,
+        name: p?.name ?? null,
+        character: p?.character ?? null,
+        photoUrl: photoUrls[0] ?? null,
+      });
+    }
+    return out;
   } catch {
     return [];
   }

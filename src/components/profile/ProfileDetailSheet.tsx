@@ -119,12 +119,15 @@ export function ProfileDetailSheet({
   onClose,
   onAction,
   actionVariant = 'discover',
+  onOpenSafetyMenu,
 }: {
   profile: ProfileDetailData;
   photoUrls?: string[];
   onClose: () => void;
   onAction?: (dir: 'left' | 'right') => void;
   actionVariant?: 'discover' | 'challenge';
+  /** When set, shows a … control in the header (block/report). */
+  onOpenSafetyMenu?: () => void;
 }) {
   const [idx, setIdx] = useState(0);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -148,16 +151,38 @@ export function ProfileDetailSheet({
     <motion.div className="fixed inset-0 z-30 flex flex-col"
       style={{ background: '#12122A' }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
       transition={{ type: 'spring', stiffness: 320, damping: 34 }}>
-      <div className="flex-none flex items-center justify-between px-4 pt-safe pt-3 pb-3 z-10"
+      <div className="flex-none flex items-center gap-2 px-4 pt-safe pt-3 pb-3 z-10"
         style={{ background: 'rgba(18,18,42,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <motion.button onClick={onClose} className="flex items-center gap-1.5 font-body font-bold text-sm"
+        <motion.button onClick={onClose} className="flex items-center gap-1.5 font-body font-bold text-sm flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.55)' }} whileTap={{ scale: 0.92 }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Back
         </motion.button>
-        {!!profile.distance && <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>{profile.distance}</span>}
+        <div className="flex-1 flex justify-center min-w-0">
+          {!!profile.distance && (
+            <span className="font-body text-xs font-bold truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{profile.distance}</span>
+          )}
+        </div>
+        {onOpenSafetyMenu ? (
+          <motion.button
+            type="button"
+            onClick={onOpenSafetyMenu}
+            className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="More options"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+              <circle cx="9" cy="3.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+              <circle cx="9" cy="9" r="1.5" fill="rgba(255,255,255,0.65)" />
+              <circle cx="9" cy="14.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+            </svg>
+          </motion.button>
+        ) : (
+          <div className="w-10 flex-shrink-0" aria-hidden />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto pb-24" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>

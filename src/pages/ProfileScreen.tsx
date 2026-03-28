@@ -4,8 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getProfile, getPhotos, savePhotos, updateProfileField, updateProfileFields, deleteUserAccount } from '../lib/database';
-import type { UserProfile } from '../lib/database';
+import {
+  getProfile,
+  getPhotos,
+  savePhotos,
+  updateProfileField,
+  updateProfileFields,
+  deleteUserAccount,
+  listBlockedUsersForSettings,
+  unblockUser,
+} from '../lib/database';
+import type { UserProfile, BlockedUserListItem } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
@@ -457,6 +466,19 @@ export function ProfileScreen() {
     getPhotos(user.id).then(setDbPhotos);
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setBlockedLoading(true);
+    void listBlockedUsersForSettings(user.id).then((rows) => {
+      if (!cancelled) {
+        setBlockedUsers(rows);
+        setBlockedLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   // Profile completeness
   const completeness = dbProfile
     ? checkProfileCompleteness({
@@ -524,6 +546,8 @@ export function ProfileScreen() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUserListItem[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
   const [showIntentModal, setShowIntentModal] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingCropSrc, setPendingCropSrc] = useState<string | null>(null);
@@ -2012,6 +2036,83 @@ export function ProfileScreen() {
                 </div>
               ))}
             </div>
+          </SectionCard>
+        </motion.div>
+
+        {/* ── Blocked users ────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.31 }}
+        >
+          <SectionCard>
+            <SectionHeading label="Blocked users" />
+            {blockedLoading ? (
+              <p className="font-body text-xs text-center py-4" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                Loading…
+              </p>
+            ) : blockedUsers.length === 0 ? (
+              <p className="font-body text-xs text-center py-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                No one blocked yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {blockedUsers.map((b) => (
+                  <div
+                    key={b.blockId}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      style={{ background: '#1C1C3E', border: '1px solid rgba(78,255,196,0.2)' }}
+                    >
+                      {b.photoUrl ? (
+                        <img src={b.photoUrl} alt="" className="w-full h-full object-cover" draggable={false} />
+                      ) : (
+                        <img
+                          src={characterImages[b.character ?? 'ghost'] ?? '/characters/Ghost.png'}
+                          alt=""
+                          className="w-8 h-8 object-contain"
+                          draggable={false}
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-sm font-bold truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                        {b.name ?? 'Player'}
+                      </p>
+                    </div>
+                    <motion.button
+                      type="button"
+                      onClick={async () => {
+                        if (!user) return;
+                        try {
+                          const { error } = await unblockUser(user.id, b.userId);
+                          if (error) {
+                            showToast(error.message);
+                            return;
+                          }
+                          setBlockedUsers((prev) => prev.filter((x) => x.blockId !== b.blockId));
+                          showToast('Unblocked');
+                        } catch (e) {
+                          showToast(e instanceof Error ? e.message : 'Could not unblock');
+                        }
+                      }}
+                      className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
+                      style={{
+                        background: 'rgba(78,255,196,0.1)',
+                        border: '1px solid rgba(78,255,196,0.3)',
+                        color: '#4EFFC4',
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      Unblock
+                    </motion.button>
+                  </div>
+                ))}
+              </div>
+            )}
           </SectionCard>
         </motion.div>
 

@@ -1,14 +1,25 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
-import { getDiscoverProfiles, getDiscoveryUsers, getProfile, getPhotos, recordSwipe, calculateDistance, updateProfileField } from '../lib/database';
+import {
+  getDiscoverProfiles,
+  getDiscoveryUsers,
+  getProfile,
+  getPhotos,
+  recordSwipe,
+  calculateDistance,
+  updateProfileField,
+  blockUser,
+} from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 import { ProfileDetailSheet } from '../components/profile/ProfileDetailSheet';
+import { SafetyMenuSheet } from '../components/safety/SafetyMenuSheet';
+import { ReportUserModal } from '../components/safety/ReportUserModal';
 import {
   DISCOVER_CARD_HEIGHT,
   DISCOVER_CARD_WIDTH,
@@ -1204,6 +1215,9 @@ export function DiscoverScreen() {
   const emailConfirmed = !!session;
 
   const [swipeToast, setSwipeToast] = useState<string | null>(null);
+  const [safetyMenuOpen, setSafetyMenuOpen] = useState(false);
+  const [safetyTarget, setSafetyTarget] = useState<{ id: string; name: string } | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   useEffect(() => {
     if (!swipeToast) return;
     const t = setTimeout(() => setSwipeToast(null), 2500);
@@ -1384,6 +1398,23 @@ export function DiscoverScreen() {
     setExpandedProfile(null);
     window.setTimeout(() => executeButtonSwipe(dir), 50);
   };
+
+  const runDiscoverBlock = useCallback(async () => {
+    if (!user || !safetyTarget) return;
+    const tid = safetyTarget.id;
+    try {
+      const { error } = await blockUser(user.id, tid);
+      if (error) {
+        setSwipeToast(error.message);
+        return;
+      }
+      setSafetyTarget(null);
+      setExpandedProfile(null);
+      setProfiles((prev) => prev.filter((p) => String(p.id) !== tid));
+    } catch (e) {
+      setSwipeToast(e instanceof Error ? e.message : 'Could not block user.');
+    }
+  }, [user, safetyTarget]);
 
   const stackDepth = Math.min(remaining, 3);
 
@@ -1571,35 +1602,47 @@ export function DiscoverScreen() {
 
       {/* Full profile detail view */}
       <AnimatePresence>
-        {expandedProfile && (
+        {expandedProfile && (() => {
+          const ep = expandedProfile;
+          const epIdStr = typeof ep.id === 'string' ? ep.id : null;
+          return (
           <ProfileDetailSheet
-            key={expandedProfile.id}
+            key={ep.id}
             profile={{
-              id: String(expandedProfile.id),
-              name: expandedProfile.name,
-              age: expandedProfile.age,
-              location: expandedProfile.location,
-              distance: expandedProfile.distance,
-              character: expandedProfile.character,
-              element: expandedProfile.element,
-              affiliation: expandedProfile.affiliation,
-              bio: expandedProfile.bio,
-              games: expandedProfile.games,
-              favoriteGames: expandedProfile.favoriteGames,
-              lookingFor: expandedProfile.lookingFor,
-              kids: expandedProfile.kids,
-              drinking: expandedProfile.drinking,
-              smoking: expandedProfile.smoking,
-              cannabis: expandedProfile.cannabis,
-              pets: expandedProfile.pets,
-              exercise: expandedProfile.exercise,
-              prompts: expandedProfile.prompts,
+              id: String(ep.id),
+              name: ep.name,
+              age: ep.age,
+              location: ep.location,
+              distance: ep.distance,
+              character: ep.character,
+              element: ep.element,
+              affiliation: ep.affiliation,
+              bio: ep.bio,
+              games: ep.games,
+              favoriteGames: ep.favoriteGames,
+              lookingFor: ep.lookingFor,
+              kids: ep.kids,
+              drinking: ep.drinking,
+              smoking: ep.smoking,
+              cannabis: ep.cannabis,
+              pets: ep.pets,
+              exercise: ep.exercise,
+              prompts: ep.prompts,
             }}
-            photoUrls={typeof expandedProfile.id === 'string' ? profilePhotosById[expandedProfile.id] : undefined}
+            photoUrls={epIdStr ? profilePhotosById[epIdStr] : undefined}
             onClose={() => setExpandedProfile(null)}
             onAction={handleDetailAction}
+            onOpenSafetyMenu={
+              epIdStr
+                ? () => {
+                    setSafetyTarget({ id: epIdStr, name: ep.name });
+                    setSafetyMenuOpen(true);
+                  }
+                : undefined
+            }
           />
-        )}
+          );
+        })()}
       </AnimatePresence>
 
       {/* Match modal */}
@@ -1629,6 +1672,29 @@ export function DiscoverScreen() {
           />
         )}
       </AnimatePresence>
+
+      <SafetyMenuSheet
+        open={safetyMenuOpen}
+        targetName={safetyTarget?.name ?? ''}
+        onClose={() => setSafetyMenuOpen(false)}
+        onBlock={() => void runDiscoverBlock()}
+        onReport={() => setReportOpen(true)}
+      />
+
+      <ReportUserModal
+        open={reportOpen && !!safetyTarget && !!user}
+        onClose={() => {
+          setReportOpen(false);
+          setSafetyTarget(null);
+        }}
+        reporterId={user?.id ?? ''}
+        reportedId={safetyTarget?.id ?? ''}
+        reportedName={safetyTarget?.name ?? ''}
+        onAfterBlock={(tid) => {
+          setExpandedProfile(null);
+          setProfiles((prev) => prev.filter((p) => String(p.id) !== tid));
+        }}
+      />
     </div>
   );
 }
