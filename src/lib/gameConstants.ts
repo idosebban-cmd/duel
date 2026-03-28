@@ -11,4 +11,6 @@ export const GAME_LABELS: Record<string, string> = {
   'dot-dash': 'Dot Dash',
   maze_race: 'Maze Race',
   'maze-race': 'Maze Race',
+  hangman: 'Hangman',
+  'hang-man': 'Hangman',
 };

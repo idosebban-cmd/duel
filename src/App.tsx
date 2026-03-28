@@ -42,6 +42,7 @@ import { WordBlitz } from './pages/game/WordBlitz';
 import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
+import { Hangman } from './pages/game/Hangman';
 import { getProfile } from './lib/database';
 import { supabase as supabaseClient } from './lib/supabase';
 import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
@@ -481,6 +482,10 @@ export default function App() {
           {/* Battleship */}
           <Route path="/games/battleship/:matchId" element={<ProtectedRoute><ErrorBoundary><Battleship /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/games/battleship" element={<ProtectedRoute><ErrorBoundary><Battleship /></ErrorBoundary></ProtectedRoute>} />
+
+          {/* Hangman */}
+          <Route path="/games/hangman/:matchId" element={<ProtectedRoute><ErrorBoundary><Hangman /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/games/hangman" element={<ProtectedRoute><ErrorBoundary><Hangman /></ErrorBoundary></ProtectedRoute>} />
 
           {/* Dot Dash */}
           <Route path="/dotdash" element={<ProtectedRoute><DotDashSetup /></ProtectedRoute>} />

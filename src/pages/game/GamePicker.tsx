@@ -82,6 +82,15 @@ const GAMES: GameOption[] = [
     gradient: 'linear-gradient(135deg, #4AC8FF, #0055AA)',
     color: '#4AC8FF',
   },
+  {
+    id: 'hangman',
+    name: 'Hangman',
+    imgSrc: '/game-icons/Hangman.png',
+    description: 'Guess the phrase before the drawing completes. One sets the word, one guesses.',
+    route: '/games/hangman',
+    gradient: 'linear-gradient(135deg, #FF6BA8, #4EFFC4)',
+    color: '#FF6BA8',
+  },
 ];
 
 export function GamePicker() {

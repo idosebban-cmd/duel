@@ -1095,6 +1095,47 @@ export async function submitGameMove(
   }
 }
 
+/** Hangman: player 1 submits category + phrase (RPC updates games / game_secrets / moves). */
+export async function hangmanSubmitSetup(
+  gameId: string,
+  phrase: string,
+  category: string,
+  subcategory: string,
+): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('hangman_submit_setup', {
+      p_game_id: gameId,
+      p_phrase: phrase,
+      p_category: category,
+      p_subcategory: subcategory,
+    });
+    if (error) {
+      console.error('[hangmanSubmitSetup]', error.message);
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('[hangmanSubmitSetup] threw:', err);
+    throw err;
+  }
+}
+
+/** Hangman: player 2 submits a letter guess. */
+export async function hangmanSubmitGuess(gameId: string, letter: string): Promise<void> {
+  try {
+    const { error } = await supabase.rpc('hangman_submit_guess', {
+      p_game_id: gameId,
+      p_letter: letter,
+    });
+    if (error) {
+      console.error('[hangmanSubmitGuess]', error.message);
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('[hangmanSubmitGuess] threw:', err);
+    throw err;
+  }
+}
+
 export async function updateWordBlitzPlayerSlice(
   gameId: string,
   gridLetters: (string | null)[][],

@@ -7,7 +7,8 @@ export type CanonicalGameType =
   | 'battleship'
   | 'word_blitz'
   | 'dot_dash'
-  | 'maze_race';
+  | 'maze_race'
+  | 'hangman';
 
 export interface RouteResolution {
   canonicalGameType: CanonicalGameType;
@@ -47,6 +48,9 @@ export function normalizeGameType(rawGameType: string): CanonicalGameType | null
     case 'maze_race':
     case 'maze-race':
       return 'maze_race';
+    case 'hangman':
+    case 'hang-man':
+      return 'hangman';
     default:
       return null;
   }
@@ -71,6 +75,8 @@ export function resolveGameRoute(rawGameType: string, matchId: string): RouteRes
       return { canonicalGameType, path: `/mazerace/${matchId}/lobby` };
     case 'guess_who':
       return { canonicalGameType, path: `/game/${matchId}/play` };
+    case 'hangman':
+      return { canonicalGameType, path: `/games/hangman/${matchId}` };
     default:
       return null;
   }
