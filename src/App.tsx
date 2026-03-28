@@ -26,6 +26,9 @@ import { DotDashSetup } from './pages/game/DotDashSetup';
 import { DotDashLobby } from './pages/game/DotDashLobby';
 import { DotDashBoard } from './pages/game/DotDashBoard';
 import { DotDashResult } from './pages/game/DotDashResult';
+import { MazeRaceLobby } from './pages/game/MazeRaceLobby';
+import { MazeRaceBoard } from './pages/game/MazeRaceBoard';
+import { MazeRaceResult } from './pages/game/MazeRaceResult';
 import { GamePicker } from './pages/game/GamePicker';
 import { LandingPage } from './pages/LandingPage';
 import { DiscoverScreen } from './pages/DiscoverScreen';
@@ -150,53 +153,70 @@ function GlobalChallengeListener() {
         setToast(null);
 
         const normalizedType = normalizeGameType(challenge.game_type);
-        if (normalizedType !== 'dot_dash') {
-          navigate(route.path);
+
+        if (normalizedType === 'dot_dash' || normalizedType === 'maze_race') {
+          try {
+            const myUserId = user?.id;
+            if (!myUserId) throw new Error('Missing user identity');
+
+            const opponentId = challenge.to_user;
+            const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
+
+            let myName = 'Player 1';
+            try {
+              const myProfile = await getProfile(myUserId);
+              if (myProfile.data?.name) myName = myProfile.data.name;
+            } catch {
+              // ignore
+            }
+
+            const p1Name = p1Id === myUserId ? myName : name;
+            const p2Name = p2Id === myUserId ? myName : name;
+
+            if (normalizedType === 'dot_dash') {
+              const res = await fetch(`${SERVER_URL}/api/dotdash/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  gameId: challenge.match_id,
+                  player1Id: p1Id,
+                  player1Name: p1Name,
+                  player2Id: p2Id,
+                  player2Name: p2Name,
+                }),
+              });
+
+              if (!res.ok) throw new Error(`DotDash create failed: ${res.status}`);
+              const created = await res.json().catch(() => null) as { gameId?: string } | null;
+              const ddGameId = created?.gameId ?? challenge.match_id;
+              navigate(`/dotdash/${ddGameId}/play`);
+              return;
+            }
+
+            const res = await fetch(`${SERVER_URL}/api/mazerace/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                gameId: challenge.match_id,
+                player1Id: p1Id,
+                player1Name: p1Name,
+                player2Id: p2Id,
+                player2Name: p2Name,
+              }),
+            });
+
+            if (!res.ok) throw new Error(`MazeRace create failed: ${res.status}`);
+            const created = await res.json().catch(() => null) as { gameId?: string } | null;
+            const mrGameId = created?.gameId ?? challenge.match_id;
+            navigate(`/mazerace/${mrGameId}/lobby`);
+          } catch (err) {
+            console.error('[App] Realtime game create failed:', err);
+            navigate(route.path);
+          }
           return;
         }
 
-        // Dot Dash uses in-memory game state on the Socket.IO server.
-        // Create (idempotently) first, keyed by the Duel matchId.
-        try {
-          const myUserId = user?.id;
-          if (!myUserId) throw new Error('Missing user identity');
-
-          const opponentId = challenge.to_user;
-          const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
-
-          // Best-effort: fetch my profile name for the lobby.
-          let myName = 'Player 1';
-          try {
-            const myProfile = await getProfile(myUserId);
-            if (myProfile.data?.name) myName = myProfile.data.name;
-          } catch {
-            // ignore
-          }
-
-          const p1Name = p1Id === myUserId ? myName : name;
-          const p2Name = p2Id === myUserId ? myName : name;
-
-          const res = await fetch(`${SERVER_URL}/api/dotdash/create`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              gameId: challenge.match_id,
-              player1Id: p1Id,
-              player1Name: p1Name,
-              player2Id: p2Id,
-              player2Name: p2Name,
-            }),
-          });
-
-          if (!res.ok) throw new Error(`DotDash create failed: ${res.status}`);
-          const created = await res.json().catch(() => null) as { gameId?: string } | null;
-          const ddGameId = created?.gameId ?? challenge.match_id;
-          navigate(`/dotdash/${ddGameId}/play`);
-        } catch (err) {
-          console.error('[App] DotDash create failed:', err);
-          // Fall back to the resolved route so at least navigation happens.
-          navigate(route.path);
-        }
+        navigate(route.path);
       },
     });
   }, [navigate, user?.id]);
@@ -467,6 +487,11 @@ export default function App() {
           <Route path="/dotdash/:gameId/lobby" element={<ProtectedRoute><DotDashLobby /></ProtectedRoute>} />
           <Route path="/dotdash/:gameId/play" element={<ProtectedRoute><ErrorBoundary><DotDashBoard /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/dotdash/:gameId/result" element={<ProtectedRoute><DotDashResult /></ProtectedRoute>} />
+
+          <Route path="/mazerace" element={<ProtectedRoute><Navigate to="/matches" replace /></ProtectedRoute>} />
+          <Route path="/mazerace/:matchId/lobby" element={<ProtectedRoute><MazeRaceLobby /></ProtectedRoute>} />
+          <Route path="/mazerace/:matchId/play" element={<ProtectedRoute><ErrorBoundary><MazeRaceBoard /></ErrorBoundary></ProtectedRoute>} />
+          <Route path="/mazerace/:matchId/result" element={<ProtectedRoute><MazeRaceResult /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
           </Routes>

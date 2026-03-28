@@ -1,0 +1,252 @@
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { connectSocket } from '../../lib/socket';
+import { useMazeRaceStore } from '../../store/mazeRaceStore';
+import { useAuthStore } from '../../store/authStore';
+import { getMatchById, getProfile } from '../../lib/database';
+
+export function MazeRaceLobby() {
+  const { matchId } = useParams<{ matchId: string }>();
+  const navigate = useNavigate();
+  const store = useMazeRaceStore();
+  const { user } = useAuthStore();
+  const socketRef = useRef(connectSocket());
+
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [opponentId, setOpponentId] = useState<string | null>(null);
+
+  const lobby = store.lobbyReady;
+  const myId = store.myUserId;
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data: profile } = await getProfile(user.id);
+      if (cancelled) return;
+      useMazeRaceStore.getState().setIdentity(user.id, profile?.name ?? user.id);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!matchId || !user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const match = await getMatchById(matchId);
+      if (cancelled || !match) return;
+      const opp = match.user_a === user.id ? match.user_b : match.user_a;
+      setOpponentId(opp ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [matchId, user?.id]);
+
+  const isP1 = myId && opponentId ? myId < opponentId : true;
+  const myReady = lobby
+    ? (isP1 ? lobby.player1Ready : lobby.player2Ready)
+    : false;
+  const oppReady = lobby
+    ? (isP1 ? lobby.player2Ready : lobby.player1Ready)
+    : false;
+
+  useEffect(() => {
+    if (!matchId || !myId) {
+      navigate('/play');
+      return;
+    }
+
+    const socket = socketRef.current;
+    socket.emit('mr_join', { gameId: matchId, userId: myId });
+
+    socket.on('mr_lobby_update', (payload: { player1Ready: boolean; player2Ready: boolean }) => {
+      useMazeRaceStore.getState().setLobbyReady(payload);
+    });
+
+    socket.on('mr_countdown', ({ count }: { count: number }) => {
+      setCountdown(count);
+    });
+
+    socket.on('mr_game_started', ({ gameState: gs }: { gameState: unknown }) => {
+      useMazeRaceStore.getState().setGameState(gs as import('../../types/mazeRace').MRGameState);
+      navigate(`/mazerace/${matchId}/play`);
+    });
+
+    socket.on('mr_error', ({ message }: { message: string }) => {
+      setError(message);
+    });
+
+    return () => {
+      socket.off('mr_lobby_update');
+      socket.off('mr_countdown');
+      socket.off('mr_game_started');
+      socket.off('mr_error');
+    };
+  }, [matchId, myId, navigate]);
+
+  const handleReady = () => {
+    if (!matchId || !myId) return;
+    socketRef.current.emit('mr_ready', { gameId: matchId, userId: myId });
+  };
+
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
+      style={{ background: '#12122A' }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(78,255,196,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(78,255,196,0.06) 1px,transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      <AnimatePresence>
+        {countdown !== null && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(18,18,42,0.92)', backdropFilter: 'blur(8px)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              key={countdown}
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 2, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="font-display font-extrabold text-center"
+              style={{
+                fontSize: 120,
+                color: '#4EFFC4',
+                textShadow: '0 0 40px rgba(78,255,196,0.8), 8px 8px 0 rgba(0,0,0,0.4)',
+              }}
+            >
+              {countdown === 0 ? 'GO!' : countdown}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="relative z-10 w-full max-w-sm flex flex-col gap-6">
+        <motion.div className="text-center" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="font-mono text-xs text-electric-mint/60 mb-1 uppercase tracking-widest">
+            Match: <span className="text-electric-mint font-bold">{matchId}</span>
+          </p>
+          <h1
+            className="font-display font-extrabold text-4xl"
+            style={{
+              background: 'linear-gradient(135deg, #FF6BA8, #4EFFC4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            MAZE RACE
+          </h1>
+          <p className="font-body text-white/40 text-sm mt-1">
+            Race to your exit · First one wins
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="grid grid-cols-2 gap-3"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {[
+            { ready: myReady, label: 'YOU', color: '#FF6BA8', shadow: '#FF3D71' },
+            { ready: oppReady, label: 'THEM', color: '#00D9FF', shadow: '#4EFFC4' },
+          ].map(({ ready, label, color, shadow }) => (
+            <div
+              key={label}
+              className="rounded-2xl p-4 flex flex-col items-center gap-3"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: `3px solid ${ready ? color : 'rgba(255,255,255,0.1)'}`,
+                boxShadow: ready ? `0 0 20px ${shadow}44` : 'none',
+                transition: 'all 0.3s',
+              }}
+            >
+              <span className="font-display font-bold text-xs px-3 py-1 rounded-full"
+                style={{
+                  background: ready ? color : 'rgba(255,255,255,0.08)',
+                  color: ready ? '#12122A' : 'rgba(255,255,255,0.4)',
+                  border: `2px solid ${ready ? color : 'rgba(255,255,255,0.1)'}`,
+                }}
+              >
+                {ready ? '✓ READY' : label}
+              </span>
+            </div>
+          ))}
+        </motion.div>
+
+        <motion.div
+          className="rounded-2xl p-4"
+          style={{ background: 'rgba(78,255,196,0.08)', border: '2px solid rgba(78,255,196,0.25)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <p className="font-display font-bold text-xs text-electric-mint uppercase tracking-widest mb-2">
+            How to play
+          </p>
+          <ul className="font-body text-white/60 text-xs space-y-1">
+            <li>Tap direction buttons to move one cell</li>
+            <li>Yellow markers show both exits — yours is opposite your opponent&apos;s</li>
+            <li>Player 1 starts top-left; player 2 starts bottom-right</li>
+          </ul>
+        </motion.div>
+
+        {error && (
+          <p className="text-center font-body text-sm text-cherry-punch">{error}</p>
+        )}
+
+        <motion.button
+          onClick={handleReady}
+          disabled={myReady}
+          className="w-full py-5 rounded-2xl font-display font-extrabold text-xl"
+          style={{
+            background: myReady
+              ? 'rgba(78,255,196,0.15)'
+              : 'linear-gradient(135deg, #FF6BA8 0%, #4EFFC4 100%)',
+            border: '4px solid black',
+            color: myReady ? 'rgba(78,255,196,0.6)' : '#12122A',
+            boxShadow: myReady ? 'none' : '8px 8px 0px 0px #FFE66D',
+            cursor: myReady ? 'not-allowed' : 'pointer',
+          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          whileHover={!myReady ? { scale: 1.03 } : {}}
+          whileTap={!myReady ? { scale: 0.97 } : {}}
+        >
+          {myReady ? '✓ READY!' : '⚡ I\'M READY'}
+        </motion.button>
+
+        <motion.button
+          onClick={() => navigate(matchId ? `/match/${matchId}` : '/play')}
+          className="font-body text-sm text-white/30 text-center hover:text-white/60 transition-colors"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          ← Leave lobby
+        </motion.button>
+      </div>
+
+      <div
+        className="fixed bottom-0 left-0 right-0 h-[3px]"
+        style={{
+          background: 'linear-gradient(90deg,#FF6BA8,#FFE66D,#4EFFC4,#B565FF,#FF6BA8)',
+          boxShadow: '0 0 14px rgba(78,255,196,0.7)',
+        }}
+      />
+    </div>
+  );
+}

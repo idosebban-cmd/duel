@@ -353,6 +353,43 @@ export function MatchScreen() {
       }
     }
 
+    if (normalizedType === 'maze_race') {
+      try {
+        const opponentId = challenge.from_user === myUserId ? challenge.to_user : challenge.from_user;
+        const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
+
+        const p1Profile = p1Id === myUserId ? myProfile : theirProfile;
+        const p2Profile = p2Id === myUserId ? myProfile : theirProfile;
+
+        const p1Name = p1Profile?.name ?? 'Player 1';
+        const p2Name = p2Profile?.name ?? 'Opponent';
+
+        const res = await fetch(`${SERVER_URL}/api/mazerace/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameId: challenge.match_id,
+            player1Id: p1Id,
+            player1Name: p1Name,
+            player2Id: p2Id,
+            player2Name: p2Name,
+          }),
+        });
+
+        if (!res.ok) throw new Error(`MazeRace create failed: ${res.status}`);
+        const created = await res.json().catch(() => null) as { gameId?: string } | null;
+        const mrGameId = created?.gameId ?? null;
+        if (!mrGameId) throw new Error('MazeRace create did not return gameId');
+
+        navigate(`/mazerace/${mrGameId}/lobby`);
+        return true;
+      } catch (err) {
+        console.error('[MatchScreen] MazeRace create failed:', err);
+        setChallengeError('Failed to start Maze Race. Please try again.');
+        return false;
+      }
+    }
+
     navigate(resolvedRoute.path);
     return true;
   }, [myUserId, navigate, myProfile, theirProfile]);

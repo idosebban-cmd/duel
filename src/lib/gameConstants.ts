@@ -9,4 +9,6 @@ export const GAME_LABELS: Record<string, string> = {
   'word-blitz': 'Word Blitz',
   dot_dash: 'Dot Dash',
   'dot-dash': 'Dot Dash',
+  maze_race: 'Maze Race',
+  'maze-race': 'Maze Race',
 };

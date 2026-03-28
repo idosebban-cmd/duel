@@ -38,6 +38,15 @@ const GAMES: GameOption[] = [
     color: '#4EFFC4',
   },
   {
+    id: 'maze_race',
+    name: 'Maze Race',
+    imgSrc: '/game-icons/Pong.png',
+    description: 'Same maze, opposite goals — first to their exit wins. Real-time race!',
+    route: '/matches',
+    gradient: 'linear-gradient(135deg, #FF6BA8, #00D9FF)',
+    color: '#FF6BA8',
+  },
+  {
     id: 'word_blitz',
     name: 'Word Blitz',
     imgSrc: '/game-icons/Word%20games.png',

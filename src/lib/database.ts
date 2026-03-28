@@ -1220,8 +1220,10 @@ export async function createChallenge(
   }
 
   // No mutual match — insert new challenge
-  const isDotDash = gameType === 'dot-dash' || gameType === 'dot_dash';
-  const challengeExpiryMs = isDotDash ? 10 * 60_000 : 30 * 60_000;
+  const isShortLivedRealtime =
+    gameType === 'dot-dash' || gameType === 'dot_dash'
+    || gameType === 'maze-race' || gameType === 'maze_race';
+  const challengeExpiryMs = isShortLivedRealtime ? 10 * 60_000 : 30 * 60_000;
   const expiresAt = new Date(Date.now() + challengeExpiryMs).toISOString();
 
   try {
