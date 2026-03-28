@@ -101,6 +101,20 @@ export async function updateProfileField(
   }
 }
 
+
+/** Update multiple profile columns in one request. */
+export async function updateProfileFields(
+  userId: string,
+  patch: Record<string, unknown>,
+): Promise<{ error: Error | null }> {
+  try {
+    const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
+    return { error: error as Error | null };
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
 export async function getProfile(userId: string): Promise<{ data: UserProfile | null; error: Error | null }> {
   try {
     const { data, error } = await supabase

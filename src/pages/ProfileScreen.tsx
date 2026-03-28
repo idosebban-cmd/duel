@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getProfile, getPhotos, savePhotos, updateProfileField, deleteUserAccount } from '../lib/database';
+import { getProfile, getPhotos, savePhotos, updateProfileField, updateProfileFields, deleteUserAccount } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
@@ -15,6 +15,7 @@ import {
 } from '../lib/discoverCardConstants';
 import { fileToDataUrl } from '../lib/imageCrop';
 import { PhotoCropModal } from '../components/profile/PhotoCropModal';
+import { LocationCaptureField } from '../components/location/LocationCaptureField';
 
 // ─── Asset maps ───────────────────────────────────────────────────────────────
 
@@ -530,6 +531,8 @@ export function ProfileScreen() {
   // Edit modal state
   const [editModal, setEditModal] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [editLat, setEditLat] = useState<number | null>(null);
+  const [editLng, setEditLng] = useState<number | null>(null);
   const [editArray, setEditArray] = useState<string[]>([]);
   const [editFavGames, setEditFavGames] = useState<string[]>([]);
   const [newFavGame, setNewFavGame] = useState('');
@@ -581,6 +584,18 @@ export function ProfileScreen() {
     setEditText(currentValue);
     setEditModal(modal);
   };
+
+  const openLocationEdit = useCallback(() => {
+    setEditText(dbProfile?.location ?? store.location ?? '');
+    setEditLat(dbProfile?.latitude ?? null);
+    setEditLng(dbProfile?.longitude ?? null);
+    setEditModal('location');
+  }, [dbProfile?.location, dbProfile?.latitude, dbProfile?.longitude, store.location]);
+
+  const handleProfileLocationCoords = useCallback((lat: number | null, lng: number | null) => {
+    setEditLat(lat);
+    setEditLng(lng);
+  }, []);
   const openArrayEdit = (modal: string, currentValue: string[]) => {
     setEditArray([...currentValue]);
     setEditModal(modal);
@@ -692,9 +707,9 @@ export function ProfileScreen() {
         )}
       </AnimatePresence>
 
-      {/* ── Text edit modal (name / bio / location) ────────────────────── */}
+      {/* ── Text edit modal (name / bio) ────────────────────── */}
       <AnimatePresence>
-        {(editModal === 'name' || editModal === 'bio' || editModal === 'location') && (
+        {(editModal === 'name' || editModal === 'bio') && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center p-6"
             style={{ background: 'rgba(0,0,0,0.85)' }}
@@ -708,7 +723,7 @@ export function ProfileScreen() {
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>
-                {editModal === 'name' ? 'Edit Name' : editModal === 'bio' ? 'Edit Bio' : 'Edit Location'}
+                {editModal === 'name' ? 'Edit Name' : 'Edit Bio'}
               </h2>
               {editModal === 'bio' ? (
                 <textarea
@@ -726,10 +741,10 @@ export function ProfileScreen() {
                   type="text"
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  maxLength={editModal === 'name' ? 50 : 100}
+                  maxLength={50}
                   className="w-full rounded-xl px-4 py-3 font-body text-sm"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
-                  placeholder={editModal === 'name' ? 'Your name' : 'City, Country'}
+                  placeholder="Your name"
                   autoFocus
                 />
               )}
@@ -762,6 +777,84 @@ export function ProfileScreen() {
                     border: '1.5px solid rgba(78,255,196,0.3)',
                     color: '#4EFFC4',
                     opacity: (saving || (editModal === 'bio' && editText.length > 0 && editText.length < 20) || !editText.trim()) ? 0.4 : 1,
+                  }}
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Location edit (GPS + Places) ────────────────────── */}
+      <AnimatePresence>
+        {editModal === 'location' && user && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
+            <motion.div
+              className="w-full max-w-sm rounded-2xl p-5 max-h-[90vh] overflow-y-auto"
+              style={{ background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)', border: '2px solid rgba(255,255,255,0.1)' }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>Edit Location</h2>
+              <LocationCaptureField
+                active={editModal === 'location'}
+                value={editText}
+                onChangeValue={setEditText}
+                latitude={editLat}
+                longitude={editLng}
+                onCoordsChange={handleProfileLocationCoords}
+              />
+              <div className="flex gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditModal(null)}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={saving || !editText.trim() || editLat == null || editLng == null}
+                  onClick={async () => {
+                    if (!user || editLat == null || editLng == null) return;
+                    setSaving(true);
+                    const { error } = await updateProfileFields(user.id, {
+                      location: editText.trim(),
+                      latitude: editLat,
+                      longitude: editLng,
+                    });
+                    setSaving(false);
+                    if (error) {
+                      showToast('Failed to save — try again');
+                      return;
+                    }
+                    setDbProfile((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            location: editText.trim(),
+                            latitude: editLat,
+                            longitude: editLng,
+                          }
+                        : prev,
+                    );
+                    showToast('Location updated!');
+                    setEditModal(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  style={{
+                    background: 'rgba(78,255,196,0.15)',
+                    border: '1.5px solid rgba(78,255,196,0.3)',
+                    color: '#4EFFC4',
+                    opacity: (saving || !editText.trim() || editLat == null || editLng == null) ? 0.4 : 1,
                   }}
                 >
                   {saving ? 'Saving…' : 'Save'}
@@ -1449,7 +1542,7 @@ export function ProfileScreen() {
                 </svg>
               </button>
             </div>
-            <button onClick={() => openTextEdit('location', location)} className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={openLocationEdit} className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
                 <circle cx="6" cy="4.5" r="1.2" fill="currentColor"/>

@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Locate } from '../ui/Icons';
+import { ArrowLeft } from '../ui/Icons';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '../ui/Input';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { LocationCaptureField, LOCATION_MAPS_KEY } from '../location/LocationCaptureField';
 
 const basicsSchema = z.object({
   name: z
@@ -59,14 +60,6 @@ function calculateAge(birthday: string): number | null {
     : age;
 }
 
-type BigDataReverse = {
-  city?: string;
-  locality?: string;
-  principalSubdivision?: string;
-};
-
-const mapsKey = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
-
 export function BasicsForm() {
   const navigate = useNavigate();
   const {
@@ -85,14 +78,7 @@ export function BasicsForm() {
   const [selectedGender, setSelectedGender] = useState<Gender | null>(storedGender);
   const [selectedInterest, setSelectedInterest] = useState<InterestedIn | null>(storedInterest);
   const [currentAge, setCurrentAge] = useState<number | null>(null);
-  const [geoLoading, setGeoLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [mapsReady, setMapsReady] = useState(
-    () => typeof window !== 'undefined' && !!(window as unknown as { google?: { maps?: { places?: unknown } } }).google?.maps?.places,
-  );
-
-  const locationInputRef = useRef<HTMLInputElement | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const {
     register,
@@ -117,110 +103,7 @@ export function BasicsForm() {
     setCurrentAge(age);
   }, [watchedBirthday]);
 
-  useEffect(() => {
-    if (!mapsKey?.trim()) return;
-    const w = window as unknown as { google?: { maps?: { places?: unknown } } };
-    if (w.google?.maps?.places) {
-      setMapsReady(true);
-      return;
-    }
-    const existing = document.getElementById('duel-google-maps-js');
-    if (existing) {
-      existing.addEventListener('load', () => setMapsReady(true));
-      return;
-    }
-    const s = document.createElement('script');
-    s.id = 'duel-google-maps-js';
-    s.async = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsKey.trim())}&libraries=places`;
-    s.onload = () => setMapsReady(true);
-    s.onerror = () => setLocationError('Could not load location search. Try GPS or check the API key.');
-    document.head.appendChild(s);
-  }, [mapsKey]);
-
-  useEffect(() => {
-    if (!mapsReady || !mapsKey?.trim()) return;
-    const input = locationInputRef.current;
-    if (!input || autocompleteRef.current) return;
-    const w = window as unknown as { google: typeof google };
-    if (!w.google?.maps?.places) return;
-
-    const ac = new w.google.maps.places.Autocomplete(input, {
-      types: ['(cities)'],
-      fields: ['formatted_address', 'geometry', 'name'],
-    });
-    autocompleteRef.current = ac;
-    const listener = ac.addListener('place_changed', () => {
-      const place = ac.getPlace();
-      const loc = place.geometry?.location;
-      if (!loc) return;
-      const lat = loc.lat();
-      const lng = loc.lng();
-      const addr = place.formatted_address ?? place.name ?? '';
-      setValue('location', addr, { shouldValidate: true });
-      setLocationCoords(lat, lng);
-      setLocationError(null);
-    });
-    return () => {
-      listener.remove();
-      autocompleteRef.current = null;
-    };
-  }, [mapsReady, mapsKey, setLocationCoords, setValue]);
-
-  const { ref: locationRefFromForm, onChange: locationOnChange, ...locationRegisterRest } = register('location');
-
-  const bindLocationRef = useCallback(
-    (el: HTMLInputElement | null) => {
-      locationRefFromForm(el);
-      locationInputRef.current = el;
-    },
-    [locationRefFromForm],
-  );
-
-  const handleLocationInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setLocationCoords(null, null);
-      setLocationError(null);
-      locationOnChange(e);
-    },
-    [locationOnChange, setLocationCoords],
-  );
-
   const allValid = isValid && selectedGender !== null && selectedInterest !== null;
-
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported in this browser.');
-      return;
-    }
-    setGeoLoading(true);
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setLocationCoords(lat, lng);
-        try {
-          const res = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(String(lat))}&longitude=${encodeURIComponent(String(lng))}&localityLanguage=en`,
-          );
-          if (!res.ok) throw new Error('reverse geocode');
-          const j = (await res.json()) as BigDataReverse;
-          const label = j.city || j.locality || j.principalSubdivision || 'Unknown location';
-          setValue('location', label, { shouldValidate: true });
-        } catch {
-          setValue('location', 'Unknown location', { shouldValidate: true });
-        } finally {
-          setGeoLoading(false);
-        }
-      },
-      (err) => {
-        setGeoLoading(false);
-        setLocationError(err.message || 'Could not get your location.');
-      },
-      { enableHighAccuracy: true, timeout: 25_000, maximumAge: 0 },
-    );
-  };
 
   const onSubmit = (data: BasicsFormData) => {
     if (!selectedGender || !selectedInterest) return;
@@ -228,7 +111,7 @@ export function BasicsForm() {
     const lng = useOnboardingStore.getState().longitude;
     if (lat == null || lng == null) {
       setLocationError(
-        mapsKey?.trim()
+        LOCATION_MAPS_KEY?.trim()
           ? 'Use "Use My Current Location" or pick a city from the suggestions.'
           : 'Use "Use My Current Location" to set your area (or add VITE_GOOGLE_MAPS_KEY for city search).',
       );
@@ -248,8 +131,6 @@ export function BasicsForm() {
     completeStep(2);
     navigate('/onboarding/photos');
   };
-
-  const locationOk = storedLat != null && storedLng != null;
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
@@ -321,35 +202,24 @@ export function BasicsForm() {
             </div>
           </div>
 
-          <div>
-            <Input
-              dark
-              label="WHERE ARE YOU?"
-              placeholder={mapsKey?.trim() ? 'Search for a city...' : 'Use GPS to set your area'}
-              error={errors.location?.message || locationError || undefined}
-              success={!errors.location && !locationError && !!watch('location') && locationOk}
-              leftIcon={<MapPin size={18} />}
-              hint={mapsKey?.trim() ? 'Pick a suggestion, or use GPS.' : 'Tap "Use My Current Location", or set VITE_GOOGLE_MAPS_KEY for city search.'}
-              {...locationRegisterRest}
-              ref={bindLocationRef}
-              onChange={handleLocationInputChange}
-            />
-            <button
-              type="button"
-              onClick={handleGetLocation}
-              disabled={geoLoading}
-              className="mt-2 flex items-center gap-1.5 text-sm font-body font-medium disabled:opacity-50"
-              style={{ color: '#FF9F1C' }}
-            >
-              <Locate size={14} />
-              {geoLoading ? 'Getting location…' : 'Use My Current Location'}
-            </button>
-          </div>
+          <LocationCaptureField
+            label="WHERE ARE YOU?"
+            active
+            value={watch('location')}
+            onChangeValue={(v) => {
+              setLocationError(null);
+              setValue('location', v, { shouldValidate: true });
+            }}
+            latitude={storedLat}
+            longitude={storedLng}
+            onCoordsChange={setLocationCoords}
+            error={errors.location?.message || locationError || undefined}
+          />
         </motion.div>
       </form>
 
       <div className="relative z-10 px-4 sm:px-6 py-5" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
-        <motion.button onClick={handleSubmit(onSubmit)} disabled={!allValid} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
+        <motion.button type="button" onClick={handleSubmit(onSubmit)} disabled={!allValid} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
           style={{ background: allValid ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: allValid ? '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)' : 'none', color: allValid ? '#12122A' : 'rgba(255,255,255,0.2)', cursor: allValid ? 'pointer' : 'not-allowed' }}
           whileHover={allValid ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } : undefined} whileTap={allValid ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
           {allValid && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
