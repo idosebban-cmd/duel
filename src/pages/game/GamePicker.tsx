@@ -40,7 +40,7 @@ const GAMES: GameOption[] = [
   {
     id: 'maze_race',
     name: 'Maze Race',
-    imgSrc: '/game-icons/Pong.png',
+    imgSrc: '/game-icons/maze.png',
     description: 'Same maze, opposite goals — first to their exit wins. Real-time race!',
     route: '/matches',
     gradient: 'linear-gradient(135deg, #FF6BA8, #00D9FF)',
@@ -227,7 +227,11 @@ export function GamePicker() {
                   <img
                     src={game.imgSrc}
                     alt={game.name}
-                    className="w-12 h-12 object-contain flex-shrink-0"
+                    className={
+                      game.id === 'hangman'
+                        ? 'w-14 h-14 sm:w-16 sm:h-16 object-contain flex-shrink-0'
+                        : 'w-12 h-12 object-contain flex-shrink-0'
+                    }
                     draggable={false}
                   />
                   <h2 className="font-display font-extrabold text-2xl text-white">
