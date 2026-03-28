@@ -8,6 +8,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { useAuthStore } from '../../store/authStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { FirstGameFeedbackModal } from '../../components/feedback/FirstGameFeedbackModal';
+import { useFirstGameFeedback } from '../../components/feedback/useFirstGameFeedback';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { isValidWord, isWordListLoaded, preloadWordList, scoreWord } from '../../utils/wordList';
 import { abandonGame, getProfile, updateWordBlitzPlayerSlice, updateWordBlitzStartedAt, finishWordBlitzGame } from '../../lib/database';
@@ -518,6 +520,7 @@ export function WordBlitz() {
   const [myProfileCharacter, setMyProfileCharacter] = useState<string | null>(null);
   const [opponentName, setOpponentName] = useState<string | null>(null);
   const [opponentCharacter, setOpponentCharacter] = useState<string | null>(null);
+  const [firstGameFeedbackDone, setFirstGameFeedbackDone] = useState(false);
 
   useEffect(() => {
     if (!isMultiplayer || !myUserId) return;
@@ -552,7 +555,11 @@ export function WordBlitz() {
   const opponentDisplayName = isMultiplayer ? (opponentName ?? 'Opponent') : BOT_OPPONENT.name;
   const opponentDisplayCharacter = isMultiplayer ? (opponentCharacter ?? BOT_OPPONENT.character) : BOT_OPPONENT.character;
 
-  usePostGameRedirect({ isMultiplayer, matchId: matchId ?? null, phase });
+  const firstGameFeedback = useFirstGameFeedback(myUserId || undefined, { enabled: phase === 'result' });
+  const firstGameFeedbackBlocking =
+    phase === 'result' && (firstGameFeedback.loading || (firstGameFeedback.show && !firstGameFeedbackDone));
+
+  usePostGameRedirect({ isMultiplayer, matchId: matchId ?? null, phase, block: firstGameFeedbackBlocking });
 
   // ── Multiplayer rules state ────────────────────────────────────────────
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -1065,18 +1072,23 @@ export function WordBlitz() {
 
   if (phase === 'result') {
     return (
-      <ResultScreen
-        myScore={myScore} oppScore={oppScore}
-        myName={myDisplayName}
-        myCharacter={myDisplayCharacter}
-        oppName={opponentDisplayName}
-        oppCharacter={opponentDisplayCharacter}
-        onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
-        onChat={() => {
-          if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
-          if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
-        }}
-      />
+      <>
+        <ResultScreen
+          myScore={myScore} oppScore={oppScore}
+          myName={myDisplayName}
+          myCharacter={myDisplayCharacter}
+          oppName={opponentDisplayName}
+          oppCharacter={opponentDisplayCharacter}
+          onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
+          onChat={() => {
+            if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
+            if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
+          }}
+        />
+        {firstGameFeedback.show && !firstGameFeedbackDone && myUserId ? (
+          <FirstGameFeedbackModal userId={myUserId} onClose={() => setFirstGameFeedbackDone(true)} />
+        ) : null}
+      </>
     );
   }
 

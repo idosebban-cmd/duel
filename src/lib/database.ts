@@ -37,6 +37,7 @@ export interface UserProfile {
   created_at: string;
   /** ISO timestamp; client-updated when app is active (throttled). Omitted until DB column exists. */
   last_seen?: string | null;
+  first_game_feedback_completed?: boolean | null;
 }
 
 /** Must match `reports.reason` CHECK constraint in Supabase. */
@@ -126,6 +127,44 @@ export async function updateProfileFields(
   }
 }
 
+
+
+// ─── First-game feedback ─────────────────────────────────────────────────────
+
+export async function submitFirstGameFeedback(
+  userId: string,
+  rating: number,
+  comment: string | null,
+): Promise<{ error: Error | null }> {
+  try {
+    const trimmed = comment?.trim() ?? '';
+    const { error } = await supabase.from('first_game_feedback').insert({
+      user_id: userId,
+      rating,
+      comment: trimmed.length > 0 ? trimmed.slice(0, 500) : null,
+    });
+    return { error: error as Error | null };
+  } catch (err) {
+    return { error: err as Error };
+  }
+}
+
+export async function setFirstGameFeedbackCompleted(userId: string): Promise<{ error: Error | null }> {
+  return updateProfileFields(userId, { first_game_feedback_completed: true });
+}
+
+export async function countUserCompletedGames(userId: string): Promise<{ count: number; error: Error | null }> {
+  try {
+    const { count, error } = await supabase
+      .from('games')
+      .select('id', { count: 'exact', head: true })
+      .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+      .not('winner', 'is', null);
+    return { count: count ?? 0, error: error as Error | null };
+  } catch (err) {
+    return { count: 0, error: err as Error };
+  }
+}
 export async function getProfile(userId: string): Promise<{ data: UserProfile | null; error: Error | null }> {
   try {
     const { data, error } = await supabase

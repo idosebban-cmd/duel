@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { useDotDashStore } from '../../store/dotDashStore';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { createChallenge } from '../../lib/database';
+import { FirstGameFeedbackModal } from '../../components/feedback/FirstGameFeedbackModal';
+import { useFirstGameFeedback } from '../../components/feedback/useFirstGameFeedback';
 
 function ConfettiPiece({ color, delay }: { color: string; delay: number }) {
   const x   = Math.random() * 100;
@@ -35,12 +37,23 @@ export function DotDashResult() {
   // matchId comes from the URL (gameId param IS the matchId for multiplayer games)
   const matchId = gameId ?? null;
 
-  usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
-
-  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
+  const [firstGameFeedbackDone, setFirstGameFeedbackDone] = useState(false);
   const [showChatUnlock, setShowChatUnlock] = useState(false);
   const [rematchBusy, setRematchBusy] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
+
+  const firstGameFeedback = useFirstGameFeedback(myId || undefined, { enabled: !!payload });
+  const firstGameFeedbackBlocking =
+    !!payload && (firstGameFeedback.loading || (firstGameFeedback.show && !firstGameFeedbackDone));
+
+  usePostGameRedirect({
+    isMultiplayer: !!matchId,
+    matchId,
+    phase: 'result',
+    block: firstGameFeedbackBlocking,
+  });
+
+  const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
 
   const firstGameUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstGameRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +71,7 @@ export function DotDashResult() {
 
   // Auto-redirect to match screen after 3s for first game with this match
   useEffect(() => {
-    if (!payload || !isFirstGame || !matchId) return;
+    if (!payload || !isFirstGame || !matchId || firstGameFeedbackBlocking) return;
 
     clearFirstGameTimers();
     firstGameUnlockTimerRef.current = setTimeout(() => setShowChatUnlock(true), 2000);
@@ -71,7 +84,7 @@ export function DotDashResult() {
       clearFirstGameTimers();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payload, isFirstGame, matchId]);
+  }, [payload, isFirstGame, matchId, firstGameFeedbackBlocking]);
 
   if (!payload) {
     return (
@@ -330,6 +343,10 @@ export function DotDashResult() {
           )}
         </motion.div>
       </div>
+
+      {firstGameFeedback.show && !firstGameFeedbackDone && myId ? (
+        <FirstGameFeedbackModal userId={myId} onClose={() => setFirstGameFeedbackDone(true)} />
+      ) : null}
 
       {/* Neon bar */}
       <div className="fixed bottom-0 left-0 right-0 h-[3px] pointer-events-none"

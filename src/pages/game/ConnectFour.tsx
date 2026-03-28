@@ -5,9 +5,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { useAuthStore } from '../../store/authStore';
 import { characterImages } from '../../utils/assetMaps';
 import { useMultiplayerGame } from '../../lib/useMultiplayerGame';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { FirstGameFeedbackModal } from '../../components/feedback/FirstGameFeedbackModal';
+import { useFirstGameFeedback } from '../../components/feedback/useFirstGameFeedback';
 import { abandonGame, getProfile } from '../../lib/database';
 import { GameTitleCard } from '../../components/game/GameTitleCard';
 import { useNoShowGuard } from '../../lib/useNoShowGuard';
@@ -276,8 +279,14 @@ export function ConnectFour() {
   const [titleCardComplete, setTitleCardComplete] = useState(!isMultiplayer);
   const titleCardActiveRef = useRef(false);
   const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [firstGameFeedbackDone, setFirstGameFeedbackDone] = useState(false);
+  const { user } = useAuthStore();
 
-  usePostGameRedirect({ isMultiplayer, matchId, phase });
+  const firstGameFeedback = useFirstGameFeedback(user?.id, { enabled: phase === 'result' });
+  const firstGameFeedbackBlocking =
+    phase === 'result' && (firstGameFeedback.loading || (firstGameFeedback.show && !firstGameFeedbackDone));
+
+  usePostGameRedirect({ isMultiplayer, matchId, phase, block: firstGameFeedbackBlocking });
 
   useEffect(() => {
     if (!isMultiplayer) {
@@ -829,6 +838,10 @@ export function ConnectFour() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {phase === 'result' && firstGameFeedback.show && !firstGameFeedbackDone && user?.id ? (
+        <FirstGameFeedbackModal userId={user.id} onClose={() => setFirstGameFeedbackDone(true)} />
+      ) : null}
     </div>
   );
 }

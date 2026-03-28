@@ -6,6 +6,8 @@ import { useGameStore } from '../../store/gameStore';
 import { createChallenge, getGame, getGameByMatchId, revealSecrets } from '../../lib/database';
 import { CharacterCard } from '../../components/game/CharacterCard';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
+import { FirstGameFeedbackModal } from '../../components/feedback/FirstGameFeedbackModal';
+import { useFirstGameFeedback } from '../../components/feedback/useFirstGameFeedback';
 import type { Character } from '../../types/game';
 
 // ── Location state passed from GameBoard ─────────────────────────
@@ -57,6 +59,7 @@ export function GameResult() {
   const [rematchBusy, setRematchBusy] = useState(false);
   const [rematchError, setRematchError] = useState<string | null>(null);
   const [gameType, setGameType] = useState<string | null>(null);
+  const [firstGameFeedbackDone, setFirstGameFeedbackDone] = useState(false);
 
   const firstGameUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firstGameRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,7 +163,22 @@ export function GameResult() {
   // Derive values needed by the auto-redirect effect (safe even when result is null)
   const matchId = result?.matchId ?? '';
 
-  usePostGameRedirect({ isMultiplayer: !!matchId, matchId, phase: 'result' });
+  const feedbackEnabled =
+    !loading &&
+    !!result &&
+    !!p1SecretId &&
+    !!p2SecretId &&
+    !secretsError;
+  const firstGameFeedback = useFirstGameFeedback(user?.id, { enabled: feedbackEnabled });
+  const firstGameFeedbackBlocking =
+    feedbackEnabled && (firstGameFeedback.loading || (firstGameFeedback.show && !firstGameFeedbackDone));
+
+  usePostGameRedirect({
+    isMultiplayer: !!matchId,
+    matchId,
+    phase: 'result',
+    block: firstGameFeedbackBlocking,
+  });
 
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
   const characters = result?.characters ?? [];
@@ -169,7 +187,7 @@ export function GameResult() {
 
   // Auto-redirect to chat after 3s for first game with this match
   useEffect(() => {
-    if (!isFirstGame || !matchId || !p1SecretId || !p2SecretId) return;
+    if (!isFirstGame || !matchId || !p1SecretId || !p2SecretId || firstGameFeedbackBlocking) return;
 
     clearFirstGameTimers();
     firstGameUnlockTimerRef.current = setTimeout(() => setShowChatUnlock(true), 2000);
@@ -183,7 +201,7 @@ export function GameResult() {
       clearFirstGameTimers();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFirstGame, matchId, p1SecretId, p2SecretId]);
+  }, [isFirstGame, matchId, p1SecretId, p2SecretId, firstGameFeedbackBlocking]);
 
   // ── Early returns (all hooks are above) ──────────────────────────
 
@@ -468,6 +486,10 @@ export function GameResult() {
           )}
         </motion.div>
       </div>
+
+      {firstGameFeedback.show && !firstGameFeedbackDone && user?.id ? (
+        <FirstGameFeedbackModal userId={user.id} onClose={() => setFirstGameFeedbackDone(true)} />
+      ) : null}
     </div>
   );
 }
