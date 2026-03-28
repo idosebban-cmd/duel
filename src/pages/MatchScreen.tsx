@@ -312,10 +312,6 @@ export function MatchScreen() {
       return false;
     }
 
-    if (normalizedType === 'maze_race') {
-      console.log('[MatchScreen][debug] maze_race prepareAcceptedChallenge', { ok: setup.ok, gameId: setup.gameId });
-    }
-
     // Dot Dash uses an in-memory Socket.IO server state.
     // Create the in-memory lobby keyed by the Duel matchId before navigating.
     if (normalizedType === 'dot_dash') {

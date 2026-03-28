@@ -135,6 +135,90 @@ function GlobalChallengeListener() {
     return result.ok;
   }, [user?.id]);
 
+  /**
+   * Inviter is `from_user`; accepter is `to_user`. Creates the in-memory Dot Dash / Maze Race
+   * lobby on the game server, then navigates. Fallback paths use matchId so we never rely on
+   * a stale toast closure for maze_race/dot_dash.
+   */
+  const ensureDotDashOrMazeLobbyAndNavigate = useCallback(async (challenge: ChallengeEventRow): Promise<void> => {
+    const myUserId = user?.id;
+    if (!myUserId) throw new Error('Missing user identity');
+
+    const normalizedType = normalizeGameType(challenge.game_type);
+    if (normalizedType !== 'dot_dash' && normalizedType !== 'maze_race') {
+      throw new Error('ensureDotDashOrMazeLobbyAndNavigate: expected dot_dash or maze_race');
+    }
+
+    const opponentId = challenge.to_user;
+    const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
+
+    let opponentName = 'Opponent';
+    try {
+      const oppProfile = await getProfile(challenge.to_user);
+      if (oppProfile.data?.name) opponentName = oppProfile.data.name;
+    } catch {
+      // ignore
+    }
+
+    let myName = 'Player 1';
+    try {
+      const me = await getProfile(myUserId);
+      if (me.data?.name) myName = me.data.name;
+    } catch {
+      // ignore
+    }
+
+    const p1Name = p1Id === myUserId ? myName : opponentName;
+    const p2Name = p2Id === myUserId ? myName : opponentName;
+    const matchId = challenge.match_id;
+
+    try {
+      if (normalizedType === 'dot_dash') {
+        const res = await fetch(`${SERVER_URL}/api/dotdash/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameId: matchId,
+            player1Id: p1Id,
+            player1Name: p1Name,
+            player2Id: p2Id,
+            player2Name: p2Name,
+          }),
+        });
+
+        if (!res.ok) throw new Error(`DotDash create failed: ${res.status}`);
+        const created = await res.json().catch(() => null) as { gameId?: string } | null;
+        const ddGameId = created?.gameId ?? matchId;
+        navigate(`/dotdash/${ddGameId}/play`);
+        return;
+      }
+
+      const res = await fetch(`${SERVER_URL}/api/mazerace/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: matchId,
+          player1Id: p1Id,
+          player1Name: p1Name,
+          player2Id: p2Id,
+          player2Name: p2Name,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`MazeRace create failed: ${res.status}`);
+      const created = await res.json().catch(() => null) as { gameId?: string } | null;
+      const mrGameId = created?.gameId ?? matchId;
+      navigate(`/mazerace/${mrGameId}/lobby`);
+    } catch (err) {
+      console.error('[App] Realtime game create failed:', err);
+      if (normalizedType === 'dot_dash') {
+        navigate(`/dotdash/${matchId}/play`);
+      } else {
+        navigate(`/mazerace/${matchId}/lobby`);
+      }
+    }
+  }, [navigate, user?.id]);
+
   const showSuccessToast = useCallback(async (challenge: ChallengeEventRow) => {
     const route = resolveGameRoute(challenge.game_type, challenge.match_id);
     if (!route) return;
@@ -151,77 +235,12 @@ function GlobalChallengeListener() {
       kind: 'success',
       message: `${name} accepted your challenge!`,
       actionLabel: 'Join game',
-      onAction: async () => {
+      onAction: () => {
         setToast(null);
-
-        const normalizedType = normalizeGameType(challenge.game_type);
-
-        if (normalizedType === 'dot_dash' || normalizedType === 'maze_race') {
-          try {
-            const myUserId = user?.id;
-            if (!myUserId) throw new Error('Missing user identity');
-
-            const opponentId = challenge.to_user;
-            const [p1Id, p2Id] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
-
-            let myName = 'Player 1';
-            try {
-              const myProfile = await getProfile(myUserId);
-              if (myProfile.data?.name) myName = myProfile.data.name;
-            } catch {
-              // ignore
-            }
-
-            const p1Name = p1Id === myUserId ? myName : name;
-            const p2Name = p2Id === myUserId ? myName : name;
-
-            if (normalizedType === 'dot_dash') {
-              const res = await fetch(`${SERVER_URL}/api/dotdash/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  gameId: challenge.match_id,
-                  player1Id: p1Id,
-                  player1Name: p1Name,
-                  player2Id: p2Id,
-                  player2Name: p2Name,
-                }),
-              });
-
-              if (!res.ok) throw new Error(`DotDash create failed: ${res.status}`);
-              const created = await res.json().catch(() => null) as { gameId?: string } | null;
-              const ddGameId = created?.gameId ?? challenge.match_id;
-              navigate(`/dotdash/${ddGameId}/play`);
-              return;
-            }
-
-            const res = await fetch(`${SERVER_URL}/api/mazerace/create`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                gameId: challenge.match_id,
-                player1Id: p1Id,
-                player1Name: p1Name,
-                player2Id: p2Id,
-                player2Name: p2Name,
-              }),
-            });
-
-            if (!res.ok) throw new Error(`MazeRace create failed: ${res.status}`);
-            const created = await res.json().catch(() => null) as { gameId?: string } | null;
-            const mrGameId = created?.gameId ?? challenge.match_id;
-            navigate(`/mazerace/${mrGameId}/lobby`);
-          } catch (err) {
-            console.error('[App] Realtime game create failed:', err);
-            navigate(route.path);
-          }
-          return;
-        }
-
         navigate(route.path);
       },
     });
-  }, [navigate, user?.id]);
+  }, [navigate]);
 
   const showRetryToast = useCallback((challenge: ChallengeEventRow) => {
     setToast({
@@ -230,12 +249,16 @@ function GlobalChallengeListener() {
       actionLabel: 'Retry',
       onAction: async () => {
         const ok = await runSetup(challenge);
-        if (ok) {
+        if (!ok) return;
+        const t = normalizeGameType(challenge.game_type);
+        if (t === 'dot_dash' || t === 'maze_race') {
+          await ensureDotDashOrMazeLobbyAndNavigate(challenge);
+        } else {
           await showSuccessToast(challenge);
         }
       },
     });
-  }, [runSetup, showSuccessToast]);
+  }, [runSetup, showSuccessToast, ensureDotDashOrMazeLobbyAndNavigate]);
 
   const showIncomingChallengeToast = useCallback(async (challenge: ChallengeEventRow) => {
     let name = 'Someone';
@@ -287,7 +310,12 @@ function GlobalChallengeListener() {
           try {
             const ok = await runSetup(updated);
             if (ok) {
-              await showSuccessToast(updated);
+              const t = normalizeGameType(updated.game_type);
+              if (t === 'dot_dash' || t === 'maze_race') {
+                await ensureDotDashOrMazeLobbyAndNavigate(updated);
+              } else {
+                await showSuccessToast(updated);
+              }
             } else {
               showRetryToast(updated);
             }
@@ -322,7 +350,7 @@ function GlobalChallengeListener() {
     return () => {
       sb.removeChannel(channel);
     };
-  }, [runSetup, showIncomingChallengeToast, showRetryToast, showSuccessToast, user?.id]);
+  }, [runSetup, showIncomingChallengeToast, showRetryToast, showSuccessToast, ensureDotDashOrMazeLobbyAndNavigate, user?.id]);
 
   if (!toast) return null;
 
