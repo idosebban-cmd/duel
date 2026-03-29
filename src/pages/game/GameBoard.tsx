@@ -553,6 +553,81 @@ export function GameBoard() {
               </div>
             )}
 
+            {/* My turn to ask — above grid */}
+            {isMyTurn && turnPhase === 'ask' && (
+              <motion.div
+                key="ask"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-3"
+              >
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value.slice(0, 100))}
+                    onKeyDown={(e) => e.key === 'Enter' && questionValid && handleAskQuestion()}
+                    placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
+                    className="w-full py-3 px-4 pr-16 rounded-2xl font-body text-base text-charcoal placeholder:text-charcoal/40 outline-none"
+                    style={{
+                      background: 'white',
+                      border: question && !questionValid
+                        ? '3px solid #FF3D71'
+                        : '3px solid #00D9FF',
+                    }}
+                  />
+                  <span
+                    className="absolute right-3 bottom-3 font-mono text-xs"
+                    style={{ color: question.length > 90 ? '#FF3D71' : 'rgba(0,0,0,0.25)' }}
+                  >
+                    {question.length}/100
+                  </span>
+                </div>
+
+                {question && !questionValid && (
+                  <p className="font-body text-xs text-cherry-punch -mt-1">
+                    {validateQuestion(question)}
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <motion.button
+                    onClick={handleAskQuestion}
+                    disabled={!questionValid}
+                    className="flex-1 py-3 rounded-2xl font-display font-bold text-base"
+                    style={{
+                      background: questionValid
+                        ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)'
+                        : '#374151',
+                      border: '4px solid black',
+                      color: questionValid ? '#0f172a' : '#6b7280',
+                      boxShadow: questionValid ? '6px 6px 0px 0px #B565FF' : 'none',
+                      cursor: questionValid ? 'pointer' : 'not-allowed',
+                    }}
+                    whileHover={questionValid ? { scale: 1.02 } : {}}
+                    whileTap={questionValid ? { scale: 0.97 } : {}}
+                  >
+                    Ask Question
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setShowGuessModal(true)}
+                    className="px-4 py-3 rounded-2xl font-display font-bold text-sm"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF9F1C, #FF3D71)',
+                      border: '4px solid black',
+                      color: 'white',
+                      boxShadow: '4px 4px 0px 0px rgba(0,0,0,0.4)',
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    Guess!
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
             {/* My board (my eliminations) */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -792,81 +867,6 @@ export function GameBoard() {
                       )}
                     </div>
                   )}
-                </motion.div>
-              )}
-
-              {/* My turn to ask */}
-              {isMyTurn && turnPhase === 'ask' && (
-                <motion.div
-                  key="ask"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col gap-3"
-                >
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value.slice(0, 100))}
-                      onKeyDown={(e) => e.key === 'Enter' && questionValid && handleAskQuestion()}
-                      placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
-                      className="w-full py-3 px-4 pr-16 rounded-2xl font-body text-base text-charcoal placeholder:text-charcoal/40 outline-none"
-                      style={{
-                        background: 'white',
-                        border: question && !questionValid
-                          ? '3px solid #FF3D71'
-                          : '3px solid #00D9FF',
-                      }}
-                    />
-                    <span
-                      className="absolute right-3 bottom-3 font-mono text-xs"
-                      style={{ color: question.length > 90 ? '#FF3D71' : 'rgba(0,0,0,0.25)' }}
-                    >
-                      {question.length}/100
-                    </span>
-                  </div>
-
-                  {question && !questionValid && (
-                    <p className="font-body text-xs text-cherry-punch -mt-1">
-                      {validateQuestion(question)}
-                    </p>
-                  )}
-
-                  <div className="flex gap-2">
-                    <motion.button
-                      onClick={handleAskQuestion}
-                      disabled={!questionValid}
-                      className="flex-1 py-3 rounded-2xl font-display font-bold text-base"
-                      style={{
-                        background: questionValid
-                          ? 'linear-gradient(135deg, #4EFFC4, #00D9FF)'
-                          : '#374151',
-                        border: '4px solid black',
-                        color: questionValid ? '#0f172a' : '#6b7280',
-                        boxShadow: questionValid ? '6px 6px 0px 0px #B565FF' : 'none',
-                        cursor: questionValid ? 'pointer' : 'not-allowed',
-                      }}
-                      whileHover={questionValid ? { scale: 1.02 } : {}}
-                      whileTap={questionValid ? { scale: 0.97 } : {}}
-                    >
-                      Ask Question
-                    </motion.button>
-                    <motion.button
-                      onClick={() => setShowGuessModal(true)}
-                      className="px-4 py-3 rounded-2xl font-display font-bold text-sm"
-                      style={{
-                        background: 'linear-gradient(135deg, #FF9F1C, #FF3D71)',
-                        border: '4px solid black',
-                        color: 'white',
-                        boxShadow: '4px 4px 0px 0px rgba(0,0,0,0.4)',
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      Guess!
-                    </motion.button>
-                  </div>
                 </motion.div>
               )}
 

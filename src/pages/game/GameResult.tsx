@@ -8,6 +8,7 @@ import { CharacterCard } from '../../components/game/CharacterCard';
 import { usePostGameRedirect } from '../../lib/usePostGameRedirect';
 import { FirstGameFeedbackModal } from '../../components/feedback/FirstGameFeedbackModal';
 import { useFirstGameFeedback } from '../../components/feedback/useFirstGameFeedback';
+import { generateGuessWhoBoard } from '../../lib/guessWhoCharacters';
 import type { Character } from '../../types/game';
 
 // ── Location state passed from GameBoard ─────────────────────────
@@ -181,9 +182,6 @@ export function GameResult() {
   });
 
   const isFirstGame = matchId ? !localStorage.getItem(`first_game_played_${matchId}`) : false;
-  const characters = result?.characters ?? [];
-  const opponentSecretId = result?.myRole === 'player1' ? p2SecretId : p1SecretId;
-  const opponentChar = opponentSecretId ? characters.find((c) => c.id === opponentSecretId) : undefined;
 
   // Auto-redirect to chat after 3s for first game with this match
   useEffect(() => {
@@ -213,7 +211,7 @@ export function GameResult() {
     );
   }
 
-  if (!result || !result.winner || !result.myRole || !result.characters) return null;
+  if (!result || !result.winner || !result.myRole) return null;
 
   if (secretsError) {
     return (
@@ -239,9 +237,19 @@ export function GameResult() {
   }
 
   // ── Derived render values ────────────────────────────────────────
+  const displayCharacters =
+    result.characters?.length
+      ? result.characters
+      : result.matchId && result.gameId
+        ? generateGuessWhoBoard(result.matchId, result.gameId).characters
+        : [];
   const didWin = result.winner === result.myRole;
   const mySecretId = result.myRole === 'player1' ? p1SecretId : p2SecretId;
-  const myChar = characters.find((c) => c.id === mySecretId);
+  const myChar = displayCharacters.find((c) => c.id === mySecretId);
+  const opponentSecretId = result.myRole === 'player1' ? p2SecretId : p1SecretId;
+  const opponentChar = opponentSecretId
+    ? displayCharacters.find((c) => c.id === opponentSecretId)
+    : undefined;
   const turnHistory = result.turnHistory ?? [];
 
   return (
@@ -320,22 +328,22 @@ export function GameResult() {
           transition={{ delay: 0.4 }}
         >
           <div className="flex gap-3">
-            {opponentChar && (
-              <div className="flex-1">
-                <RevealCard
-                  label="Opponent's character"
-                  character={opponentChar}
-                  accent="#B565FF"
-                  compact
-                />
-              </div>
-            )}
             {myChar && (
               <div className="flex-1">
                 <RevealCard
                   label="Your character"
                   character={myChar}
                   accent="#FF9F1C"
+                  compact
+                />
+              </div>
+            )}
+            {opponentChar && (
+              <div className="flex-1">
+                <RevealCard
+                  label="Opponent's character"
+                  character={opponentChar}
+                  accent="#B565FF"
                   compact
                 />
               </div>
