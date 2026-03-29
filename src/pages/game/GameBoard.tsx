@@ -677,6 +677,117 @@ export function GameBoard() {
               </motion.div>
             )}
 
+            {/* Flip phase: answer reveal + card elimination — above grid */}
+            {turnPhase === 'flip' && (
+              <motion.div
+                key="flip"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col gap-3"
+              >
+                <div
+                  className="px-4 py-3 rounded-2xl flex items-center gap-3"
+                  style={{
+                    background: currentAnswer === 'yes'
+                      ? 'rgba(78,255,196,0.15)' : 'rgba(255,61,113,0.15)',
+                    border: `2px solid ${currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71'}`,
+                  }}
+                >
+                  <span className="text-2xl">{currentAnswer === 'yes' ? '\u2705' : '\u274C'}</span>
+                  <div>
+                    <p className="font-body text-xs text-white/50">
+                      {answererIsMe ? 'You' : 'Opponent'} answered:
+                    </p>
+                    <p
+                      className="font-display font-extrabold text-xl"
+                      style={{ color: currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71' }}
+                    >
+                      {currentAnswer?.toUpperCase()}
+                    </p>
+                  </div>
+                  {isMyTurn && (
+                    <p className="font-body text-xs text-white/40 ml-auto text-right">
+                      Tap cards to<br />eliminate
+                    </p>
+                  )}
+                </div>
+
+                {isMyTurn && (
+                  <div className="flex gap-2">
+                    {store.pendingFlips.length > 0 ? (
+                      <>
+                        <motion.button
+                          onClick={handleConfirmFlips}
+                          className="flex-1 py-3 rounded-2xl font-display font-bold text-base"
+                          style={{
+                            background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
+                            border: '4px solid black',
+                            color: '#0f172a',
+                            boxShadow: '6px 6px 0px 0px #B565FF',
+                          }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                        >
+                          Flip {store.pendingFlips.length} card{store.pendingFlips.length !== 1 ? 's' : ''} & End Turn
+                        </motion.button>
+                        <button
+                          onClick={() => store.clearPendingFlips()}
+                          className="px-4 py-3 rounded-2xl font-body text-sm text-white/50 hover:text-white/80 transition-colors"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)' }}
+                        >
+                          Clear
+                        </button>
+                      </>
+                    ) : (
+                      <motion.button
+                        onClick={handleEndTurn}
+                        className="w-full py-3 rounded-2xl font-display font-bold text-base"
+                        style={{
+                          background: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
+                          border: '4px solid black',
+                          color: 'white',
+                          boxShadow: '6px 6px 0px 0px #4EFFC4',
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        Done Eliminating {'\u2192'} End Turn
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Asker waiting for answer — above grid */}
+            {!isMyTurn && turnPhase === 'answer' && (
+              <motion.div
+                key="waiting-answer"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center gap-3 py-4"
+              >
+                <WaitingDots />
+                <p className="font-body text-white/50">Waiting for opponent to answer...</p>
+              </motion.div>
+            )}
+
+            {/* Waiting for opponent to ask — above grid */}
+            {!isMyTurn && turnPhase === 'ask' && (
+              <motion.div
+                key="waiting-ask"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center gap-3 py-4"
+              >
+                <WaitingDots />
+                <p className="font-body text-white/50">Opponent is thinking...</p>
+              </motion.div>
+            )}
+
             {/* My board (my eliminations) */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -761,129 +872,6 @@ export function GameBoard() {
             )}
 
             <div className="h-32 flex-shrink-0" />
-          </div>
-
-          {/* Bottom Action Area */}
-          <div
-            className="flex-shrink-0 px-4 pb-safe pt-3 pb-6"
-            style={{
-              borderTop: '2px solid rgba(255,255,255,0.06)',
-              background: 'rgba(15,23,42,0.95)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            <AnimatePresence mode="wait">
-              {/* Asker waiting for answer */}
-              {!isMyTurn && turnPhase === 'answer' && (
-                <motion.div
-                  key="waiting-answer"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center justify-center gap-3 py-4"
-                >
-                  <WaitingDots />
-                  <p className="font-body text-white/50">Waiting for opponent to answer...</p>
-                </motion.div>
-              )}
-
-              {/* Flip phase: answer reveal + card elimination */}
-              {turnPhase === 'flip' && (
-                <motion.div
-                  key="flip"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col gap-3"
-                >
-                  <div
-                    className="px-4 py-3 rounded-2xl flex items-center gap-3"
-                    style={{
-                      background: currentAnswer === 'yes'
-                        ? 'rgba(78,255,196,0.15)' : 'rgba(255,61,113,0.15)',
-                      border: `2px solid ${currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71'}`,
-                    }}
-                  >
-                    <span className="text-2xl">{currentAnswer === 'yes' ? '\u2705' : '\u274C'}</span>
-                    <div>
-                      <p className="font-body text-xs text-white/50">
-                        {answererIsMe ? 'You' : 'Opponent'} answered:
-                      </p>
-                      <p
-                        className="font-display font-extrabold text-xl"
-                        style={{ color: currentAnswer === 'yes' ? '#4EFFC4' : '#FF3D71' }}
-                      >
-                        {currentAnswer?.toUpperCase()}
-                      </p>
-                    </div>
-                    {isMyTurn && (
-                      <p className="font-body text-xs text-white/40 ml-auto text-right">
-                        Tap cards to<br />eliminate
-                      </p>
-                    )}
-                  </div>
-
-                  {isMyTurn && (
-                    <div className="flex gap-2">
-                      {store.pendingFlips.length > 0 ? (
-                        <>
-                          <motion.button
-                            onClick={handleConfirmFlips}
-                            className="flex-1 py-3 rounded-2xl font-display font-bold text-base"
-                            style={{
-                              background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
-                              border: '4px solid black',
-                              color: '#0f172a',
-                              boxShadow: '6px 6px 0px 0px #B565FF',
-                            }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.97 }}
-                          >
-                            Flip {store.pendingFlips.length} card{store.pendingFlips.length !== 1 ? 's' : ''} & End Turn
-                          </motion.button>
-                          <button
-                            onClick={() => store.clearPendingFlips()}
-                            className="px-4 py-3 rounded-2xl font-body text-sm text-white/50 hover:text-white/80 transition-colors"
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)' }}
-                          >
-                            Clear
-                          </button>
-                        </>
-                      ) : (
-                        <motion.button
-                          onClick={handleEndTurn}
-                          className="w-full py-3 rounded-2xl font-display font-bold text-base"
-                          style={{
-                            background: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
-                            border: '4px solid black',
-                            color: 'white',
-                            boxShadow: '6px 6px 0px 0px #4EFFC4',
-                          }}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          Done Eliminating {'\u2192'} End Turn
-                        </motion.button>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* Waiting for opponent to ask */}
-              {!isMyTurn && turnPhase === 'ask' && (
-                <motion.div
-                  key="waiting-ask"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center justify-center gap-3 py-4"
-                >
-                  <WaitingDots />
-                  <p className="font-body text-white/50">Opponent is thinking...</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </div>
