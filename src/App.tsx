@@ -408,6 +408,25 @@ function GlobalChallengeListener() {
   );
 }
 
+/** Defers client-side redirect from `/` when the URL hash is a Supabase auth callback so GoTrue can parse tokens before history.replaceState drops the fragment. */
+function RootRedirect() {
+  const navigate = useNavigate();
+  const session = useAuthStore((s) => s.session);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    const isAuthCallback =
+      hash.includes('access_token') ||
+      hash.includes('error_description') ||
+      hash.includes('error_code');
+    if (!isAuthCallback) {
+      navigate('/onboarding/welcome', { replace: true });
+    }
+  }, [navigate, session]);
+
+  return null;
+}
+
 export default function App() {
   const { setUser, setSession, setLoading } = useAuthStore();
   const { setUserId } = useOnboardingStore();
@@ -471,7 +490,7 @@ export default function App() {
           <Route path="/landing" element={<LandingPage />} />
 
           {/* Welcome screen (public — entry point) */}
-          <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
 
           {/* Onboarding (sign-up is step 2; profile steps require auth via OnboardingGuard) */}
