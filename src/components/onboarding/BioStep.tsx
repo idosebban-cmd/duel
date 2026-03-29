@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
-import { useOnboardingStore } from '../../store/onboardingStore';
+import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 
-const MIN_LENGTH = 20;
 const MAX_LENGTH = 300;
 
 export function BioStep() {
@@ -12,11 +11,11 @@ export function BioStep() {
   const { bio, updateBio, completeStep } = useOnboardingStore();
   const [value, setValue] = useState(bio);
 
-  const isValid = value.trim().length >= MIN_LENGTH;
+  const hasContent = value.trim().length > 0;
 
   const handleContinue = () => {
     updateBio(value.trim());
-    if (isValid) completeStep(9);
+    completeStep(9);
     navigate('/onboarding/prompts');
   };
 
@@ -38,7 +37,7 @@ export function BioStep() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Bio</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
+            {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 8 ? 24 : 8, background: i < 8 ? '#FF6BA8' : i === 8 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
@@ -53,7 +52,7 @@ export function BioStep() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               TELL THEM<br />ABOUT YOU
             </h2>
-            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Write a short bio so people know who you are</p>
+            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Optional — share what makes you you</p>
           </motion.div>
 
           {/* Textarea */}
@@ -66,14 +65,14 @@ export function BioStep() {
               className="w-full rounded-2xl px-5 py-4 font-body text-base resize-none outline-none"
               style={{
                 background: 'rgba(255,255,255,0.07)',
-                border: `2px solid ${isValid ? '#4EFFC4' : value.length > 0 ? '#FF9F1C' : 'rgba(255,255,255,0.12)'}`,
+                border: `2px solid ${hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.12)'}`,
                 color: 'white',
                 transition: 'border-color 0.2s',
               }}
             />
             <div className="flex justify-between mt-2 px-1">
-              <span className="font-body text-xs" style={{ color: isValid ? '#4EFFC4' : value.trim().length > 0 ? '#FF9F1C' : 'rgba(255,255,255,0.3)' }}>
-                {isValid ? 'Looks great!' : `Min ${MIN_LENGTH} characters`}
+              <span className="font-body text-xs" style={{ color: hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
+                {hasContent ? 'Looks great!' : 'You can skip this'}
               </span>
               <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 {value.length}/{MAX_LENGTH}

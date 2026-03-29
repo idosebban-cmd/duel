@@ -291,3 +291,9 @@ export const STEPS = [
   { id: 10, path: '/onboarding/prompts', label: 'Prompts' },
   { id: 11, path: '/onboarding/preview', label: 'Preview' },
 ] as const;
+
+/** Indices for the top progress bar — one dot per step after Welcome (STEPS ids 1 … last). */
+export const ONBOARDING_PROGRESS_DOTS = Array.from(
+  { length: STEPS.length - 1 },
+  (_, i) => i
+);

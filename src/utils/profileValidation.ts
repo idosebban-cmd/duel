@@ -9,7 +9,6 @@ export function checkProfileCompleteness(profile: any): ProfileCompleteness {
   const checks: { label: string; ok: boolean }[] = [
     { label: 'Name', ok: !!profile?.name },
     { label: 'Profile photo', ok: !!profile?.avatar_url || (profile?.photos?.length ?? 0) > 0 },
-    { label: 'Bio (min 20 chars)', ok: !!profile?.bio && profile.bio.length >= 20 },
     { label: 'Age', ok: !!profile?.age },
     { label: 'Location', ok: !!profile?.location },
     { label: 'Gender', ok: !!profile?.gender },

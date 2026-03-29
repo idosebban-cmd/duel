@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
 import { GOLD_SELECTION, GoldCornerCheckmark } from './SelectionChrome';
-import { useOnboardingStore } from '../../store/onboardingStore';
+import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { ENABLE_JUST_PLAY } from '../../lib/featureFlags';
 
 type GoalOption = {
@@ -140,7 +140,7 @@ export function RelationshipGoals() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Goals</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
+            {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 5 ? 24 : 8, background: i < 5 ? '#FF6BA8' : i === 5 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>

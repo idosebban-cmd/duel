@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
-import { useOnboardingStore } from '../../store/onboardingStore';
+import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { SignupLegalConsent } from '../legal/SignupLegalConsent';
 
 // Check if URL contains an OAuth redirect hash (access_token, etc.)
@@ -155,6 +155,7 @@ export function CreateAccountScreen() {
 
   // ─── Email/Password ──────────────────────────────────────────────────────────
   const handleEmailSignUp = async () => {
+    console.log('sign-up attempted', email);
     if (loading || oauthBusy) return;
     setError(null);
 
@@ -175,6 +176,7 @@ export function CreateAccountScreen() {
     setLoading(true);
     try {
       const { data, error: authError } = await supabase.auth.signUp({ email, password });
+      console.log('[CreateAccount] supabase.auth.signUp response', { data, error: authError });
 
       if (authError) {
         setError(authError.message);
@@ -333,7 +335,7 @@ export function CreateAccountScreen() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Sign Up</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
+            {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div
                 key={i}
                 className="h-1.5 rounded-full"

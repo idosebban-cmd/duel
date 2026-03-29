@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '../ui/Input';
-import { useOnboardingStore } from '../../store/onboardingStore';
+import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { LocationCaptureField, LOCATION_MAPS_KEY } from '../location/LocationCaptureField';
 import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
 
@@ -147,7 +147,7 @@ export function BasicsForm() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>The Basics</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
+            {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 24 : 8, background: i < 2 ? '#FF6BA8' : i === 2 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>

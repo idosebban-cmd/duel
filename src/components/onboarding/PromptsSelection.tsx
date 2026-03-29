@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from '../ui/Icons';
-import { useOnboardingStore, type UserPrompt } from '../../store/onboardingStore';
+import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS, type UserPrompt } from '../../store/onboardingStore';
 import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
 
 // ─── Prompt library ───────────────────────────────────────────────────────────
@@ -356,7 +356,7 @@ export function PromptsSelection() {
             Personality
           </span>
           <div className="flex gap-1">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+            {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div
                 key={i}
                 className="h-1.5 rounded-full"
