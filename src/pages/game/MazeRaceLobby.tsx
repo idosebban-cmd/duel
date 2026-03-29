@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { connectSocket } from '../../lib/socket';
 import { useMazeRaceStore } from '../../store/mazeRaceStore';
 import { useAuthStore } from '../../store/authStore';
 import { getMatchById, getProfile } from '../../lib/database';
+
+const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL
+  || (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
 
 export function MazeRaceLobby() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -16,6 +20,9 @@ export function MazeRaceLobby() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [opponentId, setOpponentId] = useState<string | null>(null);
+  const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
+  const recoveringRef = useRef(false);
 
   const lobby = store.lobbyReady;
   const myId = store.myUserId;
@@ -39,9 +46,63 @@ export function MazeRaceLobby() {
       if (cancelled || !match) return;
       const opp = match.user_a === user.id ? match.user_b : match.user_a;
       setOpponentId(opp ?? null);
+      if (opp) {
+        const { data: oppProfile } = await getProfile(opp);
+        if (!cancelled) setOpponentName(oppProfile?.name ?? null);
+      } else {
+        setOpponentName(null);
+      }
     })();
     return () => { cancelled = true; };
   }, [matchId, user?.id]);
+
+  const recoverExpiredGame = useCallback(async () => {
+    if (recoveringRef.current || !matchId || !myId) return;
+    let oppId = opponentId;
+    if (!oppId) {
+      const match = await getMatchById(matchId);
+      if (!match) {
+        setError('Could not load match.');
+        return;
+      }
+      oppId = match.user_a === myId ? match.user_b : match.user_a;
+      if (oppId) setOpponentId(oppId);
+    }
+    if (!oppId) {
+      setError('Could not find opponent for this match.');
+      return;
+    }
+
+    recoveringRef.current = true;
+    setReconnecting(true);
+    setError(null);
+    try {
+      const [p1Id, p2Id] = myId < oppId ? [myId, oppId] : [oppId, myId];
+      const [r1, r2] = await Promise.all([getProfile(p1Id), getProfile(p2Id)]);
+      const p1Name = r1.data?.name ?? 'Player 1';
+      const p2Name = r2.data?.name ?? 'Opponent';
+      const res = await fetch(`${SERVER_URL}/api/mazerace/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: matchId,
+          player1Id: p1Id,
+          player1Name: p1Name,
+          player2Id: p2Id,
+          player2Name: p2Name,
+        }),
+      });
+      if (!res.ok) throw new Error(`Could not restore game (${res.status})`);
+      const socket = socketRef.current;
+      socket.emit('mr_join', { gameId: matchId, userId: myId });
+      socket.emit('mr_ready', { gameId: matchId, userId: myId });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Reconnect failed');
+    } finally {
+      setReconnecting(false);
+      recoveringRef.current = false;
+    }
+  }, [matchId, myId, opponentId]);
 
   const isP1 = myId && opponentId ? myId < opponentId : true;
   const myReady = lobby
@@ -51,15 +112,33 @@ export function MazeRaceLobby() {
     ? (isP1 ? lobby.player2Ready : lobby.player1Ready)
     : false;
 
+  const myDisplayName = isP1
+    ? (lobby?.player1Name ?? store.myName ?? 'You')
+    : (lobby?.player2Name ?? store.myName ?? 'You');
+  const oppDisplayName = isP1
+    ? (lobby?.player2Name ?? opponentName ?? 'Opponent')
+    : (lobby?.player1Name ?? opponentName ?? 'Opponent');
+
   useEffect(() => {
     if (!matchId || !myId) return;
 
     const socket = socketRef.current;
     socket.emit('mr_join', { gameId: matchId, userId: myId });
 
-    socket.on('mr_lobby_update', (payload: { player1Ready: boolean; player2Ready: boolean }) => {
+    const onLobbyUpdate = (payload: {
+      player1Ready: boolean;
+      player2Ready: boolean;
+      player1Name?: string;
+      player2Name?: string;
+    }) => {
       useMazeRaceStore.getState().setLobbyReady(payload);
-    });
+    };
+
+    const onGameExpired = () => {
+      void recoverExpiredGame();
+    };
+
+    socket.on('mr_lobby_update', onLobbyUpdate);
 
     socket.on('mr_countdown', ({ count }: { count: number }) => {
       setCountdown(count);
@@ -71,16 +150,20 @@ export function MazeRaceLobby() {
     });
 
     socket.on('mr_error', ({ message }: { message: string }) => {
+      if (message === 'Game not found') return;
       setError(message);
     });
 
+    socket.on('mr_game_expired', onGameExpired);
+
     return () => {
-      socket.off('mr_lobby_update');
+      socket.off('mr_lobby_update', onLobbyUpdate);
       socket.off('mr_countdown');
       socket.off('mr_game_started');
       socket.off('mr_error');
+      socket.off('mr_game_expired', onGameExpired);
     };
-  }, [matchId, myId, navigate]);
+  }, [matchId, myId, navigate, recoverExpiredGame]);
 
   const handleReady = () => {
     if (!matchId || !myId) return;
@@ -180,12 +263,12 @@ export function MazeRaceLobby() {
           transition={{ delay: 0.1 }}
         >
           {[
-            { ready: myReady, label: 'YOU', color: '#FF6BA8', shadow: '#FF3D71' },
-            { ready: oppReady, label: 'THEM', color: '#00D9FF', shadow: '#4EFFC4' },
-          ].map(({ ready, label, color, shadow }) => (
+            { ready: myReady, label: myDisplayName, color: '#FF6BA8', shadow: '#FF3D71', key: 'me' },
+            { ready: oppReady, label: oppDisplayName, color: '#00D9FF', shadow: '#4EFFC4', key: 'opp' },
+          ].map(({ ready, label, color, shadow, key }) => (
             <div
-              key={label}
-              className="rounded-2xl p-4 flex flex-col items-center gap-3"
+              key={key}
+              className="rounded-2xl p-4 flex flex-col items-center gap-3 min-w-0"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: `3px solid ${ready ? color : 'rgba(255,255,255,0.1)'}`,
@@ -193,12 +276,14 @@ export function MazeRaceLobby() {
                 transition: 'all 0.3s',
               }}
             >
-              <span className="font-display font-bold text-xs px-3 py-1 rounded-full"
+              <span
+                className="font-display font-bold text-xs px-3 py-1 rounded-full max-w-full truncate"
                 style={{
                   background: ready ? color : 'rgba(255,255,255,0.08)',
                   color: ready ? '#12122A' : 'rgba(255,255,255,0.4)',
                   border: `2px solid ${ready ? color : 'rgba(255,255,255,0.1)'}`,
                 }}
+                title={label}
               >
                 {ready ? '✓ READY' : label}
               </span>
@@ -223,13 +308,19 @@ export function MazeRaceLobby() {
           </ul>
         </motion.div>
 
-        {error && (
+        {reconnecting && (
+          <p className="text-center font-body text-sm text-electric-mint/90">
+            Reconnecting…
+          </p>
+        )}
+
+        {error && !reconnecting && (
           <p className="text-center font-body text-sm text-cherry-punch">{error}</p>
         )}
 
         <motion.button
           onClick={handleReady}
-          disabled={myReady}
+          disabled={myReady || reconnecting}
           className="w-full py-5 rounded-2xl font-display font-extrabold text-xl"
           style={{
             background: myReady

@@ -22,6 +22,8 @@ export interface MRGameState {
 export interface MRLobbyReady {
   player1Ready: boolean;
   player2Ready: boolean;
+  player1Name?: string;
+  player2Name?: string;
 }
 
 export interface MRGameOverPayload {

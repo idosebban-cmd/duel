@@ -12,6 +12,7 @@ function setupMazeRaceHandlers(io) {
       const game = mazeRace.getGame(gameId);
       if (!game) {
         socket.emit('mr_error', { message: 'Game not found' });
+        socket.emit('mr_game_expired', {});
         return;
       }
 
@@ -41,6 +42,7 @@ function setupMazeRaceHandlers(io) {
       const game = mazeRace.setPlayerReady(gameId, userId);
       if (!game) {
         socket.emit('mr_error', { message: 'Game not found' });
+        socket.emit('mr_game_expired', {});
         return;
       }
 
@@ -158,6 +160,8 @@ function emitLobbyUpdate(io, gameId, game) {
   io.to(`mr:${gameId}`).emit('mr_lobby_update', {
     player1Ready: game.player1.ready,
     player2Ready: game.player2.ready,
+    player1Name: game.player1.name,
+    player2Name: game.player2.name,
   });
 }
 
