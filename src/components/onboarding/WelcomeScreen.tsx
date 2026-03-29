@@ -22,7 +22,7 @@ export function WelcomeScreen() {
     return <Navigate to="/discover" replace />;
   }
   // Logged-in session + incomplete onboarding (e.g. after email confirm lands on /welcome)
-  if (!loading && session && !hasCompletedOnboardingProfile) {
+  if (!loading && user && session && !hasCompletedOnboardingProfile) {
     return <Navigate to="/onboarding/avatar" replace />;
   }
 
