@@ -178,6 +178,26 @@ export async function getProfile(userId: string): Promise<{ data: UserProfile | 
   }
 }
 
+/** Whether a profiles row exists for this user (RLS: own row). Used to heal stale hasCompletedOnboardingProfile. */
+export async function profileRowExistsForUser(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error('[profileRowExistsForUser]', error);
+      return false;
+    }
+    return data != null;
+  } catch (err) {
+    console.error('[profileRowExistsForUser]', err);
+    return false;
+  }
+}
+
 export async function getDiscoverProfiles(userId: string): Promise<UserProfile[]> {
   try {
     const blockedIds = await getBlockedRelatedUserIds(userId);

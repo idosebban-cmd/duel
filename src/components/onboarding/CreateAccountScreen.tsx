@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
+import { profileRowExistsForUser } from '../../lib/database';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
@@ -67,9 +68,23 @@ export function CreateAccountScreen() {
       navigate('/discover', { replace: true });
       return;
     }
-    if (user && session && !pendingEmailVerification) {
-      navigate('/onboarding/avatar', { replace: true });
+    if (!user || !session || pendingEmailVerification) {
+      return;
     }
+    let cancelled = false;
+    void (async () => {
+      const exists = await profileRowExistsForUser(user.id);
+      if (cancelled) return;
+      if (exists) {
+        useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+        navigate('/discover', { replace: true });
+      } else {
+        navigate('/onboarding/avatar', { replace: true });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, session, hasCompletedOnboardingProfile, pendingEmailVerification, navigate]);
 
   // ─── Handle Google OAuth redirect return ─────────────────────────────────────

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { profileRowExistsForUser } from '../lib/database';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
@@ -91,7 +92,10 @@ export function LoginScreen() {
     }
 
     setLoading(true);
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     setLoading(false);
 
     if (authError) {
@@ -99,8 +103,21 @@ export function LoginScreen() {
       return;
     }
 
+    const userId = signInData.user?.id;
+    if (!userId) {
+      navigate('/onboarding/avatar');
+      return;
+    }
+
     const { hasCompletedOnboardingProfile } = useOnboardingStore.getState();
     if (hasCompletedOnboardingProfile) {
+      navigate('/discover');
+      return;
+    }
+
+    const exists = await profileRowExistsForUser(userId);
+    if (exists) {
+      useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
       navigate('/discover');
     } else {
       navigate('/onboarding/avatar');

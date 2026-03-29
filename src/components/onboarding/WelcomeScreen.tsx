@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { profileRowExistsForUser } from '../../lib/database';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
 
@@ -17,13 +19,44 @@ export function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, session, loading } = useAuthStore();
   const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
+  const [sessionOnboardingResolve, setSessionOnboardingResolve] = useState<
+    'none' | 'checking' | 'avatar'
+  >('none');
+
+  useEffect(() => {
+    if (loading || !session || hasCompletedOnboardingProfile) {
+      setSessionOnboardingResolve('none');
+      return;
+    }
+    const uid = session.user.id;
+    setSessionOnboardingResolve('checking');
+    let cancelled = false;
+    void (async () => {
+      const exists = await profileRowExistsForUser(uid);
+      if (cancelled) return;
+      if (exists) {
+        useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+        navigate('/discover', { replace: true });
+      } else {
+        setSessionOnboardingResolve('avatar');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, session?.user?.id, hasCompletedOnboardingProfile, navigate]);
 
   if (!loading && user && hasCompletedOnboardingProfile) {
     return <Navigate to="/discover" replace />;
   }
-  // Logged-in session + incomplete onboarding (e.g. after email confirm lands on /welcome)
-  if (!loading && user && session && !hasCompletedOnboardingProfile) {
-    return <Navigate to="/onboarding/avatar" replace />;
+  // Logged-in session + local flag false: DB check first, then avatar or discover
+  if (!loading && session && !hasCompletedOnboardingProfile) {
+    if (sessionOnboardingResolve === 'checking' || sessionOnboardingResolve === 'none') {
+      return null;
+    }
+    if (sessionOnboardingResolve === 'avatar') {
+      return <Navigate to="/onboarding/avatar" replace />;
+    }
   }
 
   return (
