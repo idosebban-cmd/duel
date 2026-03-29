@@ -52,10 +52,7 @@ export function MazeRaceLobby() {
     : false;
 
   useEffect(() => {
-    if (!matchId || !myId) {
-      navigate('/play');
-      return;
-    }
+    if (!matchId || !myId) return;
 
     const socket = socketRef.current;
     socket.emit('mr_join', { gameId: matchId, userId: myId });
@@ -90,19 +87,42 @@ export function MazeRaceLobby() {
     socketRef.current.emit('mr_ready', { gameId: matchId, userId: myId });
   };
 
+  const gridBg = (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        backgroundImage:
+          'linear-gradient(rgba(78,255,196,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(78,255,196,0.06) 1px,transparent 1px)',
+        backgroundSize: '40px 40px',
+      }}
+    />
+  );
+
+  if (!matchId || !myId) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
+        style={{ background: '#12122A' }}
+      >
+        {gridBg}
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <p className="font-display font-bold text-electric-mint/80 text-sm uppercase tracking-widest">
+            Maze Race
+          </p>
+          <p className="font-body text-white/50 text-sm">
+            {!matchId ? 'Loading…' : 'Loading lobby…'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
       style={{ background: '#12122A' }}
     >
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(78,255,196,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(78,255,196,0.06) 1px,transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
+      {gridBg}
 
       <AnimatePresence>
         {countdown !== null && (
