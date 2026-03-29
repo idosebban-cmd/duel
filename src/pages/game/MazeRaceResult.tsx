@@ -184,8 +184,10 @@ export function MazeRaceResult() {
                   {isWinner ? '🏆 ' : ''}
                   {p.name}
                 </p>
-                <p className="font-mono font-bold text-2xl" style={{ color }}>
-                  ({p.x},{p.y})
+                <p className="font-body text-sm text-center mt-1" style={{ color }}>
+                  {isWinner
+                    ? (forfeit ? '🏆 Win by forfeit' : '🏆 Reached the exit!')
+                    : 'Almost there…'}
                 </p>
               </div>
             ))}

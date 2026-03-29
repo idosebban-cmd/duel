@@ -72,7 +72,8 @@ function drawMaze(ctx: CanvasRenderingContext2D, maze: number[][]) {
   }
 }
 
-function drawExit(
+/** Pulsing Lemon Pop marker + label for the local player's goal */
+function drawMyExitMarker(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -80,10 +81,10 @@ function drawExit(
 ) {
   const cx = x * CELL + CELL / 2;
   const cy = y * CELL + CELL / 2;
-  const r = CELL * 0.38 + pulse * 3;
+  const r = CELL * 0.32 + pulse * 4;
   ctx.save();
-  ctx.shadowBlur = 14 + pulse * 8;
-  ctx.shadowColor = 'rgba(255,230,109,0.9)';
+  ctx.shadowBlur = 16 + pulse * 10;
+  ctx.shadowColor = 'rgba(255,230,109,0.95)';
   ctx.fillStyle = '#FFE66D';
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -92,6 +93,44 @@ function drawExit(
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 2;
   ctx.stroke();
+  ctx.font = 'bold 8px system-ui, sans-serif';
+  ctx.fillStyle = '#FFE66D';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 4;
+  ctx.fillText('YOUR EXIT', cx, cy + r + 10);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+/** Opponent goal — distinct colour so both exits are obvious */
+function drawTheirExitMarker(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  pulse: number,
+) {
+  const cx = x * CELL + CELL / 2;
+  const cy = y * CELL + CELL / 2;
+  const r = CELL * 0.28 + pulse * 3;
+  ctx.save();
+  ctx.shadowBlur = 12 + pulse * 8;
+  ctx.shadowColor = 'rgba(181,101,255,0.85)';
+  ctx.fillStyle = '#B565FF';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.font = 'bold 8px system-ui, sans-serif';
+  ctx.fillStyle = '#E8D4FF';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 4;
+  ctx.fillText('THEIR EXIT', cx, cy + r + 10);
+  ctx.shadowBlur = 0;
   ctx.restore();
 }
 
@@ -356,10 +395,13 @@ export function MazeRaceBoard() {
         return;
       }
       drawMaze(ctx, g.maze);
-      drawExit(ctx, P1_EXIT.x, P1_EXIT.y, pulse);
-      drawExit(ctx, P2_EXIT.x, P2_EXIT.y, pulse);
+      const isP1Local = g.player1.userId === myId;
+      const myExit = isP1Local ? P1_EXIT : P2_EXIT;
+      const theirExit = isP1Local ? P2_EXIT : P1_EXIT;
+      drawMyExitMarker(ctx, myExit.x, myExit.y, pulse);
+      drawTheirExitMarker(ctx, theirExit.x, theirExit.y, pulse);
 
-      const isP1 = g.player1.userId === myId;
+      const isP1 = isP1Local;
       const me = isP1 ? g.player1 : g.player2;
       const opp = isP1 ? g.player2 : g.player1;
       if (opp.x >= 0 && opp.y >= 0) drawPlayer(ctx, opp.x, opp.y, false);
@@ -370,9 +412,6 @@ export function MazeRaceBoard() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [myId]);
 
-  const isP1 = game?.player1.userId === myId;
-  const me = isP1 ? game?.player1 : game?.player2;
-  const opp = isP1 ? game?.player2 : game?.player1;
   const elapsedStr = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
 
   const handleForfeit = () => {
@@ -406,24 +445,6 @@ export function MazeRaceBoard() {
           >
             Exit
           </button>
-        </div>
-
-        <div
-          className="grid grid-cols-2 px-4 py-2 gap-2"
-          style={{ borderBottom: '2px solid rgba(78,255,196,0.1)' }}
-        >
-          <div className="flex flex-col items-start">
-            <span className="font-body text-xs text-white/40 mb-0.5">YOU</span>
-            <span className="font-mono font-bold text-sm" style={{ color: '#FF6BA8' }}>
-              {me && me.x >= 0 ? `(${me.x},${me.y})` : '—'}
-            </span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="font-body text-xs text-white/40 mb-0.5">THEM</span>
-            <span className="font-mono font-bold text-sm" style={{ color: '#00D9FF' }}>
-              {opp && opp.x >= 0 ? `(${opp.x},${opp.y})` : '—'}
-            </span>
-          </div>
         </div>
       </div>
 

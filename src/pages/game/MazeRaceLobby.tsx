@@ -237,9 +237,6 @@ export function MazeRaceLobby() {
 
       <div className="relative z-10 w-full max-w-sm flex flex-col gap-6">
         <motion.div className="text-center" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="font-mono text-xs text-electric-mint/60 mb-1 uppercase tracking-widest">
-            Match: <span className="text-electric-mint font-bold">{matchId}</span>
-          </p>
           <h1
             className="font-display font-extrabold text-4xl"
             style={{
