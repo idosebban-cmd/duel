@@ -56,17 +56,14 @@ export function CreateAccountScreen() {
   });
 
   const saveProfile = async (userId: string, userEmail: string) => {
-    console.log('[CreateAccount] Saving profile for user:', userId);
     const { error: profileError } = await upsertProfile(userId, { ...store, email: userEmail });
     if (profileError) {
       console.error('[CreateAccount] upsertProfile failed:', profileError);
       throw new Error(`Failed to save profile: ${profileError.message}`);
     }
-    console.log('[CreateAccount] Profile saved');
 
     if (store.photos.length > 0) {
       await savePhotos(userId, store.photos);
-      console.log('[CreateAccount] Photos saved');
     }
   };
 
