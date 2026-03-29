@@ -14,10 +14,19 @@ export function PostEmailConfirmProfileSync() {
   const inFlightRef = useRef(false);
 
   useEffect(() => {
+    const state = useOnboardingStore.getState();
+    console.log('[PostEmailConfirmSync] running', {
+      uid: session?.user?.id,
+      pendingEmailVerification: state.pendingEmailVerification,
+      userId: state.userId,
+      name: state.name,
+      character: state.character,
+      email: session?.user?.email,
+    });
+
     const uid = session?.user?.id;
     if (!uid) return;
 
-    const state = useOnboardingStore.getState();
     if (!state.pendingEmailVerification) return;
     if (state.userId !== uid) return;
     if (!state.name?.trim() || !state.character) return;
