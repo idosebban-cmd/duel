@@ -66,7 +66,7 @@ interface GlobalChallengeToastState {
   message: string;
   actionLabel: string;
   kind: 'success' | 'error';
-  onAction: () => void;
+  onAction: () => void | Promise<void>;
 }
 
 const LAST_SEEN_MIN_INTERVAL_MS = 60_000;
@@ -235,12 +235,17 @@ function GlobalChallengeListener() {
       kind: 'success',
       message: `${name} accepted your challenge!`,
       actionLabel: 'Join game',
-      onAction: () => {
+      onAction: async () => {
         setToast(null);
+        const normalizedType = normalizeGameType(challenge.game_type);
+        if (normalizedType === 'dot_dash' || normalizedType === 'maze_race') {
+          await ensureDotDashOrMazeLobbyAndNavigate(challenge);
+          return;
+        }
         navigate(route.path);
       },
     });
-  }, [navigate]);
+  }, [navigate, ensureDotDashOrMazeLobbyAndNavigate]);
 
   const showRetryToast = useCallback((challenge: ChallengeEventRow) => {
     setToast({
@@ -314,6 +319,7 @@ function GlobalChallengeListener() {
               if (t === 'dot_dash' || t === 'maze_race') {
                 await ensureDotDashOrMazeLobbyAndNavigate(updated);
               } else {
+                // Inviter must tap "Join game" — do not navigate until then (accepter finishes setup first).
                 await showSuccessToast(updated);
               }
             } else {
