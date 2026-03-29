@@ -628,6 +628,55 @@ export function GameBoard() {
               </motion.div>
             )}
 
+            {/* Answerer sees the question → YES / NO — above grid */}
+            {isMyTurn && turnPhase === 'answer' && currentQuestion && (
+              <motion.div
+                key="answer"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                className="flex flex-col gap-3"
+              >
+                <div
+                  className="px-4 py-3 rounded-2xl"
+                  style={{ background: 'rgba(181,101,255,0.15)', border: '2px solid #B565FF' }}
+                >
+                  <p className="font-body text-xs text-grape-neon/70 mb-1">Opponent asks:</p>
+                  <p className="font-display font-bold text-white text-base">&quot;{currentQuestion}&quot;</p>
+                </div>
+                <div className="flex gap-3">
+                  <motion.button
+                    onClick={() => handleAnswer('yes')}
+                    className="flex-1 py-4 rounded-2xl font-display font-extrabold text-xl"
+                    style={{
+                      background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
+                      border: '4px solid black',
+                      color: '#0f172a',
+                      boxShadow: '6px 6px 0px 0px #4EFFC488',
+                    }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    YES {'\u2713'}
+                  </motion.button>
+                  <motion.button
+                    onClick={() => handleAnswer('no')}
+                    className="flex-1 py-4 rounded-2xl font-display font-extrabold text-xl"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF3D71, #FF6BA8)',
+                      border: '4px solid black',
+                      color: 'white',
+                      boxShadow: '6px 6px 0px 0px #FF3D7188',
+                    }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    NO {'\u2717'}
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+
             {/* My board (my eliminations) */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -724,55 +773,6 @@ export function GameBoard() {
             }}
           >
             <AnimatePresence mode="wait">
-              {/* Answerer sees the question → YES / NO */}
-              {isMyTurn && turnPhase === 'answer' && currentQuestion && (
-                <motion.div
-                  key="answer"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  className="flex flex-col gap-3"
-                >
-                  <div
-                    className="px-4 py-3 rounded-2xl"
-                    style={{ background: 'rgba(181,101,255,0.15)', border: '2px solid #B565FF' }}
-                  >
-                    <p className="font-body text-xs text-grape-neon/70 mb-1">Opponent asks:</p>
-                    <p className="font-display font-bold text-white text-base">&quot;{currentQuestion}&quot;</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <motion.button
-                      onClick={() => handleAnswer('yes')}
-                      className="flex-1 py-4 rounded-2xl font-display font-extrabold text-xl"
-                      style={{
-                        background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)',
-                        border: '4px solid black',
-                        color: '#0f172a',
-                        boxShadow: '6px 6px 0px 0px #4EFFC488',
-                      }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      YES {'\u2713'}
-                    </motion.button>
-                    <motion.button
-                      onClick={() => handleAnswer('no')}
-                      className="flex-1 py-4 rounded-2xl font-display font-extrabold text-xl"
-                      style={{
-                        background: 'linear-gradient(135deg, #FF3D71, #FF6BA8)',
-                        border: '4px solid black',
-                        color: 'white',
-                        boxShadow: '6px 6px 0px 0px #FF3D7188',
-                      }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      NO {'\u2717'}
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-
               {/* Asker waiting for answer */}
               {!isMyTurn && turnPhase === 'answer' && (
                 <motion.div
