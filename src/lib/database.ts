@@ -178,20 +178,25 @@ export async function getProfile(userId: string): Promise<{ data: UserProfile | 
   }
 }
 
-/** Whether a profiles row exists for this user (RLS: own row). Used to heal stale hasCompletedOnboardingProfile. */
+/**
+ * Whether this user has a profile with basics filled in (non-null name).
+ * Row existence alone is not enough — sign-up can create a stub row before onboarding.
+ */
 export async function profileRowExistsForUser(userId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id')
+      .select('name')
       .eq('id', userId)
+      .not('name', 'is', null)
       .limit(1)
       .maybeSingle();
     if (error) {
       console.error('[profileRowExistsForUser]', error);
       return false;
     }
-    return data != null;
+    const name = data?.name;
+    return typeof name === 'string' && name.trim().length > 0;
   } catch (err) {
     console.error('[profileRowExistsForUser]', err);
     return false;
