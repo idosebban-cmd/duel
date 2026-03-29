@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X } from '../ui/Icons';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { GOLD_SELECTION, GoldCornerCheckmark } from './SelectionChrome';
 
 interface GameType {
   id: string;
@@ -72,7 +73,7 @@ export function GameSelection() {
   const handleContinue = () => {
     updateGameTypes(selected);
     updateFavoriteGames(favorites.filter(Boolean));
-    completeStep(4);
+    completeStep(5);
     navigate('/onboarding/relationship-goals');
   };
 
@@ -100,7 +101,7 @@ export function GameSelection() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Games</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
+            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 4 ? 24 : 8, background: i < 4 ? '#FF6BA8' : i === 4 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
@@ -145,10 +146,10 @@ export function GameSelection() {
                     className="relative flex flex-col items-center justify-center gap-2 p-4 rounded-2xl"
                     style={{
                       background: isSelected ? game.gradient : 'rgba(255,255,255,0.07)',
-                      border: isSelected ? `2px solid ${game.color}` : '2px solid rgba(255,255,255,0.14)',
+                      border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.14)',
                       opacity: isDisabled ? 0.35 : 1,
                       cursor: isDisabled ? 'not-allowed' : 'pointer',
-                      boxShadow: isSelected ? `0 0 20px ${game.color}60, 4px 4px 0px 0px ${game.color}` : 'none',
+                      boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none',
                     }}
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: isDisabled ? 0.4 : 1, scale: isSelected ? 1.04 : 1 }}
@@ -160,22 +161,11 @@ export function GameSelection() {
                     whileTap={!isDisabled ? { scale: 0.96 } : {}}
                     aria-pressed={isSelected}
                   >
-                    {/* Glossy overlay when selected */}
                     {isSelected && (
                       <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent rounded-2xl pointer-events-none" />
                     )}
 
-                    {/* Checkmark */}
-                    {isSelected && (
-                      <motion.span
-                        className="absolute top-2 right-2 w-5 h-5 rounded-full bg-black flex items-center justify-center text-white text-xs font-bold"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 500 }}
-                      >
-                        ✓
-                      </motion.span>
-                    )}
+                    {isSelected && <GoldCornerCheckmark />}
 
                     <img src={game.icon} alt={game.name} className="w-10 h-10 object-contain" />
                     <span className="font-display font-bold text-sm text-center leading-tight" style={{ color: isSelected ? '#12122A' : 'rgba(255,255,255,0.8)' }}>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check } from '../ui/Icons';
+import { ArrowLeft } from '../ui/Icons';
+import { GOLD_SELECTION, GoldCornerCheckmark } from './SelectionChrome';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { ENABLE_JUST_PLAY } from '../../lib/featureFlags';
 
@@ -115,7 +116,7 @@ export function RelationshipGoals() {
   };
 
   const handleContinue = () => {
-    if (lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play')) completeStep(5);
+    if (lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play')) completeStep(6);
     navigate('/onboarding/preferences');
   };
 
@@ -139,7 +140,7 @@ export function RelationshipGoals() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Goals</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
+            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 5 ? 24 : 8, background: i < 5 ? '#FF6BA8' : i === 5 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
@@ -171,9 +172,9 @@ export function RelationshipGoals() {
                       onClick={() => setIntent(opt.value)}
                       className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer relative overflow-hidden text-left"
                       style={{
-                        background: isSelected ? opt.gradient : 'rgba(255,255,255,0.07)',
-                        border: isSelected ? `2px solid ${opt.border}` : '2px solid rgba(255,255,255,0.12)',
-                        boxShadow: isSelected ? `0 0 0 1px ${opt.border}, 0 0 24px ${opt.glow}, 5px 5px 0px 0px ${opt.border}` : 'none',
+                        background: isSelected ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.07)',
+                        border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.12)',
+                        boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none',
                         minHeight: 68,
                       }}
                       initial={{ opacity: 0, x: -30 }}
@@ -194,23 +195,14 @@ export function RelationshipGoals() {
                         {opt.emoji}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <span className="block font-display font-bold text-lg leading-tight" style={{ color: isSelected ? '#12122A' : 'white' }}>
+                        <span className="block font-display font-bold text-lg leading-tight text-white">
                           {opt.label}
                         </span>
-                        <span className="block font-body text-sm" style={{ color: isSelected ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)' }}>
+                        <span className="block font-body text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
                           {opt.description}
                         </span>
                       </div>
-                      {isSelected && (
-                        <motion.div
-                          className="flex-shrink-0 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center"
-                          initial={{ scale: 0, rotate: -180 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                        >
-                          <Check size={18} className="text-white" />
-                        </motion.div>
-                      )}
+                      {isSelected && <GoldCornerCheckmark />}
                     </motion.button>
                   );
                 })}
@@ -285,7 +277,7 @@ export function RelationshipGoals() {
                   const isSelected = lookingFor.includes(goal.id);
                   return (
                     <motion.button key={goal.id} onClick={() => handleSelect(goal.id)} className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl cursor-pointer relative overflow-hidden text-left"
-                      style={{ background: isSelected ? goal.gradient : 'rgba(255,255,255,0.07)', border: isSelected ? `2px solid ${goal.border}` : '2px solid rgba(255,255,255,0.12)', boxShadow: isSelected ? `0 0 0 1px ${goal.border}, 0 0 24px ${goal.glow}, 5px 5px 0px 0px ${goal.border}` : 'none', minHeight: 68 }}
+                      style={{ background: isSelected ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.07)', border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.12)', boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none', minHeight: 68 }}
                       initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0, scale: isSelected ? 1.02 : 1 }}
                       transition={{ delay: index * 0.06, scale: { type: 'spring', stiffness: 400, damping: 17 } }}
                       whileHover={{ scale: isSelected ? 1.02 : 1.015 }} whileTap={{ scale: 0.98 }} aria-pressed={isSelected}>
@@ -295,14 +287,10 @@ export function RelationshipGoals() {
                         <img src={goal.icon} alt="" className="w-8 h-8 object-contain" style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.3))' }} />
                       </span>
                       <div className="flex-1 min-w-0">
-                        <span className="block font-display font-bold text-lg leading-tight" style={{ color: isSelected ? '#12122A' : 'white' }}>{goal.label}</span>
-                        <span className="block font-body text-sm" style={{ color: isSelected ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.5)' }}>{goal.description}</span>
+                        <span className="block font-display font-bold text-lg leading-tight text-white">{goal.label}</span>
+                        <span className="block font-body text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{goal.description}</span>
                       </div>
-                      {isSelected && (
-                        <motion.div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/30 flex items-center justify-center" initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 20 }}>
-                          <Check size={18} className="text-white" />
-                        </motion.div>
-                      )}
+                      {isSelected && <GoldCornerCheckmark />}
                     </motion.button>
                   );
                 })}

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from '../ui/Icons';
 import { useOnboardingStore, type UserPrompt } from '../../store/onboardingStore';
+import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
 
 // ─── Prompt library ───────────────────────────────────────────────────────────
 
@@ -173,36 +174,25 @@ function PromptListItem({
   isDisabled: boolean;
   onSelect: () => void;
 }) {
-  const color = CATEGORY_COLORS[prompt.category];
   return (
     <motion.button
       onClick={onSelect}
       disabled={isDisabled && !isSelected}
-      className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3"
+      className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 relative"
       style={{
-        background: isSelected ? `${color}18` : 'rgba(255,255,255,0.03)',
-        border: `1.5px solid ${isSelected ? color : 'rgba(255,255,255,0.07)'}`,
+        background: isSelected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+        border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '1.5px solid rgba(255,255,255,0.07)',
+        boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none',
         opacity: isDisabled && !isSelected ? 0.35 : 1,
         cursor: isDisabled && !isSelected ? 'not-allowed' : 'pointer',
       }}
       whileTap={!isDisabled || isSelected ? { scale: 0.97 } : {}}
     >
       <span className="text-base flex-shrink-0">{prompt.icon}</span>
-      <span className="font-body text-sm leading-snug" style={{ color: isSelected ? color : 'rgba(255,255,255,0.65)' }}>
+      <span className="font-body text-sm leading-snug pr-6" style={{ color: isSelected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.65)' }}>
         {prompt.question}
       </span>
-      {isSelected && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="ml-auto flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ background: color }}
-        >
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-            <path d="M1 4L3.5 6.5L9 1" stroke="#0A1628" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </motion.div>
-      )}
+      {isSelected && <GoldCornerCheckmarkSm />}
     </motion.button>
   );
 }
@@ -329,7 +319,7 @@ export function PromptsSelection() {
   const handleContinue = () => {
     if (selected.length > 0) {
       updatePrompts(selected);
-      completeStep(9);
+      completeStep(10);
     }
     navigate('/onboarding/preview');
   };
@@ -366,16 +356,16 @@ export function PromptsSelection() {
             Personality
           </span>
           <div className="flex gap-1">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <div
                 key={i}
                 className="h-1.5 rounded-full"
                 style={{
-                  width: i === 8 ? 24 : 8,
+                  width: i === 9 ? 24 : 8,
                   background:
-                    i < 8
+                    i < 9
                       ? '#FF6BA8'
-                      : i === 8
+                      : i === 9
                       ? 'linear-gradient(90deg, #00F5FF, #FF006E)'
                       : 'rgba(255,255,255,0.15)',
                 }}

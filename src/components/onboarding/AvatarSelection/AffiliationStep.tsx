@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { GOLD_SELECTION, GoldCornerCheckmark } from '../SelectionChrome';
 
 interface Affiliation {
   id: string;
@@ -67,8 +68,8 @@ export function AffiliationStep({ selected, onSelect }: AffiliationStepProps) {
               className="relative flex flex-col items-center p-4 rounded-2xl cursor-pointer select-none"
               style={{
                 background: isSelected ? 'transparent' : 'rgba(255,255,255,0.07)',
-                border: isSelected ? `3px solid ${aff.color}` : '2px solid rgba(255,255,255,0.14)',
-                boxShadow: isSelected ? `0 0 0 2px ${aff.color}, 0 0 22px ${aff.color}60, 5px 5px 0px 0px ${aff.color}` : 'none',
+                border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.14)',
+                boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none',
               }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: isSelected ? 1.05 : 1 }}
@@ -81,18 +82,7 @@ export function AffiliationStep({ selected, onSelect }: AffiliationStepProps) {
               aria-pressed={isSelected}
               aria-label={`Select ${aff.name} - ${aff.hint}`}
             >
-              {/* Selected checkmark */}
-              {isSelected && (
-                <motion.span
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ background: aff.color, border: '2px solid #000' }}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 500 }}
-                >
-                  ✓
-                </motion.span>
-              )}
+              {isSelected && <GoldCornerCheckmark />}
 
               {/* Affiliation image */}
               <div

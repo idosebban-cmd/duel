@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, Gamepad2 } from '../ui/Icons';
+import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
+import { persistOnboardingProfile } from '../../lib/database';
 
 const characterImages: Record<string, string> = {
   dragon: '/characters/Dragon.png', cat: '/characters/Cat.png',
@@ -75,7 +77,11 @@ const lookingForIcons: Record<string, string> = {
 export function PlayerCardPreview() {
   const navigate = useNavigate();
   const store = useOnboardingStore();
+  const markOnboardingCompleteAndClearDraft = useOnboardingStore((s) => s.markOnboardingCompleteAndClearDraft);
+  const { user } = useAuthStore();
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const {
     character, element, affiliation,
@@ -96,9 +102,29 @@ export function PlayerCardPreview() {
   ].filter(Boolean) as { icon: string; label: string }[];
 
 
-  const handleNext = () => {
-    store.completeStep(10);
-    navigate('/onboarding/create-account');
+  const handleNext = async () => {
+    if (!user?.id) {
+      setSaveError('You are not signed in. Go back to sign up.');
+      return;
+    }
+    const email = user.email?.trim() ?? '';
+    if (!email) {
+      setSaveError('Your account has no email on file. Please contact support.');
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await persistOnboardingProfile(user.id, email, store);
+      store.completeStep(11);
+      markOnboardingCompleteAndClearDraft();
+      navigate('/discover');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save profile.';
+      setSaveError(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -119,8 +145,8 @@ export function PlayerCardPreview() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Player Card</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
-              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 9 ? 24 : 8, background: '#FF6BA8' }} />
+            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
+              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 10 ? 24 : 8, background: '#FF6BA8' }} />
             ))}
           </div>
         </div>
@@ -409,18 +435,22 @@ export function PlayerCardPreview() {
       {/* Fixed bottom buttons */}
       <div className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-5 z-20" style={{ background: 'linear-gradient(to top, #12122A 70%, transparent)' }}>
         <div className="max-w-lg mx-auto space-y-3">
+          {saveError && (
+            <p className="font-body text-sm text-center mb-2" style={{ color: '#FF6BA8' }}>{saveError}</p>
+          )}
           {/* LOOKS GOOD button */}
           <motion.button
-            onClick={handleNext}
-            className="w-full font-display font-extrabold text-xl sm:text-2xl text-white rounded-2xl py-5 px-8 relative overflow-hidden"
+            onClick={() => void handleNext()}
+            disabled={saving}
+            className="w-full font-display font-extrabold text-xl sm:text-2xl text-white rounded-2xl py-5 px-8 relative overflow-hidden disabled:opacity-50"
             style={{
               background: 'linear-gradient(135deg, #FF6BA8 0%, #FF3D71 100%)',
               border: '4px solid black',
               boxShadow: '8px 8px 0px 0px #B565FF',
               textShadow: '2px 2px 0 rgba(0,0,0,0.2)',
             }}
-            whileHover={{ scale: 1.03, boxShadow: '12px 12px 0px 0px #B565FF' }}
-            whileTap={{ scale: 0.97, boxShadow: '4px 4px 0px 0px #B565FF' }}
+            whileHover={saving ? {} : { scale: 1.03, boxShadow: '12px 12px 0px 0px #B565FF' }}
+            whileTap={saving ? {} : { scale: 0.97, boxShadow: '4px 4px 0px 0px #B565FF' }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -428,7 +458,7 @@ export function PlayerCardPreview() {
             <span className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
             <span className="flex items-center justify-center gap-2">
               <Gamepad2 size={24} />
-              LOOKS GOOD, NEXT
+              {saving ? 'SAVING…' : 'LOOKS GOOD, NEXT'}
             </span>
           </motion.button>
 

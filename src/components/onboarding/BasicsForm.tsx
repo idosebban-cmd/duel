@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Input } from '../ui/Input';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import { LocationCaptureField, LOCATION_MAPS_KEY } from '../location/LocationCaptureField';
+import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
 
 const basicsSchema = z.object({
   name: z
@@ -128,7 +129,7 @@ export function BasicsForm() {
       latitude: lat,
       longitude: lng,
     });
-    completeStep(2);
+    completeStep(3);
     navigate('/onboarding/photos');
   };
 
@@ -146,7 +147,7 @@ export function BasicsForm() {
         <div className="flex-1 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>The Basics</span>
           <div className="flex gap-1">
-            {[0,1,2,3,4,5,6,7,8,9].map((i) => (
+            {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 24 : 8, background: i < 2 ? '#FF6BA8' : i === 2 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
@@ -176,9 +177,10 @@ export function BasicsForm() {
                 const isSelected = selectedGender === opt.id;
                 return (
                   <motion.button key={opt.id} type="button" onClick={() => setSelectedGender(opt.id)} className="flex-1 py-3.5 rounded-pill font-display font-bold text-sm relative overflow-hidden"
-                    style={{ background: isSelected ? opt.gradient : 'rgba(255,255,255,0.07)', border: isSelected ? '2px solid rgba(255,255,255,0.3)' : '2px solid rgba(255,255,255,0.14)', color: isSelected ? '#12122A' : 'rgba(255,255,255,0.7)', boxShadow: isSelected ? `0 0 18px ${opt.border}80, 4px 4px 0px 0px ${opt.border}` : 'none' }}
+                    style={{ background: isSelected ? opt.gradient : 'rgba(255,255,255,0.07)', border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.14)', color: isSelected ? '#12122A' : 'rgba(255,255,255,0.7)', boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none' }}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }} aria-pressed={isSelected}>
                     {isSelected && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
+                    {isSelected && <GoldCornerCheckmarkSm />}
                     {opt.label}
                   </motion.button>
                 );
@@ -192,9 +194,10 @@ export function BasicsForm() {
               {interestedInOptions.map((opt) => {
                 const isSelected = selectedInterest === opt.id;
                 return (
-                  <motion.button key={opt.id} type="button" onClick={() => setSelectedInterest(opt.id)} className="flex-1 py-3.5 rounded-pill font-display font-bold text-sm"
-                    style={{ background: isSelected ? `linear-gradient(135deg, ${opt.border}90, ${opt.border})` : 'rgba(255,255,255,0.07)', border: `2px solid ${isSelected ? opt.border : 'rgba(255,255,255,0.14)'}`, color: isSelected ? '#12122A' : 'rgba(255,255,255,0.7)', boxShadow: isSelected ? `0 0 0 2px ${opt.border}, 0 0 18px ${opt.border}60, 4px 4px 0px 0px ${opt.border}` : 'none' }}
+                  <motion.button key={opt.id} type="button" onClick={() => setSelectedInterest(opt.id)} className="flex-1 py-3.5 rounded-pill font-display font-bold text-sm relative overflow-hidden"
+                    style={{ background: isSelected ? `linear-gradient(135deg, ${opt.border}90, ${opt.border})` : 'rgba(255,255,255,0.07)', border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.14)', color: isSelected ? '#12122A' : 'rgba(255,255,255,0.7)', boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none' }}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }} aria-pressed={isSelected}>
+                    {isSelected && <GoldCornerCheckmarkSm />}
                     {opt.label}
                   </motion.button>
                 );

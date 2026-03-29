@@ -1446,6 +1446,21 @@ export async function savePhotos(userId: string, photos: string[]): Promise<void
   }
 }
 
+/** Persist full onboarding draft to profiles + photos (end of onboarding flow). */
+export async function persistOnboardingProfile(
+  userId: string,
+  email: string,
+  state: Partial<OnboardingState> & { photos: string[] },
+): Promise<void> {
+  const { error: profileError } = await upsertProfile(userId, { ...state, email });
+  if (profileError) {
+    throw new Error(`Failed to save profile: ${profileError.message}`);
+  }
+  if (state.photos.length > 0) {
+    await savePhotos(userId, state.photos);
+  }
+}
+
 export async function getPhotos(userId: string): Promise<string[]> {
   try {
     const { data } = await supabase

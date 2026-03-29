@@ -77,6 +77,9 @@ export interface OnboardingState {
   pendingEmailVerification: boolean;
   /** Email used for sign-up — for resend confirmation. */
   signupEmailForResend: string | null;
+
+  /** True after profile + photos are saved at end of onboarding (persisted). */
+  hasCompletedOnboardingProfile: boolean;
 }
 
 interface OnboardingActions {
@@ -105,6 +108,7 @@ interface OnboardingActions {
   completeStep: (step: number) => void;
   setCurrentStep: (step: number) => void;
   reset: () => void;
+  markOnboardingCompleteAndClearDraft: () => void;
   setPendingEmailVerification: (payload: { userId: string; email: string }) => void;
   clearPendingEmailVerification: () => void;
 }
@@ -142,6 +146,7 @@ const initialState: OnboardingState = {
   completedSteps: [],
   pendingEmailVerification: false,
   signupEmailForResend: null,
+  hasCompletedOnboardingProfile: false,
 };
 
 export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
@@ -226,10 +231,15 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         try { sessionStorage.removeItem('duel-photos'); } catch {}
         set({ ...initialState, photos: [] });
       },
+
+      markOnboardingCompleteAndClearDraft: () => {
+        try { sessionStorage.removeItem('duel-photos'); } catch {}
+        set({ ...initialState, photos: [], hasCompletedOnboardingProfile: true });
+      },
     }),
     {
       name: 'duel-onboarding',
-      version: 6,
+      version: 7,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -254,6 +264,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         // v5 → v6: email confirmation pending flags
         if (s.pendingEmailVerification === undefined) s.pendingEmailVerification = false;
         if (s.signupEmailForResend === undefined) s.signupEmailForResend = null;
+        // v6 → v7: onboarding completion flag (resume after sign-up moved earlier)
+        if (s.hasCompletedOnboardingProfile === undefined) s.hasCompletedOnboardingProfile = false;
         return s;
       },
       partialize: (state) => {
@@ -267,15 +279,15 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 // Step definitions for routing
 export const STEPS = [
   { id: 0, path: '/onboarding/welcome', label: 'Welcome' },
-  { id: 1, path: '/onboarding/avatar', label: 'Avatar' },
-  { id: 2, path: '/onboarding/basics', label: 'Basics' },
-  { id: 3, path: '/onboarding/photos', label: 'Photos' },
-  { id: 4, path: '/onboarding/games', label: 'Games' },
-  { id: 5, path: '/onboarding/relationship-goals', label: 'Goals' },
-  { id: 6, path: '/onboarding/preferences', label: 'Preferences' },
-  { id: 7, path: '/onboarding/lifestyle', label: 'Lifestyle' },
-  { id: 8, path: '/onboarding/bio', label: 'Bio' },
-  { id: 9, path: '/onboarding/prompts', label: 'Prompts' },
-  { id: 10, path: '/onboarding/preview', label: 'Preview' },
-  { id: 11, path: '/onboarding/create-account', label: 'Create Account' },
+  { id: 1, path: '/onboarding/create-account', label: 'Create Account' },
+  { id: 2, path: '/onboarding/avatar', label: 'Avatar' },
+  { id: 3, path: '/onboarding/basics', label: 'Basics' },
+  { id: 4, path: '/onboarding/photos', label: 'Photos' },
+  { id: 5, path: '/onboarding/games', label: 'Games' },
+  { id: 6, path: '/onboarding/relationship-goals', label: 'Goals' },
+  { id: 7, path: '/onboarding/preferences', label: 'Preferences' },
+  { id: 8, path: '/onboarding/lifestyle', label: 'Lifestyle' },
+  { id: 9, path: '/onboarding/bio', label: 'Bio' },
+  { id: 10, path: '/onboarding/prompts', label: 'Prompts' },
+  { id: 11, path: '/onboarding/preview', label: 'Preview' },
 ] as const;

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { useOnboardingStore } from '../store/onboardingStore';
 import { SignupLegalConsent } from '../components/legal/SignupLegalConsent';
 
 // ─── CRT corner brackets ──────────────────────────────────────────────────────
@@ -98,7 +99,12 @@ export function LoginScreen() {
       return;
     }
 
-    navigate('/discover');
+    const { hasCompletedOnboardingProfile } = useOnboardingStore.getState();
+    if (hasCompletedOnboardingProfile) {
+      navigate('/discover');
+    } else {
+      navigate('/onboarding/avatar');
+    }
   };
 
   const handleSignUp = async () => {
@@ -130,17 +136,18 @@ export function LoginScreen() {
     }
 
     if (data.session) {
-      // Email confirmation disabled — session available immediately
       setSession(data.session);
       setUser(data.session.user);
     } else if (data.user) {
-      // Email confirmation required — store user so onboarding can proceed
       setUser(data.user);
+      useOnboardingStore.getState().setPendingEmailVerification({
+        userId: data.user.id,
+        email: data.user.email ?? email,
+      });
     }
 
-    // Navigate into onboarding regardless — all steps are local-only until final save
     if (data.user) {
-      navigate('/onboarding/avatar');
+      navigate('/onboarding/create-account');
     }
   };
 

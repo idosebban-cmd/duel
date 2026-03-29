@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
+import { useOnboardingStore } from '../../store/onboardingStore';
 
 const floatingIcons = [
   { icon: '/icons/Star.png',                       x: '6%',  y: '8%',  size: 52, delay: 0,   rotate: -15 },
@@ -13,6 +15,15 @@ const floatingIcons = [
 
 export function WelcomeScreen() {
   const navigate = useNavigate();
+  const { user, loading } = useAuthStore();
+  const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
+
+  if (!loading && user && hasCompletedOnboardingProfile) {
+    return <Navigate to="/discover" replace />;
+  }
+  if (!loading && user && !hasCompletedOnboardingProfile) {
+    return <Navigate to="/onboarding/avatar" replace />;
+  }
 
   return (
     <div
@@ -188,7 +199,7 @@ export function WelcomeScreen() {
 
         {/* CTA */}
         <motion.button
-          onClick={() => navigate('/onboarding/avatar')}
+          onClick={() => navigate('/onboarding/create-account')}
           className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
           style={{
             background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',

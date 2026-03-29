@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { GOLD_SELECTION, GoldCornerCheckmark } from '../SelectionChrome';
 
 interface Element {
   id: string;
@@ -62,8 +63,8 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
               className="relative flex flex-col items-center p-4 rounded-2xl cursor-pointer select-none"
               style={{
                 background: isSelected ? 'transparent' : 'rgba(255,255,255,0.07)',
-                border: isSelected ? `3px solid ${el.color}` : '2px solid rgba(255,255,255,0.14)',
-                boxShadow: isSelected ? `0 0 0 2px ${el.color}, 0 0 22px ${el.color}60, 5px 5px 0px 0px ${el.color}` : 'none',
+                border: isSelected ? `3px solid ${GOLD_SELECTION.borderSolid}` : '2px solid rgba(255,255,255,0.14)',
+                boxShadow: isSelected ? GOLD_SELECTION.shadow : 'none',
               }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: isSelected ? 1.05 : 1 }}
@@ -76,18 +77,7 @@ export function ElementStep({ selected, onSelect }: ElementStepProps) {
               aria-pressed={isSelected}
               aria-label={`Select ${el.name} element`}
             >
-              {/* Selected checkmark */}
-              {isSelected && (
-                <motion.span
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                  style={{ background: el.color, border: '2px solid #000' }}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 500 }}
-                >
-                  ✓
-                </motion.span>
-              )}
+              {isSelected && <GoldCornerCheckmark />}
 
               {/* Element image */}
               <div

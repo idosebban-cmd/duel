@@ -5,7 +5,6 @@ import { ArrowLeft } from '../ui/Icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
-import { upsertProfile, savePhotos } from '../../lib/database';
 import { SignupLegalConsent } from '../legal/SignupLegalConsent';
 
 // Check if URL contains an OAuth redirect hash (access_token, etc.)
@@ -25,26 +24,26 @@ function friendlyOAuthError(message: string): string {
 
 export function CreateAccountScreen() {
   const navigate = useNavigate();
-  const { setUser, setSession } = useAuthStore();
+  const { setUser, setSession, user, session } = useAuthStore();
   const store = useOnboardingStore();
   const pendingEmailVerification = useOnboardingStore((s) => s.pendingEmailVerification);
   const signupEmailForResend = useOnboardingStore((s) => s.signupEmailForResend);
   const setPendingEmailVerification = useOnboardingStore((s) => s.setPendingEmailVerification);
+  const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
+  const completeStep = useOnboardingStore((s) => s.completeStep);
 
   const [mode, setMode] = useState<'main' | 'email'>('main');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendBusy, setResendBusy] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
 
-  // Track the authenticated user so retry works for both flows
-  const [authedUser, setAuthedUser] = useState<{ id: string; email: string } | null>(null);
   const oauthHandled = useRef(false);
 
   const inputStyle = (focused: boolean) => ({
@@ -55,66 +54,53 @@ export function CreateAccountScreen() {
     transition: 'border-color 0.2s, box-shadow 0.2s',
   });
 
-  const saveProfile = async (userId: string, userEmail: string) => {
-    const { error: profileError } = await upsertProfile(userId, { ...store, email: userEmail });
-    if (profileError) {
-      console.error('[CreateAccount] upsertProfile failed:', profileError);
-      throw new Error(`Failed to save profile: ${profileError.message}`);
-    }
-
-    if (store.photos.length > 0) {
-      await savePhotos(userId, store.photos);
-    }
+  /** After Google or email sign-up with session — continue profile onboarding. */
+  const continueAfterAuth = (userId: string) => {
+    store.clearPendingEmailVerification();
+    store.setUserId(userId);
+    completeStep(1);
+    navigate('/onboarding/avatar');
   };
 
-  const finishSignUp = async (userId: string, userEmail: string) => {
-    setSavingProfile(true);
-    setError(null);
-    setAuthedUser({ id: userId, email: userEmail });
-    try {
-      store.clearPendingEmailVerification();
-      store.setUserId(userId);
-      await saveProfile(userId, userEmail);
-      navigate('/discover');
-      store.reset();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to save profile.';
-      setError(msg);
-    } finally {
-      setSavingProfile(false);
+  useEffect(() => {
+    if (hasCompletedOnboardingProfile) {
+      navigate('/discover', { replace: true });
+      return;
     }
-  };
+    if (user && session && !pendingEmailVerification) {
+      navigate('/onboarding/avatar', { replace: true });
+    }
+  }, [user, session, hasCompletedOnboardingProfile, pendingEmailVerification, navigate]);
 
   // ─── Handle Google OAuth redirect return ─────────────────────────────────────
   useEffect(() => {
     if (oauthHandled.current || !supabase || !hasOAuthRedirectHash()) return;
     oauthHandled.current = true;
 
-    setSavingProfile(true);
+    setOauthBusy(true);
 
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setSession(session);
-          setUser(session.user);
-          await finishSignUp(session.user.id, session.user.email ?? '');
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s?.user) {
+          setSession(s);
+          setUser(s.user);
+          continueAfterAuth(s.user.id);
         } else {
-          // Hash present but no session — something went wrong
           setError('Google sign-in did not complete. Please try again.');
-          setSavingProfile(false);
         }
       } catch (err) {
         console.error('[CreateAccount] OAuth return error:', err);
         setError('Something went wrong after Google sign-in. Please try again.');
-        setSavingProfile(false);
+      } finally {
+        setOauthBusy(false);
       }
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Google OAuth ────────────────────────────────────────────────────────────
   const handleGoogleSignUp = async () => {
-    if (loading || savingProfile) return;
+    if (loading || oauthBusy) return;
     setError(null);
 
     if (!supabase) {
@@ -169,7 +155,7 @@ export function CreateAccountScreen() {
 
   // ─── Email/Password ──────────────────────────────────────────────────────────
   const handleEmailSignUp = async () => {
-    if (loading || savingProfile) return;
+    if (loading || oauthBusy) return;
     setError(null);
 
     if (!supabase) {
@@ -200,7 +186,7 @@ export function CreateAccountScreen() {
         setSession(data.session);
         setUser(data.session.user);
         setLoading(false);
-        await finishSignUp(data.session.user.id, data.session.user.email ?? email);
+        continueAfterAuth(data.session.user.id);
       } else if (data.user) {
         setUser(data.user);
         setPendingEmailVerification({
@@ -218,14 +204,7 @@ export function CreateAccountScreen() {
     }
   };
 
-  // ─── Retry handler (works for both Google and email flows) ───────────────────
-  const handleRetry = async () => {
-    if (!authedUser) return;
-    await finishSignUp(authedUser.id, authedUser.email);
-  };
-
-  // ─── Saving profile state (shown after OAuth redirect or during save) ────────
-  if (savingProfile) {
+  if (oauthBusy) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: '#12122A' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -246,10 +225,10 @@ export function CreateAccountScreen() {
             className="font-display font-extrabold text-2xl mb-2"
             style={{ color: '#4EFFC4', textShadow: '0 0 16px rgba(78,255,196,0.5)' }}
           >
-            SETTING UP YOUR PROFILE
+            SIGNING YOU IN
           </h2>
           <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Almost ready to play...
+            Almost there…
           </p>
         </motion.div>
 
@@ -290,7 +269,7 @@ export function CreateAccountScreen() {
               {signupEmailForResend ?? 'your inbox'}
             </p>
             <p className="font-body text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Tap the link in that email to activate your account. Your player card is saved on this device until then — once you confirm, we will finish setting up your profile and drop you into Duel.
+              Tap the link in that email to activate your account. Your profile progress is saved on this device — after you confirm, we will finish saving your profile and drop you into Duel.
             </p>
           </motion.div>
 
@@ -319,9 +298,9 @@ export function CreateAccountScreen() {
             type="button"
             className="font-body text-sm w-full py-2"
             style={{ color: 'rgba(255,255,255,0.35)' }}
-            onClick={() => navigate('/onboarding/preview')}
+            onClick={() => navigate('/onboarding/welcome')}
           >
-            ← Back to preview
+            ← Back to start
           </button>
         </div>
 
@@ -343,7 +322,7 @@ export function CreateAccountScreen() {
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
         <motion.button
-          onClick={() => mode === 'email' ? setMode('main') : navigate('/onboarding/preview')}
+          onClick={() => mode === 'email' ? setMode('main') : navigate('/onboarding/welcome')}
           className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.55)' }}
           whileHover={{ x: -2 }}
@@ -352,10 +331,18 @@ export function CreateAccountScreen() {
           <ArrowLeft size={18} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Almost There</span>
+          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Sign Up</span>
           <div className="flex gap-1">
             {[0,1,2,3,4,5,6,7,8,9,10].map((i) => (
-              <div key={i} className="h-1.5 rounded-full" style={{ width: i === 10 ? 24 : 8, background: '#FF6BA8' }} />
+              <div
+                key={i}
+                className="h-1.5 rounded-full"
+                style={{
+                  width: i === 0 ? 24 : 8,
+                  background:
+                    i === 0 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)',
+                }}
+              />
             ))}
           </div>
         </div>
@@ -393,14 +380,14 @@ export function CreateAccountScreen() {
                 filter: 'drop-shadow(0 0 16px rgba(255,230,109,0.4))',
               }}
             >
-              PLAYER CARD READY
+              CREATE YOUR ACCOUNT
             </h1>
             <p className="font-body" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Create your account to start playing
+              Then we will build your player card
             </p>
           </motion.div>
 
-          {/* Error banner with retry (shown above form for both flows) */}
+          {/* Error banner */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -411,17 +398,6 @@ export function CreateAccountScreen() {
                 exit={{ opacity: 0 }}
               >
                 <p>{error}</p>
-                {authedUser && (
-                  <motion.button
-                    onClick={handleRetry}
-                    className="mt-2 px-4 py-1.5 rounded-lg font-display font-bold text-xs"
-                    style={{ background: 'rgba(255,107,168,0.2)', border: '1px solid rgba(255,107,168,0.4)' }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    TAP TO RETRY
-                  </motion.button>
-                )}
               </motion.div>
             )}
           </AnimatePresence>

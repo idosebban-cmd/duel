@@ -473,7 +473,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/onboarding/welcome" replace />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
 
-          {/* Onboarding (unprotected — auth happens at the end) */}
+          {/* Onboarding (sign-up is step 2; profile steps require auth via OnboardingGuard) */}
           <Route path="/onboarding/avatar" element={<OnboardingGuard><AvatarSelection /></OnboardingGuard>} />
           <Route path="/onboarding/basics" element={<OnboardingGuard><BasicsForm /></OnboardingGuard>} />
           <Route path="/onboarding/photos" element={<OnboardingGuard><PhotoUpload /></OnboardingGuard>} />

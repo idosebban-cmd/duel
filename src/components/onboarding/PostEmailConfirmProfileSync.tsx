@@ -42,7 +42,7 @@ export function PostEmailConfirmProfileSync() {
         if (state.photos.length > 0) {
           await savePhotos(uid, state.photos);
         }
-        useOnboardingStore.getState().reset();
+        useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
         navigate('/discover', { replace: true });
       } catch (err) {
         console.error('[PostEmailConfirmProfileSync]', err);
