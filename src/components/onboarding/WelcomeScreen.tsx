@@ -15,13 +15,14 @@ const floatingIcons = [
 
 export function WelcomeScreen() {
   const navigate = useNavigate();
-  const { user, loading } = useAuthStore();
+  const { user, session, loading } = useAuthStore();
   const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
 
   if (!loading && user && hasCompletedOnboardingProfile) {
     return <Navigate to="/discover" replace />;
   }
-  if (!loading && user && !hasCompletedOnboardingProfile) {
+  // Logged-in session + incomplete onboarding (e.g. after email confirm lands on /welcome)
+  if (!loading && session && !hasCompletedOnboardingProfile) {
     return <Navigate to="/onboarding/avatar" replace />;
   }
 
