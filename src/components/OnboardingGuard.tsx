@@ -10,8 +10,16 @@ const userIdsKnownToHaveNoProfileRow = new Set<string>();
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();
   const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
+  const pendingEmailVerification = useOnboardingStore((s) => s.pendingEmailVerification);
+  const name = useOnboardingStore((s) => s.name);
+  const completedSteps = useOnboardingStore((s) => s.completedSteps);
+
+  const hasLocalProgress =
+    !pendingEmailVerification && (name.trim().length > 0 || completedSteps.length > 0);
   const [dbResolved, setDbResolved] = useState(
-    () => Boolean(user?.id && userIdsKnownToHaveNoProfileRow.has(user.id)),
+    () => (hasLocalProgress
+      ? true
+      : Boolean(user?.id && userIdsKnownToHaveNoProfileRow.has(user.id))),
   );
 
   useEffect(() => {
@@ -20,6 +28,10 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
       return;
     }
     if (hasCompletedOnboardingProfile) {
+      return;
+    }
+    if (hasLocalProgress) {
+      setDbResolved(true);
       return;
     }
     if (userIdsKnownToHaveNoProfileRow.has(user.id)) {
@@ -40,7 +52,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [loading, user?.id, hasCompletedOnboardingProfile]);
+  }, [loading, user?.id, hasCompletedOnboardingProfile, hasLocalProgress]);
 
   // While auth is still loading, show the children (no flash)
   if (loading) return <>{children}</>;
