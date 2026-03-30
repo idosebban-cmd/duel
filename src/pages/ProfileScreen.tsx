@@ -108,6 +108,30 @@ const goalColors: Record<string, string> = {
   'open': '#FFE66D',
 };
 
+const intentLabels: Record<'play' | 'romance' | 'both', string> = {
+  play: 'Just Play',
+  romance: 'Find Romance',
+  both: 'Both - Play & Romance',
+};
+
+const intentDescriptions: Record<'play' | 'romance' | 'both', string> = {
+  play: 'Looking for gaming partners - no pressure',
+  romance: 'Looking for a real connection',
+  both: 'Open to games and romance',
+};
+
+const intentColors: Record<'play' | 'romance' | 'both', string> = {
+  play: '#00F5FF',
+  romance: '#FF6BA8',
+  both: '#B565FF',
+};
+
+const intentIcons: Record<'play' | 'romance' | 'both', string> = {
+  play: gameTypeIcons.video,
+  romance: elementImages.fire,
+  both: elementImages.electric,
+};
+
 // ─── Option sets (matching onboarding) ───────────────────────────────────────
 
 const LIFESTYLE_OPTIONS: Record<string, string[]> = {
@@ -681,9 +705,9 @@ export function ProfileScreen() {
               <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>I'm Here To…</h2>
               <div className="flex flex-col gap-2.5">
                 {([
-                  { value: 'play' as const, emoji: '🎮', label: 'Just Play', desc: 'Find gaming partners — no strings', color: '#00F5FF' },
-                  { value: 'romance' as const, emoji: '💜', label: 'Find Romance', desc: 'Looking for a real connection', color: '#FF6BA8' },
-                  { value: 'both' as const, emoji: '✨', label: 'Both', desc: 'Open to games and romance', color: '#B565FF' },
+                  { value: 'play' as const, icon: intentIcons.play, label: 'Just Play', desc: 'Find gaming partners - no strings', color: '#00F5FF' },
+                  { value: 'romance' as const, icon: intentIcons.romance, label: 'Find Romance', desc: 'Looking for a real connection', color: '#FF6BA8' },
+                  { value: 'both' as const, icon: intentIcons.both, label: 'Both', desc: 'Open to games and romance', color: '#B565FF' },
                 ]).map((opt) => (
                   <button
                     key={opt.value}
@@ -705,7 +729,7 @@ export function ProfileScreen() {
                       setShowIntentModal(false);
                     }}
                   >
-                    <span className="text-2xl">{opt.emoji}</span>
+                    <img src={opt.icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
                     <div>
                       <p className="font-body text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
                       <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{opt.desc}</p>
@@ -1709,10 +1733,16 @@ export function ProfileScreen() {
                           setDbPhotos(refreshed);
                           showToast('Photo removed');
                         }}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                        style={{ background: 'rgba(0,0,0,0.7)', color: '#FF6BA8', fontSize: '10px', fontWeight: 'bold' }}
+                        className="absolute top-0 right-0 w-11 h-11 flex items-start justify-end p-1"
+                        style={{ color: '#FF6BA8' }}
+                        aria-label={`Delete photo ${i + 1}`}
                       >
-                        ✕
+                        <span
+                          className="w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(255,107,168,0.5)', fontSize: '12px', fontWeight: 700 }}
+                        >
+                          x
+                        </span>
                       </button>
                       {/* Reorder arrows */}
                       <div className="absolute bottom-1 left-1 right-1 flex justify-between">
@@ -1936,73 +1966,80 @@ export function ProfileScreen() {
           </SectionCard>
         </motion.div>
 
-        {/* ── Relationship goal (hidden for play-only) ────────────────── */}
-        {intent !== 'play' && (
+        {/* ── What I Want (unified intent + looking for) ───────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.24 }}
         >
           <SectionCard>
-            <SectionHeading label="Looking For" onEdit={() => { openArrayEdit('looking_for', lookingFor); }} />
-            {lookingFor.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {lookingFor.map((id) => {
-                  const color = goalColors[id] || '#4EFFC4';
-                  return (
-                    <div
-                      key={id}
-                      className="px-3 py-2 rounded-lg font-body text-sm font-bold"
-                      style={{
-                        color,
-                        background: `${color}18`,
-                        border: `1.5px solid ${color}40`,
-                      }}
-                    >
-                      {goalLabels[id] || id}
-                    </div>
-                  );
-                })}
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>
+                What I Want
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowIntentModal(true)}
+                  className="font-body text-xs px-2.5 py-1 rounded-lg"
+                  style={{ color: '#4EFFC4', background: 'rgba(78,255,196,0.08)', border: '1px solid rgba(78,255,196,0.2)' }}
+                >
+                  Edit intent
+                </button>
+                {intent !== 'play' && (
+                  <button
+                    onClick={() => openArrayEdit('looking_for', lookingFor)}
+                    className="font-body text-xs px-2.5 py-1 rounded-lg"
+                    style={{ color: '#4EFFC4', background: 'rgba(78,255,196,0.08)', border: '1px solid rgba(78,255,196,0.2)' }}
+                  >
+                    Edit goals
+                  </button>
+                )}
               </div>
-            ) : (
-              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                Not set
-              </p>
-            )}
-          </SectionCard>
-        </motion.div>
-        )}
-
-        {/* ── Intent (Just Play / Romance / Both) ────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.26 }}
-        >
-          <SectionCard>
-            <SectionHeading label="I'm Here To" onEdit={() => setShowIntentModal(true)} />
+            </div>
             <div
               className="flex items-center gap-3 px-3 py-3 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <span className="text-xl">
-                {intent === 'play' ? '🎮' : intent === 'romance' ? '💜' : '✨'}
-              </span>
+              <img src={intentIcons[intent]} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
               <div>
                 <p className="font-body text-sm font-bold" style={{
-                  color: intent === 'play' ? '#00F5FF' : intent === 'romance' ? '#FF6BA8' : '#B565FF',
+                  color: intentColors[intent],
                 }}>
-                  {intent === 'play' ? 'Just Play' : intent === 'romance' ? 'Find Romance' : 'Both — Play & Romance'}
+                  {intentLabels[intent]}
                 </p>
                 <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  {intent === 'play'
-                    ? 'Looking for gaming partners — no pressure'
-                    : intent === 'romance'
-                    ? 'Looking for a real connection'
-                    : 'Open to games and romance'}
+                  {intentDescriptions[intent]}
                 </p>
               </div>
             </div>
+            {intent !== 'play' && (
+              <div className="mt-3">
+                {lookingFor.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {lookingFor.map((id) => {
+                      const color = goalColors[id] || '#4EFFC4';
+                      return (
+                        <div
+                          key={id}
+                          className="px-3 py-2 rounded-lg font-body text-sm font-bold"
+                          style={{
+                            color,
+                            background: `${color}18`,
+                            border: `1.5px solid ${color}40`,
+                          }}
+                        >
+                          {goalLabels[id] || id}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                    No relationship goals selected yet
+                  </p>
+                )}
+              </div>
+            )}
           </SectionCard>
         </motion.div>
 
@@ -2014,22 +2051,20 @@ export function ProfileScreen() {
         >
           <SectionCard>
             <SectionHeading label="Lifestyle" onEdit={() => setEditModal('lifestyle')} />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {(Object.entries(lifestyle) as [keyof typeof lifestyle, string | null][]).map(([key, val]) => (
                 <div
                   key={key}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  className="rounded-lg p-2 flex flex-col items-start gap-1 min-h-[82px]"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
-                  <img src={lifestyleIcons[key]} alt={key} className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
-                  <div className="min-w-0">
-                    <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
-                      {lifestyleLabels[key]}
-                    </p>
-                    <p className="font-body text-xs font-bold truncate" style={{ color: val ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.2)' }}>
-                      {val ?? 'Not set'}
-                    </p>
-                  </div>
+                  <img src={lifestyleIcons[key]} alt={key} className="w-4 h-4 object-contain" draggable={false} />
+                  <p className="font-body text-[10px] leading-none" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    {lifestyleLabels[key]}
+                  </p>
+                  <p className="font-body text-[11px] font-bold leading-tight line-clamp-2" style={{ color: val ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.28)' }}>
+                    {val ?? 'Not set'}
+                  </p>
                 </div>
               ))}
             </div>
@@ -2122,29 +2157,6 @@ export function ProfileScreen() {
           <SectionCard>
             <SectionHeading label="Account" />
             <div className="flex flex-col gap-2">
-              {/* Coming soon items */}
-              {[
-                { label: 'Privacy Settings', icon: '🔒' },
-                { label: 'Notifications',    icon: '🔔' },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-between px-3 py-3 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base" style={{ opacity: 0.4 }}>{item.icon}</span>
-                    <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</span>
-                  </div>
-                  <span
-                    className="font-body text-[10px] font-bold px-2 py-0.5 rounded-md"
-                    style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' }}
-                  >
-                    SOON
-                  </span>
-                </div>
-              ))}
-
               <button
                 type="button"
                 onClick={() => navigate('/privacy')}
@@ -2152,7 +2164,7 @@ export function ProfileScreen() {
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-base" style={{ opacity: 0.6 }}>📄</span>
+                  <img src={affiliationImages.academia} alt="" className="w-4 h-4 object-contain opacity-70" draggable={false} />
                   <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Privacy Policy</span>
                 </div>
                 <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
@@ -2165,7 +2177,7 @@ export function ProfileScreen() {
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="text-base" style={{ opacity: 0.6 }}>📜</span>
+                  <img src={affiliationImages.tech} alt="" className="w-4 h-4 object-contain opacity-70" draggable={false} />
                   <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Terms of Use</span>
                 </div>
                 <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
