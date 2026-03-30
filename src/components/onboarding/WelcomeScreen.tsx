@@ -66,7 +66,7 @@ export function WelcomeScreen() {
     >
       {/* Grid background */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none z-0"
         style={{
           backgroundImage:
             'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)',
@@ -76,7 +76,7 @@ export function WelcomeScreen() {
 
       {/* Scanlines */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-40"
+        className="absolute inset-0 pointer-events-none opacity-40 z-0"
         style={{
           backgroundImage:
             'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
@@ -84,14 +84,14 @@ export function WelcomeScreen() {
       />
 
       {/* Corner brackets */}
-      <div className="absolute top-5 left-5 w-10 h-10 border-t-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none" />
-      <div className="absolute top-5 right-5 w-10 h-10 border-t-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none" />
-      <div className="absolute bottom-5 left-5 w-10 h-10 border-b-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none" />
-      <div className="absolute bottom-5 right-5 w-10 h-10 border-b-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none" />
+      <div className="absolute top-5 left-5 w-10 h-10 border-t-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none z-0" />
+      <div className="absolute top-5 right-5 w-10 h-10 border-t-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none z-0" />
+      <div className="absolute bottom-5 left-5 w-10 h-10 border-b-[3px] border-l-[3px] border-electric-mint/50 pointer-events-none z-0" />
+      <div className="absolute bottom-5 right-5 w-10 h-10 border-b-[3px] border-r-[3px] border-electric-mint/50 pointer-events-none z-0" />
 
       {/* Ambient glow orbs */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none z-0"
         style={{
           top: '20%', left: '15%', width: 320, height: 320,
           background: 'radial-gradient(circle, rgba(181,101,255,0.10) 0%, transparent 70%)',
@@ -99,7 +99,7 @@ export function WelcomeScreen() {
         }}
       />
       <div
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none z-0"
         style={{
           bottom: '20%', right: '10%', width: 280, height: 280,
           background: 'radial-gradient(circle, rgba(255,107,168,0.10) 0%, transparent 70%)',
@@ -111,7 +111,7 @@ export function WelcomeScreen() {
       {floatingIcons.map((el, i) => (
         <motion.div
           key={i}
-          className="absolute select-none pointer-events-none"
+          className="absolute z-0 select-none pointer-events-none"
           style={{ left: el.x, top: el.y, width: el.size, height: el.size }}
           initial={{ opacity: 0, scale: 0, rotate: el.rotate }}
           animate={{
@@ -163,7 +163,7 @@ export function WelcomeScreen() {
               fontSize: '96px',
               color: '#FFE66D',
               textShadow:
-                '0 0 9px rgba(255,230,109,0.9), 0 0 25px rgba(255,230,109,0.35), 2px 2px 0px #FF9F1C, 4px 4px 0px rgba(0,0,0,0.6)',
+                '0 0 4.5px rgba(255,230,109,0.9), 0 0 12.5px rgba(255,230,109,0.35), 2px 2px 0px #FF9F1C, 4px 4px 0px rgba(0,0,0,0.6)',
               letterSpacing: '0.06em',
             }}
           >
@@ -218,41 +218,43 @@ export function WelcomeScreen() {
           ].map((pill) => (
             <span
               key={pill.text}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-body font-bold border-2 border-black"
+              className="flex h-10 min-h-[2.5rem] items-center gap-1.5 px-4 py-2 rounded-full text-base font-body font-bold border-2 border-black"
               style={{
                 backgroundColor: pill.bg,
                 color: pill.fg,
                 boxShadow: '3px 3px 0px rgba(0,0,0,0.6)',
               }}
             >
-              <img src={pill.icon} alt="" className="w-3.5 h-3.5 object-contain" />
+              <img src={pill.icon} alt="" className="h-5 w-5 object-contain" />
               {pill.text}
             </span>
           ))}
         </motion.div>
 
         {/* CTA */}
-        <motion.button
-          onClick={() => navigate('/onboarding/create-account')}
-          className="relative overflow-hidden w-full max-w-xs font-display font-extrabold text-xl rounded-[14px] py-5 px-8 cursor-pointer select-none"
-          style={{
-            background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
-            border: '3px solid rgba(255,255,255,0.25)',
-            boxShadow: '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)',
-            color: '#12122A',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65 }}
-          whileHover={{
-            scale: 1.05,
-            boxShadow: '0 0 50px rgba(78,255,196,0.75), 6px 6px 0px rgba(0,0,0,0.4)',
-          }}
-          whileTap={{ scale: 0.97, boxShadow: '2px 2px 0px rgba(0,0,0,0.4)' }}
-        >
-          <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
-          INSERT COIN →
-        </motion.button>
+        <div className="relative z-10 w-full max-w-xs">
+          <motion.button
+            onClick={() => navigate('/onboarding/create-account')}
+            className="relative flex h-14 min-h-[3.5rem] w-full items-center justify-center overflow-hidden font-display font-extrabold text-xl rounded-[14px] px-8 cursor-pointer select-none"
+            style={{
+              background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+              border: '3px solid rgba(255,255,255,0.25)',
+              boxShadow: '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)',
+              color: '#12122A',
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            whileHover={{
+              scale: 1.05,
+              boxShadow: '0 0 50px rgba(78,255,196,0.75), 6px 6px 0px rgba(0,0,0,0.4)',
+            }}
+            whileTap={{ scale: 0.97, boxShadow: '2px 2px 0px rgba(0,0,0,0.4)' }}
+          >
+            <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+            INSERT COIN →
+          </motion.button>
+        </div>
 
         <motion.button
           type="button"
@@ -269,7 +271,7 @@ export function WelcomeScreen() {
 
       {/* Bottom neon bar */}
       <motion.div
-        className="absolute bottom-0 left-0 right-0 h-[3px]"
+        className="absolute bottom-0 left-0 right-0 z-0 h-[3px]"
         style={{
           background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)',
           boxShadow: '0 0 14px rgba(78,255,196,0.7)',
