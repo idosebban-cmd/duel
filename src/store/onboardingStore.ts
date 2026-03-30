@@ -239,7 +239,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
     }),
     {
       name: 'duel-onboarding',
-      version: 7,
+      version: 8,
       migrate: (persistedState: unknown) => {
         const s = persistedState as Record<string, unknown>;
         // v0 → v1: lookingFor changed from string|null to string[]
@@ -266,6 +266,8 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
         if (s.signupEmailForResend === undefined) s.signupEmailForResend = null;
         // v6 → v7: onboarding completion flag (resume after sign-up moved earlier)
         if (s.hasCompletedOnboardingProfile === undefined) s.hasCompletedOnboardingProfile = false;
+        // v7 → v8: step indices shifted again — reset completedSteps
+        s.completedSteps = [];
         return s;
       },
       partialize: (state) => {
@@ -283,13 +285,9 @@ export const STEPS = [
   { id: 2, path: '/onboarding/avatar', label: 'Avatar' },
   { id: 3, path: '/onboarding/basics', label: 'Basics' },
   { id: 4, path: '/onboarding/photos', label: 'Photos' },
-  { id: 5, path: '/onboarding/games', label: 'Games' },
-  { id: 6, path: '/onboarding/relationship-goals', label: 'Goals' },
-  { id: 7, path: '/onboarding/preferences', label: 'Preferences' },
-  { id: 8, path: '/onboarding/lifestyle', label: 'Lifestyle' },
-  { id: 9, path: '/onboarding/bio', label: 'Bio' },
-  { id: 10, path: '/onboarding/prompts', label: 'Prompts' },
-  { id: 11, path: '/onboarding/preview', label: 'Preview' },
+  { id: 5, path: '/onboarding/relationship-goals', label: 'Goals' },
+  { id: 6, path: '/onboarding/preferences', label: 'Preferences' },
+  { id: 7, path: '/onboarding/preview', label: 'Preview' },
 ] as const;
 
 /** Indices for the top progress bar — one dot per step after Welcome (STEPS ids 1 … last). */

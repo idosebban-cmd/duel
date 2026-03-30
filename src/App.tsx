@@ -497,14 +497,16 @@ export default function App() {
           <Route path="/onboarding/avatar" element={<OnboardingGuard><AvatarSelection /></OnboardingGuard>} />
           <Route path="/onboarding/basics" element={<OnboardingGuard><BasicsForm /></OnboardingGuard>} />
           <Route path="/onboarding/photos" element={<OnboardingGuard><PhotoUpload /></OnboardingGuard>} />
-          <Route path="/onboarding/games" element={<OnboardingGuard><GameSelection /></OnboardingGuard>} />
           <Route path="/onboarding/relationship-goals" element={<OnboardingGuard><RelationshipGoals /></OnboardingGuard>} />
           <Route path="/onboarding/preferences" element={<OnboardingGuard><PreferencesStep /></OnboardingGuard>} />
+          <Route path="/onboarding/preview" element={<OnboardingGuard><PlayerCardPreview /></OnboardingGuard>} />
+          <Route path="/onboarding/create-account" element={<CreateAccountScreen />} />
+
+          {/* Onboarding screens kept for later profile editing (not in active onboarding sequence) */}
+          <Route path="/onboarding/games" element={<OnboardingGuard><GameSelection /></OnboardingGuard>} />
           <Route path="/onboarding/lifestyle" element={<OnboardingGuard><LifestyleQuestions /></OnboardingGuard>} />
           <Route path="/onboarding/bio" element={<OnboardingGuard><BioStep /></OnboardingGuard>} />
           <Route path="/onboarding/prompts" element={<OnboardingGuard><PromptsSelection /></OnboardingGuard>} />
-          <Route path="/onboarding/preview" element={<OnboardingGuard><PlayerCardPreview /></OnboardingGuard>} />
-          <Route path="/onboarding/create-account" element={<CreateAccountScreen />} />
 
           {/* Login */}
           <Route path="/login" element={<LoginScreen />} />

@@ -135,8 +135,8 @@ export function PreferencesStep() {
       preferredAgeMax: ageMax,
       preferredDistance: anywhere ? null : distance,
     });
-    completeStep(7);
-    navigate('/onboarding/lifestyle');
+    completeStep(6);
+    navigate('/onboarding/preview');
   }, [showMe, ageMin, ageMax, distance, anywhere, updatePreferences, completeStep, navigate]);
 
   return (

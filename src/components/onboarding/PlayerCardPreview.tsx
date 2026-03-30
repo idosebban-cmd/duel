@@ -116,7 +116,7 @@ export function PlayerCardPreview() {
     setSaveError(null);
     try {
       await persistOnboardingProfile(user.id, email, store);
-      store.completeStep(11);
+      store.completeStep(7);
       markOnboardingCompleteAndClearDraft();
       navigate('/discover');
     } catch (err) {

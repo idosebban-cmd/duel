@@ -116,7 +116,7 @@ export function RelationshipGoals() {
   };
 
   const handleContinue = () => {
-    if (lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play')) completeStep(6);
+    if (lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play')) completeStep(5);
     navigate('/onboarding/preferences');
   };
 

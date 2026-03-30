@@ -114,7 +114,7 @@ export function PhotoUpload() {
   const handleContinue = () => {
     updatePhotos(photos.map((p) => p.dataUrl));
     completeStep(4);
-    navigate('/onboarding/games');
+    navigate('/onboarding/relationship-goals');
   };
 
   // Consume crop queue sequentially.
