@@ -604,7 +604,7 @@ export function Hangman() {
               type="button"
               disabled={setupBusy || !pickedSub || !phraseInput.trim()}
               onClick={() => void handleSubmitSetup()}
-              className="w-full py-4 rounded-2xl font-display text-lg disabled:opacity-40"
+              className={`w-full py-4 rounded-2xl font-display text-lg ${setupBusy || !pickedSub || !phraseInput.trim() ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
               style={{
                 background: 'linear-gradient(135deg,#4EFFC4,#00AAFF)',
                 color: '#12122A',

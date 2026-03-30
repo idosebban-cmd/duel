@@ -173,7 +173,7 @@ function PendingActivityIcon({ activity }: { activity: MatchPendingActivity }) {
     <div className="relative flex-shrink-0" aria-label={`${activity.count} unread messages`}>
       <MessageCircle className={iconClass} style={{ color }} aria-hidden />
       <span
-        className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-body text-[10px] font-bold leading-none"
+        className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-body text-xs font-bold leading-none"
         style={{ background: '#FF6BA8', color: '#0A1628' }}
       >
         {n}
@@ -273,7 +273,7 @@ function MatchCard({
           <div className="min-w-0">
             {match.intent && (
               <span
-                className="inline-flex items-center px-2 py-1 rounded-full font-body text-[11px] font-bold leading-none flex-shrink-0 whitespace-nowrap"
+                className="inline-flex items-center px-2 py-1 rounded-full font-body text-xs font-bold leading-none flex-shrink-0 whitespace-nowrap"
                 style={{
                   color: '#0A1628',
                   background: intentMeta[match.intent].color,
@@ -322,7 +322,7 @@ function SectionLabel({ label }: { label: string }) {
   const isNew = label.trim().toLowerCase() === 'new';
   return (
     <div className="px-4 pt-5 pb-2 flex items-center gap-2">
-      <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
+      <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
         {label.toUpperCase()}
       </span>
       <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -586,7 +586,7 @@ export function MatchesScreen() {
             Your Matches
           </h1>
           {newMatches.length > 0 && (
-            <span className="font-body text-[11px]" style={{ color: '#4EFFC4' }}>
+            <span className="font-body text-xs" style={{ color: '#4EFFC4' }}>
               {newMatches.length} new {newMatches.length === 1 ? 'match' : 'matches'}!
             </span>
           )}

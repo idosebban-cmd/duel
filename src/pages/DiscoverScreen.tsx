@@ -495,7 +495,7 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
               className="rounded-lg px-2.5 py-2"
               style={{ background: `${color}10`, border: `1.5px solid ${color}40` }}
             >
-              <p className="font-body text-[10px] mb-0.5" style={{ color: `${color}99` }}>{p.question}</p>
+              <p className="font-body text-xs mb-0.5" style={{ color: `${color}99` }}>{p.question}</p>
               <p
                 className="font-body text-xs leading-snug overflow-hidden"
                 style={{ color: 'rgba(255,255,255,0.8)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}

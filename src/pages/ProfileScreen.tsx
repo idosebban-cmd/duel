@@ -369,7 +369,7 @@ function DeleteModal({
             </div>
             {error && (
               <p
-                className="font-body text-xs text-center"
+                className="font-body text-sm text-center"
                 style={{ color: '#FF6BA8', background: 'rgba(255,61,113,0.1)', border: '1px solid rgba(255,61,113,0.35)', borderRadius: 10, padding: '8px 10px' }}
               >
                 {error}
@@ -379,12 +379,11 @@ function DeleteModal({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1.5px solid rgba(255,255,255,0.16)',
                   color: 'rgba(255,255,255,0.75)',
-                  opacity: loading ? 0.6 : 1,
                 }}
               >
                 Cancel
@@ -392,12 +391,11 @@ function DeleteModal({
               <button
                 onClick={onDelete}
                 disabled={loading}
-                className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: '#FF3D71',
                   color: '#fff',
                   border: '1.5px solid rgba(0,0,0,0.3)',
-                  opacity: loading ? 0.75 : 1,
                 }}
               >
                 {loading ? 'Deleting…' : 'Delete Forever'}
@@ -732,7 +730,7 @@ export function ProfileScreen() {
                     <img src={opt.icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
                     <div>
                       <p className="font-body text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
-                      <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{opt.desc}</p>
+                      <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{opt.desc}</p>
                     </div>
                     {intent === opt.value && (
                       <span className="ml-auto text-base" style={{ color: opt.color }}>✓</span>
@@ -932,7 +930,7 @@ export function ProfileScreen() {
                   return (
                     <div key={field}>
                       <div className="flex items-center gap-2 mb-2">
-                        <img src={lifestyleIcons[field]} alt="" className="w-4 h-4 object-contain" />
+                        <img src={lifestyleIcons[field]} alt="" className="w-6 h-6 object-contain" />
                         <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
                           {lifestyleLabels[field]}
                         </span>
@@ -1151,7 +1149,7 @@ export function ProfileScreen() {
                       }}
                     >
                       <img src={img} alt={id} className="w-10 h-10 object-contain" draggable={false} />
-                      <span className="font-body text-[10px] font-bold" style={{ color: isSelected ? '#4EFFC4' : 'rgba(255,255,255,0.6)' }}>
+                      <span className="font-body text-xs font-bold" style={{ color: isSelected ? '#4EFFC4' : 'rgba(255,255,255,0.6)' }}>
                         {cap(id)}
                       </span>
                     </button>
@@ -1370,7 +1368,7 @@ export function ProfileScreen() {
                           >
                             <span className="text-xs font-bold">✕</span>
                           </button>
-                          <p className="font-body text-[11px] mb-1 pr-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                          <p className="font-body text-xs mb-1 pr-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
                             {p.icon} {p.question}
                           </p>
                           <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{p.answer}</p>
@@ -1573,7 +1571,7 @@ export function ProfileScreen() {
                   className="w-8 h-8 rounded-full flex items-center justify-center"
                   style={{ background: '#0A1628', border: '1.5px solid rgba(255,255,255,0.15)' }}
                 >
-                  <img src={elementImages[element]} alt={element} className="w-5 h-5 object-contain" draggable={false} />
+                  <img src={elementImages[element]} alt={element} className="w-6 h-6 object-contain" draggable={false} />
                 </div>
               )}
               <button
@@ -1598,7 +1596,7 @@ export function ProfileScreen() {
             {character && element && affiliation ? (
               <div className="flex items-center justify-center gap-1.5 mt-2">
                 {affiliationImages[affiliation] && (
-                  <img src={affiliationImages[affiliation]} alt="" className="w-4 h-4 object-contain" draggable={false} />
+                  <img src={affiliationImages[affiliation]} alt="" className="w-6 h-6 object-contain" draggable={false} />
                 )}
                 <span className="font-body text-xs" style={{ color: 'rgba(78,255,196,0.7)' }}>
                   {cap(element)} {cap(affiliation)} {cap(character)}
@@ -1696,7 +1694,7 @@ export function ProfileScreen() {
                   className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
+                  <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
                   <p className="font-body text-xs font-bold" style={{ color: item.display ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}>
                     {item.display ?? 'Not set'}
                   </p>
@@ -1756,7 +1754,7 @@ export function ProfileScreen() {
                               const refreshed = await getPhotos(user.id);
                               setDbPhotos(refreshed);
                             }}
-                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            className="w-6 h-6 rounded-full flex items-center justify-center"
                             style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px' }}
                           >
                             ◀
@@ -1773,7 +1771,7 @@ export function ProfileScreen() {
                               const refreshed = await getPhotos(user.id);
                               setDbPhotos(refreshed);
                             }}
-                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            className="w-6 h-6 rounded-full flex items-center justify-center"
                             style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px' }}
                           >
                             ▶
@@ -1808,7 +1806,7 @@ export function ProfileScreen() {
               >
                 {uploading ? (
                   <motion.div
-                    className="w-5 h-5 rounded-full border-2 border-t-transparent"
+                    className="w-6 h-6 rounded-full border-2 border-t-transparent"
                     style={{ borderColor: 'rgba(78,255,196,0.5)', borderTopColor: 'transparent' }}
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
@@ -1890,7 +1888,7 @@ export function ProfileScreen() {
                     </div>
                   )}
                   <div className="text-center">
-                    <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
+                    <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
                     <p className="font-body text-xs font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
                       {item.name ?? 'Not set'}
                     </p>
@@ -1930,7 +1928,7 @@ export function ProfileScreen() {
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                   >
                     {gameTypeIcons[g] && (
-                      <img src={gameTypeIcons[g]} alt="" className="w-4 h-4 object-contain" draggable={false} />
+                      <img src={gameTypeIcons[g]} alt="" className="w-6 h-6 object-contain" draggable={false} />
                     )}
                     <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
                       {gameTypeLabels[g] || g}
@@ -2007,7 +2005,7 @@ export function ProfileScreen() {
                 }}>
                   {intentLabels[intent]}
                 </p>
-                <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
                   {intentDescriptions[intent]}
                 </p>
               </div>
@@ -2058,11 +2056,11 @@ export function ProfileScreen() {
                   className="rounded-lg p-2 flex flex-col items-start gap-1 min-h-[82px]"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
-                  <img src={lifestyleIcons[key]} alt={key} className="w-4 h-4 object-contain" draggable={false} />
-                  <p className="font-body text-[10px] leading-none" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  <img src={lifestyleIcons[key]} alt={key} className="w-6 h-6 object-contain" draggable={false} />
+                  <p className="font-body text-xs leading-none" style={{ color: 'rgba(255,255,255,0.4)' }}>
                     {lifestyleLabels[key]}
                   </p>
-                  <p className="font-body text-[11px] font-bold leading-tight line-clamp-2" style={{ color: val ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.28)' }}>
+                  <p className="font-body text-xs font-bold leading-tight line-clamp-2" style={{ color: val ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.28)' }}>
                     {val ?? 'Not set'}
                   </p>
                 </div>
@@ -2164,7 +2162,7 @@ export function ProfileScreen() {
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
                 <div className="flex items-center gap-2.5">
-                  <img src={affiliationImages.academia} alt="" className="w-4 h-4 object-contain opacity-70" draggable={false} />
+                  <img src={affiliationImages.academia} alt="" className="w-6 h-6 object-contain opacity-70" draggable={false} />
                   <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Privacy Policy</span>
                 </div>
                 <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
@@ -2177,7 +2175,7 @@ export function ProfileScreen() {
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
                 <div className="flex items-center gap-2.5">
-                  <img src={affiliationImages.tech} alt="" className="w-4 h-4 object-contain opacity-70" draggable={false} />
+                  <img src={affiliationImages.tech} alt="" className="w-6 h-6 object-contain opacity-70" draggable={false} />
                   <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Terms of Use</span>
                 </div>
                 <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>

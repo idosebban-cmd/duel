@@ -270,7 +270,7 @@ export function PhotoUpload() {
           />
 
           {/* Upload button */}
-          <motion.button type="button" onClick={() => fileInputRef.current?.click()} disabled={photos.length >= MAX_PHOTOS} className="mt-4 w-full py-3 rounded-2xl font-display font-bold text-base flex items-center justify-center gap-2"
+          <motion.button type="button" onClick={() => fileInputRef.current?.click()} disabled={photos.length >= MAX_PHOTOS} className={`mt-4 w-full py-3 rounded-2xl font-display font-bold text-base flex items-center justify-center gap-2 ${photos.length >= MAX_PHOTOS ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
             style={{ background: 'rgba(255,255,255,0.05)', border: `3px dashed ${photos.length < MAX_PHOTOS ? '#4EFFC4' : 'rgba(255,255,255,0.2)'}`, color: photos.length < MAX_PHOTOS ? '#4EFFC4' : 'rgba(255,255,255,0.3)', cursor: photos.length < MAX_PHOTOS ? 'pointer' : 'not-allowed' }}
             whileHover={photos.length < MAX_PHOTOS ? { scale: 1.02 } : {}} whileTap={photos.length < MAX_PHOTOS ? { scale: 0.98 } : {}}>
             <Plus size={18} />
@@ -311,7 +311,7 @@ export function PhotoUpload() {
 
       {/* Bottom CTA */}
       <div className="relative z-10 px-4 sm:px-6 py-5" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
-        <motion.button onClick={handleContinue} disabled={!canContinue} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
+        <motion.button onClick={handleContinue} disabled={!canContinue} className={`w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none ${!canContinue ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
           style={{ background: canContinue ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: canContinue ? '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)' : 'none', color: canContinue ? '#12122A' : 'rgba(255,255,255,0.2)', cursor: canContinue ? 'pointer' : 'not-allowed' }}
           whileHover={canContinue ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } as any : {}} whileTap={canContinue ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
           {canContinue && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
@@ -398,12 +398,12 @@ function PhotoCard({
       {/* Remove button */}
       <motion.button
         onClick={onRemove}
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         aria-label="Remove photo"
       >
-        <X size={14} />
+        <X size={24} />
       </motion.button>
 
       {/* Drag handle hint */}
@@ -431,7 +431,7 @@ function EmptySlot({
       disabled={!onClick}
       className={`w-full flex flex-col items-center justify-center rounded-2xl transition-all ${
         isMain ? 'aspect-[3/4]' : 'aspect-square'
-      }`}
+      } ${!onClick ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
       style={{
         border: '2px dashed rgba(78,255,196,0.4)',
         background: 'rgba(78,255,196,0.04)',

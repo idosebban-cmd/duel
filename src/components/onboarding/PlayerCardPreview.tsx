@@ -304,7 +304,7 @@ export function PlayerCardPreview() {
                     <button
                       onClick={() => setPhotoIndex((i) => Math.max(0, i - 1))}
                       disabled={photoIndex === 0}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30"
+                      className={`absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center ${photoIndex === 0 ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                       aria-label="Previous photo"
                     >
                       <ChevronLeft size={18} />
@@ -312,7 +312,7 @@ export function PlayerCardPreview() {
                     <button
                       onClick={() => setPhotoIndex((i) => Math.min(photos.length - 1, i + 1))}
                       disabled={photoIndex === photos.length - 1}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center disabled:opacity-30"
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center ${photoIndex === photos.length - 1 ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                       aria-label="Next photo"
                     >
                       <ChevronRight size={18} />
@@ -448,7 +448,7 @@ export function PlayerCardPreview() {
           <motion.button
             onClick={() => void handleNext()}
             disabled={saving}
-            className="w-full font-display font-extrabold text-xl sm:text-2xl text-white rounded-2xl py-5 px-8 relative overflow-hidden disabled:opacity-50"
+            className={`w-full font-display font-extrabold text-xl sm:text-2xl text-white rounded-2xl py-5 px-8 relative overflow-hidden ${saving ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
             style={{
               background: 'linear-gradient(135deg, #FF6BA8 0%, #FF3D71 100%)',
               border: '4px solid black',

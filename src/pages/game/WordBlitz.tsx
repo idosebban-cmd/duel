@@ -1150,7 +1150,7 @@ export function WordBlitz() {
               <img src={characterImages[myDisplayCharacter]} alt="" className="w-6 h-6 object-contain" draggable={false} />
             </div>
             <div>
-              <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
+              <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
               <p className="font-display text-xl leading-none" style={{ color: '#4EFFC4', textShadow: '0 0 10px rgba(78,255,196,0.5)' }}>{myScore}</p>
             </div>
           </div>
@@ -1168,7 +1168,7 @@ export function WordBlitz() {
           {/* Opponent avatar + score */}
           <div className="flex items-center gap-2">
             <div>
-              <p className="font-body text-[10px] text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{opponentDisplayName.toUpperCase()}</p>
+              <p className="font-body text-xs text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{opponentDisplayName.toUpperCase()}</p>
               <div className="flex items-center gap-1">
                 <p className="font-display text-xl leading-none text-right" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
                 <AnimatePresence>
@@ -1217,15 +1217,15 @@ export function WordBlitz() {
             { label: '6+', pts: '40', color: '#4EFFC4'               },
           ].map(({ label, pts, color }) => (
             <div key={label} className="flex items-center gap-1">
-              <span className="font-body text-[10px] font-bold px-1.5 py-0.5 rounded"
+              <span className="font-body text-xs font-bold px-1.5 py-0.5 rounded"
                 style={{ background: 'rgba(255,255,255,0.06)', color, border: `1px solid ${color}33` }}
               >
                 {label}
               </span>
-              <span className="font-mono text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
+              <span className="font-mono text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
             </div>
           ))}
-          <span className="font-body text-[10px] ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
+          <span className="font-body text-xs ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
         </div>
 
         {/* ── Letter pool ──────────────────────────────────────────────────── */}
@@ -1270,7 +1270,7 @@ export function WordBlitz() {
           )}
           {pool.length > 0 && (
             <div className="flex items-center justify-center pt-1">
-              <span className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+              <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
                 Tap a letter to start
               </span>
             </div>
@@ -1395,7 +1395,7 @@ export function WordBlitz() {
               </p>
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6BA8', boxShadow: '0 0 4px #FF6BA8' }} />
-                <span className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Live</span>
+                <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Live</span>
               </div>
             </div>
           </div>
@@ -1413,7 +1413,7 @@ export function WordBlitz() {
               )}
             </AnimatePresence>
             <div className="text-right">
-              <p className="font-body text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>SCORE</p>
+              <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>SCORE</p>
               <p className="font-display text-2xl leading-none" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
             </div>
           </div>

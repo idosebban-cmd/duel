@@ -142,7 +142,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
                 type="button"
                 disabled={busy}
                 onClick={() => void handleSkip()}
-                className="w-full py-3 rounded-2xl font-body font-semibold text-sm"
+                className={`w-full py-3 rounded-2xl font-body font-semibold text-sm ${busy ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: 'transparent',
                   border: '2px solid rgba(255,255,255,0.2)',
@@ -155,7 +155,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
                 type="button"
                 disabled={busy || rating < 1}
                 onClick={() => void handleSend()}
-                className="w-full py-3.5 rounded-2xl font-display font-extrabold text-base text-white disabled:opacity-45 disabled:cursor-not-allowed"
+                className={`w-full py-3.5 rounded-2xl font-display font-extrabold text-base text-white ${busy || rating < 1 ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: 'linear-gradient(135deg, #FF6BA8, #FF3D71)',
                   border: '3px solid rgba(255,255,255,0.15)',

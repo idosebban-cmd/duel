@@ -254,22 +254,17 @@ export function WelcomeScreen() {
           INSERT COIN →
         </motion.button>
 
-        <motion.p
-          className="mt-4 font-body text-sm"
+        <motion.button
+          type="button"
+          className="mt-4 w-full h-11 px-4 font-body text-sm text-center"
           style={{ color: 'rgba(255,255,255,0.28)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.85 }}
+          onClick={() => navigate('/login?mode=signin')}
         >
-          Already playing?{' '}
-          <button
-            className="font-semibold hover:underline"
-            style={{ color: '#FF6BA8' }}
-            onClick={() => navigate('/login?mode=signin')}
-          >
-            Log in
-          </button>
-        </motion.p>
+          Already playing? <span className="font-semibold hover:underline" style={{ color: '#FF6BA8' }}>Log in</span>
+        </motion.button>
       </motion.div>
 
       {/* Bottom neon bar */}

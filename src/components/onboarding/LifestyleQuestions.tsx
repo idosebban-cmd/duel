@@ -208,7 +208,7 @@ export function LifestyleQuestions() {
           type="button"
           onClick={handleContinue}
           disabled={!allAnswered}
-          className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
+          className={`w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none ${!allAnswered ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
           style={{
             background: allAnswered ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)',
             border: '3px solid rgba(255,255,255,0.25)',

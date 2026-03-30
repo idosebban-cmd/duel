@@ -75,7 +75,7 @@ export function Button({
         ${variantStyles[variant]}
         ${sizeStyles[size]}
         ${fullWidth ? 'w-full' : ''}
-        ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}
+        ${disabled || loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}
         ${className}
       `}
       {...props}

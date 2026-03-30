@@ -205,7 +205,7 @@ export function ReportUserModal({
                   <motion.button
                     type="button"
                     onClick={() => !submitting && onClose()}
-                    className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                    className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${submitting ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.14)',
@@ -220,12 +220,11 @@ export function ReportUserModal({
                     type="button"
                     onClick={() => void handleSubmitReport()}
                     disabled={!reason || submitting}
-                    className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                    className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${!reason || submitting ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
                       border: '2px solid rgba(0,0,0,0.35)',
                       color: '#12122A',
-                      opacity: !reason || submitting ? 0.5 : 1,
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -240,12 +239,11 @@ export function ReportUserModal({
                     type="button"
                     onClick={() => void handleBlockFromPrompt()}
                     disabled={blocking}
-                    className="w-full py-3 rounded-xl font-body text-sm font-bold"
+                    className={`w-full py-3 rounded-xl font-body text-sm font-bold ${blocking ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'rgba(255,61,113,0.18)',
                       border: '1px solid rgba(255,61,113,0.45)',
                       color: '#FF6BA8',
-                      opacity: blocking ? 0.65 : 1,
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -255,7 +253,7 @@ export function ReportUserModal({
                     type="button"
                     onClick={handleNoBlock}
                     disabled={blocking}
-                    className="w-full py-3 rounded-xl font-body text-sm font-bold"
+                    className={`w-full py-3 rounded-xl font-body text-sm font-bold ${blocking ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.12)',

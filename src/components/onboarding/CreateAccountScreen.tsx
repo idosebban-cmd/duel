@@ -300,7 +300,7 @@ export function CreateAccountScreen() {
             type="button"
             onClick={() => void handleResendConfirmation()}
             disabled={resendBusy || !signupEmailForResend}
-            className="w-full py-3.5 rounded-2xl font-display font-bold text-sm mb-4 disabled:opacity-45"
+            className={`w-full py-3.5 rounded-2xl font-display font-bold text-sm mb-4 ${resendBusy || !signupEmailForResend ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: '2px solid rgba(255,255,255,0.18)',
@@ -432,7 +432,7 @@ export function CreateAccountScreen() {
                 <motion.button
                   onClick={handleGoogleSignUp}
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-display font-extrabold text-lg relative overflow-hidden"
+                  className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-display font-extrabold text-lg relative overflow-hidden ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                   style={{
                     background: loading ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
                     border: '3px solid rgba(255,255,255,0.25)',
@@ -558,7 +558,7 @@ export function CreateAccountScreen() {
                   <motion.button
                     onClick={handleEmailSignUp}
                     disabled={loading}
-                    className="w-full py-4 rounded-xl font-display text-lg relative overflow-hidden"
+                    className={`w-full py-4 rounded-xl font-display text-lg relative overflow-hidden ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: loading ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
                       color: loading ? 'rgba(255,255,255,0.4)' : '#12122A',

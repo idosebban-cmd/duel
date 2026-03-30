@@ -145,11 +145,11 @@ export function PhotoCropModal({
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-display text-xl mb-3" style={{ color: '#FFE66D' }}>{title}</h2>
-            <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <p className="font-body text-sm mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
               Drag to adjust framing, zoom to get closer, then confirm.
             </p>
 
-            <p className="font-body text-xs font-bold mb-2 text-center" style={{ color: '#4EFFC4' }}>
+            <p className="font-body text-sm font-bold mb-2 text-center" style={{ color: '#4EFFC4' }}>
               This is what matches will see
             </p>
 
@@ -182,7 +182,7 @@ export function PhotoCropModal({
             </div>
 
             <div className="mt-3">
-              <label className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <label className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 Zoom
               </label>
               <input
@@ -199,7 +199,7 @@ export function PhotoCropModal({
             <div className="mt-4 flex gap-3">
               <button
                 onClick={onCancel}
-                className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                className="flex-1 h-11 rounded-xl font-body text-sm font-bold"
                 style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}
               >
                 Cancel
@@ -207,12 +207,11 @@ export function PhotoCropModal({
               <button
                 onClick={() => { void handleConfirm(); }}
                 disabled={busy || !naturalSize}
-                className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                className={`flex-1 h-11 rounded-xl font-body text-sm font-bold ${busy || !naturalSize ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: 'rgba(78,255,196,0.15)',
                   border: '1.5px solid rgba(78,255,196,0.3)',
                   color: '#4EFFC4',
-                  opacity: busy || !naturalSize ? 0.6 : 1,
                 }}
               >
                 {busy ? 'Cropping...' : 'Use Crop'}

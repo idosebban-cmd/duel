@@ -217,7 +217,7 @@ export function RelationshipGoals() {
                   style={{ color: 'rgba(0,212,255,0.7)' }}
                 >
                   <span
-                    className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-bold"
                     style={{ border: '1.5px solid rgba(0,212,255,0.5)', color: 'rgba(0,212,255,0.8)' }}
                   >
                     ?

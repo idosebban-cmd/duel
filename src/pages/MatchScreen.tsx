@@ -868,7 +868,7 @@ export function MatchScreen() {
         {(incomingChallenges.length > 0 || outgoingChallenges.length > 0) && (
           <div className="px-4 pt-3 pb-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 Challenges
               </span>
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -906,7 +906,7 @@ export function MatchScreen() {
                         {theirName} wants to play{' '}
                         <span style={{ color: '#FF6BA8' }}>{GAME_LABELS[c.game_type] ?? c.game_type}</span>
                       </p>
-                      <p className="font-body text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      <p className="font-body text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
                         {timeRemaining(c.expires_at)}
                       </p>
                     </div>
@@ -988,13 +988,13 @@ export function MatchScreen() {
                 className="flex items-center gap-2 min-w-0"
                 aria-label={isGameHistoryExpanded ? 'Collapse game history' : 'Expand game history'}
               >
-                <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
                   Game History
                 </span>
-                <span className="font-body text-[11px] font-bold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                <span className="font-body text-xs font-bold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.48)' }}>
                   {`${gameRecord.wins}W · ${gameRecord.losses}L · ${gameRecord.draws}D`}
                 </span>
-                <span className="font-body text-[11px] font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   {isGameHistoryExpanded ? '▲' : '▼'}
                 </span>
               </button>
@@ -1019,7 +1019,7 @@ export function MatchScreen() {
                         <p className="font-display text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
                           {GAME_LABELS[g.game_type] ?? g.game_type}
                         </p>
-                        <p className="font-body text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
                           {formatDate(g.created_at)}
                         </p>
                       </div>
@@ -1062,7 +1062,7 @@ export function MatchScreen() {
         {/* ── Chat section divider ─────────────────────────────── */}
         <div className="px-4 pt-4 pb-1">
           <div className="flex items-center gap-2">
-            <span className="font-body text-[11px] font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Chat
             </span>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />

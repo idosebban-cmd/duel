@@ -78,7 +78,7 @@ export function LocationCaptureField({
         type="button"
         onClick={requestCurrentLocation}
         disabled={geoLoading}
-        className="mt-2 flex items-center gap-1.5 text-sm font-body font-medium disabled:opacity-50"
+        className={`mt-2 flex items-center gap-1.5 text-sm font-body font-medium ${geoLoading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
         style={{ color: '#FF9F1C' }}
       >
         <Locate size={14} />

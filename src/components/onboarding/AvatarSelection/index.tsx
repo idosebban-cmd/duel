@@ -112,7 +112,7 @@ export function AvatarSelection() {
 
       {/* Bottom CTA */}
       <div className="relative z-10 px-4 sm:px-6 py-5" style={{ borderTop: '1px solid rgba(78,255,196,0.15)', background: '#12122A' }}>
-        <motion.button onClick={handleContinue} disabled={!canContinue} className="w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none"
+        <motion.button onClick={handleContinue} disabled={!canContinue} className={`w-full max-w-lg mx-auto block font-display font-extrabold text-xl rounded-[14px] py-5 px-8 relative overflow-hidden select-none ${!canContinue ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
           style={{ background: canContinue ? 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)' : 'rgba(255,255,255,0.07)', border: '3px solid rgba(255,255,255,0.25)', boxShadow: canContinue ? '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)' : 'none', color: canContinue ? '#12122A' : 'rgba(255,255,255,0.2)', cursor: canContinue ? 'pointer' : 'not-allowed' }}
           whileHover={canContinue ? { scale: 1.03, boxShadow: '0 0 42px rgba(78,255,196,0.65), 6px 6px 0px rgba(0,0,0,0.4)' } as any : {}} whileTap={canContinue ? { scale: 0.97 } : {}} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
           {canContinue && <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />}
