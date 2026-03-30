@@ -1430,7 +1430,7 @@ export function WordBlitz() {
                 style={{ background: 'rgba(255,107,168,0.1)', color: '#FF6BA8', border: '1px solid rgba(255,107,168,0.25)' }}
               >
                 {w.toUpperCase()}
-                <span style={{ opacity: 0.6, fontSize: '0.6rem' }}>+{scoreWord(w)}</span>
+                <span style={{ opacity: 0.6, fontSize: '12px' }}>+{scoreWord(w)}</span>
               </span>
             ))}
           </div>

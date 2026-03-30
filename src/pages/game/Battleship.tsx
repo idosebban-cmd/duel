@@ -187,14 +187,14 @@ function PlacementGrid({ grid, previewCells, previewValid, cellSize, onTap, onHo
     <div>
       <div style={{ display: 'flex', marginLeft: LABEL }}>
         {COL_LABELS.map(l => (
-          <div key={l} style={{ width: cellSize, height: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'rgba(78,255,196,0.5)', fontFamily: 'monospace', fontWeight: 'bold' }}>
+          <div key={l} style={{ width: cellSize, height: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'rgba(78,255,196,0.5)', fontFamily: 'monospace', fontWeight: 'bold' }}>
             {l}
           </div>
         ))}
       </div>
       {Array.from({ length: GRID }, (_, row) => (
         <div key={row} style={{ display: 'flex' }}>
-          <div style={{ width: LABEL, height: cellSize, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'rgba(78,255,196,0.5)', fontFamily: 'monospace', fontWeight: 'bold' }}>
+          <div style={{ width: LABEL, height: cellSize, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'rgba(78,255,196,0.5)', fontFamily: 'monospace', fontWeight: 'bold' }}>
             {row + 1}
           </div>
           {Array.from({ length: GRID }, (_, col) => {
@@ -230,12 +230,12 @@ function RadarGrid({ shots, sunkCells, selectedCell, locked, cellSize, onTap }: 
     <div>
       <div style={{ display: 'flex', marginLeft: LABEL }}>
         {COL_LABELS.map(l => (
-          <div key={l} style={{ width: cellSize, height: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(78,255,196,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{l}</div>
+          <div key={l} style={{ width: cellSize, height: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'rgba(78,255,196,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{l}</div>
         ))}
       </div>
       {Array.from({ length: GRID }, (_, row) => (
         <div key={row} style={{ display: 'flex' }}>
-          <div style={{ width: LABEL, height: cellSize, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(78,255,196,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{row + 1}</div>
+          <div style={{ width: LABEL, height: cellSize, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'rgba(78,255,196,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{row + 1}</div>
           {Array.from({ length: GRID }, (_, col) => {
             const shot   = shots[row][col];
             const isSel  = selectedCell?.[0] === row && selectedCell?.[1] === col;
@@ -271,12 +271,12 @@ function FleetGrid({ myGrid, botShots, myShips, cellSize }: {
     <div>
       <div style={{ display: 'flex', marginLeft: LABEL }}>
         {COL_LABELS.map(l => (
-          <div key={l} style={{ width: cellSize, height: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(255,61,113,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{l}</div>
+          <div key={l} style={{ width: cellSize, height: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'rgba(255,61,113,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{l}</div>
         ))}
       </div>
       {Array.from({ length: GRID }, (_, row) => (
         <div key={row} style={{ display: 'flex' }}>
-          <div style={{ width: LABEL, height: cellSize, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'rgba(255,61,113,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{row + 1}</div>
+          <div style={{ width: LABEL, height: cellSize, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'rgba(255,61,113,0.45)', fontFamily: 'monospace', fontWeight: 'bold' }}>{row + 1}</div>
           {Array.from({ length: GRID }, (_, col) => {
             const shipId = myGrid[row][col];
             const shot   = botShots[row][col];
@@ -335,7 +335,7 @@ function ResultScreen({ result, myShots, playerSunk, onBack, onChat }: {
             <div key={s.label} className="rounded-xl py-3"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="font-display text-lg" style={{ color: '#FFE66D' }}>{s.value}</div>
-              <div className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{s.label}</div>
+              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -849,7 +849,7 @@ export function Battleship() {
                 const current = i === shipIdx && !allPlaced;
                 return (
                   <div key={def.id} className="flex flex-col items-center gap-0.5">
-                    <div style={{ fontSize: 8, color: placed ? def.color : current ? def.color + 'AA' : 'rgba(255,255,255,0.2)', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+                    <div style={{ fontSize: 12, color: placed ? def.color : current ? def.color + 'AA' : 'rgba(255,255,255,0.2)', fontFamily: 'monospace', letterSpacing: 0.5 }}>
                       {def.name.slice(0, 3).toUpperCase()}
                     </div>
                     <div style={{ display: 'flex', gap: 2 }}>
@@ -922,8 +922,8 @@ export function Battleship() {
                   <img src={characterImages[playerChar] ?? '/characters/Ghost.png'} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
                 </div>
                 <div>
-                  <div className="font-body font-bold" style={{ fontSize: 9, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
-                  <div className="font-body" style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>
+                  <div className="font-body font-bold" style={{ fontSize: 12, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
+                  <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
                     {5 - mySunkCount}/5 afloat
                   </div>
                 </div>
@@ -941,7 +941,7 @@ export function Battleship() {
                 </AnimatePresence>
                 {botThinking && (
                   <motion.div animate={{ opacity: [0.3, 0.9, 0.3] }} transition={{ duration: 1.0, repeat: Infinity }}
-                    className="font-body" style={{ fontSize: 9, color: 'rgba(255,61,113,0.7)' }}>
+                    className="font-body" style={{ fontSize: 12, color: 'rgba(255,61,113,0.7)' }}>
                     targeting…
                   </motion.div>
                 )}
@@ -954,8 +954,8 @@ export function Battleship() {
                   <img src={characterImages[BOT_CHAR]} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
                 </div>
                 <div className="text-right">
-                  <div className="font-body font-bold" style={{ fontSize: 9, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
-                  <div className="font-body" style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>
+                  <div className="font-body font-bold" style={{ fontSize: 12, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
+                  <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
                     {5 - playerSunkCount}/5 afloat
                   </div>
                 </div>
@@ -987,7 +987,7 @@ export function Battleship() {
             {/* Enemy radar */}
             <div>
               <div className="font-body font-bold text-center mb-1"
-                style={{ fontSize: 9, color: 'rgba(78,255,196,0.5)', letterSpacing: 1.5 }}>
+                style={{ fontSize: 12, color: 'rgba(78,255,196,0.5)', letterSpacing: 1.5 }}>
                 ENEMY WATERS
               </div>
               <RadarGrid
@@ -1018,7 +1018,7 @@ export function Battleship() {
             {/* Player fleet */}
             <div>
               <div className="font-body font-bold text-center mb-1"
-                style={{ fontSize: 9, color: 'rgba(255,61,113,0.5)', letterSpacing: 1.5 }}>
+                style={{ fontSize: 12, color: 'rgba(255,61,113,0.5)', letterSpacing: 1.5 }}>
                 YOUR FLEET
               </div>
               <FleetGrid myGrid={myGrid} botShots={theirShots} myShips={myShips} cellSize={CELL_B} />

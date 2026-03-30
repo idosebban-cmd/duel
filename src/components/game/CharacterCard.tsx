@@ -89,7 +89,7 @@ export function CharacterCard({
           {isMySecret && (
             <div
               className="absolute top-1 left-1 px-1 rounded text-white font-display font-bold"
-              style={{ fontSize: 6, background: '#FF9F1C', border: '1px solid black' }}
+              style={{ fontSize: 12, background: '#FF9F1C', border: '1px solid black' }}
             >
               ★ YOU
             </div>
@@ -104,7 +104,7 @@ export function CharacterCard({
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 500, damping: 20 }}
             >
-              <span style={{ fontSize: 10, color: 'white' }}>✓</span>
+              <span style={{ fontSize: 12, color: 'white' }}>✓</span>
             </motion.div>
           )}
         </motion.div>

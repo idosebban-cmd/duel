@@ -592,7 +592,7 @@ export function ConnectFour() {
               <img src={characterImages[playerChar] ?? '/characters/Ghost.png'} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
             </div>
             <div>
-              <div className="font-body font-bold" style={{ fontSize: 10, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
+              <div className="font-body font-bold" style={{ fontSize: 12, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
               <div style={{ width: 12, height: 12, borderRadius: '50%', marginTop: 2, background: 'linear-gradient(135deg,#4EFFC4,#00AAFF)', border: '2px solid #1ABCFF', display: 'inline-block' }} />
             </div>
           </div>
@@ -611,11 +611,11 @@ export function ConnectFour() {
             </AnimatePresence>
             {turn === 'bot' && phase === 'playing' && (
               <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.1, repeat: Infinity }}
-                className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
+                className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
                 {isMultiplayer ? 'waiting…' : 'thinking…'}
               </motion.div>
             )}
-            <div className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
+            <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
               Move {moveCount}/42
             </div>
           </div>
@@ -627,7 +627,7 @@ export function ConnectFour() {
               <img src={characterImages[BOT_CHAR]} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
             </div>
             <div className="text-right">
-              <div className="font-body font-bold" style={{ fontSize: 10, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
+              <div className="font-body font-bold" style={{ fontSize: 12, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
               <div style={{ width: 12, height: 12, borderRadius: '50%', marginTop: 2, background: 'linear-gradient(135deg,#FF3D71,#FF9F1C)', border: '2px solid #CC1F40', display: 'inline-block' }} />
             </div>
           </div>

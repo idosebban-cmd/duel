@@ -696,8 +696,8 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
           <DualRangeSlider min={18} max={50} valueMin={draft.ageMin} valueMax={draft.ageMax}
             onChange={(mn, mx) => setDraft(p => ({ ...p, ageMin: mn, ageMax: mx }))} />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-            <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>18</span>
-            <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>50</span>
+            <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>18</span>
+            <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>50</span>
           </div>
         </section>
 
@@ -713,8 +713,8 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
             <>
               <SingleRangeSlider min={1} max={50} value={draft.distanceMax} onChange={v => set('distanceMax', v)} />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>1 km</span>
-                <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>50 km</span>
+                <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>1 km</span>
+                <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>50 km</span>
               </div>
             </>
           )}
@@ -829,7 +829,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
                   </div>
                   <div>
                     <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: sel ? '#fff' : 'rgba(255,255,255,0.55)' }}>{label}</span>
-                    {desc && <span className="font-body" style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', display: 'block' }}>{desc}</span>}
+                    {desc && <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', display: 'block' }}>{desc}</span>}
                   </div>
                 </label>
               );
@@ -1477,7 +1477,7 @@ export function DiscoverScreen() {
               <circle cx="5.5" cy="11.5" r="1.8" fill={activeFilterCount > 0 ? '#4EFFC4' : 'rgba(255,255,255,0.5)'} />
             </svg>
             {activeFilterCount > 0 && (
-              <div className="absolute font-body font-bold flex items-center justify-center" style={{ top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: '#4EFFC4', color: '#12122A', fontSize: 9 }}>
+              <div className="absolute font-body font-bold flex items-center justify-center" style={{ top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: '#4EFFC4', color: '#12122A', fontSize: 12 }}>
                 {activeFilterCount}
               </div>
             )}

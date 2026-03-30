@@ -1755,7 +1755,7 @@ export function ProfileScreen() {
                               setDbPhotos(refreshed);
                             }}
                             className="w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px' }}
+                            style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '12px' }}
                           >
                             ◀
                           </button>
@@ -1772,7 +1772,7 @@ export function ProfileScreen() {
                               setDbPhotos(refreshed);
                             }}
                             className="w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '10px' }}
+                            style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '12px' }}
                           >
                             ▶
                           </button>
@@ -2056,11 +2056,11 @@ export function ProfileScreen() {
                   className="rounded-lg p-2 flex flex-col items-start gap-1 min-h-[82px]"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
-                  <img src={lifestyleIcons[key]} alt={key} className="w-6 h-6 object-contain" draggable={false} />
-                  <p className="font-body text-xs leading-none" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  <img src={lifestyleIcons[key]} alt="" width={32} height={32} className="object-contain" draggable={false} />
+                  <p className="font-body text-sm leading-none" style={{ color: 'rgba(255,255,255,0.7)' }}>
                     {lifestyleLabels[key]}
                   </p>
-                  <p className="font-body text-xs font-bold leading-tight line-clamp-2" style={{ color: val ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.28)' }}>
+                  <p className="font-body text-xs font-bold leading-tight line-clamp-2" style={{ color: val ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}>
                     {val ?? 'Not set'}
                   </p>
                 </div>

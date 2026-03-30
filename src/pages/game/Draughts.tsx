@@ -759,9 +759,9 @@ export function Draughts() {
               <img src={characterImages[playerChar] ?? '/characters/Ghost.png'} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
             </div>
             <div>
-              <div className="font-body font-bold" style={{ fontSize: 10, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
+              <div className="font-body font-bold" style={{ fontSize: 12, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
               <div className="font-display" style={{ fontSize: 16, color: '#fff', lineHeight: 1 }}>{playerCount}</div>
-              <div className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>pieces</div>
+              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>pieces</div>
             </div>
           </div>
 
@@ -777,11 +777,11 @@ export function Draughts() {
             </AnimatePresence>
             {turn === 'bot' && phase === 'playing' && (
               <motion.div animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.1, repeat: Infinity }}
-                className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
+                className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
                 thinking…
               </motion.div>
             )}
-            <div className="font-body font-bold" style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
+            <div className="font-body font-bold" style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
               {moves} moves
             </div>
           </div>
@@ -793,9 +793,9 @@ export function Draughts() {
               <img src={characterImages[BOT_CHAR]} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
             </div>
             <div className="text-right">
-              <div className="font-body font-bold" style={{ fontSize: 10, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
+              <div className="font-body font-bold" style={{ fontSize: 12, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
               <div className="font-display" style={{ fontSize: 16, color: '#fff', lineHeight: 1 }}>{botCount}</div>
-              <div className="font-body" style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>pieces</div>
+              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>pieces</div>
             </div>
           </div>
         </div>
