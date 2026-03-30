@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore } from '../../store/onboardingStore';
-import { upsertProfile, savePhotos } from '../../lib/database';
 
 /**
  * After the user confirms their email, Supabase establishes a session with a non-null JWT.
@@ -29,32 +28,17 @@ export function PostEmailConfirmProfileSync() {
 
     if (!state.pendingEmailVerification) return;
     if (state.userId !== uid) return;
-    if (!state.name?.trim() || !state.character) return;
     if (inFlightRef.current) return;
-
-    const email =
-      session.user.email?.trim() ||
-      state.signupEmailForResend?.trim() ||
-      '';
-    if (!email) return;
 
     inFlightRef.current = true;
 
     void (async () => {
       try {
-        const { error } = await upsertProfile(uid, { ...state, email });
-        if (error) {
-          console.error('[PostEmailConfirmProfileSync] upsertProfile failed:', error);
-          inFlightRef.current = false;
-          return;
-        }
-        if (state.photos.length > 0) {
-          await savePhotos(uid, state.photos);
-        }
-        useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
-        navigate('/discover', { replace: true });
+        useOnboardingStore.getState().clearPendingEmailVerification();
+        navigate('/onboarding/avatar', { replace: true });
       } catch (err) {
         console.error('[PostEmailConfirmProfileSync]', err);
+      } finally {
         inFlightRef.current = false;
       }
     })();
