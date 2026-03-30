@@ -19,9 +19,9 @@ export default {
         'charcoal': '#2D3142',
       },
       fontFamily: {
-        display: ['Return Of The Boss', 'sans-serif'],
-        body: ['Balsamiq Sans', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        display: ['Retronoid', 'sans-serif'],
+        body: ['JLS Data Gothic', 'sans-serif'],
+        mono: ['JLS Data Gothic', 'monospace'],
       },
       boxShadow: {
         'manga': '6px 6px 0px 0px rgba(0,0,0,0.15)',

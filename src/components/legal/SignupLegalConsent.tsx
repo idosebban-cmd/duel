@@ -9,7 +9,7 @@ export function SignupLegalConsent({ className = '' }: { className?: string }) {
       style={{
         color: 'rgba(255,255,255,0.45)',
         lineHeight: 1.45,
-        fontFamily: '"Balsamiq Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+        fontFamily: '"JLS Data Gothic", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
       }}
     >
       By creating an account you agree to our{' '}

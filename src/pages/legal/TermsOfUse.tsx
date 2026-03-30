@@ -227,7 +227,7 @@ export function TermsOfUse() {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
             filter: 'drop-shadow(0 0 12px rgba(255,230,109,0.4))',
-            fontFamily: '"Balsamiq Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+            fontFamily: '"JLS Data Gothic", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
           }}
         >
           DUEL
@@ -248,7 +248,7 @@ export function TermsOfUse() {
             className="font-display text-xl mb-3"
             style={{
               color: '#FFE66D',
-              fontFamily: '"Balsamiq Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+              fontFamily: '"JLS Data Gothic", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
               letterSpacing: '0.02em',
             }}
           >
@@ -265,7 +265,7 @@ export function TermsOfUse() {
                     className="font-display text-sm mt-2"
                     style={{
                       color: '#FFE66D',
-                      fontFamily: '"Balsamiq Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+                      fontFamily: '"JLS Data Gothic", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                     }}
@@ -280,7 +280,7 @@ export function TermsOfUse() {
                   className="font-body text-sm leading-relaxed"
                   style={{
                     color: 'rgba(255,255,255,0.82)',
-                    fontFamily: '"Balsamiq Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+                    fontFamily: '"JLS Data Gothic", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
                   }}
                 >
                   {p}

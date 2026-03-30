@@ -149,7 +149,7 @@ function drawPlayer(
 
   // Label badge
   ctx.save();
-  ctx.font         = 'bold 7px "JetBrains Mono", monospace';
+  ctx.font         = 'bold 7px "JLS Data Gothic", monospace';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = 'white';
