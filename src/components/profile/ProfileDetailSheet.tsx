@@ -107,8 +107,8 @@ function StatRow({ iconKey, label, value }: { iconKey: string; label: string; va
         style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
         <img src={lifestyleIcons[iconKey]} alt="" className="w-5 h-5 object-contain" draggable={false} />
       </div>
-      <span className="font-body text-sm flex-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-      <span className="font-body text-sm font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>
+      <span className="font-body text-ui-body flex-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</span>
+      <span className="font-body text-ui-body font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>
     </div>
   );
 }
@@ -153,7 +153,7 @@ export function ProfileDetailSheet({
       transition={{ type: 'spring', stiffness: 320, damping: 34 }}>
       <div className="flex-none flex items-center gap-2 px-4 pt-safe pt-3 pb-3 z-10"
         style={{ background: 'rgba(18,18,42,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <motion.button onClick={onClose} className="flex items-center gap-1.5 font-body font-bold text-sm flex-shrink-0"
+        <motion.button onClick={onClose} className="flex items-center gap-1.5 font-body font-bold text-ui-body flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.55)' }} whileTap={{ scale: 0.92 }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -162,7 +162,7 @@ export function ProfileDetailSheet({
         </motion.button>
         <div className="flex-1 flex justify-center min-w-0">
           {!!profile.distance && (
-            <span className="font-body text-xs font-bold truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{profile.distance}</span>
+            <span className="font-body text-ui-label font-bold truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{profile.distance}</span>
           )}
         </div>
         {onOpenSafetyMenu ? (
@@ -211,9 +211,9 @@ export function ProfileDetailSheet({
             <h1 className="font-display text-4xl leading-none" style={{ color: '#FFE66D', textShadow: '0 0 16px rgba(255,230,109,0.55), 4px 4px 0 rgba(0,0,0,0.4)' }}>{profile.name}</h1>
             <span className="font-body font-bold text-2xl" style={{ color: 'rgba(255,255,255,0.6)' }}>{profile.age}</span>
           </div>
-          {!!profile.location && <div className="flex items-center gap-1.5 mb-3 font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>{profile.location}</div>}
+          {!!profile.location && <div className="flex items-center gap-1.5 mb-3 font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>{profile.location}</div>}
           <div className="flex flex-wrap gap-2 mb-1">
-            <span className="font-body text-xs font-bold px-3 py-1.5 rounded-full"
+            <span className="font-body text-ui-label font-bold px-3 py-1.5 rounded-full"
               style={{ background: `${lfColor}1E`, color: lfColor, border: `1.5px solid ${lfColor}4A` }}>
               {lookingForLabels[profile.lookingFor] ?? profile.lookingFor}
             </span>
@@ -226,21 +226,21 @@ export function ProfileDetailSheet({
             ].map(({ img, label }) => (
               <div key={label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <img src={img} alt="" className="w-4 h-4 object-contain" draggable={false} />
-                <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
+                <img src={img} alt="" className="w-5 h-5 object-contain" draggable={false} />
+                <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div className="px-5 pt-5"><Divider /><h2 className="font-display text-lg mb-3" style={{ color: '#4EFFC4' }}>ABOUT</h2>
-          <p className="font-body text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>{profile.bio}</p></div>
+          <p className="font-body text-ui-body leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>{profile.bio}</p></div>
 
         {!!profile.prompts?.length && (
           <div className="px-5 pt-5"><Divider /><h2 className="font-display text-lg mb-4" style={{ color: '#00F5FF' }}>GET TO KNOW ME</h2>
             <div className="flex flex-col gap-3">{profile.prompts.map((p) => (
               <div key={p.id} className="rounded-xl p-4" style={{ background: '#0A0A1E', border: '2px solid rgba(78,255,196,0.3)' }}>
-                <div className="flex items-center gap-2 mb-2"><span className="text-lg">{p.icon}</span><p className="font-body text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>{p.question}</p></div>
+                <div className="flex items-center gap-2 mb-2"><span className="text-lg">{p.icon}</span><p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>{p.question}</p></div>
                 <p className="font-display text-base leading-snug" style={{ color: '#FFFFFF' }}>{p.answer}</p>
               </div>
             ))}</div>
@@ -265,17 +265,17 @@ export function ProfileDetailSheet({
                 <div key={game} className="flex flex-col items-center gap-1.5 py-3 rounded-xl"
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <img src={gameTypeIcons[game]} alt={game} className="w-8 h-8 object-contain" draggable={false} />
-                  <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>{gameTypeLabels[game] ?? game}</span>
+                  <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>{gameTypeLabels[game] ?? game}</span>
                 </div>
               ))}
             </div>
           )}
           {profile.favoriteGames.length > 0 && (
             <div>
-              <p className="font-body text-xs mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Favourite games</p>
+              <p className="font-body text-ui-caption mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Favourite games</p>
               <div className="flex flex-wrap gap-2">
                 {profile.favoriteGames.map((g) => (
-                  <span key={g} className="font-body text-xs px-2.5 py-1 rounded-full"
+                  <span key={g} className="font-body text-ui-caption px-2.5 py-1 rounded-full"
                     style={{ background: 'rgba(255,230,109,0.08)', color: '#FFE66D', border: '1px solid rgba(255,230,109,0.25)' }}>{g}</span>
                 ))}
               </div>

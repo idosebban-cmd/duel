@@ -95,18 +95,18 @@ export function GameSelection() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/photos')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/photos')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Games</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Games</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 4 ? 24 : 8, background: i < 4 ? '#FF6BA8' : i === 4 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>
-        <motion.button onClick={handleContinue} className="font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
+        <motion.button onClick={handleContinue} className="font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
           Skip →
         </motion.button>
       </div>
@@ -119,7 +119,7 @@ export function GameSelection() {
               <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 WHAT GAMES DO YOU LIKE?
               </h2>
-              <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Pick 3–8 game types you enjoy</p>
+              <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>Pick 3–8 game types you enjoy</p>
             </div>
 
             {/* Selection counter */}
@@ -183,7 +183,7 @@ export function GameSelection() {
               <h3 className="font-display font-bold text-2xl mb-1" style={{ background: 'linear-gradient(135deg, #B565FF, #FF6BA8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 NAME SOME GAMES YOU LOVE
               </h3>
-              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>Optional — helps us match you better</p>
+              <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>Optional — helps us match you better</p>
             </div>
             <div className="space-y-3">
               {favorites.map((fav, i) => (
@@ -192,13 +192,13 @@ export function GameSelection() {
                     <span className="pl-4 text-lg">🎮</span>
                     <input type="text" value={fav} onChange={(e) => updateFavorite(i, e.target.value)}
                       placeholder={`e.g., ${['Monopoly', 'Wordle', 'God of War', 'Stardew Valley', 'Minecraft'][i]}...`}
-                      className="flex-1 px-3 py-3.5 font-body text-base bg-transparent outline-none"
+                      className="flex-1 px-3 py-3.5 font-body text-ui-body bg-transparent outline-none"
                       style={{ color: 'white' }}
                       aria-label={`Favorite game ${i + 1}`} />
                     <AnimatePresence>
                       {fav && (
                         <motion.button type="button" onClick={() => clearFavorite(i)} className="px-3" style={{ color: 'rgba(255,255,255,0.35)' }} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} transition={{ type: 'spring', stiffness: 500 }} aria-label="Clear">
-                          <X size={16} />
+                          <X size={20} />
                         </motion.button>
                       )}
                     </AnimatePresence>

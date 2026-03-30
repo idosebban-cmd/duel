@@ -173,7 +173,7 @@ function PendingActivityIcon({ activity }: { activity: MatchPendingActivity }) {
     <div className="relative flex-shrink-0" aria-label={`${activity.count} unread messages`}>
       <MessageCircle className={iconClass} style={{ color }} aria-hidden />
       <span
-        className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-body text-xs font-bold leading-none"
+        className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-body text-ui-label font-bold leading-none"
         style={{ background: '#FF6BA8', color: '#0A1628' }}
       >
         {n}
@@ -273,7 +273,7 @@ function MatchCard({
           <div className="min-w-0">
             {match.intent && (
               <span
-                className="inline-flex items-center px-2 py-1 rounded-full font-body text-xs font-bold leading-none flex-shrink-0 whitespace-nowrap"
+                className="inline-flex items-center px-2 py-1 rounded-full font-body text-ui-label font-bold leading-none flex-shrink-0 whitespace-nowrap"
                 style={{
                   color: '#0A1628',
                   background: intentMeta[match.intent].color,
@@ -304,7 +304,7 @@ function MatchCard({
                     aria-hidden
                   />
                 )}
-                <span className="font-body text-xs whitespace-nowrap">
+                <span className="font-body text-ui-caption whitespace-nowrap">
                   {timeAgo(match.lastMessage?.createdAt ?? match.matchedAt)}
                 </span>
               </>
@@ -322,7 +322,7 @@ function SectionLabel({ label }: { label: string }) {
   const isNew = label.trim().toLowerCase() === 'new';
   return (
     <div className="px-4 pt-5 pb-2 flex items-center gap-2">
-      <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
+      <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: isNew ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
         {label.toUpperCase()}
       </span>
       <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -360,7 +360,7 @@ function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) 
             style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.8)' }}
           />
         )}
-        <span className="font-body text-xs font-bold">Matches</span>
+        <span className="font-body text-ui-label font-bold">Matches</span>
       </button>
 
       <button
@@ -372,7 +372,7 @@ function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) 
           <circle cx="11" cy="11" r="8.25" stroke="currentColor" strokeWidth="1.75"/>
           <path d="M14.85 7.15L12.35 12.35L7.15 14.85L9.65 9.65L14.85 7.15Z" fill="currentColor"/>
         </svg>
-        <span className="font-body text-xs">Discover</span>
+        <span className="font-body text-ui-caption">Discover</span>
       </button>
 
       <button
@@ -384,7 +384,7 @@ function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) 
           <circle cx="11" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="1.75"/>
           <path d="M3.5 18.5C3.5 15.462 6.91 13 11 13C15.09 13 18.5 15.462 18.5 18.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
         </svg>
-        <span className="font-body text-xs">Profile</span>
+        <span className="font-body text-ui-caption">Profile</span>
       </button>
     </nav>
   );
@@ -418,7 +418,7 @@ function EmptyState() {
       </motion.div>
       <div>
         <p className="font-display text-2xl mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>No matches yet</p>
-        <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
           Keep swiping to find your player 2!
         </p>
       </div>
@@ -586,7 +586,7 @@ export function MatchesScreen() {
             Your Matches
           </h1>
           {newMatches.length > 0 && (
-            <span className="font-body text-xs" style={{ color: '#4EFFC4' }}>
+            <span className="font-body text-ui-caption" style={{ color: '#4EFFC4' }}>
               {newMatches.length} new {newMatches.length === 1 ? 'match' : 'matches'}!
             </span>
           )}
@@ -601,7 +601,7 @@ export function MatchesScreen() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center gap-3 py-12 px-8 text-center">
-            <p className="font-body text-sm" style={{ color: 'rgba(255,107,168,0.8)' }}>{error}</p>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,107,168,0.8)' }}>{error}</p>
             <motion.button
               onClick={() => {
                 setError(null);

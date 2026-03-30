@@ -11,7 +11,7 @@ export function ProgressBar({ current, total, label }: ProgressBarProps) {
   return (
     <div className="w-full">
       {label && (
-        <p className="font-body text-sm text-charcoal/60 mb-2 text-center">
+        <p className="font-body text-ui-body text-charcoal/60 mb-2 text-center">
           {label}
         </p>
       )}

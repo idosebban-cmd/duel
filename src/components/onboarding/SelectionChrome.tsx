@@ -9,7 +9,7 @@ export const GOLD_SELECTION = {
 export function GoldCornerCheckmark({ className }: { className?: string }) {
   return (
     <motion.span
-      className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-[#12122A] text-xs font-bold pointer-events-none ${className ?? ''}`}
+      className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-[#12122A] font-display text-ui-caption font-bold pointer-events-none ${className ?? ''}`}
       style={{
         background: 'linear-gradient(135deg, #FF9F1C, #FFE66D)',
         border: '2px solid #000',
@@ -27,7 +27,7 @@ export function GoldCornerCheckmark({ className }: { className?: string }) {
 export function GoldCornerCheckmarkSm({ className }: { className?: string }) {
   return (
     <motion.span
-      className={`absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full flex items-center justify-center text-[#12122A] text-xs font-bold pointer-events-none ${className ?? ''}`}
+      className={`absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full flex items-center justify-center text-[#12122A] font-display text-ui-caption font-bold pointer-events-none ${className ?? ''}`}
       style={{
         background: 'linear-gradient(135deg, #FF9F1C, #FFE66D)',
         border: '2px solid #000',

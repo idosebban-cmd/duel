@@ -209,7 +209,7 @@ export function TermsOfUse() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="h-9 px-3 rounded-xl font-body text-sm font-bold"
+          className="h-9 px-3 rounded-xl font-body text-ui-body font-bold"
           style={{
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -277,7 +277,7 @@ export function TermsOfUse() {
               return (
                 <p
                   key={idx}
-                  className="font-body text-sm leading-relaxed"
+                  className="font-body text-ui-body leading-relaxed"
                   style={{
                     color: 'rgba(255,255,255,0.82)',
                     fontFamily: '"JLS Data Gothic", system-ui, -apple-system, Segoe UI, Roboto, sans-serif',

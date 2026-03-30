@@ -73,12 +73,12 @@ export function AvatarSelection() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={handleBack} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={handleBack} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
 
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Avatar · {subSteps[subStep]}</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Avatar · {subSteps[subStep]}</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === 1 ? 24 : 8, background: i < 1 ? '#FF6BA8' : i === 1 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />

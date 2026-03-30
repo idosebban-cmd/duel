@@ -92,7 +92,7 @@ export function DotDashResult() {
         className="min-h-screen flex flex-col items-center justify-center"
         style={{ background: '#12122A' }}
       >
-        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
+        <p className="font-body text-white/50 text-ui-body animate-pulse">Loading result...</p>
       </div>
     );
   }
@@ -203,7 +203,7 @@ export function DotDashResult() {
                 <p className="font-mono font-bold text-3xl" style={{ color }}>
                   {p.score}
                 </p>
-                <p className="font-body text-xs text-charcoal/50">
+                <p className="font-body text-ui-caption text-charcoal/50">
                   {Math.round(p.score / 10)} dots
                 </p>
                 <div className="flex gap-0.5 mt-1">
@@ -219,17 +219,17 @@ export function DotDashResult() {
           <div className="px-5 py-3 flex justify-around" style={{ background: '#f8f4ff', borderTop: '2px solid #e0e0e0' }}>
             <div className="text-center">
               <p className="font-mono font-bold text-charcoal text-lg">{myDots + oppDots}</p>
-              <p className="font-body text-charcoal/40 text-xs">Dots eaten</p>
+              <p className="font-body text-charcoal/40 text-ui-caption">Dots eaten</p>
             </div>
             <div className="text-center">
               <p className="font-mono font-bold text-charcoal text-lg">{totalDots}</p>
-              <p className="font-body text-charcoal/40 text-xs">Dots left</p>
+              <p className="font-body text-charcoal/40 text-ui-caption">Dots left</p>
             </div>
             <div className="text-center">
               <p className="font-mono font-bold text-charcoal text-lg">
                 {Math.abs(finalScores.player1 - finalScores.player2)}
               </p>
-              <p className="font-body text-charcoal/40 text-xs">Point gap</p>
+              <p className="font-body text-charcoal/40 text-ui-caption">Point gap</p>
             </div>
           </div>
         </motion.div>
@@ -337,7 +337,7 @@ export function DotDashResult() {
           </motion.button>
 
           {rematchError && (
-            <p className="font-body text-sm text-white/40 text-center">
+            <p className="font-body text-ui-body text-white/40 text-center">
               {rematchError}
             </p>
           )}

@@ -282,7 +282,7 @@ function SetupScreen({ onGo, myCharacter, myName, opponentCharacter, opponentNam
           >
             <img src={characterImages[myCharacter] || characterImages.fox} alt="" className="w-14 h-14 object-contain" draggable={false} />
           </div>
-          <span className="font-body text-sm font-bold" style={{ color: '#4EFFC4' }}>{myName}</span>
+          <span className="font-body text-ui-body font-bold" style={{ color: '#4EFFC4' }}>{myName}</span>
         </motion.div>
 
         <motion.div
@@ -303,7 +303,7 @@ function SetupScreen({ onGo, myCharacter, myName, opponentCharacter, opponentNam
           >
             <img src={characterImages[opponentCharacter]} alt="" className="w-14 h-14 object-contain" draggable={false} />
           </div>
-          <span className="font-body text-sm font-bold" style={{ color: '#FF6BA8' }}>{opponentName}</span>
+          <span className="font-body text-ui-body font-bold" style={{ color: '#FF6BA8' }}>{opponentName}</span>
         </motion.div>
       </div>
 
@@ -320,10 +320,10 @@ function SetupScreen({ onGo, myCharacter, myName, opponentCharacter, opponentNam
         }}>
           WORD BLITZ
         </h1>
-        <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.55)' }}>
           Build connecting words from your letters
         </p>
-        <p className="font-body text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        <p className="font-body text-ui-body mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
           2 minutes · Most points wins
         </p>
       </motion.div>
@@ -406,13 +406,13 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppChar
       >
         <div className="flex flex-col items-center gap-2">
           <img src={characterImages[myCharacter] || characterImages.fox} alt="" className="w-14 h-14 object-contain" draggable={false} />
-          <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{myName}</span>
+          <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>{myName}</span>
           <span className="font-display text-3xl" style={{ color: won || isDraw ? '#4EFFC4' : 'rgba(255,255,255,0.8)' }}>{myScore}</span>
         </div>
         <div className="font-display text-2xl" style={{ color: 'rgba(255,255,255,0.2)' }}>vs</div>
         <div className="flex flex-col items-center gap-2">
           <img src={characterImages[oppCharacter]} alt="" className="w-14 h-14 object-contain" draggable={false} />
-          <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{oppName}</span>
+          <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>{oppName}</span>
           <span className="font-display text-3xl" style={{ color: lost ? '#FF6BA8' : 'rgba(255,255,255,0.8)' }}>{oppScore}</span>
         </div>
       </motion.div>
@@ -443,7 +443,7 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppChar
         </button>
         <button
           onClick={() => navigate('/matches')}
-          className="font-body text-sm text-center"
+          className="font-body text-ui-body text-center"
           style={{ color: 'rgba(255,255,255,0.3)' }}
         >
           Back to Matches
@@ -1114,7 +1114,7 @@ export function WordBlitz() {
           <AnimatePresence>
             {mp.moveError && (
               <motion.div
-                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-xs font-bold text-white text-center"
+                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-ui-label font-bold text-white text-center"
                 style={{
                   background: 'rgba(255,61,113,0.18)',
                   border: '1.5px solid rgba(255,61,113,0.55)',
@@ -1150,7 +1150,7 @@ export function WordBlitz() {
               <img src={characterImages[myDisplayCharacter]} alt="" className="w-6 h-6 object-contain" draggable={false} />
             </div>
             <div>
-              <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
+              <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.35)' }}>YOU</p>
               <p className="font-display text-xl leading-none" style={{ color: '#4EFFC4', textShadow: '0 0 10px rgba(78,255,196,0.5)' }}>{myScore}</p>
             </div>
           </div>
@@ -1168,13 +1168,13 @@ export function WordBlitz() {
           {/* Opponent avatar + score */}
           <div className="flex items-center gap-2">
             <div>
-              <p className="font-body text-xs text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{opponentDisplayName.toUpperCase()}</p>
+              <p className="font-body text-ui-caption text-right" style={{ color: 'rgba(255,255,255,0.35)' }}>{opponentDisplayName.toUpperCase()}</p>
               <div className="flex items-center gap-1">
                 <p className="font-display text-xl leading-none text-right" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
                 <AnimatePresence>
                   {oppPopup && (
                     <motion.span
-                      className="font-body text-xs font-bold"
+                      className="font-body text-ui-label font-bold"
                       style={{ color: '#FF6BA8' }}
                       initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                     >
@@ -1196,7 +1196,7 @@ export function WordBlitz() {
         <AnimatePresence>
           {oppPopup && (
             <motion.div
-              className="fixed top-16 right-4 z-30 px-3 py-1.5 rounded-lg font-body text-sm font-bold"
+              className="fixed top-16 right-4 z-30 px-3 py-1.5 rounded-lg font-body text-ui-body font-bold"
               style={{ background: 'rgba(255,107,168,0.15)', border: '1.5px solid rgba(255,107,168,0.4)', color: '#FF6BA8' }}
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
             >
@@ -1217,15 +1217,15 @@ export function WordBlitz() {
             { label: '6+', pts: '40', color: '#4EFFC4'               },
           ].map(({ label, pts, color }) => (
             <div key={label} className="flex items-center gap-1">
-              <span className="font-body text-xs font-bold px-1.5 py-0.5 rounded"
+              <span className="font-body text-ui-label font-bold px-1.5 py-0.5 rounded"
                 style={{ background: 'rgba(255,255,255,0.06)', color, border: `1px solid ${color}33` }}
               >
                 {label}
               </span>
-              <span className="font-mono text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
+              <span className="font-mono text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>={pts}pts</span>
             </div>
           ))}
-          <span className="font-body text-xs ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
+          <span className="font-body text-ui-caption ml-1" style={{ color: 'rgba(78,255,196,0.5)' }}>· all used +50</span>
         </div>
 
         {/* ── Letter pool ──────────────────────────────────────────────────── */}
@@ -1263,14 +1263,14 @@ export function WordBlitz() {
           </div>
           {pool.length === 0 && (
             <div className="flex items-center justify-center pt-1">
-              <span className="font-body text-xs" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
+              <span className="font-body text-ui-caption" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
                 {allUsed ? '✓ All letters placed! +50 bonus' : 'No letters left'}
               </span>
             </div>
           )}
           {pool.length > 0 && (
             <div className="flex items-center justify-center pt-1">
-              <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
+              <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.28)' }}>
                 Tap a letter to start
               </span>
             </div>
@@ -1284,7 +1284,7 @@ export function WordBlitz() {
               {scorePopups.map((popup) => (
                 <motion.div
                   key={popup.id}
-                  className="absolute z-20 pointer-events-none font-body text-sm font-bold whitespace-nowrap"
+                  className="absolute z-20 pointer-events-none font-body text-ui-body font-bold whitespace-nowrap"
                   style={{
                     color: '#4EFFC4',
                     left: popup.col * CELL_PX,
@@ -1359,7 +1359,7 @@ export function WordBlitz() {
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <span className="font-body text-xs font-semibold" style={{ color: '#4EFFC4' }}>
+          <span className="font-body text-ui-caption font-semibold" style={{ color: '#4EFFC4' }}>
             They're building words too! Peek at {opponentDisplayName}'s board
           </span>
           <motion.span
@@ -1395,7 +1395,7 @@ export function WordBlitz() {
               </p>
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FF6BA8', boxShadow: '0 0 4px #FF6BA8' }} />
-                <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Live</span>
+                <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.35)' }}>Live</span>
               </div>
             </div>
           </div>
@@ -1404,7 +1404,7 @@ export function WordBlitz() {
             <AnimatePresence>
               {oppPopup && (
                 <motion.div
-                  className="font-body text-xs font-bold px-2 py-1 rounded-lg"
+                  className="font-body text-ui-label font-bold px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(255,107,168,0.15)', color: '#FF6BA8', border: '1px solid rgba(255,107,168,0.3)' }}
                   initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                 >
@@ -1413,7 +1413,7 @@ export function WordBlitz() {
               )}
             </AnimatePresence>
             <div className="text-right">
-              <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>SCORE</p>
+              <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>SCORE</p>
               <p className="font-display text-2xl leading-none" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
             </div>
           </div>
@@ -1426,7 +1426,7 @@ export function WordBlitz() {
           >
             {oppWords.map((w) => (
               <span key={w}
-                className="font-body text-xs px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
+                className="font-body text-ui-caption px-2 py-0.5 rounded-md font-bold flex items-center gap-1"
                 style={{ background: 'rgba(255,107,168,0.1)', color: '#FF6BA8', border: '1px solid rgba(255,107,168,0.25)' }}
               >
                 {w.toUpperCase()}
@@ -1490,7 +1490,7 @@ export function WordBlitz() {
           >
             ↑
           </motion.span>
-          <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>Back to your board</span>
+          <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.25)' }}>Back to your board</span>
         </motion.button>
       </div>
 
@@ -1498,7 +1498,7 @@ export function WordBlitz() {
       {isMultiplayer && phase === 'playing' && mp.bothPresent && (
         <button
           onClick={() => setShowLeaveDialog(true)}
-          className="fixed bottom-4 left-4 z-20 font-body text-xs px-3 py-1.5 rounded-lg"
+          className="fixed bottom-4 left-4 z-20 font-body text-ui-caption px-3 py-1.5 rounded-lg"
           style={{ background: 'rgba(255,61,113,0.15)', border: '1px solid #FF3D71', color: '#FF3D71' }}
         >
           Leave Game

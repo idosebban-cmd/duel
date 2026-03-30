@@ -327,10 +327,10 @@ function SetupScreen({ playerChar, onDone }: { playerChar: string; onDone: () =>
         <h1 className="font-display text-4xl mb-2" style={{ color: '#FFE66D', textShadow: '0 0 20px rgba(255,230,109,0.7), 4px 4px 0 rgba(0,0,0,0.5)' }}>
           GET READY
         </h1>
-        <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Capture all their pieces to win
         </p>
-        <p className="font-body text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="font-body text-ui-caption mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
           YOU'RE CYAN &bull; THEY'RE RED
         </p>
       </div>
@@ -375,7 +375,7 @@ function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings,
           animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 1.8, repeat: Infinity }}>
           {won ? 'YOU WIN!' : 'THEY WIN!'}
         </motion.div>
-        <p className="font-body text-sm mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="font-body text-ui-body mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
           {won ? 'Draughts Champion' : 'Nice Try!'}
         </p>
 
@@ -389,7 +389,7 @@ function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings,
             <div key={s.label} className="rounded-xl py-3"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="font-display text-xl" style={{ color: '#FFE66D' }}>{s.value}</div>
-              <div className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>{s.label}</div>
+              <div className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.38)' }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -400,7 +400,7 @@ function ResultScreen({ result, playerCaptures, botCaptures, moves, playerKings,
           whileTap={{ scale: 0.97 }}>
           START CHATTING →
         </motion.button>
-        <button onClick={onBack} className="font-body text-sm w-full py-2"
+        <button onClick={onBack} className="font-body text-ui-body w-full py-2"
           style={{ color: 'rgba(255,255,255,0.3)' }}>
           Back to Games
         </button>
@@ -703,7 +703,7 @@ export function Draughts() {
           <AnimatePresence>
             {mp.moveError && (
               <motion.div
-                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-xs font-bold text-white text-center"
+                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-ui-label font-bold text-white text-center"
                 style={{
                   background: 'rgba(255,61,113,0.18)',
                   border: '1.5px solid rgba(255,61,113,0.55)',
@@ -918,17 +918,17 @@ export function Draughts() {
       <div className="flex-none flex items-center justify-between px-5 py-3"
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
         {isMultiplayer && phase === 'playing' && mp.bothPresent ? (
-          <button onClick={() => setShowLeaveDialog(true)} className="font-body text-xs"
+          <button onClick={() => setShowLeaveDialog(true)} className="font-body text-ui-caption"
             style={{ color: '#FF3D71' }}>
             Leave Game
           </button>
         ) : (
-          <button onClick={() => navigate('/matches')} className="font-body text-xs"
+          <button onClick={() => navigate('/matches')} className="font-body text-ui-caption"
             style={{ color: 'rgba(255,255,255,0.28)' }}>
             ← Games
           </button>
         )}
-        <div className="font-body text-xs text-center" style={{ color: 'rgba(255,255,255,0.22)' }}>
+        <div className="font-body text-ui-caption text-center" style={{ color: 'rgba(255,255,255,0.22)' }}>
           Tap a piece to move
         </div>
         <div className="font-display text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>DUEL</div>
@@ -943,7 +943,7 @@ export function Draughts() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-sm text-white/45">
+            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-ui-body text-white/45">
               Waiting for {opponentName ?? 'Opponent'}...
             </p>
           </motion.div>
@@ -966,7 +966,7 @@ export function Draughts() {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <p className="font-body text-sm text-center text-white/75 mb-3 break-words">
+              <p className="font-body text-ui-body text-center text-white/75 mb-3 break-words">
                 {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -981,7 +981,7 @@ export function Draughts() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss

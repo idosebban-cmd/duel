@@ -192,7 +192,7 @@ export function MazeRaceLobby() {
           <p className="font-display font-bold text-electric-mint/80 text-sm uppercase tracking-widest">
             Maze Race
           </p>
-          <p className="font-body text-white/50 text-sm">
+          <p className="font-body text-white/50 text-ui-body">
             {!matchId ? 'Loading…' : 'Loading lobby…'}
           </p>
         </div>
@@ -248,7 +248,7 @@ export function MazeRaceLobby() {
           >
             MAZE RACE
           </h1>
-          <p className="font-body text-white/40 text-sm mt-1">
+          <p className="font-body text-white/40 text-ui-body mt-1">
             Race to your exit · First one wins
           </p>
         </motion.div>
@@ -298,7 +298,7 @@ export function MazeRaceLobby() {
           <p className="font-display font-bold text-xs text-electric-mint uppercase tracking-widest mb-2">
             How to play
           </p>
-          <ul className="font-body text-white/60 text-xs space-y-1">
+          <ul className="font-body text-white/60 text-ui-caption space-y-1">
             <li>Tap direction buttons to move one cell</li>
             <li>Yellow markers show both exits — yours is opposite your opponent&apos;s</li>
             <li>Player 1 starts top-left; player 2 starts bottom-right</li>
@@ -306,13 +306,13 @@ export function MazeRaceLobby() {
         </motion.div>
 
         {reconnecting && (
-          <p className="text-center font-body text-sm text-electric-mint/90">
+          <p className="text-center font-body text-ui-body text-electric-mint/90">
             Reconnecting…
           </p>
         )}
 
         {error && !reconnecting && (
-          <p className="text-center font-body text-sm text-cherry-punch">{error}</p>
+          <p className="text-center font-body text-ui-body text-cherry-punch">{error}</p>
         )}
 
         <motion.button
@@ -339,7 +339,7 @@ export function MazeRaceLobby() {
 
         <motion.button
           onClick={() => navigate(matchId ? `/match/${matchId}` : '/play')}
-          className="font-body text-sm text-white/30 text-center hover:text-white/60 transition-colors"
+          className="font-body text-ui-body text-white/30 text-center hover:text-white/60 transition-colors"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}

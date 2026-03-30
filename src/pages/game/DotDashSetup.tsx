@@ -99,7 +99,7 @@ export function DotDashSetup() {
           }}>
             DOT DASH
           </h1>
-          <p className="font-body text-white/40 text-sm mt-1">
+          <p className="font-body text-white/40 text-ui-body mt-1">
             {isJoining ? "You've been invited to race!" : 'Maze Race · 2 Players'}
           </p>
         </motion.div>
@@ -117,14 +117,14 @@ export function DotDashSetup() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (isJoining ? handleJoin() : handleCreate())}
-            className="w-full px-4 py-3 rounded-xl font-body text-sm text-charcoal outline-none"
+            className="w-full px-4 py-3 rounded-xl font-body text-ui-body text-charcoal outline-none"
             style={{ border: '3px solid #4EFFC4', background: 'white' }}
           />
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden" style={{ border: '2px solid rgba(255,255,255,0.2)' }}>
               <img src={avatar} alt="avatar" className="w-full h-full object-contain" />
             </div>
-            <p className="font-body text-white/40 text-xs flex-1">Your character from your profile</p>
+            <p className="font-body text-white/40 text-ui-caption flex-1">Your character from your profile</p>
           </div>
         </motion.div>
 
@@ -151,7 +151,7 @@ export function DotDashSetup() {
 
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                <p className="font-body text-xs text-white/30">or join with a game ID</p>
+                <p className="font-body text-ui-caption text-white/30">or join with a game ID</p>
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
               </div>
             </>
@@ -164,7 +164,7 @@ export function DotDashSetup() {
               value={gameId}
               onChange={(e) => setGameId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-              className="flex-1 px-4 py-3 rounded-xl font-mono text-sm text-charcoal outline-none"
+              className="flex-1 px-4 py-3 rounded-xl font-mono text-ui-body text-charcoal outline-none"
               style={{ border: '3px solid #FF6BA8', background: 'white' }}
             />
             <motion.button
@@ -183,7 +183,7 @@ export function DotDashSetup() {
         </motion.div>
 
         {error && (
-          <motion.p className="text-center font-body text-sm text-cherry-punch"
+          <motion.p className="text-center font-body text-ui-body text-cherry-punch"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           >
             {error}

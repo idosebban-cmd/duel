@@ -142,10 +142,6 @@
   .font-display.text-8xl { font-size: 7.2rem; line-height: 1; }
   .font-display.text-9xl { font-size: 9.6rem; line-height: 1; }
 
-  .font-body.text-xs { font-size: 0.875rem; line-height: 1.25rem; }
-  .font-body.text-sm { font-size: 1rem; line-height: 1.5rem; }
-  .font-body.text-base { font-size: 1.125rem; line-height: 1.75rem; }
-
   button.font-display.text-xs { font-size: 0.875rem; line-height: 1.25rem; }
   button.font-display.text-sm { font-size: 1rem; line-height: 1.5rem; }
   button.font-display.text-base { font-size: 1.125rem; line-height: 1.75rem; }

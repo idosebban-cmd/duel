@@ -55,7 +55,7 @@ export function CharacterStep({ selected, onSelect }: CharacterStepProps) {
           CHOOSE YOUR CHARACTER
         </motion.h2>
         <motion.p
-          className="font-body text-base"
+          className="font-body text-ui-body"
           style={{ color: 'rgba(255,255,255,0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -111,7 +111,7 @@ export function CharacterStep({ selected, onSelect }: CharacterStepProps) {
               <span className="font-display font-bold text-base sm:text-lg leading-tight" style={{ color: 'white' }}>
                 {char.name}
               </span>
-              <span className="font-body text-xs mt-0.5 text-center leading-tight" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <span className="font-body text-ui-caption mt-0.5 text-center leading-tight" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {char.hint}
               </span>
             </motion.button>

@@ -64,7 +64,7 @@ export function LocationCaptureField({
         placeholder={mapsKeyTrimmed ? 'Search for a city...' : 'Use GPS to set your area'}
         error={combinedError}
         success={!combinedError && !!value.trim() && hasCoords}
-        leftIcon={<MapPin size={18} />}
+        leftIcon={<MapPin size={20} />}
         hint={
           mapsKeyTrimmed
             ? 'Pick a suggestion, or use GPS.'
@@ -78,10 +78,10 @@ export function LocationCaptureField({
         type="button"
         onClick={requestCurrentLocation}
         disabled={geoLoading}
-        className={`mt-2 flex items-center gap-1.5 text-sm font-body font-medium ${geoLoading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+        className={`mt-2 flex items-center gap-1.5 font-body text-ui-body font-medium ${geoLoading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
         style={{ color: '#FF9F1C' }}
       >
-        <Locate size={14} />
+        <Locate size={20} />
         {geoLoading ? 'Getting location…' : 'Use My Current Location'}
       </button>
     </div>

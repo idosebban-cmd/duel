@@ -23,6 +23,14 @@ export default {
         body: ['JLS Data Gothic', 'sans-serif'],
         mono: ['JLS Data Gothic', 'monospace'],
       },
+      fontSize: {
+        'ui-caption': ['12px', { lineHeight: '1.4' }],
+        'ui-body': ['15px', { lineHeight: '1.5' }],
+        'ui-body-strong': ['15px', { lineHeight: '1.5', fontWeight: '600' }],
+        'ui-label': ['13px', { lineHeight: '1.4' }],
+        'ui-title': ['18px', { lineHeight: '1.3' }],
+        'ui-display': ['28px', { lineHeight: '1.2' }],
+      },
       boxShadow: {
         'manga': '6px 6px 0px 0px rgba(0,0,0,0.15)',
         'manga-lg': '8px 8px 0px 0px rgba(0,0,0,0.2)',

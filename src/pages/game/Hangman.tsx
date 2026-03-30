@@ -127,7 +127,7 @@ function ResultScreenHangman({
         >
           {won ? 'YOU WIN!' : 'THEY WIN!'}
         </motion.div>
-        <p className="font-body text-sm mb-4" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="font-body text-ui-body mb-4" style={{ color: 'rgba(255,255,255,0.45)' }}>
           {won ? 'Great guessing!' : 'Six wrong guesses — phrase wins.'}
         </p>
         {solution ? (
@@ -154,7 +154,7 @@ function ResultScreenHangman({
               <div className="font-display text-xl" style={{ color: '#FFE66D' }}>
                 {s.value}
               </div>
-              <div className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>
+              <div className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.38)' }}>
                 {s.label}
               </div>
             </div>
@@ -173,7 +173,7 @@ function ResultScreenHangman({
         >
           START CHATTING →
         </motion.button>
-        <button type="button" onClick={onBack} className="font-body text-sm w-full py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <button type="button" onClick={onBack} className="font-body text-ui-body w-full py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
           Back to Games
         </button>
       </motion.div>
@@ -479,7 +479,7 @@ export function Hangman() {
           <AnimatePresence>
             {(guessErr || setupErr) && (
               <motion.div
-                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-xs font-bold text-white text-center max-w-xs"
+                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-ui-label font-bold text-white text-center max-w-xs"
                 style={{
                   background: 'rgba(255,61,113,0.18)',
                   border: '1.5px solid rgba(255,61,113,0.55)',
@@ -516,7 +516,7 @@ export function Hangman() {
         <button
           type="button"
           onClick={() => setShowLeaveDialog(true)}
-          className="font-body text-xs"
+          className="font-body text-ui-caption"
           style={{ color: 'rgba(255,255,255,0.45)' }}
         >
           Leave
@@ -537,7 +537,7 @@ export function Hangman() {
       <main className="flex-1 overflow-y-auto px-4 pb-8 flex flex-col items-center gap-6">
         {localPhase === 'setup_ui' && isP1 && titleCardComplete && (
           <div className="w-full max-w-md flex flex-col gap-4">
-            <p className="font-body text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="font-body text-center text-ui-body" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Pick a category, then type your phrase. Only letters A–Z are guessed; spaces and symbols show automatically.
             </p>
             <div className="flex flex-col gap-2">
@@ -566,7 +566,7 @@ export function Hangman() {
                           <button
                             key={sub}
                             type="button"
-                            className="text-left px-6 py-2 font-body text-sm"
+                            className="text-left px-6 py-2 font-body text-ui-body"
                             style={{
                               background:
                                 pickedCategory === cat.name && pickedSub === sub
@@ -593,7 +593,7 @@ export function Hangman() {
               value={phraseInput}
               onChange={(e) => setPhraseInput(e.target.value)}
               placeholder="Type your word or phrase..."
-              className="w-full rounded-xl px-4 py-3 font-body text-base outline-none"
+              className="w-full rounded-xl px-4 py-3 font-body text-ui-body outline-none"
               style={{
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid rgba(255,255,255,0.15)',
@@ -621,7 +621,7 @@ export function Hangman() {
             <p className="font-display text-lg" style={{ color: '#FF6BA8' }}>
               Opponent is choosing a word…
             </p>
-            <p className="font-body text-sm text-center" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <p className="font-body text-ui-body text-center" style={{ color: 'rgba(255,255,255,0.45)' }}>
               Hang tight — you will guess once they finish.
             </p>
           </div>
@@ -630,7 +630,7 @@ export function Hangman() {
         {gs?.phase === 'in_progress' && titleCardComplete && (
           <>
             <div className="text-center">
-              <p className="font-body text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <p className="font-body text-ui-caption mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 {gs.category} · {gs.subcategory}
               </p>
               {isP1 ? (
@@ -649,7 +649,7 @@ export function Hangman() {
             {gs ? <WordRows gs={gs} /> : null}
 
             <div className="w-full max-w-md">
-              <p className="font-body text-xs mb-2 text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <p className="font-body text-ui-caption mb-2 text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 Wrong letters
               </p>
               <div className="flex flex-wrap justify-center gap-2 min-h-[28px]">
@@ -704,7 +704,7 @@ export function Hangman() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-sm text-white/45">
+            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-ui-body text-white/45">
               Waiting for {opponentName ?? 'Opponent'}...
             </p>
           </motion.div>
@@ -727,7 +727,7 @@ export function Hangman() {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <p className="font-body text-sm text-center text-white/75 mb-3 break-words">
+              <p className="font-body text-ui-body text-center text-white/75 mb-3 break-words">
                 {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -742,7 +742,7 @@ export function Hangman() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss

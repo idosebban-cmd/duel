@@ -145,11 +145,11 @@ export function PlayerCardPreview() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/prompts')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/prompts')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Player Card</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Player Card</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 10 ? 24 : 8, background: '#FF6BA8' }} />
@@ -261,12 +261,12 @@ export function PlayerCardPreview() {
               {/* Gender/interest info */}
               <div className="flex justify-center gap-2 mt-2 flex-wrap">
                 {gender && (
-                  <span className="px-2 py-1 rounded-lg text-xs font-body font-semibold text-white bg-black/20">
+                  <span className="px-2 py-1 rounded-lg font-body text-ui-caption font-semibold text-white bg-black/20">
                     {capitalize(gender)}
                   </span>
                 )}
                 {interestedIn && (
-                  <span className="px-2 py-1 rounded-lg text-xs font-body font-semibold text-white bg-black/20">
+                  <span className="px-2 py-1 rounded-lg font-body text-ui-caption font-semibold text-white bg-black/20">
                     Likes {interestedIn}
                   </span>
                 )}
@@ -276,7 +276,7 @@ export function PlayerCardPreview() {
             {/* Photos carousel */}
             {photos.length === 0 && (
               <div className="px-5 py-5 text-center" style={{ background: 'rgba(0,0,0,0.04)', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-                <p className="font-body text-sm" style={{ color: 'rgba(0,0,0,0.35)' }}>
+                <p className="font-body text-ui-body" style={{ color: 'rgba(0,0,0,0.35)' }}>
                   📷 No photos yet — go back to the Photos step to add them
                 </p>
               </div>
@@ -307,7 +307,7 @@ export function PlayerCardPreview() {
                       className={`absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center ${photoIndex === 0 ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                       aria-label="Previous photo"
                     >
-                      <ChevronLeft size={18} />
+                      <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={() => setPhotoIndex((i) => Math.min(photos.length - 1, i + 1))}
@@ -315,7 +315,7 @@ export function PlayerCardPreview() {
                       className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center ${photoIndex === photos.length - 1 ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                       aria-label="Next photo"
                     >
-                      <ChevronRight size={18} />
+                      <ChevronRight size={24} />
                     </button>
                     <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
                       {photos.map((_, i) => (
@@ -376,7 +376,7 @@ export function PlayerCardPreview() {
                   {favoriteGames.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {favoriteGames.map((game) => (
-                        <span key={game} className="text-xs font-body text-charcoal/60 bg-charcoal/5 px-2 py-1 rounded-lg">
+                        <span key={game} className="font-body text-ui-caption text-charcoal/60 bg-charcoal/5 px-2 py-1 rounded-lg">
                           🎮 {game}
                         </span>
                       ))}
@@ -442,7 +442,7 @@ export function PlayerCardPreview() {
       <div className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-5 z-20" style={{ background: 'linear-gradient(to top, #12122A 70%, transparent)' }}>
         <div className="max-w-lg mx-auto space-y-3">
           {saveError && (
-            <p className="font-body text-sm text-center mb-2" style={{ color: '#FF6BA8' }}>{saveError}</p>
+            <p className="font-body text-ui-body text-center mb-2" style={{ color: '#FF6BA8' }}>{saveError}</p>
           )}
           {/* LOOKS GOOD button */}
           <motion.button

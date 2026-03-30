@@ -5,7 +5,7 @@ export function SignupLegalConsent({ className = '' }: { className?: string }) {
   const navigate = useNavigate();
   return (
     <p
-      className={`text-center font-body text-xs ${className}`}
+      className={`text-center font-body text-ui-caption ${className}`}
       style={{
         color: 'rgba(255,255,255,0.45)',
         lineHeight: 1.45,

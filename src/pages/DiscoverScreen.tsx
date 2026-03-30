@@ -434,7 +434,7 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
         />
         {profile.intent && (
           <div
-            className="absolute top-3 left-3 px-2.5 py-1 rounded-full font-body text-xs font-bold"
+            className="absolute top-3 left-3 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
             style={{
               background: 'rgba(0,0,0,0.65)',
               color: profile.intent === 'play' ? '#00F5FF' : profile.intent === 'romance' ? '#FF6BA8' : '#B565FF',
@@ -445,7 +445,7 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
           </div>
         )}
         <div
-          className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-body text-xs font-bold"
+          className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
           style={{ background: 'rgba(0,0,0,0.65)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.35)' }}
         >
           {profile.distance}
@@ -470,18 +470,18 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
           <span className="font-display text-2xl leading-none" style={{ color: '#FFE66D', textShadow: '0 0 10px rgba(255,230,109,0.5)' }}>
             {profile.name}
           </span>
-          <span className="font-body font-bold text-lg" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          <span className="font-body font-bold text-ui-title" style={{ color: 'rgba(255,255,255,0.65)' }}>
             {profile.age}
           </span>
         </div>
-        <div className="flex items-center gap-1 font-body text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <div className="flex items-center gap-1 font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.4)' }}>
           <svg width="9" height="11" viewBox="0 0 9 11" fill="none">
             <path d="M4.5 0C2.57 0 1 1.57 1 3.5C1 6.12 4.5 11 4.5 11C4.5 11 8 6.12 8 3.5C8 1.57 6.43 0 4.5 0ZM4.5 4.75C3.81 4.75 3.25 4.19 3.25 3.5C3.25 2.81 3.81 2.25 4.5 2.25C5.19 2.25 5.75 2.81 5.75 3.5C5.75 4.19 5.19 4.75 4.5 4.75Z" fill="currentColor"/>
           </svg>
           {profile.location}
         </div>
         <p
-          className="font-body text-xs leading-relaxed overflow-hidden"
+          className="font-body text-ui-caption leading-relaxed overflow-hidden"
           style={{ color: 'rgba(255,255,255,0.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
         >
           {profile.bio}
@@ -495,9 +495,9 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
               className="rounded-lg px-2.5 py-2"
               style={{ background: `${color}10`, border: `1.5px solid ${color}40` }}
             >
-              <p className="font-body text-xs mb-0.5" style={{ color: `${color}99` }}>{p.question}</p>
+              <p className="font-body text-ui-caption mb-0.5" style={{ color: `${color}99` }}>{p.question}</p>
               <p
-                className="font-body text-xs leading-snug overflow-hidden"
+                className="font-body text-ui-caption leading-snug overflow-hidden"
                 style={{ color: 'rgba(255,255,255,0.8)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
               >
                 {p.answer}
@@ -513,14 +513,14 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
               className="w-6 h-6 rounded-md flex items-center justify-center"
               style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
             >
-              <img src={gameTypeIcons[game]} alt={game} className="w-4 h-4 object-contain" draggable={false} />
+              <img src={gameTypeIcons[game]} alt={game} className="w-5 h-5 object-contain" draggable={false} />
             </div>
           ))}
         </div>
         )}
         <div className="mt-auto">
           <span
-            className="font-body text-xs font-bold px-2.5 py-1 rounded-full"
+            className="font-body text-ui-label font-bold px-2.5 py-1 rounded-full"
             style={{ background: `${lfColor}22`, color: lfColor, border: `1px solid ${lfColor}44` }}
           >
             {lookingForLabels[profile.lookingFor]}
@@ -994,11 +994,11 @@ function EmptyState({ onReset }: { onReset: () => void }) {
       </motion.div>
       <div>
         <p className="font-display text-3xl mb-2" style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.6)' }}>NO ONE NEARBY YET</p>
-        <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>No one nearby yet — check back soon.</p>
+        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>No one nearby yet — check back soon.</p>
       </div>
       <button
         onClick={onReset}
-        className="font-body font-bold text-sm px-6 py-3 rounded-xl"
+        className="font-body font-bold text-ui-body px-6 py-3 rounded-xl"
         style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)', color: '#12122A', boxShadow: '0 0 20px rgba(78,255,196,0.35), 4px 4px 0 rgba(0,0,0,0.3)' }}
       >
         REFRESH
@@ -1038,7 +1038,7 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
         >
           IT'S A MATCH!
         </motion.div>
-        <p className="font-body text-sm mb-7" style={{ color: 'rgba(255,255,255,0.5)' }}>You and {matchProfile.name} liked each other</p>
+        <p className="font-body text-ui-body mb-7" style={{ color: 'rgba(255,255,255,0.5)' }}>You and {matchProfile.name} liked each other</p>
         <div className="flex items-center justify-center gap-4 mb-8">
           <motion.div className="w-24 h-24 rounded-full overflow-hidden border-4 flex-shrink-0"
             style={{ borderColor: '#4EFFC4', boxShadow: '0 0 20px rgba(78,255,196,0.5)', background: '#0E0E22' }}
@@ -1060,7 +1060,7 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
           LET'S PLAY 🎮
         </motion.button>
-        <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-sm mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-ui-body mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
           Maybe Later
         </button>
       </motion.div>
@@ -1089,15 +1089,15 @@ function BottomNav({
             style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.8)' }}
           />
         )}
-        <span className="font-body text-xs">Matches</span>
+        <span className="font-body text-ui-caption">Matches</span>
       </button>
       <button className="flex-1 flex flex-col items-center justify-center gap-1 py-3" style={{ color: '#4EFFC4' }}>
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.25" stroke="currentColor" strokeWidth="1.75"/><path d="M14.85 7.15L12.35 12.35L7.15 14.85L9.65 9.65L14.85 7.15Z" fill="currentColor"/></svg>
-        <span className="font-body text-xs font-bold">Discover</span>
+        <span className="font-body text-ui-label font-bold">Discover</span>
       </button>
       <button className="flex-1 flex flex-col items-center justify-center gap-1 py-3" onClick={onProfile} style={{ color: 'rgba(255,255,255,0.35)' }}>
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="1.75"/><path d="M3.5 18.5C3.5 15.462 6.91 13 11 13C15.09 13 18.5 15.462 18.5 18.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/></svg>
-        <span className="font-body text-xs">Profile</span>
+        <span className="font-body text-ui-caption">Profile</span>
       </button>
     </nav>
   );
@@ -1134,7 +1134,7 @@ function IncompleteProfileModal({
         >
           COMPLETE YOUR PROFILE
         </motion.div>
-        <p className="font-body text-sm mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
+        <p className="font-body text-ui-body mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
           You need to finish your profile before discovering matches
         </p>
 
@@ -1152,14 +1152,14 @@ function IncompleteProfileModal({
           />
         </div>
 
-        <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="font-body text-ui-caption mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Still missing:
         </p>
         <div className="flex flex-wrap gap-1.5 justify-center mb-6">
           {missingFields.map((field) => (
             <span
               key={field}
-              className="font-body text-xs px-2.5 py-1 rounded-lg"
+              className="font-body text-ui-caption px-2.5 py-1 rounded-lg"
               style={{
                 background: 'rgba(255,159,28,0.1)',
                 color: '#FF9F1C',
@@ -1429,7 +1429,7 @@ export function DiscoverScreen() {
       <AnimatePresence>
         {swipeToast && (
           <motion.div
-            className="fixed top-20 left-1/2 z-[100] -translate-x-1/2 px-4 py-3 rounded-2xl font-body text-sm font-bold"
+            className="fixed top-20 left-1/2 z-[100] -translate-x-1/2 px-4 py-3 rounded-2xl font-body text-ui-body font-bold"
             style={{
               background: 'rgba(14,22,48,0.95)',
               border: '1.5px solid rgba(255,107,168,0.6)',
@@ -1457,7 +1457,7 @@ export function DiscoverScreen() {
         </div>
         <div className="flex items-center gap-2.5">
           {!showEmptyState && (
-            <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.35)' }}>
               {filteredProfiles.length} nearby
             </span>
           )}
@@ -1495,7 +1495,7 @@ export function DiscoverScreen() {
       {/* Email confirmation banner */}
       {!emailConfirmed && (
         <div
-          className="flex-none flex items-center gap-3 mx-5 mb-2 px-4 py-3 rounded-xl font-body text-sm"
+          className="flex-none flex items-center gap-3 mx-5 mb-2 px-4 py-3 rounded-xl font-body text-ui-body"
           style={{
             background: 'rgba(255,230,109,0.08)',
             border: '1.5px solid rgba(255,230,109,0.3)',
@@ -1529,7 +1529,7 @@ export function DiscoverScreen() {
               className="w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin"
               aria-hidden="true"
             />
-            <p className="font-body text-white/60 text-sm">Loading nearby profiles...</p>
+            <p className="font-body text-white/60 text-ui-body">Loading nearby profiles...</p>
           </div>
         ) : showEmpty ? (
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />

@@ -151,18 +151,18 @@ export function PreferencesStep() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/relationship-goals')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/relationship-goals')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Preferences</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Preferences</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 6 ? 24 : 8, background: i < 6 ? '#FF6BA8' : i === 6 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>
-        <motion.button onClick={handleContinue} className="font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
+        <motion.button onClick={handleContinue} className="font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
           Skip →
         </motion.button>
       </div>
@@ -175,7 +175,7 @@ export function PreferencesStep() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               YOUR PREFERENCES
             </h2>
-            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Who do you want to see?</p>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>Who do you want to see?</p>
           </motion.div>
 
           <div className="space-y-8">
@@ -200,7 +200,7 @@ export function PreferencesStep() {
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="flex items-center justify-between mb-3">
                 <label className="font-display font-bold text-sm tracking-wider" style={{ color: '#4EFFC4' }}>AGE RANGE</label>
-                <span className="font-mono text-sm font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>{ageMin} – {ageMax}</span>
+                <span className="font-mono text-ui-body font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>{ageMin} – {ageMax}</span>
               </div>
               <DualRangeSlider min={18} max={65} valueMin={ageMin} valueMax={ageMax} onChange={(mn, mx) => { setAgeMin(mn); setAgeMax(mx); }} />
             </motion.div>
@@ -209,7 +209,7 @@ export function PreferencesStep() {
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <div className="flex items-center justify-between mb-3">
                 <label className="font-display font-bold text-sm tracking-wider" style={{ color: '#B565FF' }}>DISTANCE</label>
-                <span className="font-mono text-sm font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                <span className="font-mono text-ui-body font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>
                   {anywhere ? 'Anywhere' : `Within ${distance} km`}
                 </span>
               </div>
@@ -230,7 +230,7 @@ export function PreferencesStep() {
                 >
                   {anywhere && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="#4EFFC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
-                <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Show me people anywhere</span>
+                <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>Show me people anywhere</span>
               </label>
             </motion.div>
           </div>

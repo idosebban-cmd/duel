@@ -377,7 +377,7 @@ function GlobalChallengeListener() {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <div className="flex-1 min-w-0 font-body text-sm text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">
+        <div className="flex-1 min-w-0 font-body text-ui-body text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">
           {toast.message}
         </div>
         <button

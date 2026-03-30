@@ -170,7 +170,7 @@ function HeroSection() {
 
         {/* Tagline */}
         <motion.p
-          className="font-body font-bold text-lg mb-9 leading-snug"
+          className="font-body font-bold text-ui-title mb-9 leading-snug"
           style={{ color: 'rgba(255,255,255,0.6)' }}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -207,7 +207,7 @@ function HeroSection() {
 
         {/* Log in link */}
         <motion.p
-          className="mt-4 font-body text-sm"
+          className="mt-4 font-body text-ui-body"
           style={{ color: 'rgba(255,255,255,0.28)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -329,7 +329,7 @@ function HowItWorksSection() {
               {/* Text */}
               <div>
                 <h3 className="font-display text-2xl text-white mb-0.5">{step.title}</h3>
-                <p className="font-body text-white/60 text-base">{step.desc}</p>
+                <p className="font-body text-white/60 text-ui-body">{step.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -378,7 +378,7 @@ function GamesSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
-          className="font-body text-white/50 text-center mb-12 text-base"
+          className="font-body text-white/50 text-center mb-12 text-ui-body"
         >
           2-5 minute games designed for two players
         </motion.p>
@@ -475,7 +475,7 @@ function IntentSection() {
               >
                 {card.title}
               </h3>
-              <p className="font-body text-white/70 text-base">{card.body}</p>
+              <p className="font-body text-white/70 text-ui-body">{card.body}</p>
             </motion.div>
           ))}
         </div>
@@ -519,7 +519,7 @@ function FooterSection() {
 
         {/* Log in link */}
         <p
-          className="mt-4 font-body text-sm mb-10"
+          className="mt-4 font-body text-ui-body mb-10"
           style={{ color: 'rgba(255,255,255,0.28)' }}
         >
           Already playing?{' '}

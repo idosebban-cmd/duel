@@ -323,7 +323,7 @@ function ResultScreen({ result, myShots, playerSunk, onBack, onChat }: {
           animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 1.8, repeat: Infinity }}>
           {won ? 'YOU WIN!' : 'THEY WIN!'}
         </motion.div>
-        <p className="font-body text-sm mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="font-body text-ui-body mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
           {won ? 'Fleet Admiral' : 'Fleet Destroyed'}
         </p>
         <div className="grid grid-cols-3 gap-2 mb-6">
@@ -344,7 +344,7 @@ function ResultScreen({ result, myShots, playerSunk, onBack, onChat }: {
           whileTap={{ scale: 0.97 }}>
           START CHATTING →
         </motion.button>
-        <button onClick={onBack} className="font-body text-sm w-full py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <button onClick={onBack} className="font-body text-ui-body w-full py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
           Back to Games
         </button>
       </motion.div>
@@ -775,7 +775,7 @@ export function Battleship() {
           <AnimatePresence>
             {mp.moveError && (
               <motion.div
-                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-xs font-bold text-white text-center"
+                className="fixed top-20 left-1/2 z-[120] -translate-x-1/2 px-4 py-2 rounded-2xl font-body text-ui-label font-bold text-white text-center"
                 style={{
                   background: 'rgba(255,61,113,0.18)',
                   border: '1.5px solid rgba(255,61,113,0.55)',
@@ -818,7 +818,7 @@ export function Battleship() {
               <button
                 type="button"
                 onClick={() => void handlePlacementExitToMatches()}
-                className="font-body text-xs"
+                className="font-body text-ui-caption"
                 style={{ color: 'rgba(255,255,255,0.28)' }}
               >
                 ← Games
@@ -827,7 +827,7 @@ export function Battleship() {
             <h1 className="font-display text-2xl text-center" style={{ color: '#FFE66D', textShadow: '0 0 15px rgba(255,230,109,0.5)' }}>
               DEPLOY YOUR FLEET
             </h1>
-            <p className="font-body text-xs text-center mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <p className="font-body text-ui-caption text-center mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
               {allPlaced
                 ? 'Fleet ready! Tap READY to battle.'
                 : `Hover/tap to preview, tap again to place · ${currentShipDef.name} (${currentShipDef.length})`}
@@ -1007,7 +1007,7 @@ export function Battleship() {
                       🎯 FIRE! {COL_LABELS[selectedCell[1]]}{selectedCell[0] + 1}
                     </motion.button>
                   ) : turn === 'player' ? (
-                    <motion.div key="hint" className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                    <motion.div key="hint" className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.2)' }}>
                       Tap enemy waters to target
                     </motion.div>
                   ) : null}
@@ -1029,11 +1029,11 @@ export function Battleship() {
           <div className="flex-none flex items-center justify-between px-5 py-2"
             style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
             {isMultiplayer && phase === 'battle' && mp.bothPresent ? (
-              <button onClick={() => setShowLeaveDialog(true)} className="font-body text-xs" style={{ color: '#FF3D71' }}>
+              <button onClick={() => setShowLeaveDialog(true)} className="font-body text-ui-caption" style={{ color: '#FF3D71' }}>
                 Leave Game
               </button>
             ) : (
-              <button onClick={() => navigate('/matches')} className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>
+              <button onClick={() => navigate('/matches')} className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.28)' }}>
                 ← Games
               </button>
             )}
@@ -1061,7 +1061,7 @@ export function Battleship() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
             >
-              <p className="font-body text-sm text-white/75">
+              <p className="font-body text-ui-body text-white/75">
                 Waiting for {opponentName ?? 'Opponent'} to finish placing ships...
               </p>
               <div className="mt-3 flex items-center justify-center gap-2">
@@ -1089,7 +1089,7 @@ export function Battleship() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-sm text-white/45">
+            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-ui-body text-white/45">
               Waiting for {opponentName ?? 'Opponent'}...
             </p>
           </motion.div>
@@ -1112,7 +1112,7 @@ export function Battleship() {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <p className="font-body text-sm text-center text-white/75 mb-3 break-words">
+              <p className="font-body text-ui-body text-center text-white/75 mb-3 break-words">
                 {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -1127,7 +1127,7 @@ export function Battleship() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss

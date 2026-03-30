@@ -244,7 +244,7 @@ export function CreateAccountScreen() {
           >
             SIGNING YOU IN
           </h2>
-          <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Almost there…
           </p>
         </motion.div>
@@ -279,19 +279,19 @@ export function CreateAccountScreen() {
             >
               CHECK YOUR EMAIL
             </h1>
-            <p className="font-body text-sm mb-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            <p className="font-body text-ui-body mb-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
               We sent a confirmation link to
             </p>
             <p className="font-display text-base mb-6 break-all" style={{ color: '#FFE66D' }}>
               {signupEmailForResend ?? 'your inbox'}
             </p>
-            <p className="font-body text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="font-body text-ui-body mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Tap the link in that email to activate your account. Your profile progress is saved on this device — after you confirm, we will finish saving your profile and drop you into Duel.
             </p>
           </motion.div>
 
           {resendMessage && (
-            <p className="font-body text-xs text-center mb-4" style={{ color: resendMessage.includes('on the way') ? '#4EFFC4' : '#FF6BA8' }}>
+            <p className="font-body text-ui-caption text-center mb-4" style={{ color: resendMessage.includes('on the way') ? '#4EFFC4' : '#FF6BA8' }}>
               {resendMessage}
             </p>
           )}
@@ -313,7 +313,7 @@ export function CreateAccountScreen() {
 
           <button
             type="button"
-            className="font-body text-sm w-full py-2"
+            className="font-body text-ui-body w-full py-2"
             style={{ color: 'rgba(255,255,255,0.35)' }}
             onClick={() => navigate('/onboarding/welcome')}
           >
@@ -340,15 +340,15 @@ export function CreateAccountScreen() {
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
         <motion.button
           onClick={() => mode === 'email' ? setMode('main') : navigate('/onboarding/welcome')}
-          className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0"
+          className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.55)' }}
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
         >
-          <ArrowLeft size={18} /><span>Back</span>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Sign Up</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Sign Up</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div
@@ -408,7 +408,7 @@ export function CreateAccountScreen() {
           <AnimatePresence>
             {error && (
               <motion.div
-                className="mb-4 px-4 py-3 rounded-xl font-body text-sm text-center"
+                className="mb-4 px-4 py-3 rounded-xl font-body text-ui-body text-center"
                 style={{ background: 'rgba(255,107,168,0.1)', border: '1px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -468,7 +468,7 @@ export function CreateAccountScreen() {
                 {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
-                  <span className="font-body text-xs font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>OR</span>
+                  <span className="font-body text-ui-label font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>OR</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
                 </div>
 
@@ -507,7 +507,7 @@ export function CreateAccountScreen() {
                   }}
                 >
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-body text-xs font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>EMAIL</label>
+                    <label className="font-body text-ui-label font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>EMAIL</label>
                     <input
                       type="email"
                       value={email}
@@ -517,13 +517,13 @@ export function CreateAccountScreen() {
                       onKeyDown={(e) => e.key === 'Enter' && handleEmailSignUp()}
                       placeholder="player1@email.com"
                       autoComplete="email"
-                      className="w-full px-4 py-3 rounded-xl font-body text-sm outline-none placeholder:opacity-30"
+                      className="w-full px-4 py-3 rounded-xl font-body text-ui-body outline-none placeholder:opacity-30"
                       style={inputStyle(emailFocused)}
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-body text-xs font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>PASSWORD</label>
+                    <label className="font-body text-ui-label font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>PASSWORD</label>
                     <div className="relative">
                       <input
                         type={showPass ? 'text' : 'password'}
@@ -534,7 +534,7 @@ export function CreateAccountScreen() {
                         onKeyDown={(e) => e.key === 'Enter' && handleEmailSignUp()}
                         placeholder="6+ characters"
                         autoComplete="new-password"
-                        className="w-full px-4 py-3 pr-12 rounded-xl font-body text-sm outline-none placeholder:opacity-40"
+                        className="w-full px-4 py-3 pr-12 rounded-xl font-body text-ui-body outline-none placeholder:opacity-40"
                         style={inputStyle(passFocused)}
                       />
                       <button
@@ -592,7 +592,7 @@ export function CreateAccountScreen() {
 
           {/* Log in link */}
           <motion.p
-            className="text-center font-body text-sm mt-6"
+            className="text-center font-body text-ui-body mt-6"
             style={{ color: 'rgba(255,255,255,0.35)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

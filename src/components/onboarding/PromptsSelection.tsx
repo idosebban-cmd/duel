@@ -128,7 +128,7 @@ function SelectedPromptCard({
       {/* Icon + question */}
       <div className="flex items-start gap-2 mb-3 pr-8">
         <span className="text-xl flex-shrink-0 mt-0.5">{prompt.icon}</span>
-        <p className="font-body text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>
           {prompt.question}
         </p>
       </div>
@@ -139,7 +139,7 @@ function SelectedPromptCard({
         onChange={(e) => onAnswerChange(e.target.value.slice(0, MAX_CHARS))}
         placeholder="Be specific and playful! Show your personality."
         rows={3}
-        className="w-full resize-none outline-none font-body text-sm leading-relaxed rounded-lg px-3 py-2.5"
+        className="w-full resize-none outline-none font-body text-ui-body leading-relaxed rounded-lg px-3 py-2.5"
         style={{
           background: 'rgba(255,255,255,0.05)',
           border: `1px solid ${color}40`,
@@ -151,7 +151,7 @@ function SelectedPromptCard({
       {/* Character counter */}
       <div className="flex justify-end mt-1.5">
         <span
-          className="font-body text-xs"
+          className="font-body text-ui-caption"
           style={{ color: remaining < 20 ? '#FF6BA8' : 'rgba(255,255,255,0.25)' }}
         >
           {prompt.answer.length}/{MAX_CHARS}
@@ -189,7 +189,7 @@ function PromptListItem({
       whileTap={!isDisabled || isSelected ? { scale: 0.97 } : {}}
     >
       <span className="text-base flex-shrink-0">{prompt.icon}</span>
-      <span className="font-body text-sm leading-snug pr-6" style={{ color: isSelected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.65)' }}>
+      <span className="font-body text-ui-body leading-snug pr-6" style={{ color: isSelected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.65)' }}>
         {prompt.question}
       </span>
       {isSelected && <GoldCornerCheckmarkSm />}
@@ -221,13 +221,13 @@ function CategorySection({
         className="w-full flex items-center gap-3 px-4 py-3"
       >
         <span className="text-xl">{category.icon}</span>
-        <span className="flex-1 text-left font-body text-sm font-bold" style={{ color: category.color }}>
+        <span className="flex-1 text-left font-body text-ui-body font-bold" style={{ color: category.color }}>
           {category.label}
         </span>
-        <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>
           {prompts.filter(p => selectedIds.has(p.id)).length > 0 && `${prompts.filter(p => selectedIds.has(p.id)).length} selected`}
         </span>
-        {open ? <ChevronUp size={16} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={16} color="rgba(255,255,255,0.3)" />}
+        {open ? <ChevronUp size={20} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={20} color="rgba(255,255,255,0.3)" />}
       </button>
 
       <AnimatePresence>
@@ -342,17 +342,17 @@ export function PromptsSelection() {
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3 flex-none">
         <motion.button
           onClick={() => navigate('/onboarding/bio')}
-          className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0"
+          className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.55)' }}
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={24} />
           <span>Back</span>
         </motion.button>
 
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#00F5FF' }}>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#00F5FF' }}>
             Personality
           </span>
           <div className="flex gap-1">
@@ -376,7 +376,7 @@ export function PromptsSelection() {
 
         <motion.button
           onClick={handleSkip}
-          className="font-body font-medium text-sm flex-shrink-0"
+          className="font-body font-medium text-ui-body flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.4)' }}
           whileHover={{ color: 'rgba(255,255,255,0.8)' } as any}
           whileTap={{ scale: 0.95 }}
@@ -406,7 +406,7 @@ export function PromptsSelection() {
             >
               SHOW YOUR<br />PERSONALITY
             </h2>
-            <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Pick 3 prompts to complete
             </p>
           </motion.div>
@@ -426,7 +426,7 @@ export function PromptsSelection() {
                   </p>
                   <motion.button
                     onClick={handleSurpriseMe}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-xs font-bold"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-body text-ui-label font-bold"
                     style={{
                       background: 'rgba(255,230,109,0.08)',
                       border: '1.5px solid rgba(255,230,109,0.25)',
@@ -468,7 +468,7 @@ export function PromptsSelection() {
                 whileHover={{ background: 'rgba(255,230,109,0.12)' } as any}
                 whileTap={{ scale: 0.97 }}
               >
-                <Shuffle size={18} />
+                <Shuffle size={24} />
                 Surprise Me 🎲
               </motion.button>
             </motion.div>
@@ -526,7 +526,7 @@ export function PromptsSelection() {
           </motion.button>
 
           {!isComplete && selected.length > 0 && (
-            <p className="text-center font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className="text-center font-body text-ui-caption mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
               {selected.length < 3
                 ? `Pick ${3 - selected.length} more prompt${3 - selected.length !== 1 ? 's' : ''}`
                 : 'Fill in your answers to continue'}

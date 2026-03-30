@@ -206,7 +206,7 @@ export function GameResult() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/50 text-sm animate-pulse">Loading result...</p>
+        <p className="font-body text-white/50 text-ui-body animate-pulse">Loading result...</p>
       </div>
     );
   }
@@ -216,7 +216,7 @@ export function GameResult() {
   if (secretsError) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/70 text-sm">Something went wrong loading game results.</p>
+        <p className="font-body text-white/70 text-ui-body">Something went wrong loading game results.</p>
         <button
           onClick={() => navigate('/matches', { replace: true })}
           className="px-6 py-3 rounded-2xl font-display font-bold text-sm"
@@ -231,7 +231,7 @@ export function GameResult() {
   if (!p1SecretId || !p2SecretId) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/50 text-sm animate-pulse">Revealing characters...</p>
+        <p className="font-body text-white/50 text-ui-body animate-pulse">Revealing characters...</p>
       </div>
     );
   }
@@ -488,7 +488,7 @@ export function GameResult() {
           </motion.button>
 
           {rematchError && (
-            <p className="font-body text-xs text-center" style={{ color: 'rgba(255,107,168,0.9)' }}>
+            <p className="font-body text-ui-caption text-center" style={{ color: 'rgba(255,107,168,0.9)' }}>
               {rematchError}
             </p>
           )}
@@ -532,7 +532,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
       <p className="font-display font-extrabold text-2xl text-white">{value}</p>
-      <p className="font-body text-xs text-white/40">{label}</p>
+      <p className="font-body text-ui-caption text-white/40">{label}</p>
     </div>
   );
 }

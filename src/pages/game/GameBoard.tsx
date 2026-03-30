@@ -460,7 +460,7 @@ export function GameBoard() {
         <div className="relative flex-1 flex flex-col overflow-hidden">
           {secretInsertFailed && titleCardComplete && (
             <motion.div
-              className="mx-4 mt-3 px-4 py-3 rounded-2xl font-body text-sm text-center"
+              className="mx-4 mt-3 px-4 py-3 rounded-2xl font-body text-ui-body text-center"
               style={{
                 background: 'rgba(255,61,113,0.15)',
                 border: '2px solid #FF3D71',
@@ -491,7 +491,7 @@ export function GameBoard() {
             <div className="flex items-center gap-2">
               <span className="text-lg">{'\u23F1\uFE0F'}</span>
               <span
-                className="font-mono font-bold text-xl"
+                className="font-mono font-bold text-ui-title"
                 style={{ color: '#FFE66D', letterSpacing: 1 }}
               >
                 {elapsedMins}:{elapsedSecs}
@@ -504,7 +504,7 @@ export function GameBoard() {
 
             <button
               onClick={() => setShowExitConfirm(true)}
-              className="font-body text-xs text-white/30 hover:text-white/60 transition-colors"
+              className="font-body text-ui-caption text-white/30 hover:text-white/60 transition-colors"
             >
               Exit
             </button>
@@ -515,7 +515,7 @@ export function GameBoard() {
             <AnimatePresence>
               {mp.moveError && (
                 <motion.div
-                  className="px-4 py-2 rounded-xl font-body text-sm text-white text-center"
+                  className="px-4 py-2 rounded-xl font-body text-ui-body text-white text-center"
                   style={{ background: 'rgba(255,61,113,0.18)', border: '2px solid #FF3D71' }}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -526,7 +526,7 @@ export function GameBoard() {
               )}
               {errorMsg && (
                 <motion.div
-                  className="px-4 py-2 rounded-xl font-body text-sm text-white text-center"
+                  className="px-4 py-2 rounded-xl font-body text-ui-body text-white text-center"
                   style={{ background: '#FF3D7188', border: '2px solid #FF3D71' }}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -568,7 +568,7 @@ export function GameBoard() {
                     onChange={(e) => setQuestion(e.target.value.slice(0, 100))}
                     onKeyDown={(e) => e.key === 'Enter' && questionValid && handleAskQuestion()}
                     placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
-                    className="w-full py-3 px-4 pr-16 rounded-2xl font-body text-base text-charcoal placeholder:text-charcoal/40 outline-none"
+                    className="w-full py-3 px-4 pr-16 rounded-2xl font-body text-ui-body text-charcoal placeholder:text-charcoal/40 outline-none"
                     style={{
                       background: 'white',
                       border: question && !questionValid
@@ -577,7 +577,7 @@ export function GameBoard() {
                     }}
                   />
                   <span
-                    className="absolute right-3 bottom-3 font-mono text-xs"
+                    className="absolute right-3 bottom-3 font-mono text-ui-caption"
                     style={{ color: question.length > 90 ? '#FF3D71' : 'rgba(0,0,0,0.25)' }}
                   >
                     {question.length}/100
@@ -585,7 +585,7 @@ export function GameBoard() {
                 </div>
 
                 {question && !questionValid && (
-                  <p className="font-body text-xs text-cherry-punch -mt-1">
+                  <p className="font-body text-ui-caption text-cherry-punch -mt-1">
                     {validateQuestion(question)}
                   </p>
                 )}
@@ -640,7 +640,7 @@ export function GameBoard() {
                   className="px-4 py-3 rounded-2xl"
                   style={{ background: 'rgba(181,101,255,0.15)', border: '2px solid #B565FF' }}
                 >
-                  <p className="font-body text-xs text-grape-neon/70 mb-1">Opponent asks:</p>
+                  <p className="font-body text-ui-caption text-grape-neon/70 mb-1">Opponent asks:</p>
                   <p className="font-display font-bold text-white text-base">&quot;{currentQuestion}&quot;</p>
                 </div>
                 <div className="flex gap-3">
@@ -695,7 +695,7 @@ export function GameBoard() {
                 >
                   <span className="text-2xl">{currentAnswer === 'yes' ? '\u2705' : '\u274C'}</span>
                   <div>
-                    <p className="font-body text-xs text-white/50">
+                    <p className="font-body text-ui-caption text-white/50">
                       {answererIsMe ? 'You' : 'Opponent'} answered:
                     </p>
                     <p
@@ -706,7 +706,7 @@ export function GameBoard() {
                     </p>
                   </div>
                   {isMyTurn && (
-                    <p className="font-body text-xs text-white/40 ml-auto text-right">
+                    <p className="font-body text-ui-caption text-white/40 ml-auto text-right">
                       Tap cards to<br />eliminate
                     </p>
                   )}
@@ -732,7 +732,7 @@ export function GameBoard() {
                         </motion.button>
                         <button
                           onClick={() => store.clearPendingFlips()}
-                          className="px-4 py-3 rounded-2xl font-body text-sm text-white/50 hover:text-white/80 transition-colors"
+                          className="px-4 py-3 rounded-2xl font-body text-ui-body text-white/50 hover:text-white/80 transition-colors"
                           style={{ background: 'rgba(255,255,255,0.05)', border: '2px solid rgba(255,255,255,0.1)' }}
                         >
                           Clear
@@ -798,7 +798,7 @@ export function GameBoard() {
                     </span>
                   )}
                 </p>
-                <span className="font-body text-xs text-white/30">
+                <span className="font-body text-ui-caption text-white/30">
                   {myFlipped.length} eliminated
                 </span>
               </div>
@@ -845,7 +845,7 @@ export function GameBoard() {
                     return (
                       <div
                         key={i}
-                        className="px-3 py-2 rounded-xl font-body text-sm"
+                        className="px-3 py-2 rounded-xl font-body text-ui-body"
                         style={{
                           background: 'rgba(255,255,255,0.04)',
                           border: '1px solid rgba(255,255,255,0.08)',
@@ -854,7 +854,7 @@ export function GameBoard() {
                         <span className="text-white/60">{askerIsMe ? 'You' : 'Opponent'} asked: </span>
                         <span className="text-white/80 italic">&quot;{entry.question}&quot;</span>
                         <span
-                          className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                          className="ml-2 px-2 py-0.5 rounded-full font-body text-ui-label font-bold"
                           style={{
                             background: entry.answer === 'yes' ? '#4EFFC433' : '#FF3D7133',
                             color: entry.answer === 'yes' ? '#4EFFC4' : '#FF3D71',
@@ -885,7 +885,7 @@ export function GameBoard() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-sm text-white/45">
+            <p className="w-full max-w-[min(92vw,420px)] min-w-0 text-center font-body text-ui-body text-white/45">
               Waiting for {opponentName ?? 'Opponent'}...
             </p>
           </motion.div>
@@ -908,7 +908,7 @@ export function GameBoard() {
                 backdropFilter: 'blur(8px)',
               }}
             >
-              <p className="font-body text-sm text-center text-white/75 mb-3 break-words">
+              <p className="font-body text-ui-body text-center text-white/75 mb-3 break-words">
                 {opponentName ?? 'Opponent'} hasn&apos;t shown up yet — keep waiting or cancel?
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -923,7 +923,7 @@ export function GameBoard() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-xs text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss
@@ -951,7 +951,7 @@ export function GameBoard() {
               animate={{ scale: 1 }}
             >
               <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
-              <p className="font-body text-white/50 text-sm mb-6">
+              <p className="font-body text-white/50 text-ui-body mb-6">
                 Leaving will forfeit the match. Your opponent wins.
               </p>
               <div className="flex gap-3">

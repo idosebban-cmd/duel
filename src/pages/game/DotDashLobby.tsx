@@ -108,7 +108,7 @@ export function DotDashLobby() {
       <div className="relative z-10 w-full max-w-sm flex flex-col gap-6">
         {/* Header */}
         <motion.div className="text-center" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="font-mono text-xs text-electric-mint/60 mb-1 uppercase tracking-widest">
+          <p className="font-mono text-ui-caption text-electric-mint/60 mb-1 uppercase tracking-widest">
             Game ID: <span className="text-electric-mint font-bold">{gameId}</span>
           </p>
           <h1 className="font-display font-extrabold text-4xl" style={{
@@ -117,7 +117,7 @@ export function DotDashLobby() {
           }}>
             DOT DASH
           </h1>
-          <p className="font-body text-white/40 text-sm mt-1">
+          <p className="font-body text-white/40 text-ui-body mt-1">
             Waiting for both players · {mins}:{secs}
           </p>
         </motion.div>
@@ -168,7 +168,7 @@ export function DotDashLobby() {
           <p className="font-display font-bold text-xs text-electric-mint uppercase tracking-widest mb-2">
             How to play
           </p>
-          <ul className="font-body text-white/60 text-xs space-y-1">
+          <ul className="font-body text-white/60 text-ui-caption space-y-1">
             <li>🎮 Swipe or use arrow keys to move</li>
             <li>• Collect dots to score (+10 each)</li>
             <li>👻 Avoid ghosts – lose a life if caught</li>
@@ -182,13 +182,13 @@ export function DotDashLobby() {
             style={{ background: 'rgba(255,255,255,0.04)', border: '2px solid rgba(255,255,255,0.08)' }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
           >
-            <p className="font-body text-white/40 text-xs mb-2">Share this link with your opponent:</p>
+            <p className="font-body text-white/40 text-ui-caption mb-2">Share this link with your opponent:</p>
             <button
               onClick={() => {
                 const url = `${window.location.origin}/dotdash?join=${gameId}`;
                 navigator.clipboard?.writeText(url);
               }}
-              className="font-mono text-xs text-electric-mint underline break-all"
+              className="font-mono text-ui-caption text-electric-mint underline break-all"
             >
               {window.location.origin}/dotdash?join={gameId}
             </button>
@@ -196,7 +196,7 @@ export function DotDashLobby() {
         )}
 
         {error && (
-          <p className="text-center font-body text-sm text-cherry-punch">{error}</p>
+          <p className="text-center font-body text-ui-body text-cherry-punch">{error}</p>
         )}
 
         {/* Ready button */}
@@ -222,7 +222,7 @@ export function DotDashLobby() {
 
         <motion.button
           onClick={() => navigate('/dotdash')}
-          className="font-body text-sm text-white/30 text-center hover:text-white/60 transition-colors"
+          className="font-body text-ui-body text-white/30 text-center hover:text-white/60 transition-colors"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
         >
           ← Leave lobby

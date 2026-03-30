@@ -182,7 +182,7 @@ export function GamePicker() {
           >
             READY TO PLAY?
           </h1>
-          <p className="font-body text-white/60 text-lg">Choose your game</p>
+          <p className="font-body text-white/60 text-ui-title">Choose your game</p>
         </motion.div>
 
         {/* Game options grid */}
@@ -240,7 +240,7 @@ export function GamePicker() {
                 </div>
 
                 {/* Description */}
-                <p className="font-body text-white/70 text-sm leading-relaxed flex-1">
+                <p className="font-body text-white/70 text-ui-body leading-relaxed flex-1">
                   {game.description}
                 </p>
 
@@ -276,7 +276,7 @@ export function GamePicker() {
         >
           <button
             onClick={() => navigate(matchId ? `/match/${matchId}` : '/discover')}
-            className="font-body text-sm text-white/30 hover:text-white/60 transition-colors"
+            className="font-body text-ui-body text-white/30 hover:text-white/60 transition-colors"
           >
             {matchId ? '\u2190 Back to match' : '\u2190 Back to profiles'}
           </button>

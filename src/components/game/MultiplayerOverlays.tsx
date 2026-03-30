@@ -57,7 +57,7 @@ export function WaitingForOpponentOverlay({ visible, opponentName, matchId }: Wa
         <p className="font-display text-xl" style={{ color: '#4EFFC4' }}>
           Waiting for {opponentName ?? 'opponent'}...
         </p>
-        <p className="font-body text-sm mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="font-body text-ui-body mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
           {elapsed}s / 30s
         </p>
       </div>
@@ -92,7 +92,7 @@ export function LeaveGameDialog({ visible, opponentName, onStay, onLeave }: Leav
         <h2 className="font-display text-2xl mb-2" style={{ color: '#FFE66D' }}>
           Leave game?
         </h2>
-        <p className="font-body text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+        <p className="font-body text-ui-body mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
           You'll forfeit and {opponentName ?? 'your opponent'} wins.
         </p>
         <button
@@ -156,7 +156,7 @@ export function OpponentLeftOverlay({ visible, opponentName }: OpponentLeftProps
         >
           YOU WIN!
         </motion.div>
-        <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.5)' }}>
           {opponentName ?? 'Opponent'} left the game.
         </p>
       </motion.div>

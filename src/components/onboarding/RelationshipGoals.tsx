@@ -134,18 +134,18 @@ export function RelationshipGoals() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/games')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/games')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Goals</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Goals</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 5 ? 24 : 8, background: i < 5 ? '#FF6BA8' : i === 5 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
             ))}
           </div>
         </div>
-        <motion.button onClick={handleContinue} className="font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
+        <motion.button onClick={handleContinue} className="font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }} whileHover={{ color: 'rgba(255,255,255,0.8)' } as any} whileTap={{ scale: 0.95 }}>
           Skip →
         </motion.button>
       </div>
@@ -157,7 +157,7 @@ export function RelationshipGoals() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #FF6BA8, #FF3D71)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               WHAT ARE YOU<br />LOOKING FOR?
             </h2>
-            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Be honest — no judgment</p>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>Be honest — no judgment</p>
           </motion.div>
 
           {/* ── Intent picker (Just Play feature) ───────────────────────────── */}
@@ -198,7 +198,7 @@ export function RelationshipGoals() {
                         <span className="block font-display font-bold text-lg leading-tight text-white">
                           {opt.label}
                         </span>
-                        <span className="block font-body text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                        <span className="block font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.55)' }}>
                           {opt.description}
                         </span>
                       </div>
@@ -213,11 +213,11 @@ export function RelationshipGoals() {
                 <button
                   type="button"
                   onClick={() => setShowTooltip((v) => !v)}
-                  className="font-body text-xs font-medium tracking-wide flex items-center gap-1.5 transition-colors"
+                  className="font-body text-ui-caption font-medium tracking-wide flex items-center gap-1.5 transition-colors"
                   style={{ color: 'rgba(0,212,255,0.7)' }}
                 >
                   <span
-                    className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-bold"
+                    className="inline-flex items-center justify-center w-5 h-5 rounded-full font-body text-ui-caption font-bold"
                     style={{ border: '1.5px solid rgba(0,212,255,0.5)', color: 'rgba(0,212,255,0.8)' }}
                   >
                     ?
@@ -244,13 +244,13 @@ export function RelationshipGoals() {
                         className="absolute -top-[7px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45"
                         style={{ background: 'rgba(10, 22, 40, 0.97)', border: '1.5px solid rgba(0,212,255,0.35)', borderRight: 'none', borderBottom: 'none' }}
                       />
-                      <p className="font-body text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                      <p className="font-body text-ui-body leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
                         <strong style={{ color: '#00d4ff' }}>Just Play</strong> matches you with anyone else who picked "Just Play" or "Open to Both" — with <strong style={{ color: '#00d4ff' }}>no filters</strong> on age, gender, or distance. It's all about finding people to game with, nothing else.
                       </p>
                       <button
                         type="button"
                         onClick={() => setShowTooltip(false)}
-                        className="mt-2 font-body text-xs font-medium"
+                        className="mt-2 font-body text-ui-caption font-medium"
                         style={{ color: 'rgba(0,212,255,0.6)' }}
                       >
                         Got it
@@ -267,7 +267,7 @@ export function RelationshipGoals() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
               {ENABLE_JUST_PLAY && (
                 <div className="mb-4">
-                  <p className="font-body text-sm font-medium text-center" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <p className="font-body text-ui-body font-medium text-center" style={{ color: 'rgba(255,255,255,0.45)' }}>
                     What kind of relationship are you looking for?
                   </p>
                 </div>
@@ -288,7 +288,7 @@ export function RelationshipGoals() {
                       </span>
                       <div className="flex-1 min-w-0">
                         <span className="block font-display font-bold text-lg leading-tight text-white">{goal.label}</span>
-                        <span className="block font-body text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{goal.description}</span>
+                        <span className="block font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.55)' }}>{goal.description}</span>
                       </div>
                       {isSelected && <GoldCornerCheckmark />}
                     </motion.button>

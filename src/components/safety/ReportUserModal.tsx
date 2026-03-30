@@ -124,7 +124,7 @@ export function ReportUserModal({
                   >
                     Report {reportedName}
                   </h2>
-                  <p className="font-body text-xs text-center mb-4" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <p className="font-body text-ui-caption text-center mb-4" style={{ color: 'rgba(255,255,255,0.45)' }}>
                     Why are you reporting this profile?
                   </p>
                   <div className="flex flex-col gap-2 mb-4">
@@ -144,14 +144,14 @@ export function ReportUserModal({
                           onChange={() => setReason(r)}
                           className="accent-[#4EFFC4] shrink-0"
                         />
-                        <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                        <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.85)' }}>
                           {r}
                         </span>
                       </label>
                     ))}
                   </div>
                   <label className="block">
-                    <span className="font-body text-xs mb-1 block" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    <span className="font-body text-ui-caption mb-1 block" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       Additional details (optional)
                     </span>
                     <textarea
@@ -159,7 +159,7 @@ export function ReportUserModal({
                       onChange={(e) => setDetails(e.target.value)}
                       rows={3}
                       maxLength={2000}
-                      className="w-full rounded-xl px-3 py-2 font-body text-sm resize-none"
+                      className="w-full rounded-xl px-3 py-2 font-body text-ui-body resize-none"
                       style={{
                         background: 'rgba(0,0,0,0.35)',
                         border: '1px solid rgba(255,255,255,0.12)',
@@ -176,7 +176,7 @@ export function ReportUserModal({
                   <h2 className="font-display text-xl mb-3 text-center" style={{ color: '#4EFFC4' }}>
                     Report sent
                   </h2>
-                  <p className="font-body text-sm text-center leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>
+                  <p className="font-body text-ui-body text-center leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>
                     Do you also want to block {reportedName}?
                   </p>
                 </>
@@ -184,7 +184,7 @@ export function ReportUserModal({
 
               {error && (
                 <p
-                  className="font-body text-xs text-center mt-3 rounded-lg px-3 py-2"
+                  className="font-body text-ui-caption text-center mt-3 rounded-lg px-3 py-2"
                   style={{
                     color: '#FF6BA8',
                     background: 'rgba(255,61,113,0.12)',
@@ -205,7 +205,7 @@ export function ReportUserModal({
                   <motion.button
                     type="button"
                     onClick={() => !submitting && onClose()}
-                    className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${submitting ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                    className={`flex-1 py-3 rounded-xl font-body text-ui-body font-bold ${submitting ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.14)',
@@ -220,7 +220,7 @@ export function ReportUserModal({
                     type="button"
                     onClick={() => void handleSubmitReport()}
                     disabled={!reason || submitting}
-                    className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${!reason || submitting ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                    className={`flex-1 py-3 rounded-xl font-body text-ui-body font-bold ${!reason || submitting ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'linear-gradient(135deg, #4EFFC4 0%, #00D9FF 100%)',
                       border: '2px solid rgba(0,0,0,0.35)',
@@ -239,7 +239,7 @@ export function ReportUserModal({
                     type="button"
                     onClick={() => void handleBlockFromPrompt()}
                     disabled={blocking}
-                    className={`w-full py-3 rounded-xl font-body text-sm font-bold ${blocking ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                    className={`w-full py-3 rounded-xl font-body text-ui-body font-bold ${blocking ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'rgba(255,61,113,0.18)',
                       border: '1px solid rgba(255,61,113,0.45)',
@@ -253,7 +253,7 @@ export function ReportUserModal({
                     type="button"
                     onClick={handleNoBlock}
                     disabled={blocking}
-                    className={`w-full py-3 rounded-xl font-body text-sm font-bold ${blocking ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                    className={`w-full py-3 rounded-xl font-body text-ui-body font-bold ${blocking ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     style={{
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid rgba(255,255,255,0.12)',

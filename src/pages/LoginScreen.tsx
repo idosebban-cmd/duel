@@ -306,7 +306,7 @@ export function LoginScreen() {
         >
           {/* Email */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-body text-xs font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>
+            <label className="font-body text-ui-label font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>
               EMAIL
             </label>
             <input
@@ -318,14 +318,14 @@ export function LoginScreen() {
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
               placeholder="player1@email.com"
               autoComplete="email"
-              className="w-full px-4 py-3 rounded-xl font-body text-sm outline-none placeholder:opacity-30"
+              className="w-full px-4 py-3 rounded-xl font-body text-ui-body outline-none placeholder:opacity-30"
               style={inputStyle(emailFocused)}
             />
           </div>
 
           {/* Password */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-body text-xs font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>
+            <label className="font-body text-ui-label font-bold" style={{ color: 'rgba(78,255,196,0.7)' }}>
               PASSWORD
             </label>
             <div className="relative">
@@ -338,7 +338,7 @@ export function LoginScreen() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="••••••••"
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                className="w-full px-4 py-3 pr-12 rounded-xl font-body text-sm outline-none placeholder:opacity-40"
+                className="w-full px-4 py-3 pr-12 rounded-xl font-body text-ui-body outline-none placeholder:opacity-40"
                 style={inputStyle(passFocused)}
               />
               <button
@@ -356,7 +356,7 @@ export function LoginScreen() {
           {mode === 'signin' && (
             <div className="text-right -mt-1">
               <button
-                className="font-body text-xs hover:underline transition-opacity hover:opacity-100"
+                className="font-body text-ui-caption hover:underline transition-opacity hover:opacity-100"
                 style={{ color: '#4EFFC4', opacity: 0.7 }}
                 onClick={handleForgotPassword}
               >
@@ -369,7 +369,7 @@ export function LoginScreen() {
           <AnimatePresence>
             {(error || message) && (
               <motion.p
-                className="font-body text-xs text-center px-2 py-2 rounded-lg"
+                className="font-body text-ui-caption text-center px-2 py-2 rounded-lg"
                 style={{
                   background: error ? 'rgba(255,107,108,0.1)' : 'rgba(78,255,196,0.1)',
                   color: error ? '#FF6B6C' : '#4EFFC4',
@@ -430,7 +430,7 @@ export function LoginScreen() {
 
         {/* ─── Footer ─────────────────────────────────────────────────────── */}
         <motion.p
-          className="text-center font-body text-sm mt-6"
+          className="text-center font-body text-ui-body mt-6"
           style={{ color: 'rgba(255,255,255,0.4)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

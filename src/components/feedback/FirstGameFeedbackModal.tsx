@@ -76,7 +76,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       >
         {thanks ? (
-          <p className="font-body text-center text-lg text-white">Thanks! 🎮</p>
+          <p className="font-body text-center text-ui-title text-white">Thanks! 🎮</p>
         ) : (
           <>
             <h2
@@ -85,7 +85,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
             >
               How was your first game?
             </h2>
-            <p className="font-body text-sm text-center mt-1 mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <p className="font-body text-ui-body text-center mt-1 mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
               Help us make Duel better
             </p>
 
@@ -124,7 +124,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
               maxLength={500}
               rows={3}
               placeholder="Anything to tell us?"
-              className="w-full rounded-2xl px-4 py-3 font-body text-sm text-white placeholder:text-white/35 resize-none focus:outline-none focus:ring-2 focus:ring-[#4EFFC4]/50 mb-4"
+              className="w-full rounded-2xl px-4 py-3 font-body text-ui-body text-white placeholder:text-white/35 resize-none focus:outline-none focus:ring-2 focus:ring-[#4EFFC4]/50 mb-4"
               style={{
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid rgba(255,255,255,0.12)',
@@ -132,7 +132,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
             />
 
             {error ? (
-              <p className="font-body text-xs text-center mb-3" style={{ color: '#FF6BA8' }}>
+              <p className="font-body text-ui-caption text-center mb-3" style={{ color: '#FF6BA8' }}>
                 {error}
               </p>
             ) : null}
@@ -142,7 +142,7 @@ export function FirstGameFeedbackModal({ userId, onClose }: FirstGameFeedbackMod
                 type="button"
                 disabled={busy}
                 onClick={() => void handleSkip()}
-                className={`w-full py-3 rounded-2xl font-body font-semibold text-sm ${busy ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                className={`w-full py-3 rounded-2xl font-body text-ui-body-strong ${busy ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: 'transparent',
                   border: '2px solid rgba(255,255,255,0.2)',

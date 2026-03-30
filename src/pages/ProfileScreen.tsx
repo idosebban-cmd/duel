@@ -233,7 +233,7 @@ function PromptCard({ prompt }: { prompt: UserPrompt }) {
     >
       <div className="flex items-center gap-2 mb-2">
         <span className="text-lg">{prompt.icon}</span>
-        <p className="font-body text-xs leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>
           {prompt.question}
         </p>
       </div>
@@ -280,7 +280,7 @@ function SectionHeading({ label, onEdit }: { label: string; onEdit?: () => void 
       {onEdit && (
         <button
           onClick={onEdit}
-          className="font-body text-xs px-2.5 py-1 rounded-lg"
+          className="font-body text-ui-caption px-2.5 py-1 rounded-lg"
           style={{
             color: '#4EFFC4',
             background: 'rgba(78,255,196,0.08)',
@@ -301,7 +301,7 @@ function Toast({ visible, message }: { visible: boolean; message: string }) {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed top-20 left-1/2 z-50 px-5 py-3 rounded-xl font-body text-sm font-bold"
+          className="fixed top-20 left-1/2 z-50 px-5 py-3 rounded-xl font-body text-ui-body font-bold"
           style={{
             background: 'rgba(14,22,48,0.95)',
             border: '1.5px solid rgba(78,255,196,0.35)',
@@ -363,13 +363,13 @@ function DeleteModal({
           >
             <div className="text-center">
               <p className="font-display text-xl mb-2" style={{ color: '#FF3D71' }}>Delete Account</p>
-              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 This will permanently delete your account, profile, matches, game history, and all messages. This cannot be undone.
               </p>
             </div>
             {error && (
               <p
-                className="font-body text-sm text-center"
+                className="font-body text-ui-body text-center"
                 style={{ color: '#FF6BA8', background: 'rgba(255,61,113,0.1)', border: '1px solid rgba(255,61,113,0.35)', borderRadius: 10, padding: '8px 10px' }}
               >
                 {error}
@@ -379,7 +379,7 @@ function DeleteModal({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                className={`flex-1 py-3 rounded-xl font-body text-ui-body font-bold ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1.5px solid rgba(255,255,255,0.16)',
@@ -391,7 +391,7 @@ function DeleteModal({
               <button
                 onClick={onDelete}
                 disabled={loading}
-                className={`flex-1 py-3 rounded-xl font-body text-sm font-bold ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                className={`flex-1 py-3 rounded-xl font-body text-ui-body font-bold ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 style={{
                   background: '#FF3D71',
                   color: '#fff',
@@ -434,7 +434,7 @@ function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) 
             style={{ background: '#FF6BA8', boxShadow: '0 0 8px rgba(255,107,168,0.8)' }}
           />
         )}
-        <span className="font-body text-xs">Matches</span>
+        <span className="font-body text-ui-caption">Matches</span>
       </button>
 
       <button
@@ -446,7 +446,7 @@ function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) 
           <circle cx="11" cy="11" r="8.25" stroke="currentColor" strokeWidth="1.75"/>
           <path d="M14.85 7.15L12.35 12.35L7.15 14.85L9.65 9.65L14.85 7.15Z" fill="currentColor"/>
         </svg>
-        <span className="font-body text-xs">Discover</span>
+        <span className="font-body text-ui-caption">Discover</span>
       </button>
 
       <button
@@ -462,7 +462,7 @@ function BottomNav({ hasIncomingChallenge }: { hasIncomingChallenge: boolean }) 
           <circle cx="11" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="1.75"/>
           <path d="M3.5 18.5C3.5 15.462 6.91 13 11 13C15.09 13 18.5 15.462 18.5 18.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
         </svg>
-        <span className="font-body text-xs font-bold">Profile</span>
+        <span className="font-body text-ui-label font-bold">Profile</span>
       </button>
     </nav>
   );
@@ -729,8 +729,8 @@ export function ProfileScreen() {
                   >
                     <img src={opt.icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
                     <div>
-                      <p className="font-body text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
-                      <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{opt.desc}</p>
+                      <p className="font-body text-ui-body font-bold" style={{ color: opt.color }}>{opt.label}</p>
+                      <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.4)' }}>{opt.desc}</p>
                     </div>
                     {intent === opt.value && (
                       <span className="ml-auto text-base" style={{ color: opt.color }}>✓</span>
@@ -740,7 +740,7 @@ export function ProfileScreen() {
               </div>
               <button
                 onClick={() => setShowIntentModal(false)}
-                className="w-full mt-4 py-2 font-body text-sm font-bold rounded-lg"
+                className="w-full mt-4 py-2 font-body text-ui-body font-bold rounded-lg"
                 style={{ color: 'rgba(255,255,255,0.35)' }}
               >
                 Cancel
@@ -774,7 +774,7 @@ export function ProfileScreen() {
                   onChange={(e) => setEditText(e.target.value)}
                   rows={4}
                   maxLength={500}
-                  className="w-full rounded-xl px-4 py-3 font-body text-sm resize-none"
+                  className="w-full rounded-xl px-4 py-3 font-body text-ui-body resize-none"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
                   placeholder="Tell people about yourself..."
                   autoFocus
@@ -785,21 +785,21 @@ export function ProfileScreen() {
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
                   maxLength={50}
-                  className="w-full rounded-xl px-4 py-3 font-body text-sm"
+                  className="w-full rounded-xl px-4 py-3 font-body text-ui-body"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
                   placeholder="Your name"
                   autoFocus
                 />
               )}
               {editModal === 'bio' && (
-                <p className="font-body text-xs mt-2" style={{ color: editText.length < 20 ? '#FF9F1C' : 'rgba(255,255,255,0.3)' }}>
+                <p className="font-body text-ui-caption mt-2" style={{ color: editText.length < 20 ? '#FF9F1C' : 'rgba(255,255,255,0.3)' }}>
                   {editText.length}/500 {editText.length < 20 ? '(min 20 characters)' : ''}
                 </p>
               )}
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => setEditModal(null)}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
                 >
                   Cancel
@@ -814,7 +814,7 @@ export function ProfileScreen() {
                       setEditModal(null);
                     }
                   }}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{
                     background: 'rgba(78,255,196,0.15)',
                     border: '1.5px solid rgba(78,255,196,0.3)',
@@ -858,7 +858,7 @@ export function ProfileScreen() {
                 <button
                   type="button"
                   onClick={() => setEditModal(null)}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
                 >
                   Cancel
@@ -892,7 +892,7 @@ export function ProfileScreen() {
                     showToast('Location updated!');
                     setEditModal(null);
                   }}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{
                     background: 'rgba(78,255,196,0.15)',
                     border: '1.5px solid rgba(78,255,196,0.3)',
@@ -931,7 +931,7 @@ export function ProfileScreen() {
                     <div key={field}>
                       <div className="flex items-center gap-2 mb-2">
                         <img src={lifestyleIcons[field]} alt="" className="w-6 h-6 object-contain" />
-                        <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
                           {lifestyleLabels[field]}
                         </span>
                       </div>
@@ -939,7 +939,7 @@ export function ProfileScreen() {
                         {options.map((opt) => (
                           <button
                             key={opt}
-                            className="px-3 py-1.5 rounded-lg font-body text-xs transition-all"
+                            className="px-3 py-1.5 rounded-lg font-body text-ui-caption transition-all"
                             style={{
                               background: currentVal === opt ? 'rgba(78,255,196,0.15)' : 'rgba(255,255,255,0.04)',
                               border: `1.5px solid ${currentVal === opt ? 'rgba(78,255,196,0.4)' : 'rgba(255,255,255,0.08)'}`,
@@ -954,7 +954,7 @@ export function ProfileScreen() {
                           </button>
                         ))}
                         <button
-                          className="px-3 py-1.5 rounded-lg font-body text-xs transition-all"
+                          className="px-3 py-1.5 rounded-lg font-body text-ui-caption transition-all"
                           style={{
                             background: currentVal === null ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
                             border: `1.5px solid ${currentVal === null ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
@@ -974,7 +974,7 @@ export function ProfileScreen() {
               </div>
               <button
                 onClick={() => setEditModal(null)}
-                className="w-full mt-5 py-2.5 font-body text-sm font-bold rounded-xl"
+                className="w-full mt-5 py-2.5 font-body text-ui-body font-bold rounded-xl"
                 style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
               >
                 Done
@@ -1024,7 +1024,7 @@ export function ProfileScreen() {
                         }
                       }}
                     >
-                      <span className="font-body text-sm font-bold" style={{ color: isSelected ? opt.color : 'rgba(255,255,255,0.7)' }}>
+                      <span className="font-body text-ui-body font-bold" style={{ color: isSelected ? opt.color : 'rgba(255,255,255,0.7)' }}>
                         {opt.label}
                       </span>
                       {isSelected && <span style={{ color: opt.color }}>✓</span>}
@@ -1034,7 +1034,7 @@ export function ProfileScreen() {
               </div>
               <button
                 onClick={() => setEditModal(null)}
-                className="w-full mt-4 py-2 font-body text-sm font-bold rounded-lg"
+                className="w-full mt-4 py-2 font-body text-ui-body font-bold rounded-lg"
                 style={{ color: 'rgba(255,255,255,0.35)' }}
               >
                 Cancel
@@ -1064,18 +1064,18 @@ export function ProfileScreen() {
                 type="date"
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 font-body text-sm"
+                className="w-full rounded-xl px-4 py-3 font-body text-ui-body"
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none', colorScheme: 'dark' }}
               />
               {editText && (
-                <p className="font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                <p className="font-body text-ui-caption mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   Age: {calcAge(editText)}
                 </p>
               )}
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => setEditModal(null)}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
                 >
                   Cancel
@@ -1092,7 +1092,7 @@ export function ProfileScreen() {
                       setEditModal(null);
                     }
                   }}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{
                     background: 'rgba(78,255,196,0.15)',
                     border: '1.5px solid rgba(78,255,196,0.3)',
@@ -1149,7 +1149,7 @@ export function ProfileScreen() {
                       }}
                     >
                       <img src={img} alt={id} className="w-10 h-10 object-contain" draggable={false} />
-                      <span className="font-body text-xs font-bold" style={{ color: isSelected ? '#4EFFC4' : 'rgba(255,255,255,0.6)' }}>
+                      <span className="font-body text-ui-label font-bold" style={{ color: isSelected ? '#4EFFC4' : 'rgba(255,255,255,0.6)' }}>
                         {cap(id)}
                       </span>
                     </button>
@@ -1158,7 +1158,7 @@ export function ProfileScreen() {
               </div>
               <button
                 onClick={() => setEditModal(null)}
-                className="w-full mt-4 py-2.5 font-body text-sm font-bold rounded-xl"
+                className="w-full mt-4 py-2.5 font-body text-ui-body font-bold rounded-xl"
                 style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
               >
                 Cancel
@@ -1190,7 +1190,7 @@ export function ProfileScreen() {
                   return (
                     <button
                       key={g}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-body text-xs transition-all"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-body text-ui-caption transition-all"
                       style={{
                         background: selected ? 'rgba(78,255,196,0.15)' : 'rgba(255,255,255,0.04)',
                         border: `1.5px solid ${selected ? 'rgba(78,255,196,0.4)' : 'rgba(255,255,255,0.08)'}`,
@@ -1202,7 +1202,7 @@ export function ProfileScreen() {
                         );
                       }}
                     >
-                      {gameTypeIcons[g] && <img src={gameTypeIcons[g]} alt="" className="w-3.5 h-3.5 object-contain" />}
+                      {gameTypeIcons[g] && <img src={gameTypeIcons[g]} alt="" className="w-5 h-5 object-contain" />}
                       {gameTypeLabels[g] || g}
                     </button>
                   );
@@ -1214,9 +1214,9 @@ export function ProfileScreen() {
                 {editFavGames.map((g, i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <span className="font-body text-sm flex-1" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
+                    <span className="font-body text-ui-body flex-1" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
                     <button onClick={() => setEditFavGames((prev) => prev.filter((_, j) => j !== i))}
-                      style={{ color: 'rgba(255,107,168,0.7)' }} className="text-sm font-bold px-1">✕</button>
+                      style={{ color: 'rgba(255,107,168,0.7)' }} className="font-body text-ui-body font-bold px-1">✕</button>
                   </div>
                 ))}
               </div>
@@ -1226,7 +1226,7 @@ export function ProfileScreen() {
                   value={newFavGame}
                   onChange={(e) => setNewFavGame(e.target.value)}
                   placeholder="Add a game…"
-                  className="flex-1 rounded-lg px-3 py-2 font-body text-sm"
+                  className="flex-1 rounded-lg px-3 py-2 font-body text-ui-body"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newFavGame.trim()) {
@@ -1238,7 +1238,7 @@ export function ProfileScreen() {
                 <button
                   disabled={!newFavGame.trim()}
                   onClick={() => { setEditFavGames((prev) => [...prev, newFavGame.trim()]); setNewFavGame(''); }}
-                  className="px-3 py-2 rounded-lg font-body text-xs font-bold"
+                  className="px-3 py-2 rounded-lg font-body text-ui-label font-bold"
                   style={{ background: 'rgba(78,255,196,0.1)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.25)', opacity: newFavGame.trim() ? 1 : 0.4 }}
                 >
                   Add
@@ -1247,7 +1247,7 @@ export function ProfileScreen() {
 
               <div className="flex gap-3">
                 <button onClick={() => setEditModal(null)}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
                   Cancel
                 </button>
@@ -1261,7 +1261,7 @@ export function ProfileScreen() {
                       setEditModal(null);
                     }
                   }}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.3)', color: '#4EFFC4', opacity: saving ? 0.4 : 1 }}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
@@ -1304,7 +1304,7 @@ export function ProfileScreen() {
                         );
                       }}
                     >
-                      <span className="font-body text-sm font-bold" style={{ color: selected ? opt.color : 'rgba(255,255,255,0.6)' }}>
+                      <span className="font-body text-ui-body font-bold" style={{ color: selected ? opt.color : 'rgba(255,255,255,0.6)' }}>
                         {opt.label}
                       </span>
                       {selected && <span style={{ color: opt.color }}>✓</span>}
@@ -1314,7 +1314,7 @@ export function ProfileScreen() {
               </div>
               <div className="flex gap-3 mt-4">
                 <button onClick={() => setEditModal(null)}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
                   Cancel
                 </button>
@@ -1324,7 +1324,7 @@ export function ProfileScreen() {
                     const ok = await saveField('looking_for', editArray);
                     if (ok) { showToast('Updated!'); setEditModal(null); }
                   }}
-                  className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                   style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.3)', color: '#4EFFC4', opacity: (saving || editArray.length === 0) ? 0.4 : 1 }}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
@@ -1366,29 +1366,29 @@ export function ProfileScreen() {
                             className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
                             style={{ background: 'rgba(255,107,168,0.15)', color: '#FF6BA8' }}
                           >
-                            <span className="text-xs font-bold">✕</span>
+                            <span className="font-body text-ui-label font-bold">✕</span>
                           </button>
-                          <p className="font-body text-xs mb-1 pr-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                          <p className="font-body text-ui-caption mb-1 pr-6" style={{ color: 'rgba(255,255,255,0.35)' }}>
                             {p.icon} {p.question}
                           </p>
-                          <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{p.answer}</p>
+                          <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.8)' }}>{p.answer}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="font-body text-sm mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>No prompts yet</p>
+                    <p className="font-body text-ui-body mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>No prompts yet</p>
                   )}
                   {prompts.length < 5 && (
                     <button
                       onClick={() => setPromptStep('pick')}
-                      className="w-full py-2.5 rounded-xl font-body text-sm font-bold mb-3"
+                      className="w-full py-2.5 rounded-xl font-body text-ui-body font-bold mb-3"
                       style={{ background: 'rgba(78,255,196,0.1)', border: '1.5px solid rgba(78,255,196,0.25)', color: '#4EFFC4' }}
                     >
                       + Add Prompt
                     </button>
                   )}
                   <button onClick={() => { setEditModal(null); setPromptStep('list'); }}
-                    className="w-full py-2 font-body text-sm font-bold rounded-lg"
+                    className="w-full py-2 font-body text-ui-body font-bold rounded-lg"
                     style={{ color: 'rgba(255,255,255,0.35)' }}>
                     Done
                   </button>
@@ -1409,13 +1409,13 @@ export function ProfileScreen() {
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                             onClick={() => { setPickedPrompt(p); setPromptAnswer(''); setPromptStep('answer'); }}
                           >
-                            <span className="font-body text-xs" style={{ color }}>{p.icon} {p.question}</span>
+                            <span className="font-body text-ui-caption" style={{ color }}>{p.icon} {p.question}</span>
                           </button>
                         );
                       })}
                   </div>
                   <button onClick={() => setPromptStep('list')}
-                    className="w-full py-2 font-body text-sm font-bold rounded-lg"
+                    className="w-full py-2 font-body text-ui-body font-bold rounded-lg"
                     style={{ color: 'rgba(255,255,255,0.35)' }}>
                     Back
                   </button>
@@ -1431,15 +1431,15 @@ export function ProfileScreen() {
                     onChange={(e) => setPromptAnswer(e.target.value)}
                     rows={3}
                     maxLength={200}
-                    className="w-full rounded-xl px-4 py-3 font-body text-sm resize-none mb-1"
+                    className="w-full rounded-xl px-4 py-3 font-body text-ui-body resize-none mb-1"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }}
                     placeholder="Your answer…"
                     autoFocus
                   />
-                  <p className="font-body text-xs mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{promptAnswer.length}/200</p>
+                  <p className="font-body text-ui-caption mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>{promptAnswer.length}/200</p>
                   <div className="flex gap-3">
                     <button onClick={() => setPromptStep('pick')}
-                      className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                      className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                       style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
                       Back
                     </button>
@@ -1457,7 +1457,7 @@ export function ProfileScreen() {
                         showToast('Prompt added!');
                         setPromptStep('list');
                       }}
-                      className="flex-1 py-3 rounded-xl font-body text-sm font-bold"
+                      className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
                       style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.3)', color: '#4EFFC4', opacity: promptAnswer.trim() ? 1 : 0.4 }}>
                       Add
                     </button>
@@ -1563,7 +1563,7 @@ export function ProfileScreen() {
                 {character && characterImages[character] ? (
                   <img src={characterImages[character]} alt={character} className="w-11 h-11 object-contain" draggable={false} />
                 ) : (
-                  <span className="font-body text-xl" style={{ color: 'rgba(255,255,255,0.2)' }}>?</span>
+                  <span className="font-body text-ui-title" style={{ color: 'rgba(255,255,255,0.2)' }}>?</span>
                 )}
               </div>
               {element && elementImages[element] && (
@@ -1585,7 +1585,7 @@ export function ProfileScreen() {
                 </svg>
               </button>
             </div>
-            <button onClick={openLocationEdit} className="font-body text-sm mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={openLocationEdit} className="font-body text-ui-body mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
                 <circle cx="6" cy="4.5" r="1.2" fill="currentColor"/>
@@ -1598,12 +1598,12 @@ export function ProfileScreen() {
                 {affiliationImages[affiliation] && (
                   <img src={affiliationImages[affiliation]} alt="" className="w-6 h-6 object-contain" draggable={false} />
                 )}
-                <span className="font-body text-xs" style={{ color: 'rgba(78,255,196,0.7)' }}>
+                <span className="font-body text-ui-caption" style={{ color: 'rgba(78,255,196,0.7)' }}>
                   {cap(element)} {cap(affiliation)} {cap(character)}
                 </span>
               </div>
             ) : (
-              <p className="font-body text-xs mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              <p className="font-body text-ui-caption mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
                 No avatar selected
               </p>
             )}
@@ -1622,7 +1622,7 @@ export function ProfileScreen() {
                 <span className="font-display text-sm" style={{ color: '#FFE66D' }}>
                   Complete Your Profile
                 </span>
-                <span className="font-body text-xs font-bold" style={{ color: '#4EFFC4' }}>
+                <span className="font-body text-ui-label font-bold" style={{ color: '#4EFFC4' }}>
                   {completeness.percentage}%
                 </span>
               </div>
@@ -1639,14 +1639,14 @@ export function ProfileScreen() {
                   transition={{ duration: 0.6, ease: 'easeOut' }}
                 />
               </div>
-              <p className="font-body text-xs mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <p className="font-body text-ui-caption mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 Missing:
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {completeness.missing.map((field) => (
                   <span
                     key={field}
-                    className="font-body text-xs px-2 py-1 rounded-lg"
+                    className="font-body text-ui-caption px-2 py-1 rounded-lg"
                     style={{ background: 'rgba(255,159,28,0.1)', color: '#FF9F1C', border: '1px solid rgba(255,159,28,0.25)' }}
                   >
                     {field}
@@ -1694,8 +1694,8 @@ export function ProfileScreen() {
                   className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
-                  <p className="font-body text-xs font-bold" style={{ color: item.display ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}>
+                  <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
+                  <p className="font-body text-ui-label font-bold" style={{ color: item.display ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.2)' }}>
                     {item.display ?? 'Not set'}
                   </p>
                 </button>
@@ -1785,7 +1785,7 @@ export function ProfileScreen() {
                       className="flex-shrink-0 w-24 h-28 rounded-xl flex items-center justify-center"
                       style={{ border: '1.5px dashed rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.02)' }}
                     >
-                      <span className="font-body text-xs text-center px-1" style={{ color: 'rgba(255,255,255,0.2)' }}>No photos yet</span>
+                      <span className="font-body text-ui-caption text-center px-1" style={{ color: 'rgba(255,255,255,0.2)' }}>No photos yet</span>
                     </div>
                   )
               }
@@ -1816,7 +1816,7 @@ export function ProfileScreen() {
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                       <path d="M10 4v12M4 10h12" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
-                    <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>Add</span>
+                    <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.2)' }}>Add</span>
                   </>
                 )}
               </button>
@@ -1832,7 +1832,7 @@ export function ProfileScreen() {
         >
           <SectionCard>
             <SectionHeading label="About" onEdit={() => openTextEdit('bio', bio)} />
-            <p className="font-body text-sm leading-relaxed" style={{ color: bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)' }}>
+            <p className="font-body text-ui-body leading-relaxed" style={{ color: bio ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)' }}>
               {bio || PLACEHOLDER.bio}
             </p>
           </SectionCard>
@@ -1853,7 +1853,7 @@ export function ProfileScreen() {
                 ))}
               </div>
             ) : (
-              <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 No prompts added yet
               </p>
             )}
@@ -1888,8 +1888,8 @@ export function ProfileScreen() {
                     </div>
                   )}
                   <div className="text-center">
-                    <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
-                    <p className="font-body text-xs font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
+                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
+                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
                       {item.name ?? 'Not set'}
                     </p>
                   </div>
@@ -1898,7 +1898,7 @@ export function ProfileScreen() {
             </div>
             <button
               onClick={() => setEditModal('character')}
-              className="w-full mt-3 py-2.5 rounded-xl font-body text-sm font-bold"
+              className="w-full mt-3 py-2.5 rounded-xl font-body text-ui-body font-bold"
               style={{
                 background: 'rgba(78,255,196,0.07)',
                 border: '1.5px solid rgba(78,255,196,0.2)',
@@ -1930,21 +1930,21 @@ export function ProfileScreen() {
                     {gameTypeIcons[g] && (
                       <img src={gameTypeIcons[g]} alt="" className="w-6 h-6 object-contain" draggable={false} />
                     )}
-                    <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
                       {gameTypeLabels[g] || g}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="font-body text-sm mb-3" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <p className="font-body text-ui-body mb-3" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 No game types selected
               </p>
             )}
             {/* Favourite games */}
             {favoriteGames.length > 0 && (
               <>
-                <p className="font-body text-xs font-bold mb-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <p className="font-body text-ui-label font-bold mb-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   FAVOURITE GAMES
                 </p>
                 <div className="flex flex-col gap-1.5">
@@ -1954,8 +1954,8 @@ export function ProfileScreen() {
                       className="flex items-center gap-2 px-3 py-2 rounded-lg"
                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
                     >
-                      <span className="text-sm">🎮</span>
-                      <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
+                      <span className="font-body text-ui-body">🎮</span>
+                      <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
                     </div>
                   ))}
                 </div>
@@ -1978,7 +1978,7 @@ export function ProfileScreen() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowIntentModal(true)}
-                  className="font-body text-xs px-2.5 py-1 rounded-lg"
+                  className="font-body text-ui-caption px-2.5 py-1 rounded-lg"
                   style={{ color: '#4EFFC4', background: 'rgba(78,255,196,0.08)', border: '1px solid rgba(78,255,196,0.2)' }}
                 >
                   Edit intent
@@ -1986,7 +1986,7 @@ export function ProfileScreen() {
                 {intent !== 'play' && (
                   <button
                     onClick={() => openArrayEdit('looking_for', lookingFor)}
-                    className="font-body text-xs px-2.5 py-1 rounded-lg"
+                    className="font-body text-ui-caption px-2.5 py-1 rounded-lg"
                     style={{ color: '#4EFFC4', background: 'rgba(78,255,196,0.08)', border: '1px solid rgba(78,255,196,0.2)' }}
                   >
                     Edit goals
@@ -2000,12 +2000,12 @@ export function ProfileScreen() {
             >
               <img src={intentIcons[intent]} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
               <div>
-                <p className="font-body text-sm font-bold" style={{
+                <p className="font-body text-ui-body font-bold" style={{
                   color: intentColors[intent],
                 }}>
                   {intentLabels[intent]}
                 </p>
-                <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.35)' }}>
                   {intentDescriptions[intent]}
                 </p>
               </div>
@@ -2019,7 +2019,7 @@ export function ProfileScreen() {
                       return (
                         <div
                           key={id}
-                          className="px-3 py-2 rounded-lg font-body text-sm font-bold"
+                          className="px-3 py-2 rounded-lg font-body text-ui-body font-bold"
                           style={{
                             color,
                             background: `${color}18`,
@@ -2032,7 +2032,7 @@ export function ProfileScreen() {
                     })}
                   </div>
                 ) : (
-                  <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                  <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.25)' }}>
                     No relationship goals selected yet
                   </p>
                 )}
@@ -2057,10 +2057,10 @@ export function ProfileScreen() {
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
                   <img src={lifestyleIcons[key]} alt="" width={32} height={32} className="object-contain" draggable={false} />
-                  <p className="font-body text-sm leading-none" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <p className="font-body text-ui-body leading-none" style={{ color: 'rgba(255,255,255,0.7)' }}>
                     {lifestyleLabels[key]}
                   </p>
-                  <p className="font-body text-xs font-bold leading-tight line-clamp-2" style={{ color: val ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}>
+                  <p className="font-body text-ui-label font-bold leading-tight line-clamp-2" style={{ color: val ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}>
                     {val ?? 'Not set'}
                   </p>
                 </div>
@@ -2078,11 +2078,11 @@ export function ProfileScreen() {
           <SectionCard>
             <SectionHeading label="Blocked users" />
             {blockedLoading ? (
-              <p className="font-body text-xs text-center py-4" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="font-body text-ui-caption text-center py-4" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 Loading…
               </p>
             ) : blockedUsers.length === 0 ? (
-              <p className="font-body text-xs text-center py-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <p className="font-body text-ui-caption text-center py-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 No one blocked yet.
               </p>
             ) : (
@@ -2109,7 +2109,7 @@ export function ProfileScreen() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-bold truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                      <p className="font-body text-ui-body font-bold truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>
                         {b.name ?? 'Player'}
                       </p>
                     </div>
@@ -2129,7 +2129,7 @@ export function ProfileScreen() {
                           showToast(e instanceof Error ? e.message : 'Could not unblock');
                         }
                       }}
-                      className="font-body text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
+                      className="font-body text-ui-label font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
                       style={{
                         background: 'rgba(78,255,196,0.1)',
                         border: '1px solid rgba(78,255,196,0.3)',
@@ -2163,9 +2163,9 @@ export function ProfileScreen() {
               >
                 <div className="flex items-center gap-2.5">
                   <img src={affiliationImages.academia} alt="" className="w-6 h-6 object-contain opacity-70" draggable={false} />
-                  <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Privacy Policy</span>
+                  <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>Privacy Policy</span>
                 </div>
-                <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
+                <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
               </button>
 
               <button
@@ -2176,9 +2176,9 @@ export function ProfileScreen() {
               >
                 <div className="flex items-center gap-2.5">
                   <img src={affiliationImages.tech} alt="" className="w-6 h-6 object-contain opacity-70" draggable={false} />
-                  <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Terms of Use</span>
+                  <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>Terms of Use</span>
                 </div>
-                <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
+                <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.45)' }}>Open</span>
               </button>
 
               <motion.button
@@ -2186,7 +2186,7 @@ export function ProfileScreen() {
                   setDeleteError(null);
                   setDeleteOpen(true);
                 }}
-                className="w-full py-3 rounded-full font-body text-sm font-bold"
+                className="w-full py-3 rounded-full font-body text-ui-body font-bold"
                 style={{
                   background: '#FF3D71',
                   border: '1.5px solid rgba(0,0,0,0.3)',
@@ -2200,7 +2200,7 @@ export function ProfileScreen() {
               {/* Logout */}
               <motion.button
                 onClick={async () => { await supabase?.auth.signOut(); useOnboardingStore.getState().reset(); navigate('/login'); }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-sm font-bold mt-1"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-ui-body font-bold mt-1"
                 style={{
                   background: 'rgba(78,255,196,0.07)',
                   border: '1.5px solid rgba(78,255,196,0.2)',

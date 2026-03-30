@@ -151,11 +151,11 @@ export function PhotoUpload() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/basics')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/basics')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Photos</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Photos</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 3 ? 24 : 8, background: i < 3 ? '#FF6BA8' : i === 3 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
@@ -172,7 +172,7 @@ export function PhotoUpload() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #FF9F1C, #FF3D71)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               ADD YOUR PHOTOS
             </h2>
-            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>
               Upload {MIN_PHOTOS}–{MAX_PHOTOS} photos. First one is your main pic.
             </p>
           </motion.div>
@@ -273,15 +273,15 @@ export function PhotoUpload() {
           <motion.button type="button" onClick={() => fileInputRef.current?.click()} disabled={photos.length >= MAX_PHOTOS} className={`mt-4 w-full py-3 rounded-2xl font-display font-bold text-base flex items-center justify-center gap-2 ${photos.length >= MAX_PHOTOS ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
             style={{ background: 'rgba(255,255,255,0.05)', border: `3px dashed ${photos.length < MAX_PHOTOS ? '#4EFFC4' : 'rgba(255,255,255,0.2)'}`, color: photos.length < MAX_PHOTOS ? '#4EFFC4' : 'rgba(255,255,255,0.3)', cursor: photos.length < MAX_PHOTOS ? 'pointer' : 'not-allowed' }}
             whileHover={photos.length < MAX_PHOTOS ? { scale: 1.02 } : {}} whileTap={photos.length < MAX_PHOTOS ? { scale: 0.98 } : {}}>
-            <Plus size={18} />
+            <Plus size={24} />
             {photos.length >= MAX_PHOTOS ? 'Max photos reached' : 'Add More Photos'}
           </motion.button>
 
           {/* Counter */}
           <div className="flex justify-between items-center mt-3">
-            <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{photos.length} / {MAX_PHOTOS} photos</p>
-            {photos.length < MIN_PHOTOS && <p className="font-body text-sm text-cherry-punch flex items-center gap-1"><AlertCircle size={14} />Add at least {MIN_PHOTOS - photos.length} more</p>}
-            {photos.length >= MIN_PHOTOS && <p className="font-body text-sm font-medium" style={{ color: '#4EFFC4' }}>✓ Ready to continue</p>}
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.4)' }}>{photos.length} / {MAX_PHOTOS} photos</p>
+            {photos.length < MIN_PHOTOS && <p className="font-body text-ui-body text-cherry-punch flex items-center gap-1"><AlertCircle size={20} />Add at least {MIN_PHOTOS - photos.length} more</p>}
+            {photos.length >= MIN_PHOTOS && <p className="font-body text-ui-body font-medium" style={{ color: '#4EFFC4' }}>✓ Ready to continue</p>}
           </div>
 
           {/* Errors */}
@@ -289,7 +289,7 @@ export function PhotoUpload() {
             {errors.length > 0 && (
               <motion.div className="mt-3 p-3 rounded-xl bg-cherry-punch/10 border-2 border-cherry-punch/30" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 {errors.map((err, i) => (
-                  <p key={i} className="text-sm text-cherry-punch font-body flex items-center gap-1"><AlertCircle size={14} />{err}</p>
+                  <p key={i} className="font-body text-ui-body text-cherry-punch flex items-center gap-1"><AlertCircle size={20} />{err}</p>
                 ))}
               </motion.div>
             )}
@@ -297,10 +297,10 @@ export function PhotoUpload() {
 
           {/* Tips */}
           <div className="mt-6 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(78,255,196,0.2)' }}>
-            <p className="font-display font-bold text-sm mb-2 flex items-center gap-2" style={{ color: '#4EFFC4' }}><Camera size={16} />Photo Tips</p>
+            <p className="font-display font-bold text-sm mb-2 flex items-center gap-2" style={{ color: '#4EFFC4' }}><Camera size={20} />Photo Tips</p>
             <ul className="space-y-1">
               {['Show your face clearly', 'Full body shots work great', 'Be yourself!', 'JPG, PNG or WEBP · Max 10MB each'].map((tip) => (
-                <li key={tip} className="text-xs font-body flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                <li key={tip} className="font-body text-ui-caption flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   <span style={{ color: '#4EFFC4' }}>✓</span>{tip}
                 </li>
               ))}
@@ -408,7 +408,7 @@ function PhotoCard({
 
       {/* Drag handle hint */}
       <div className="absolute bottom-2 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="px-2 py-0.5 rounded bg-black/60 text-white text-xs font-body">
+        <span className="px-2 py-0.5 rounded bg-black/60 text-white font-body text-ui-caption">
           Drag to reorder
         </span>
       </div>
@@ -443,7 +443,7 @@ function EmptySlot({
       <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2" style={{ background: 'rgba(78,255,196,0.12)' }}>
         <Plus size={isMain ? 22 : 16} style={{ color: '#4EFFC4' }} />
       </div>
-      {isMain && <span className="font-body text-xs font-medium" style={{ color: 'rgba(78,255,196,0.7)' }}>Add Photo</span>}
+      {isMain && <span className="font-body text-ui-caption font-medium" style={{ color: 'rgba(78,255,196,0.7)' }}>Add Photo</span>}
     </motion.button>
   );
 }

@@ -180,7 +180,7 @@ export function WelcomeScreen() {
         >
           <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(78,255,196,0.45))' }} />
           <motion.span
-            className="font-body text-xs font-bold tracking-widest uppercase"
+            className="font-body text-ui-caption font-bold tracking-widest uppercase"
             style={{ color: '#4EFFC4' }}
             animate={{ opacity: [1, 0.3, 1] }}
             transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -192,7 +192,7 @@ export function WelcomeScreen() {
 
         {/* Tagline */}
         <motion.p
-          className="font-body font-bold text-lg mb-7 leading-snug"
+          className="font-body font-bold text-ui-title mb-7 leading-snug"
           style={{ color: 'rgba(255,255,255,0.7)' }}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -218,7 +218,7 @@ export function WelcomeScreen() {
           ].map((pill) => (
             <span
               key={pill.text}
-              className="flex h-10 min-h-[2.5rem] items-center gap-1.5 px-4 py-2 rounded-full text-base font-body font-bold border-2 border-black"
+              className="flex h-10 min-h-[2.5rem] items-center gap-1.5 px-4 py-2 rounded-full font-body text-ui-label font-bold border-2 border-black"
               style={{
                 backgroundColor: pill.bg,
                 color: pill.fg,
@@ -258,14 +258,14 @@ export function WelcomeScreen() {
 
         <motion.button
           type="button"
-          className="mt-4 w-full h-11 px-4 font-body text-sm text-center"
+          className="mt-4 w-full h-11 px-4 font-body text-ui-body text-center"
           style={{ color: 'rgba(255,255,255,0.28)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.85 }}
           onClick={() => navigate('/login?mode=signin')}
         >
-          Already playing? <span className="font-semibold hover:underline" style={{ color: '#FF6BA8' }}>Log in</span>
+          Already playing? <span className="font-body text-ui-body-strong hover:underline" style={{ color: '#FF6BA8' }}>Log in</span>
         </motion.button>
       </motion.div>
 

@@ -56,7 +56,7 @@ export function SafetyMenuSheet({
                   onBlock();
                   onClose();
                 }}
-                className="w-full py-4 rounded-2xl font-body text-sm font-bold text-left px-4"
+                className="w-full py-4 rounded-2xl font-body text-ui-body font-bold text-left px-4"
                 style={{
                   background: 'rgba(255,61,113,0.12)',
                   border: '1px solid rgba(255,61,113,0.35)',
@@ -72,7 +72,7 @@ export function SafetyMenuSheet({
                   onReport();
                   onClose();
                 }}
-                className="w-full py-4 rounded-2xl font-body text-sm font-bold text-left px-4"
+                className="w-full py-4 rounded-2xl font-body text-ui-body font-bold text-left px-4"
                 style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.12)',
@@ -85,7 +85,7 @@ export function SafetyMenuSheet({
               <motion.button
                 type="button"
                 onClick={onClose}
-                className="w-full py-3 rounded-xl font-body text-sm font-bold mt-1"
+                className="w-full py-3 rounded-xl font-body text-ui-body font-bold mt-1"
                 style={{ color: 'rgba(255,255,255,0.45)' }}
                 whileTap={{ scale: 0.98 }}
               >

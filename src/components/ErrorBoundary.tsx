@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         <div className="min-h-screen flex items-center justify-center px-6" style={{ background: '#12122A' }}>
           <div className="w-full max-w-md text-center">
             <div className="font-display font-extrabold text-2xl text-white">Something went wrong</div>
-            <p className="font-body text-white/60 text-sm mt-3">
+            <p className="font-body text-white/60 text-ui-body mt-3">
               An unexpected error happened. You can try again and we’ll attempt to recover.
             </p>
             <button

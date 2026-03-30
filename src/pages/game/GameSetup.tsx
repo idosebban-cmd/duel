@@ -135,7 +135,7 @@ export function GameSetup() {
           >
             GUESS WHO?
           </h1>
-          <p className="font-body text-white/40 text-sm mt-1">
+          <p className="font-body text-white/40 text-ui-body mt-1">
             {isJoining ? "You've been invited to play!" : 'Game Setup'}
           </p>
         </motion.div>
@@ -157,12 +157,12 @@ export function GameSetup() {
             placeholder="Display name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl font-body text-sm text-charcoal outline-none"
+            className="w-full px-4 py-3 rounded-xl font-body text-ui-body text-charcoal outline-none"
             style={{ border: '3px solid #B565FF', background: 'white' }}
           />
 
           <div>
-            <p className="font-body text-white/40 text-xs mb-2">Avatar</p>
+            <p className="font-body text-white/40 text-ui-caption mb-2">Avatar</p>
             <div className="flex items-center gap-3">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden"
@@ -170,7 +170,7 @@ export function GameSetup() {
               >
                 <img src={avatar} alt="avatar" className="w-full h-full object-contain" />
               </div>
-              <p className="font-body text-white/40 text-xs">Randomly assigned — your identity is hidden</p>
+              <p className="font-body text-white/40 text-ui-caption">Randomly assigned — your identity is hidden</p>
             </div>
           </div>
         </motion.div>
@@ -202,7 +202,7 @@ export function GameSetup() {
 
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                <p className="font-body text-xs text-white/30">or join existing</p>
+                <p className="font-body text-ui-caption text-white/30">or join existing</p>
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
               </div>
             </>
@@ -215,7 +215,7 @@ export function GameSetup() {
               value={gameId}
               onChange={(e) => setGameId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-              className="flex-1 px-4 py-3 rounded-xl font-mono text-sm text-charcoal outline-none"
+              className="flex-1 px-4 py-3 rounded-xl font-mono text-ui-body text-charcoal outline-none"
               style={{ border: '3px solid #FF6BA8', background: 'white' }}
             />
             <motion.button
@@ -237,7 +237,7 @@ export function GameSetup() {
 
         {error && (
           <motion.p
-            className="text-center font-body text-sm text-cherry-punch"
+            className="text-center font-body text-ui-body text-cherry-punch"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >

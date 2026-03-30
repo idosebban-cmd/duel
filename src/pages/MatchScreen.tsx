@@ -138,7 +138,7 @@ function MessageBubble({ msg, myUserId, theirAvatar }: {
       {!isMe && <AvatarBubble src={theirAvatar} size={28} />}
       <div className={`flex flex-col gap-0.5 max-w-[72%] ${isMe ? 'items-end' : 'items-start'}`}>
         <div
-          className="px-4 py-2.5 rounded-2xl font-body text-sm leading-relaxed"
+          className="px-4 py-2.5 rounded-2xl font-body text-ui-body leading-relaxed"
           style={isMe ? {
             background: 'linear-gradient(135deg, rgba(255,107,168,0.35), rgba(181,101,255,0.35))',
             border: '1px solid rgba(255,107,168,0.35)',
@@ -153,7 +153,7 @@ function MessageBubble({ msg, myUserId, theirAvatar }: {
         >
           {msg.content}
         </div>
-        <span className="font-body text-xs px-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <span className="font-body text-ui-caption px-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
           {formatTime(msg.created_at)}
           {isMe && (
             <span className="ml-1" style={{ color: msg.delivered ? '#4EFFC4' : 'rgba(255,255,255,0.25)' }}>
@@ -692,7 +692,7 @@ export function MatchScreen() {
               boxShadow: '0 12px 48px rgba(0,0,0,0.45)',
             }}
           >
-            <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.75)' }}>
               {loadError}
             </p>
             <motion.button
@@ -782,10 +782,10 @@ export function MatchScreen() {
 
         {/* Names below avatars */}
         <div className="flex justify-center gap-6 mt-1.5">
-          <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {myProfile?.name ?? 'You'}
           </span>
-          <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {theirName}
           </span>
         </div>
@@ -793,7 +793,7 @@ export function MatchScreen() {
 
       {blockError && (
         <div
-          className="flex-none px-4 py-2 z-20 font-body text-xs text-center"
+          className="flex-none px-4 py-2 z-20 font-body text-ui-caption text-center"
           style={{ background: 'rgba(255,61,113,0.15)', color: '#FF6BA8', borderBottom: '1px solid rgba(255,61,113,0.25)' }}
           role="alert"
         >
@@ -832,7 +832,7 @@ export function MatchScreen() {
               }}
               aria-label="Dismiss challenge toast"
             >
-              <span className="font-body text-xs leading-none">x</span>
+              <span className="font-body text-ui-caption leading-none">x</span>
             </button>
           </motion.div>
         )}
@@ -868,7 +868,7 @@ export function MatchScreen() {
         {(incomingChallenges.length > 0 || outgoingChallenges.length > 0) && (
           <div className="px-4 pt-3 pb-1">
             <div className="flex items-center gap-2 mb-2">
-              <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 Challenges
               </span>
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -877,7 +877,7 @@ export function MatchScreen() {
             {/* Challenge error */}
             {challengeError && (
               <motion.div
-                className="mb-2 px-3 py-2 rounded-xl font-body text-xs"
+                className="mb-2 px-3 py-2 rounded-xl font-body text-ui-caption"
                 style={{ background: 'rgba(255,107,168,0.12)', border: '1px solid rgba(255,107,168,0.3)', color: '#FF6BA8' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -906,7 +906,7 @@ export function MatchScreen() {
                         {theirName} wants to play{' '}
                         <span style={{ color: '#FF6BA8' }}>{GAME_LABELS[c.game_type] ?? c.game_type}</span>
                       </p>
-                      <p className="font-body text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      <p className="font-body text-ui-caption mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
                         {timeRemaining(c.expires_at)}
                       </p>
                     </div>
@@ -952,7 +952,7 @@ export function MatchScreen() {
                   }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>
                       <span style={{ color: '#4EFFC4' }}>{GAME_LABELS[c.game_type] ?? c.game_type}</span>
                       {' \u2014 '}
                       {timeRemaining(c.expires_at)}
@@ -988,13 +988,13 @@ export function MatchScreen() {
                 className="flex items-center gap-2 min-w-0"
                 aria-label={isGameHistoryExpanded ? 'Collapse game history' : 'Expand game history'}
               >
-                <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
                   Game History
                 </span>
-                <span className="font-body text-xs font-bold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.48)' }}>
+                <span className="font-body text-ui-label font-bold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.48)' }}>
                   {`${gameRecord.wins}W · ${gameRecord.losses}L · ${gameRecord.draws}D`}
                 </span>
-                <span className="font-body text-xs font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   {isGameHistoryExpanded ? '▲' : '▼'}
                 </span>
               </button>
@@ -1019,7 +1019,7 @@ export function MatchScreen() {
                         <p className="font-display text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
                           {GAME_LABELS[g.game_type] ?? g.game_type}
                         </p>
-                        <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>
                           {formatDate(g.created_at)}
                         </p>
                       </div>
@@ -1062,7 +1062,7 @@ export function MatchScreen() {
         {/* ── Chat section divider ─────────────────────────────── */}
         <div className="px-4 pt-4 pb-1">
           <div className="flex items-center gap-2">
-            <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Chat
             </span>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -1131,7 +1131,7 @@ export function MatchScreen() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <p className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   No messages yet. Say hi!
                 </p>
               </motion.div>
@@ -1165,7 +1165,7 @@ export function MatchScreen() {
               onKeyDown={handleKeyDown}
               placeholder={`Message ${theirName}...`}
               disabled={!matchId || !myUserId}
-              className="flex-1 px-4 py-2.5 rounded-2xl font-body text-sm outline-none"
+              className="flex-1 px-4 py-2.5 rounded-2xl font-body text-ui-body outline-none"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: `1.5px solid ${input ? 'rgba(78,255,196,0.35)' : 'rgba(255,255,255,0.08)'}`,

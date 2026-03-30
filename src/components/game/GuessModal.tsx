@@ -64,7 +64,7 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
             >
               WHO IS IT?
             </h2>
-            <p className="font-body text-sm text-charcoal/60 mt-0.5">
+            <p className="font-body text-ui-body text-charcoal/60 mt-0.5">
               {standing.length} character{standing.length !== 1 ? 's' : ''} still standing
             </p>
           </div>
@@ -72,7 +72,7 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
             onClick={onClose}
             className="w-9 h-9 rounded-full flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
           >
-            <X size={18} className="text-charcoal" />
+            <X size={24} className="text-charcoal" />
           </button>
         </div>
 
@@ -81,8 +81,8 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
           className="mx-5 mb-3 px-3 py-2 rounded-xl flex items-center gap-2 flex-shrink-0"
           style={{ background: '#FF3D7122', border: '2px solid #FF3D7166' }}
         >
-          <AlertTriangle size={16} className="text-cherry-punch flex-shrink-0" />
-          <p className="font-body text-xs text-cherry-punch font-medium">
+          <AlertTriangle size={20} className="text-cherry-punch flex-shrink-0" />
+          <p className="font-body text-ui-caption text-cherry-punch font-medium">
             Wrong guess = you lose immediately!
           </p>
         </div>
@@ -118,7 +118,7 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
             {!selected && (
               <motion.p
                 key="hint"
-                className="text-center font-body text-xs text-charcoal/40 mb-3"
+                className="text-center font-body text-ui-caption text-charcoal/40 mb-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -129,7 +129,7 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
             {selected && !confirming && (
               <motion.p
                 key="step1"
-                className="text-center font-body text-xs mb-3"
+                className="text-center font-body text-ui-caption mb-3"
                 style={{ color: '#B565FF', fontWeight: 600 }}
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -147,7 +147,7 @@ export function GuessModal({ characters, flippedCards, onConfirm, onClose }: Gue
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
               >
-                <p className="font-body text-xs text-cherry-punch font-semibold text-center mb-1">
+                <p className="font-body text-ui-caption text-cherry-punch font-semibold text-center mb-1">
                   Step 2 of 2 — final confirmation
                 </p>
                 <p className="font-display font-bold text-sm text-charcoal text-center">

@@ -141,11 +141,11 @@ export function BasicsForm() {
       <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-electric-mint/40 pointer-events-none" />
 
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/avatar')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/avatar')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>The Basics</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>The Basics</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 24 : 8, background: i < 2 ? '#FF6BA8' : i === 2 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
@@ -163,7 +163,7 @@ export function BasicsForm() {
             <Input dark label="WHEN WERE YOU BORN?" type="date" error={errors.birthday?.message} success={!errors.birthday && !!watchedBirthday && (currentAge ?? 0) >= 18} {...register('birthday')} />
             <AnimatePresence>
               {currentAge !== null && currentAge >= 18 && !errors.birthday && (
-                <motion.p className="mt-2 text-sm font-body font-medium flex items-center gap-1" style={{ color: '#4EFFC4' }} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
+                <motion.p className="mt-2 font-body text-ui-body font-medium flex items-center gap-1" style={{ color: '#4EFFC4' }} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
                   ✓ Age: {currentAge} years old
                 </motion.p>
               )}

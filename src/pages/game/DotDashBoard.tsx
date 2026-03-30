@@ -545,7 +545,7 @@ export function DotDashBoard() {
           <div className="font-display font-extrabold text-lg text-white/80">DOT DASH</div>
           <button
             onClick={() => setShowExit(true)}
-            className="font-body text-xs text-white/30 hover:text-white/60 transition-colors"
+            className="font-body text-ui-caption text-white/30 hover:text-white/60 transition-colors"
           >
             Exit
           </button>
@@ -557,7 +557,7 @@ export function DotDashBoard() {
         >
           {/* My side */}
           <div className="flex flex-col items-start">
-            <span className="font-body text-xs text-white/40 mb-0.5">YOU</span>
+            <span className="font-body text-ui-caption text-white/40 mb-0.5">YOU</span>
             <span className="font-mono font-bold text-2xl" style={{ color: '#FF6BA8' }}>
               {me?.score ?? 0}
             </span>
@@ -570,7 +570,7 @@ export function DotDashBoard() {
 
           {/* Opponent side */}
           <div className="flex flex-col items-end">
-            <span className="font-body text-xs text-white/40 mb-0.5">THEM</span>
+            <span className="font-body text-ui-caption text-white/40 mb-0.5">THEM</span>
             <span className="font-mono font-bold text-2xl" style={{ color: '#4EFFC4' }}>
               {opp?.score ?? 0}
             </span>
@@ -603,7 +603,7 @@ export function DotDashBoard() {
               <div className="text-center px-6">
                 <div className="mx-auto w-10 h-10 rounded-full border-2 border-white/10 border-t-[#FFE66D] animate-spin" />
                 <p className="font-display font-bold text-white text-lg mt-3">Reconnecting…</p>
-                <p className="font-body text-white/50 text-sm mt-1">Hang tight — resyncing the match.</p>
+                <p className="font-body text-white/50 text-ui-body mt-1">Hang tight — resyncing the match.</p>
               </div>
             </motion.div>
           )}
@@ -622,7 +622,7 @@ export function DotDashBoard() {
               <div className="text-center px-6">
                 <div className="mx-auto w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin" />
                 <p className="font-display font-bold text-white text-lg mt-3">Waiting for game state...</p>
-                <p className="font-body text-white/50 text-sm mt-1">Connecting you to the match.</p>
+                <p className="font-body text-white/50 text-ui-body mt-1">Connecting you to the match.</p>
               </div>
             </motion.div>
           )}
@@ -639,7 +639,7 @@ export function DotDashBoard() {
               <div className="text-center px-6">
                 <div className="text-3xl mb-2">⚠️</div>
                 <p className="font-display font-bold text-white text-lg">Opponent disconnected</p>
-                <p className="font-body text-white/50 text-sm mt-1">Waiting 30 s…</p>
+                <p className="font-body text-white/50 text-ui-body mt-1">Waiting 30 s…</p>
               </div>
             </motion.div>
           )}
@@ -649,7 +649,7 @@ export function DotDashBoard() {
         <AnimatePresence>
           {store.errorMessage && (
             <motion.div
-              className="absolute top-2 left-2 right-2 px-3 py-2 rounded-xl text-center font-body text-sm text-white"
+              className="absolute top-2 left-2 right-2 px-3 py-2 rounded-xl text-center font-body text-ui-body text-white"
               style={{ background: 'rgba(255,61,113,0.9)', border: '2px solid #FF3D71' }}
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             >
@@ -664,7 +664,7 @@ export function DotDashBoard() {
         className="w-full max-w-[456px] px-4 py-3 relative flex items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
-        <p className="font-body text-xs text-white/30 absolute left-4">
+        <p className="font-body text-ui-caption text-white/30 absolute left-4">
           Swipe or ← ↑ → ↓ to move
         </p>
         {(() => {
@@ -742,7 +742,7 @@ export function DotDashBoard() {
               initial={{ scale: 0.9 }} animate={{ scale: 1 }}
             >
               <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
-              <p className="font-body text-white/50 text-sm mb-6">
+              <p className="font-body text-white/50 text-ui-body mb-6">
                 Leaving forfeits the match. Your opponent wins.
               </p>
               <div className="flex gap-3">

@@ -93,11 +93,11 @@ export function LifestyleQuestions() {
       <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-electric-mint/40 pointer-events-none" />
 
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3 flex-shrink-0">
-        <motion.button onClick={() => navigate('/onboarding/preferences')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/preferences')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Lifestyle</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Lifestyle</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 7 ? 24 : 8, background: i < 7 ? '#FF6BA8' : i === 7 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
@@ -166,7 +166,7 @@ export function LifestyleQuestions() {
                           <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                         )}
                         <span
-                          className="relative w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono font-bold flex-shrink-0"
+                          className="relative w-7 h-7 rounded-full flex items-center justify-center font-mono font-bold text-ui-caption flex-shrink-0"
                           style={{
                             background: isSelected ? 'rgba(0,0,0,0.2)' : '#f5f5f5',
                             color: isSelected ? 'white' : '#2D3142',
@@ -192,7 +192,7 @@ export function LifestyleQuestions() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <span className="font-body text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>
                       Prefer not to say
                     </span>
                   </motion.button>

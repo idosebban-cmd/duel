@@ -19,7 +19,7 @@ export function PrivacyPolicy() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="h-9 px-3 rounded-xl font-body text-sm font-bold"
+          className="h-9 px-3 rounded-xl font-body text-ui-body font-bold"
           style={{
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',

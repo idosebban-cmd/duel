@@ -47,7 +47,7 @@ export function AffiliationStep({ selected, onSelect }: AffiliationStepProps) {
           CHOOSE YOUR AFFILIATION
         </motion.h2>
         <motion.p
-          className="font-body text-base"
+          className="font-body text-ui-body"
           style={{ color: 'rgba(255,255,255,0.6)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -102,7 +102,7 @@ export function AffiliationStep({ selected, onSelect }: AffiliationStepProps) {
               <span className="font-display font-bold text-base sm:text-lg leading-tight" style={{ color: 'white' }}>
                 {aff.name}
               </span>
-              <span className="font-body text-xs mt-0.5 text-center leading-tight" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <span className="font-body text-ui-caption mt-0.5 text-center leading-tight" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {aff.hint}
               </span>
             </motion.button>

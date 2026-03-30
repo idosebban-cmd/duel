@@ -31,11 +31,11 @@ export function BioStep() {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center px-4 sm:px-6 py-4 gap-3">
-        <motion.button onClick={() => navigate('/onboarding/lifestyle')} className="flex items-center gap-1.5 font-body font-medium text-sm flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
-          <ArrowLeft size={18} /><span>Back</span>
+        <motion.button onClick={() => navigate('/onboarding/lifestyle')} className="flex items-center gap-1.5 font-body font-medium text-ui-body flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}>
+          <ArrowLeft size={24} /><span>Back</span>
         </motion.button>
         <div className="flex-1 flex flex-col items-center gap-1.5">
-          <span className="font-body text-xs font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Bio</span>
+          <span className="font-body text-ui-label font-bold tracking-widest uppercase" style={{ color: '#4EFFC4' }}>Bio</span>
           <div className="flex gap-1">
             {ONBOARDING_PROGRESS_DOTS.map((i) => (
               <div key={i} className="h-1.5 rounded-full" style={{ width: i === 8 ? 24 : 8, background: i < 8 ? '#FF6BA8' : i === 8 ? 'linear-gradient(90deg, #4EFFC4, #FF6BA8)' : 'rgba(255,255,255,0.15)' }} />
@@ -52,7 +52,7 @@ export function BioStep() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-2" style={{ background: 'linear-gradient(135deg, #4EFFC4, #00D9FF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               TELL THEM<br />ABOUT YOU
             </h2>
-            <p className="font-body text-base" style={{ color: 'rgba(255,255,255,0.6)' }}>Optional — share what makes you you</p>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.6)' }}>Optional — share what makes you you</p>
           </motion.div>
 
           {/* Textarea */}
@@ -62,7 +62,7 @@ export function BioStep() {
               onChange={(e) => setValue(e.target.value.slice(0, MAX_LENGTH))}
               placeholder="I'm a competitive board game nerd who thinks trash talk is a love language..."
               rows={5}
-              className="w-full rounded-2xl px-5 py-4 font-body text-base resize-none outline-none"
+              className="w-full rounded-2xl px-5 py-4 font-body text-ui-body resize-none outline-none"
               style={{
                 background: 'rgba(255,255,255,0.07)',
                 border: `2px solid ${hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.12)'}`,
@@ -71,10 +71,10 @@ export function BioStep() {
               }}
             />
             <div className="flex justify-between mt-2 px-1">
-              <span className="font-body text-xs" style={{ color: hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
+              <span className="font-body text-ui-caption" style={{ color: hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
                 {hasContent ? 'Looks great!' : 'You can skip this'}
               </span>
-              <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 {value.length}/{MAX_LENGTH}
               </span>
             </div>

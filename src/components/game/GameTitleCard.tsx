@@ -68,7 +68,7 @@ export function GameTitleCard({
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
           >
-            <p className="font-body text-xs uppercase tracking-[0.2em] text-white/40 mb-2">
+            <p className="font-body text-ui-caption uppercase tracking-[0.2em] text-white/40 mb-2">
               Match Starting
             </p>
             <h2
