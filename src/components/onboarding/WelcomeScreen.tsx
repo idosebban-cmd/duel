@@ -160,10 +160,10 @@ export function WelcomeScreen() {
           <h1
             className="font-display select-none leading-none mt-2"
             style={{
-              fontSize: '72px',
+              fontSize: '96px',
               color: '#FFE66D',
               textShadow:
-                '0 0 18px rgba(255,230,109,0.9), 0 0 50px rgba(255,230,109,0.35), 4px 4px 0px #FF9F1C, 7px 7px 0px rgba(0,0,0,0.6)',
+                '0 0 9px rgba(255,230,109,0.9), 0 0 25px rgba(255,230,109,0.35), 2px 2px 0px #FF9F1C, 4px 4px 0px rgba(0,0,0,0.6)',
               letterSpacing: '0.06em',
             }}
           >

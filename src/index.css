@@ -125,3 +125,32 @@
     box-shadow: 0 0 0 4px #B565FF, 0 0 20px rgba(181, 101, 255, 0.5);
   }
 }
+
+@layer utilities {
+  .font-display.text-xs { font-size: 0.875rem; line-height: 1.25rem; }
+  .font-display.text-sm { font-size: 1rem; line-height: 1.5rem; }
+  .font-display.text-base { font-size: 1.125rem; line-height: 1.75rem; }
+  .font-display.text-lg { font-size: 1.25rem; line-height: 1.75rem; }
+  .font-display.text-xl { font-size: 1.5rem; line-height: 2rem; }
+  .font-display.text-2xl { font-size: 1.875rem; line-height: 2.25rem; }
+  .font-display.text-3xl { font-size: 2.25rem; line-height: 2.5rem; }
+
+  .font-display.text-4xl { font-size: 2.7rem; line-height: 1; }
+  .font-display.text-5xl { font-size: 3.6rem; line-height: 1; }
+  .font-display.text-6xl { font-size: 4.5rem; line-height: 1; }
+  .font-display.text-7xl { font-size: 5.4rem; line-height: 1; }
+  .font-display.text-8xl { font-size: 7.2rem; line-height: 1; }
+  .font-display.text-9xl { font-size: 9.6rem; line-height: 1; }
+
+  .font-body.text-xs { font-size: 0.875rem; line-height: 1.25rem; }
+  .font-body.text-sm { font-size: 1rem; line-height: 1.5rem; }
+  .font-body.text-base { font-size: 1.125rem; line-height: 1.75rem; }
+
+  button.font-display.text-xs { font-size: 0.875rem; line-height: 1.25rem; }
+  button.font-display.text-sm { font-size: 1rem; line-height: 1.5rem; }
+  button.font-display.text-base { font-size: 1.125rem; line-height: 1.75rem; }
+  button.font-display.text-lg { font-size: 1.25rem; line-height: 1.75rem; }
+  button.font-display.text-xl { font-size: 1.5rem; line-height: 2rem; }
+  button.font-display.text-2xl { font-size: 1.875rem; line-height: 2.25rem; }
+  button.font-display.text-3xl { font-size: 2.25rem; line-height: 2.5rem; }
+}
