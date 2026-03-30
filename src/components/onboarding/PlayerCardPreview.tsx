@@ -73,6 +73,8 @@ const lookingForIcons: Record<string, string> = {
   open: '/looking-for/Open.png',
 };
 
+type LookingForId = keyof typeof lookingForLabels;
+
 
 export function PlayerCardPreview() {
   const navigate = useNavigate();
@@ -92,6 +94,10 @@ export function PlayerCardPreview() {
 
   const capitalize = (s: string | null) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+  const selectedLookingFor: LookingForId[] = Array.isArray(lookingFor)
+    ? lookingFor.filter((id): id is LookingForId => typeof id === 'string' && id in lookingForLabels)
+    : [];
 
 
   const lifestyleItems = [
@@ -380,13 +386,13 @@ export function PlayerCardPreview() {
               )}
 
               {/* Looking for */}
-              {Array.isArray(lookingFor) && lookingFor.some(id => lookingForLabels[id]) && (
+              {selectedLookingFor.length > 0 && (
                 <div>
                   <p className="font-display font-bold text-sm text-charcoal/50 mb-2 uppercase tracking-wider">
                     Looking For
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(lookingFor as string[]).filter(id => lookingForLabels[id]).map((id) => (
+                    {selectedLookingFor.map((id) => (
                       <span
                         key={id}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-display font-bold text-sm text-white"
