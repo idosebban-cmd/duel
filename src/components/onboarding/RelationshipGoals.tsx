@@ -68,7 +68,7 @@ const goals: GoalOption[] = [
 
 type IntentOption = {
   value: 'romance' | 'play' | 'both';
-  emoji: string;
+  icon: string;
   label: string;
   description: string;
   gradient: string;
@@ -79,7 +79,7 @@ type IntentOption = {
 const intentOptions: IntentOption[] = [
   {
     value: 'romance',
-    emoji: '\u2764\uFE0F',
+    icon: '/Romance.png',
     label: 'Here for Romance',
     description: 'Find your match the classic way',
     gradient: 'linear-gradient(135deg, #ff4e6a, #ff8fa3)',
@@ -88,7 +88,7 @@ const intentOptions: IntentOption[] = [
   },
   {
     value: 'play',
-    emoji: '\uD83C\uDFAE',
+    icon: '/Just play.png',
     label: 'Just Want to Play',
     description: 'Skip the romance, find gaming partners',
     gradient: 'linear-gradient(135deg, #00d4ff, #0066ff)',
@@ -97,7 +97,7 @@ const intentOptions: IntentOption[] = [
   },
   {
     value: 'both',
-    emoji: '\u2728',
+    icon: '/Open to both.png',
     label: 'Open to Both',
     description: 'Romance, games, or whatever happens',
     gradient: 'linear-gradient(135deg, #ffd700, #9b59b6)',
@@ -192,7 +192,7 @@ export function RelationshipGoals() {
                           border: isSelected ? '2px solid rgba(255,255,255,0.3)' : `2px solid ${opt.border}30`,
                         }}
                       >
-                        {opt.emoji}
+                        <img src={opt.icon} alt="" width={40} height={40} />
                       </span>
                       <div className="flex-1 min-w-0">
                         <span className="block font-display font-bold text-lg leading-tight text-white">
