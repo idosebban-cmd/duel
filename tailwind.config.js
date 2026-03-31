@@ -19,8 +19,9 @@ export default {
         'charcoal': '#2D3142',
       },
       fontFamily: {
-        display: ['Retronoid', 'sans-serif'],
+        display: ['Toxigenesis', 'sans-serif'],
         body: ['JLS Data Gothic', 'sans-serif'],
+        logo: ['Retronoid', 'sans-serif'],
         mono: ['JLS Data Gothic', 'monospace'],
       },
       fontSize: {

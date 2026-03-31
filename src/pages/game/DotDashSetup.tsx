@@ -99,7 +99,7 @@ export function DotDashSetup() {
           }}>
             DOT DASH
           </h1>
-          <p className="font-body text-white/40 text-ui-body mt-1">
+          <p className="font-body text-white/70 text-ui-body mt-1">
             {isJoining ? "You've been invited to race!" : 'Maze Race · 2 Players'}
           </p>
         </motion.div>
@@ -124,7 +124,7 @@ export function DotDashSetup() {
             <div className="w-10 h-10 rounded-xl overflow-hidden" style={{ border: '2px solid rgba(255,255,255,0.2)' }}>
               <img src={avatar} alt="avatar" className="w-full h-full object-contain" />
             </div>
-            <p className="font-body text-white/40 text-ui-caption flex-1">Your character from your profile</p>
+            <p className="font-body text-white/70 text-ui-caption flex-1">Your character from your profile</p>
           </div>
         </motion.div>
 

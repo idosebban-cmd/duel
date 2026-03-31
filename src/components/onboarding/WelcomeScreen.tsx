@@ -158,7 +158,7 @@ export function WelcomeScreen() {
             />
           </div>
           <h1
-            className="font-display select-none leading-none mt-2"
+            className="font-logo select-none leading-none mt-2"
             style={{
               fontSize: '96px',
               color: '#FFE66D',

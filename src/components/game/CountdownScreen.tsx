@@ -67,7 +67,7 @@ export function CountdownScreen({ onComplete }: CountdownScreenProps) {
 
           {showGo && (
             <motion.p
-              className="font-body text-white/60 text-lg mt-4"
+              className="font-body text-white/70 text-lg mt-4"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >

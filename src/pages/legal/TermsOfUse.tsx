@@ -220,7 +220,7 @@ export function TermsOfUse() {
         </button>
 
         <div
-          className="font-display text-2xl leading-none"
+          className="font-logo text-2xl leading-none"
           style={{
             background: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)',
             WebkitBackgroundClip: 'text',

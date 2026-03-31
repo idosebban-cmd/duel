@@ -76,7 +76,7 @@ export function MazeRaceResult() {
         className="min-h-screen flex flex-col items-center justify-center"
         style={{ background: '#12122A' }}
       >
-        <p className="font-body text-white/50 text-ui-body animate-pulse">Loading result...</p>
+        <p className="font-body text-white/70 text-ui-body animate-pulse">Loading result...</p>
       </div>
     );
   }
@@ -135,7 +135,7 @@ export function MazeRaceResult() {
               >
                 YOU WIN!
               </h1>
-              <p className="font-body text-white/60 mt-2">
+              <p className="font-body text-white/70 mt-2">
                 {forfeit ? `${opp.name} forfeited!` : 'You reached your exit first!'}
               </p>
             </>
@@ -145,7 +145,7 @@ export function MazeRaceResult() {
               <h1 className="font-display font-extrabold text-4xl text-white/70">
                 {opp.name} wins!
               </h1>
-              <p className="font-body text-white/50 mt-2">
+              <p className="font-body text-white/70 mt-2">
                 {forfeit ? 'You disconnected — they win by forfeit.' : 'They reached their exit first.'}
               </p>
             </>
@@ -298,7 +298,7 @@ export function MazeRaceResult() {
           </motion.button>
 
           {rematchError && (
-            <p className="font-body text-ui-body text-white/40 text-center">{rematchError}</p>
+            <p className="font-body text-ui-body text-white/70 text-center">{rematchError}</p>
           )}
         </motion.div>
       </div>

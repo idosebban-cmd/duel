@@ -182,7 +182,7 @@ export function GamePicker() {
           >
             READY TO PLAY?
           </h1>
-          <p className="font-body text-white/60 text-ui-title">Choose your game</p>
+          <p className="font-body text-white/70 text-ui-title">Choose your game</p>
         </motion.div>
 
         {/* Game options grid */}

@@ -144,7 +144,7 @@ function HeroSection() {
             />
           </div>
           <h1
-            className="font-display select-none leading-none mt-2"
+            className="font-logo select-none leading-none mt-2"
             style={{
               fontSize: '80px',
               color: '#FFE66D',
@@ -171,7 +171,7 @@ function HeroSection() {
         {/* Tagline */}
         <motion.p
           className="font-body font-bold text-ui-title mb-9 leading-snug"
-          style={{ color: 'rgba(255,255,255,0.6)' }}
+          style={{ color: 'rgba(255,255,255,0.7)' }}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
@@ -329,7 +329,7 @@ function HowItWorksSection() {
               {/* Text */}
               <div>
                 <h3 className="font-display text-2xl text-white mb-0.5">{step.title}</h3>
-                <p className="font-body text-white/60 text-ui-body">{step.desc}</p>
+                <p className="font-body text-white/70 text-ui-body">{step.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -378,7 +378,7 @@ function GamesSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
-          className="font-body text-white/50 text-center mb-12 text-ui-body"
+          className="font-body text-white/70 text-center mb-12 text-ui-body"
         >
           2-5 minute games designed for two players
         </motion.p>
@@ -535,7 +535,7 @@ function FooterSection() {
         {/* App name */}
         <div style={{ borderTop: '1px solid rgba(78,255,196,0.12)' }} className="pt-8">
           <h2
-            className="font-display select-none leading-none"
+            className="font-logo select-none leading-none"
             style={{
               fontSize: '36px',
               color: '#FFE66D',

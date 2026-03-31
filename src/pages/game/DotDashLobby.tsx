@@ -117,7 +117,7 @@ export function DotDashLobby() {
           }}>
             DOT DASH
           </h1>
-          <p className="font-body text-white/40 text-ui-body mt-1">
+          <p className="font-body text-white/70 text-ui-body mt-1">
             Waiting for both players · {mins}:{secs}
           </p>
         </motion.div>
@@ -168,7 +168,7 @@ export function DotDashLobby() {
           <p className="font-display font-bold text-xs text-electric-mint uppercase tracking-widest mb-2">
             How to play
           </p>
-          <ul className="font-body text-white/60 text-ui-caption space-y-1">
+          <ul className="font-body text-white/70 text-ui-caption space-y-1">
             <li>🎮 Swipe or use arrow keys to move</li>
             <li>• Collect dots to score (+10 each)</li>
             <li>👻 Avoid ghosts – lose a life if caught</li>
@@ -182,7 +182,7 @@ export function DotDashLobby() {
             style={{ background: 'rgba(255,255,255,0.04)', border: '2px solid rgba(255,255,255,0.08)' }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
           >
-            <p className="font-body text-white/40 text-ui-caption mb-2">Share this link with your opponent:</p>
+            <p className="font-body text-white/70 text-ui-caption mb-2">Share this link with your opponent:</p>
             <button
               onClick={() => {
                 const url = `${window.location.origin}/dotdash?join=${gameId}`;

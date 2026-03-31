@@ -135,7 +135,7 @@ export function GameSetup() {
           >
             GUESS WHO?
           </h1>
-          <p className="font-body text-white/40 text-ui-body mt-1">
+          <p className="font-body text-white/70 text-ui-body mt-1">
             {isJoining ? "You've been invited to play!" : 'Game Setup'}
           </p>
         </motion.div>
@@ -170,7 +170,7 @@ export function GameSetup() {
               >
                 <img src={avatar} alt="avatar" className="w-full h-full object-contain" />
               </div>
-              <p className="font-body text-white/40 text-ui-caption">Randomly assigned — your identity is hidden</p>
+              <p className="font-body text-white/70 text-ui-caption">Randomly assigned — your identity is hidden</p>
             </div>
           </div>
         </motion.div>

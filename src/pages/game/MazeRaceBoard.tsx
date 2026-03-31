@@ -496,7 +496,7 @@ export function MazeRaceBoard() {
             >
               <div className="text-center px-6">
                 <p className="font-display font-bold text-white text-lg">Opponent disconnected</p>
-                <p className="font-body text-white/50 text-ui-body mt-1">Waiting 30 s…</p>
+                <p className="font-body text-white/70 text-ui-body mt-1">Waiting 30 s…</p>
               </div>
             </motion.div>
           )}
@@ -602,7 +602,7 @@ export function MazeRaceBoard() {
               animate={{ scale: 1 }}
             >
               <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
-              <p className="font-body text-white/50 text-ui-body mb-6">
+              <p className="font-body text-white/70 text-ui-body mb-6">
                 Leaving forfeits the match. Your opponent wins.
               </p>
               <div className="flex gap-3">

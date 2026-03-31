@@ -394,7 +394,7 @@ export function GameBoard() {
       >
         <div className="flex flex-col items-center gap-3">
           <WaitingDots />
-          <p className="font-body text-white/50">Setting up game...</p>
+          <p className="font-body text-white/70">Setting up game...</p>
         </div>
       </div>
     );
@@ -409,7 +409,7 @@ export function GameBoard() {
       >
         <div className="flex flex-col items-center gap-3">
           <WaitingDots />
-          <p className="font-body text-white/50">Loading game...</p>
+          <p className="font-body text-white/70">Loading game...</p>
         </div>
       </div>
     );
@@ -769,7 +769,7 @@ export function GameBoard() {
                 className="flex items-center justify-center gap-3 py-4"
               >
                 <WaitingDots />
-                <p className="font-body text-white/50">Waiting for opponent to answer...</p>
+                <p className="font-body text-white/70">Waiting for opponent to answer...</p>
               </motion.div>
             )}
 
@@ -783,7 +783,7 @@ export function GameBoard() {
                 className="flex items-center justify-center gap-3 py-4"
               >
                 <WaitingDots />
-                <p className="font-body text-white/50">Opponent is thinking...</p>
+                <p className="font-body text-white/70">Opponent is thinking...</p>
               </motion.div>
             )}
 
@@ -951,7 +951,7 @@ export function GameBoard() {
               animate={{ scale: 1 }}
             >
               <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
-              <p className="font-body text-white/50 text-ui-body mb-6">
+              <p className="font-body text-white/70 text-ui-body mb-6">
                 Leaving will forfeit the match. Your opponent wins.
               </p>
               <div className="flex gap-3">

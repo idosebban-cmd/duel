@@ -1037,7 +1037,7 @@ export function Battleship() {
                 ← Games
               </button>
             )}
-            <div className="font-display text-xs" style={{ color: 'rgba(255,255,255,0.15)' }}>DUEL</div>
+            <div className="font-logo text-xs" style={{ color: 'rgba(255,255,255,0.15)' }}>DUEL</div>
           </div>
         </>
       )}

@@ -206,7 +206,7 @@ export function GameResult() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/50 text-ui-body animate-pulse">Loading result...</p>
+        <p className="font-body text-white/70 text-ui-body animate-pulse">Loading result...</p>
       </div>
     );
   }
@@ -231,7 +231,7 @@ export function GameResult() {
   if (!p1SecretId || !p2SecretId) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#12122A' }}>
-        <p className="font-body text-white/50 text-ui-body animate-pulse">Revealing characters...</p>
+        <p className="font-body text-white/70 text-ui-body animate-pulse">Revealing characters...</p>
       </div>
     );
   }
@@ -304,7 +304,7 @@ export function GameResult() {
               >
                 YOU WIN!
               </h1>
-              <p className="font-body text-white/60 mt-2">You guessed it!</p>
+              <p className="font-body text-white/70 mt-2">You guessed it!</p>
             </>
           ) : (
             <>
@@ -315,7 +315,7 @@ export function GameResult() {
               >
                 Opponent wins!
               </h1>
-              <p className="font-body text-white/50 mt-2">Better luck next time!</p>
+              <p className="font-body text-white/70 mt-2">Better luck next time!</p>
             </>
           )}
         </motion.div>

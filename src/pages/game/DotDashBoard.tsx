@@ -603,7 +603,7 @@ export function DotDashBoard() {
               <div className="text-center px-6">
                 <div className="mx-auto w-10 h-10 rounded-full border-2 border-white/10 border-t-[#FFE66D] animate-spin" />
                 <p className="font-display font-bold text-white text-lg mt-3">Reconnecting…</p>
-                <p className="font-body text-white/50 text-ui-body mt-1">Hang tight — resyncing the match.</p>
+                <p className="font-body text-white/70 text-ui-body mt-1">Hang tight — resyncing the match.</p>
               </div>
             </motion.div>
           )}
@@ -622,7 +622,7 @@ export function DotDashBoard() {
               <div className="text-center px-6">
                 <div className="mx-auto w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin" />
                 <p className="font-display font-bold text-white text-lg mt-3">Waiting for game state...</p>
-                <p className="font-body text-white/50 text-ui-body mt-1">Connecting you to the match.</p>
+                <p className="font-body text-white/70 text-ui-body mt-1">Connecting you to the match.</p>
               </div>
             </motion.div>
           )}
@@ -639,7 +639,7 @@ export function DotDashBoard() {
               <div className="text-center px-6">
                 <div className="text-3xl mb-2">⚠️</div>
                 <p className="font-display font-bold text-white text-lg">Opponent disconnected</p>
-                <p className="font-body text-white/50 text-ui-body mt-1">Waiting 30 s…</p>
+                <p className="font-body text-white/70 text-ui-body mt-1">Waiting 30 s…</p>
               </div>
             </motion.div>
           )}
@@ -742,7 +742,7 @@ export function DotDashBoard() {
               initial={{ scale: 0.9 }} animate={{ scale: 1 }}
             >
               <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
-              <p className="font-body text-white/50 text-ui-body mb-6">
+              <p className="font-body text-white/70 text-ui-body mb-6">
                 Leaving forfeits the match. Your opponent wins.
               </p>
               <div className="flex gap-3">

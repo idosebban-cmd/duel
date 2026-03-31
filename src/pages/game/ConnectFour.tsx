@@ -778,7 +778,7 @@ export function ConnectFour() {
         <div className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.22)' }}>
           {turn === 'player' && phase === 'playing' && !winCells ? 'Tap a column to drop' : '\u00A0'}
         </div>
-        <div className="font-display text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>DUEL</div>
+        <div className="font-logo text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>DUEL</div>
       </div>
 
       <AnimatePresence>

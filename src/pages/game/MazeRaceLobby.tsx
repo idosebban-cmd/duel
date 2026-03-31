@@ -192,7 +192,7 @@ export function MazeRaceLobby() {
           <p className="font-display font-bold text-electric-mint/80 text-sm uppercase tracking-widest">
             Maze Race
           </p>
-          <p className="font-body text-white/50 text-ui-body">
+          <p className="font-body text-white/70 text-ui-body">
             {!matchId ? 'Loading…' : 'Loading lobby…'}
           </p>
         </div>
@@ -248,7 +248,7 @@ export function MazeRaceLobby() {
           >
             MAZE RACE
           </h1>
-          <p className="font-body text-white/40 text-ui-body mt-1">
+          <p className="font-body text-white/70 text-ui-body mt-1">
             Race to your exit · First one wins
           </p>
         </motion.div>
@@ -298,7 +298,7 @@ export function MazeRaceLobby() {
           <p className="font-display font-bold text-xs text-electric-mint uppercase tracking-widest mb-2">
             How to play
           </p>
-          <ul className="font-body text-white/60 text-ui-caption space-y-1">
+          <ul className="font-body text-white/70 text-ui-caption space-y-1">
             <li>Tap direction buttons to move one cell</li>
             <li>Yellow markers show both exits — yours is opposite your opponent&apos;s</li>
             <li>Player 1 starts top-left; player 2 starts bottom-right</li>

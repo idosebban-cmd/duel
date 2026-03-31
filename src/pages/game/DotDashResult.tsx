@@ -92,7 +92,7 @@ export function DotDashResult() {
         className="min-h-screen flex flex-col items-center justify-center"
         style={{ background: '#12122A' }}
       >
-        <p className="font-body text-white/50 text-ui-body animate-pulse">Loading result...</p>
+        <p className="font-body text-white/70 text-ui-body animate-pulse">Loading result...</p>
       </div>
     );
   }
@@ -149,7 +149,7 @@ export function DotDashResult() {
               }}>
                 YOU WIN!
               </h1>
-              <p className="font-body text-white/60 mt-2">
+              <p className="font-body text-white/70 mt-2">
                 {forfeit ? `${opp.name} forfeited!` : 'Nice moves, champ!'}
               </p>
             </>
@@ -159,7 +159,7 @@ export function DotDashResult() {
               <h1 className="font-display font-extrabold text-4xl text-white/70">
                 {opp.name} wins!
               </h1>
-              <p className="font-body text-white/50 mt-2">
+              <p className="font-body text-white/70 mt-2">
                 {forfeit ? 'You disconnected — they win by forfeit.' : 'Better luck next time!'}
               </p>
             </>
@@ -337,7 +337,7 @@ export function DotDashResult() {
           </motion.button>
 
           {rematchError && (
-            <p className="font-body text-ui-body text-white/40 text-center">
+            <p className="font-body text-ui-body text-white/70 text-center">
               {rematchError}
             </p>
           )}

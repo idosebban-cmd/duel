@@ -235,7 +235,7 @@ export function LoginScreen() {
         {/* ─── Header ────────────────────────────────────────────────────── */}
         <div className="text-center mb-8">
           <motion.div
-            className="font-display text-6xl leading-none mb-1"
+            className="font-logo text-6xl leading-none mb-1"
             style={{
               background: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 50%, #FFE66D 100%)',
               WebkitBackgroundClip: 'text',

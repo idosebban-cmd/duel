@@ -746,7 +746,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
         {/* ── Game Preferences ── */}
         <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           {sectionHead('GAME PREFERENCES')}
-          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 16, marginTop: 2 }}>Show me people who like...</p>
+          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 16, marginTop: 2 }}>Show me people who like...</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {DUEL_GAMES.map(game => (
               <label key={game} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => toggleGame(game)}>
@@ -791,7 +791,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
                 <div style={{ paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
                   {LIFESTYLE_OPTIONS.map(({ key, label, options }) => (
                     <div key={key}>
-                      <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', display: 'block', marginBottom: 8 }}>{label}</span>
+                      <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', display: 'block', marginBottom: 8 }}>{label}</span>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                         {options.map(opt => {
                           const sel = draft[key] === opt;
@@ -814,7 +814,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
         {/* ── Activity Level ── */}
         <section style={{ padding: '20px 20px 36px' }}>
           {sectionHead('ACTIVITY LEVEL')}
-          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 16, marginTop: 2 }}>Show profiles that are...</p>
+          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 16, marginTop: 2 }}>Show profiles that are...</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {([
               { value: 'today',  label: 'Active recently', desc: 'Online in last 24 hours' },
@@ -840,7 +840,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
 
       {/* Bottom action bar */}
       <div style={{ flexShrink: 0, padding: '14px 20px', background: 'rgba(10,22,40,0.98)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <p className="font-body" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.38)', marginBottom: 10 }}>
+        <p className="font-body" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>
           {previewCount} profile{previewCount !== 1 ? 's' : ''} match your filters
         </p>
         <motion.button onClick={() => onApply(draft)} className="font-display"
@@ -1452,7 +1452,7 @@ export function DiscoverScreen() {
 
       {/* Header */}
       <header className="flex-none flex items-center justify-between px-5 pt-5 pb-3">
-        <div className="font-display text-2xl" style={{ color: '#FFE66D', textShadow: '0 0 16px rgba(255,230,109,0.65), 4px 4px 0 rgba(0,0,0,0.4)' }}>
+        <div className="font-logo text-2xl" style={{ color: '#FFE66D', textShadow: '0 0 16px rgba(255,230,109,0.65), 4px 4px 0 rgba(0,0,0,0.4)' }}>
           DUEL
         </div>
         <div className="flex items-center gap-2.5">
@@ -1529,7 +1529,7 @@ export function DiscoverScreen() {
               className="w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin"
               aria-hidden="true"
             />
-            <p className="font-body text-white/60 text-ui-body">Loading nearby profiles...</p>
+            <p className="font-body text-white/70 text-ui-body">Loading nearby profiles...</p>
           </div>
         ) : showEmpty ? (
           <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
