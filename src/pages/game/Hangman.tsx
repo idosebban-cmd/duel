@@ -173,7 +173,7 @@ function ResultScreenHangman({
         >
           START CHATTING →
         </motion.button>
-        <button type="button" onClick={onBack} className="font-body text-ui-body w-full py-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <button type="button" onClick={onBack} className="font-body text-ui-body w-full py-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
           Back to Games
         </button>
       </motion.div>
@@ -630,7 +630,7 @@ export function Hangman() {
         {gs?.phase === 'in_progress' && titleCardComplete && (
           <>
             <div className="text-center">
-              <p className="font-body text-ui-caption mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <p className="font-body text-ui-caption mb-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 {gs.category} · {gs.subcategory}
               </p>
               {isP1 ? (
@@ -649,7 +649,7 @@ export function Hangman() {
             {gs ? <WordRows gs={gs} /> : null}
 
             <div className="w-full max-w-md">
-              <p className="font-body text-ui-caption mb-2 text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <p className="font-body text-ui-caption mb-2 text-center" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 Wrong letters
               </p>
               <div className="flex flex-wrap justify-center gap-2 min-h-[28px]">
@@ -742,7 +742,7 @@ export function Hangman() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/70"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss

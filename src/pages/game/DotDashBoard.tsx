@@ -557,7 +557,7 @@ export function DotDashBoard() {
         >
           {/* My side */}
           <div className="flex flex-col items-start">
-            <span className="font-body text-ui-caption text-white/40 mb-0.5">YOU</span>
+            <span className="font-body text-ui-caption text-white/70 mb-0.5">YOU</span>
             <span className="font-mono font-bold text-2xl" style={{ color: '#FF6BA8' }}>
               {me?.score ?? 0}
             </span>
@@ -570,7 +570,7 @@ export function DotDashBoard() {
 
           {/* Opponent side */}
           <div className="flex flex-col items-end">
-            <span className="font-body text-ui-caption text-white/40 mb-0.5">THEM</span>
+            <span className="font-body text-ui-caption text-white/70 mb-0.5">THEM</span>
             <span className="font-mono font-bold text-2xl" style={{ color: '#4EFFC4' }}>
               {opp?.score ?? 0}
             </span>
@@ -664,7 +664,7 @@ export function DotDashBoard() {
         className="w-full max-w-[456px] px-4 py-3 relative flex items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
-        <p className="font-body text-ui-caption text-white/30 absolute left-4">
+        <p className="font-body text-ui-caption text-white/70 absolute left-4">
           Swipe or ← ↑ → ↓ to move
         </p>
         {(() => {

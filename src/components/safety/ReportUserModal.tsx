@@ -151,7 +151,7 @@ export function ReportUserModal({
                     ))}
                   </div>
                   <label className="block">
-                    <span className="font-body text-ui-caption mb-1 block" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    <span className="font-body text-ui-caption mb-1 block" style={{ color: 'rgba(255,255,255,0.7)' }}>
                       Additional details (optional)
                     </span>
                     <textarea

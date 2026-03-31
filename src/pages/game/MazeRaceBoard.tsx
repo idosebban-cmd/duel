@@ -520,7 +520,7 @@ export function MazeRaceBoard() {
         className="w-full max-w-[456px] px-4 py-3 flex flex-col items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
-        <p className="font-body text-ui-caption text-white/30 mb-2 self-start">Tap arrows to move one cell</p>
+        <p className="font-body text-ui-caption text-white/70 mb-2 self-start">Tap arrows to move one cell</p>
         <div
           className="grid place-items-center"
           style={{

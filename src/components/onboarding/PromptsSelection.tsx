@@ -224,7 +224,7 @@ function CategorySection({
         <span className="flex-1 text-left font-body text-ui-body font-bold" style={{ color: category.color }}>
           {category.label}
         </span>
-        <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
           {prompts.filter(p => selectedIds.has(p.id)).length > 0 && `${prompts.filter(p => selectedIds.has(p.id)).length} selected`}
         </span>
         {open ? <ChevronUp size={20} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={20} color="rgba(255,255,255,0.3)" />}
@@ -526,7 +526,7 @@ export function PromptsSelection() {
           </motion.button>
 
           {!isComplete && selected.length > 0 && (
-            <p className="text-center font-body text-ui-caption mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className="text-center font-body text-ui-caption mt-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
               {selected.length < 3
                 ? `Pick ${3 - selected.length} more prompt${3 - selected.length !== 1 ? 's' : ''}`
                 : 'Fill in your answers to continue'}

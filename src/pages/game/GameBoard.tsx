@@ -695,7 +695,7 @@ export function GameBoard() {
                 >
                   <span className="text-2xl">{currentAnswer === 'yes' ? '\u2705' : '\u274C'}</span>
                   <div>
-                    <p className="font-body text-ui-caption text-white/50">
+                    <p className="font-body text-ui-caption text-white/70">
                       {answererIsMe ? 'You' : 'Opponent'} answered:
                     </p>
                     <p
@@ -706,7 +706,7 @@ export function GameBoard() {
                     </p>
                   </div>
                   {isMyTurn && (
-                    <p className="font-body text-ui-caption text-white/40 ml-auto text-right">
+                    <p className="font-body text-ui-caption text-white/70 ml-auto text-right">
                       Tap cards to<br />eliminate
                     </p>
                   )}
@@ -798,7 +798,7 @@ export function GameBoard() {
                     </span>
                   )}
                 </p>
-                <span className="font-body text-ui-caption text-white/30">
+                <span className="font-body text-ui-caption text-white/70">
                   {myFlipped.length} eliminated
                 </span>
               </div>
@@ -923,7 +923,7 @@ export function GameBoard() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/70"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss

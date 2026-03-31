@@ -438,7 +438,7 @@ function EmptyState() {
       </motion.div>
       <div>
         <p className="font-display text-2xl mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>No matches yet</p>
-        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>
           Keep swiping to find your player 2!
         </p>
       </div>

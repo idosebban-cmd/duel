@@ -942,7 +942,7 @@ export function MatchScreen() {
                         {theirName} wants to play{' '}
                         <span style={{ color: '#FF6BA8' }}>{GAME_LABELS[c.game_type] ?? c.game_type}</span>
                       </p>
-                      <p className="font-body text-ui-caption mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      <p className="font-body text-ui-caption mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>
                         {timeRemaining(c.expires_at)}
                       </p>
                     </div>
@@ -1055,7 +1055,7 @@ export function MatchScreen() {
                         <p className="font-display text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
                           {GAME_LABELS[g.game_type] ?? g.game_type}
                         </p>
-                        <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
                           {formatDate(g.created_at)}
                         </p>
                       </div>
@@ -1167,7 +1167,7 @@ export function MatchScreen() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>
                   No messages yet. Say hi!
                 </p>
               </motion.div>

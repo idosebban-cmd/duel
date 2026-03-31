@@ -176,7 +176,7 @@ function SetupScreen({ playerChar, onDone }: { playerChar: string; onDone: () =>
         <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Connect 4 to win!
         </p>
-        <p className="font-body text-ui-caption mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="font-body text-ui-caption mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
           YOU'RE CYAN &bull; THEY'RE PINK
         </p>
       </div>
@@ -615,7 +615,7 @@ export function ConnectFour() {
                 {isMultiplayer ? 'waiting…' : 'thinking…'}
               </motion.div>
             )}
-            <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+            <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
               Move {moveCount}/42
             </div>
           </div>
@@ -828,7 +828,7 @@ export function ConnectFour() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/70"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss

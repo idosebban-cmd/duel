@@ -468,7 +468,7 @@ export function CreateAccountScreen() {
                 {/* Divider */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
-                  <span className="font-body text-ui-label font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>OR</span>
+                  <span className="font-body text-ui-label font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.7)' }}>OR</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
                 </div>
 

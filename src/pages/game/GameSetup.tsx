@@ -162,7 +162,7 @@ export function GameSetup() {
           />
 
           <div>
-            <p className="font-body text-white/40 text-ui-caption mb-2">Avatar</p>
+            <p className="font-body text-white/70 text-ui-caption mb-2">Avatar</p>
             <div className="flex items-center gap-3">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden"
@@ -202,7 +202,7 @@ export function GameSetup() {
 
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                <p className="font-body text-ui-caption text-white/30">or join existing</p>
+                <p className="font-body text-ui-caption text-white/70">or join existing</p>
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
               </div>
             </>

@@ -532,7 +532,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
       <p className="font-display font-extrabold text-2xl text-white">{value}</p>
-      <p className="font-body text-ui-caption text-white/40">{label}</p>
+      <p className="font-body text-ui-caption text-white/70">{label}</p>
     </div>
   );
 }

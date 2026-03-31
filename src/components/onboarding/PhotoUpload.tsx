@@ -279,7 +279,7 @@ export function PhotoUpload() {
 
           {/* Counter */}
           <div className="flex justify-between items-center mt-3">
-            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.4)' }}>{photos.length} / {MAX_PHOTOS} photos</p>
+            <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>{photos.length} / {MAX_PHOTOS} photos</p>
             {photos.length < MIN_PHOTOS && <p className="font-body text-ui-body text-cherry-punch flex items-center gap-1"><AlertCircle size={20} />Add at least {MIN_PHOTOS - photos.length} more</p>}
             {photos.length >= MIN_PHOTOS && <p className="font-body text-ui-body font-medium" style={{ color: '#4EFFC4' }}>✓ Ready to continue</p>}
           </div>

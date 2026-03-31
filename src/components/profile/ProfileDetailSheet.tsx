@@ -240,7 +240,7 @@ export function ProfileDetailSheet({
           <div className="px-5 pt-5"><Divider /><h2 className="font-display text-lg mb-4" style={{ color: '#00F5FF' }}>GET TO KNOW ME</h2>
             <div className="flex flex-col gap-3">{profile.prompts.map((p) => (
               <div key={p.id} className="rounded-xl p-4" style={{ background: '#0A0A1E', border: '2px solid rgba(78,255,196,0.3)' }}>
-                <div className="flex items-center gap-2 mb-2"><span className="text-lg">{p.icon}</span><p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.4)' }}>{p.question}</p></div>
+                <div className="flex items-center gap-2 mb-2"><span className="text-lg">{p.icon}</span><p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.7)' }}>{p.question}</p></div>
                 <p className="font-display text-base leading-snug" style={{ color: '#FFFFFF' }}>{p.answer}</p>
               </div>
             ))}</div>
@@ -272,7 +272,7 @@ export function ProfileDetailSheet({
           )}
           {profile.favoriteGames.length > 0 && (
             <div>
-              <p className="font-body text-ui-caption mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Favourite games</p>
+              <p className="font-body text-ui-caption mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>Favourite games</p>
               <div className="flex flex-wrap gap-2">
                 {profile.favoriteGames.map((g) => (
                   <span key={g} className="font-body text-ui-caption px-2.5 py-1 rounded-full"

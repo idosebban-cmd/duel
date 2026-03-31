@@ -1263,7 +1263,7 @@ export function WordBlitz() {
           </div>
           {pool.length === 0 && (
             <div className="flex items-center justify-center pt-1">
-              <span className="font-body text-ui-caption" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.2)' }}>
+              <span className="font-body text-ui-caption" style={{ color: allUsed ? '#4EFFC4' : 'rgba(255,255,255,0.7)' }}>
                 {allUsed ? '✓ All letters placed! +50 bonus' : 'No letters left'}
               </span>
             </div>
@@ -1413,7 +1413,7 @@ export function WordBlitz() {
               )}
             </AnimatePresence>
             <div className="text-right">
-              <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>SCORE</p>
+              <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>SCORE</p>
               <p className="font-display text-2xl leading-none" style={{ color: '#FF6BA8', textShadow: '0 0 10px rgba(255,107,168,0.5)' }}>{oppScore}</p>
             </div>
           </div>

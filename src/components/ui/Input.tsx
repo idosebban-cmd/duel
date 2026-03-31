@@ -50,7 +50,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           )}
           <input
             ref={ref}
-            className={`w-full rounded-2xl px-5 py-4 font-body text-ui-body focus:outline-none transition-all duration-200 placeholder:text-white/30 ${leftIcon ? 'pl-11' : ''} ${rightElement || error || success ? 'pr-12' : ''} ${className}`}
+            className={`w-full rounded-2xl px-5 py-4 font-body text-ui-body focus:outline-none transition-all duration-200 placeholder:text-white/70 ${leftIcon ? 'pl-11' : ''} ${rightElement || error || success ? 'pr-12' : ''} ${className}`}
             style={{
               background: 'rgba(255,255,255,0.07)',
               border: `2px solid ${error ? '#FF3D71' : success ? '#4EFFC4' : 'rgba(78,255,196,0.3)'}`,
@@ -71,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
               <AlertCircle size={20} />{error}
             </motion.p>
           )}
-          {!error && hint && <p className="mt-1.5 font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.4)' }}>{hint}</p>}
+          {!error && hint && <p className="mt-1.5 font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{hint}</p>}
         </AnimatePresence>
       </div>
     );

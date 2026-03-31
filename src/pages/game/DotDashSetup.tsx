@@ -151,7 +151,7 @@ export function DotDashSetup() {
 
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                <p className="font-body text-ui-caption text-white/30">or join with a game ID</p>
+                <p className="font-body text-ui-caption text-white/70">or join with a game ID</p>
                 <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
               </div>
             </>

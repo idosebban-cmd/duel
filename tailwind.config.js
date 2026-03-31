@@ -19,10 +19,10 @@ export default {
         'charcoal': '#2D3142',
       },
       fontFamily: {
-        display: ['Toxigenesis', 'sans-serif'],
-        body: ['JLS Data Gothic', 'sans-serif'],
+        display: ['Sundayschool', 'sans-serif'],
+        body: ['Adventure Regular', 'sans-serif'],
         logo: ['Retronoid', 'sans-serif'],
-        mono: ['JLS Data Gothic', 'monospace'],
+        mono: ['Adventure Regular', 'monospace'],
       },
       fontSize: {
         'ui-caption': ['12px', { lineHeight: '1.4' }],

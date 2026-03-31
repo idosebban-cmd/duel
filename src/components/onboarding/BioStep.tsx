@@ -71,10 +71,10 @@ export function BioStep() {
               }}
             />
             <div className="flex justify-between mt-2 px-1">
-              <span className="font-body text-ui-caption" style={{ color: hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.3)' }}>
+              <span className="font-body text-ui-caption" style={{ color: hasContent ? '#4EFFC4' : 'rgba(255,255,255,0.7)' }}>
                 {hasContent ? 'Looks great!' : 'You can skip this'}
               </span>
-              <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 {value.length}/{MAX_LENGTH}
               </span>
             </div>

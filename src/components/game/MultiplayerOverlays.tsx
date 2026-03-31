@@ -57,7 +57,7 @@ export function WaitingForOpponentOverlay({ visible, opponentName, matchId }: Wa
         <p className="font-display text-xl" style={{ color: '#4EFFC4' }}>
           Waiting for {opponentName ?? 'opponent'}...
         </p>
-        <p className="font-body text-ui-body mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="font-body text-ui-body mt-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
           {elapsed}s / 30s
         </p>
       </div>

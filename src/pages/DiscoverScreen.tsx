@@ -474,7 +474,7 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
             {profile.age}
           </span>
         </div>
-        <div className="flex items-center gap-1 font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <div className="flex items-center gap-1 font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
           <svg width="9" height="11" viewBox="0 0 9 11" fill="none">
             <path d="M4.5 0C2.57 0 1 1.57 1 3.5C1 6.12 4.5 11 4.5 11C4.5 11 8 6.12 8 3.5C8 1.57 6.43 0 4.5 0ZM4.5 4.75C3.81 4.75 3.25 4.19 3.25 3.5C3.25 2.81 3.81 2.25 4.5 2.25C5.19 2.25 5.75 2.81 5.75 3.5C5.75 4.19 5.19 4.75 4.5 4.75Z" fill="currentColor"/>
           </svg>
@@ -829,7 +829,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
                   </div>
                   <div>
                     <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: sel ? '#fff' : 'rgba(255,255,255,0.55)' }}>{label}</span>
-                    {desc && <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', display: 'block' }}>{desc}</span>}
+                    {desc && <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', display: 'block' }}>{desc}</span>}
                   </div>
                 </label>
               );
@@ -1152,7 +1152,7 @@ function IncompleteProfileModal({
           />
         </div>
 
-        <p className="font-body text-ui-caption mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="font-body text-ui-caption mb-3" style={{ color: 'rgba(255,255,255,0.7)' }}>
           Still missing:
         </p>
         <div className="flex flex-wrap gap-1.5 justify-center mb-6">

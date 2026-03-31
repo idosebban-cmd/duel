@@ -11,19 +11,20 @@
 }
 
 @font-face {
-  font-family: 'Toxigenesis';
-  src: url('/fonts/toxigenesis bd.otf') format('opentype');
+  font-family: 'Sundayschool';
+  src: url('/fonts/Sundayschool-8OwLz.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'JLS Data Gothic';
-  src: url('/fonts/JlsdatagothicCnc-yyz3.otf') format('opentype');
+  font-family: 'Adventure Regular';
+  src: url('/fonts/__Adventure-Regular.otf') format('opentype'),
+       url('/fonts/Adventure-Regular.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
 }
+
 
 @layer base {
   * {

@@ -330,7 +330,7 @@ function SetupScreen({ playerChar, onDone }: { playerChar: string; onDone: () =>
         <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>
           Capture all their pieces to win
         </p>
-        <p className="font-body text-ui-caption mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="font-body text-ui-caption mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
           YOU'RE CYAN &bull; THEY'RE RED
         </p>
       </div>
@@ -761,7 +761,7 @@ export function Draughts() {
             <div>
               <div className="font-body font-bold" style={{ fontSize: 12, color: '#4EFFC4', letterSpacing: 1 }}>YOU</div>
               <div className="font-display" style={{ fontSize: 16, color: '#fff', lineHeight: 1 }}>{playerCount}</div>
-              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>pieces</div>
+              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>pieces</div>
             </div>
           </div>
 
@@ -781,7 +781,7 @@ export function Draughts() {
                 thinking…
               </motion.div>
             )}
-            <div className="font-body font-bold" style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+            <div className="font-body font-bold" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
               {moves} moves
             </div>
           </div>
@@ -795,7 +795,7 @@ export function Draughts() {
             <div className="text-right">
               <div className="font-body font-bold" style={{ fontSize: 12, color: '#FF3D71', letterSpacing: 1 }}>THEM</div>
               <div className="font-display" style={{ fontSize: 16, color: '#fff', lineHeight: 1 }}>{botCount}</div>
-              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>pieces</div>
+              <div className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>pieces</div>
             </div>
           </div>
         </div>
@@ -981,7 +981,7 @@ export function Draughts() {
                 <button
                   type="button"
                   onClick={noShow.dismissPrompt}
-                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/50"
+                  className="px-4 py-2 rounded-xl font-body text-ui-caption text-white/70"
                   style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
                 >
                   Dismiss
