@@ -79,7 +79,7 @@ type IntentOption = {
 const intentOptions: IntentOption[] = [
   {
     value: 'romance',
-    icon: '/Romance.png',
+    icon: '/romance.png',
     label: 'Here for Romance',
     description: 'Find your match the classic way',
     gradient: 'linear-gradient(135deg, #ff4e6a, #ff8fa3)',
@@ -88,7 +88,7 @@ const intentOptions: IntentOption[] = [
   },
   {
     value: 'play',
-    icon: '/Just%20play.png',
+    icon: '/just-play.png',
     label: 'Just Want to Play',
     description: 'Skip the romance, find gaming partners',
     gradient: 'linear-gradient(135deg, #00d4ff, #0066ff)',
@@ -97,7 +97,7 @@ const intentOptions: IntentOption[] = [
   },
   {
     value: 'both',
-    icon: '/Open%20to%20both.png',
+    icon: '/open-to-both.png',
     label: 'Open to Both',
     description: 'Romance, games, or whatever happens',
     gradient: 'linear-gradient(135deg, #ffd700, #9b59b6)',
