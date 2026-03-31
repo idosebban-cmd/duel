@@ -47,29 +47,34 @@ AS $$
       OR (intent_filter = 'romance' AND p.intent IN ('romance', 'both'))
       OR (intent_filter = 'all')
     )
-    AND p.latitude IS NOT NULL
-    AND p.longitude IS NOT NULL
     AND (
-      6371.0 * acos(
-        GREATEST(
-          -1.0::double precision,
-          LEAST(
-            1.0::double precision,
-            cos(radians(caller_lat))
-              * cos(radians(p.latitude::double precision))
-              * cos(radians(p.longitude::double precision) - radians(caller_lng))
-            + sin(radians(caller_lat)) * sin(radians(p.latitude::double precision))
+      max_distance_km IS NULL
+      OR (
+        p.latitude IS NOT NULL
+        AND p.longitude IS NOT NULL
+        AND (
+          6371.0 * acos(
+            GREATEST(
+              -1.0::double precision,
+              LEAST(
+                1.0::double precision,
+                cos(radians(caller_lat))
+                  * cos(radians(p.latitude::double precision))
+                  * cos(radians(p.longitude::double precision) - radians(caller_lng))
+                + sin(radians(caller_lat)) * sin(radians(p.latitude::double precision))
+              )
+            )
           )
-        )
+        ) <= max_distance_km
       )
-    ) <= max_distance_km
+    )
   ORDER BY p.created_at DESC
   LIMIT 100;
 $$;
 
 COMMENT ON FUNCTION public.get_discovery_profiles(
   uuid, double precision, double precision, double precision, text, integer, integer, text
-) IS 'Distance-filtered discover list; excludes swipes, mutual blocks, null lat/lng candidates.';
+) IS 'Discover list with optional distance filter; excludes swipes and mutual blocks.';
 
 GRANT EXECUTE ON FUNCTION public.get_discovery_profiles(
   uuid, double precision, double precision, double precision, text, integer, integer, text
