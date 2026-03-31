@@ -14,15 +14,6 @@ export function PostEmailConfirmProfileSync() {
 
   useEffect(() => {
     const state = useOnboardingStore.getState();
-    console.log('[PostEmailConfirmSync] running', {
-      uid: session?.user?.id,
-      pendingEmailVerification: state.pendingEmailVerification,
-      userId: state.userId,
-      name: state.name,
-      character: state.character,
-      email: session?.user?.email,
-    });
-
     const uid = session?.user?.id;
     if (!uid) return;
 
