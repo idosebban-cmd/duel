@@ -94,7 +94,7 @@ export function CharacterStep({ selected, onSelect }: CharacterStepProps) {
 
               {/* Character avatar */}
               <div
-                className="w-full aspect-square rounded-xl mb-3 overflow-hidden"
+                className="w-full aspect-square rounded-xl mb-3 overflow-hidden flex items-center justify-center"
                 style={{
                   background: isSelected ? char.gradient : 'rgba(255,255,255,0.05)',
                   border: isSelected ? 'none' : '1px solid rgba(255,255,255,0.1)',
@@ -103,7 +103,7 @@ export function CharacterStep({ selected, onSelect }: CharacterStepProps) {
                 <img
                   src={char.image}
                   alt={char.name}
-                  className="w-full h-full object-cover"
+                  className="w-4/5 h-4/5 object-contain"
                 />
               </div>
 
