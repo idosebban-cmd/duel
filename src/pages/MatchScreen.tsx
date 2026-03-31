@@ -15,6 +15,7 @@ import {
   sendMessage,
   markMessagesRead,
   blockUser,
+  getPhotos,
 } from '../lib/database';
 import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
 import {
@@ -25,6 +26,7 @@ import {
 import { GAME_LABELS } from '../lib/gameConstants';
 import { SafetyMenuSheet } from '../components/safety/SafetyMenuSheet';
 import { ReportUserModal } from '../components/safety/ReportUserModal';
+import { ProfileDetailSheet } from '../components/profile/ProfileDetailSheet';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -204,6 +206,8 @@ export function MatchScreen() {
   const [safetyMenuOpen, setSafetyMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [blockError, setBlockError] = useState<string | null>(null);
+  const [theirPhotoUrls, setTheirPhotoUrls] = useState<string[]>([]);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -638,6 +642,19 @@ export function MatchScreen() {
   const theirName = theirProfile?.name ?? 'Match';
   const theirUserId = theirProfile?.id ?? '';
 
+  useEffect(() => {
+    if (!theirUserId) {
+      setTheirPhotoUrls([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const photos = await getPhotos(theirUserId);
+      if (!cancelled) setTheirPhotoUrls(photos);
+    })();
+    return () => { cancelled = true; };
+  }, [theirUserId]);
+
   const runMatchBlock = async () => {
     if (!myUserId || !theirUserId) return;
     setBlockError(null);
@@ -757,7 +774,14 @@ export function MatchScreen() {
             >
               VS
             </span>
-            <AvatarBubble src={theirAvatar} size={40} />
+            <button
+              type="button"
+              onClick={() => setProfileSheetOpen(true)}
+              aria-label={`Open ${theirName}'s profile`}
+              disabled={!theirUserId}
+            >
+              <AvatarBubble src={theirAvatar} size={40} />
+            </button>
           </div>
 
           {theirUserId ? (
@@ -785,9 +809,21 @@ export function MatchScreen() {
           <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {myProfile?.name ?? 'You'}
           </span>
-          <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            {theirName}
-          </span>
+          {theirUserId ? (
+            <button
+              type="button"
+              onClick={() => setProfileSheetOpen(true)}
+              className="font-body text-ui-caption"
+              style={{ color: 'rgba(255,255,255,0.5)' }}
+              aria-label={`Open ${theirName}'s profile`}
+            >
+              {theirName}
+            </button>
+          ) : (
+            <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {theirName}
+            </span>
+          )}
         </div>
       </header>
 
@@ -1209,6 +1245,35 @@ export function MatchScreen() {
         reportedName={theirName}
         onAfterBlock={() => navigate('/matches', { replace: true })}
       />
+
+      <AnimatePresence>
+        {profileSheetOpen && theirProfile && (
+          <ProfileDetailSheet
+            key={theirProfile.id}
+            profile={{
+              id: theirProfile.id,
+              name: theirProfile.name ?? 'Match',
+              age: theirProfile.age ?? 0,
+              location: theirProfile.location ?? undefined,
+              character: theirProfile.character ?? 'ghost',
+              element: theirProfile.element ?? 'fire',
+              affiliation: theirProfile.affiliation ?? 'city',
+              bio: theirProfile.bio ?? 'No bio available yet.',
+              games: theirProfile.game_types ?? [],
+              favoriteGames: theirProfile.favorite_games ?? [],
+              lookingFor: theirProfile.looking_for?.[0] ?? 'open',
+              kids: theirProfile.kids ?? 'Not set',
+              drinking: theirProfile.drinking ?? 'Not set',
+              smoking: theirProfile.smoking ?? 'Not set',
+              cannabis: theirProfile.cannabis ?? 'Not set',
+              pets: theirProfile.pets ?? 'Not set',
+              exercise: theirProfile.exercise ?? 'Not set',
+            }}
+            photoUrls={theirPhotoUrls}
+            onClose={() => setProfileSheetOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

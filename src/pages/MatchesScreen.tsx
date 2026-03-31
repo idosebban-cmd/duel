@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { getMatches, getLastMessages, getPhotos, getMatchPendingActivity } from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo, MatchPendingActivity } from '../lib/database';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
+import { ProfileDetailSheet } from '../components/profile/ProfileDetailSheet';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -187,11 +188,13 @@ function PendingActivityIcon({ activity }: { activity: MatchPendingActivity }) {
 function MatchCard({
   match,
   onTap,
+  onOpenProfile,
   isNew,
   photoUrl,
 }: {
   match: Match;
   onTap: () => void;
+  onOpenProfile: () => void;
   isNew: boolean;
   photoUrl?: string;
 }) {
@@ -224,7 +227,15 @@ function MatchCard({
       )}
 
       {/* Avatar */}
-      <div className="relative flex-shrink-0" aria-label={`${match.name} avatar`}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenProfile();
+        }}
+        className="relative flex-shrink-0"
+        aria-label={`Open ${match.name}'s profile`}
+      >
         <div
           className="w-[62px] h-[62px] rounded-xl overflow-hidden relative"
           style={{
@@ -257,15 +268,24 @@ function MatchCard({
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
-      </div>
+      </button>
 
       {/* Right content */}
       <div className="flex-1 min-w-0 flex flex-col gap-2">
         {/* Row 1: Name, Age */}
         <div className="flex items-center min-w-0">
-          <span className="font-body text-[15px] leading-tight whitespace-nowrap truncate min-w-0" style={{ color: 'rgba(255,255,255,0.92)' }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenProfile();
+            }}
+            className="font-body text-[15px] leading-tight whitespace-nowrap truncate min-w-0 text-left"
+            style={{ color: 'rgba(255,255,255,0.92)' }}
+            aria-label={`Open ${match.name}'s profile`}
+          >
             {match.name}{match.age > 0 ? `, ${match.age}` : ''}
-          </span>
+          </button>
         </div>
 
         {/* Row 2: Intent | dot + timestamp */}
@@ -450,6 +470,7 @@ export function MatchesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
+  const [expandedProfile, setExpandedProfile] = useState<Match | null>(null);
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
   const fetchMatchesData = useCallback(async () => {
@@ -628,6 +649,7 @@ export function MatchesScreen() {
                       match={m}
                       isNew={true}
                       onTap={() => handleTap(m)}
+                      onOpenProfile={() => setExpandedProfile(m)}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
                   </motion.div>
@@ -644,6 +666,7 @@ export function MatchesScreen() {
                       match={m}
                       isNew={false}
                       onTap={() => handleTap(m)}
+                      onOpenProfile={() => setExpandedProfile(m)}
                       photoUrl={matchPhotosByUserId[m.userId]}
                     />
                   </motion.div>
@@ -655,6 +678,35 @@ export function MatchesScreen() {
           </AnimatePresence>
         )}
       </div>
+
+      <AnimatePresence>
+        {expandedProfile && (
+          <ProfileDetailSheet
+            key={expandedProfile.userId}
+            profile={{
+              id: expandedProfile.userId,
+              name: expandedProfile.name,
+              age: expandedProfile.age,
+              location: expandedProfile.location,
+              character: expandedProfile.character,
+              element: expandedProfile.element,
+              affiliation: expandedProfile.affiliation,
+              bio: expandedProfile.bio,
+              games: expandedProfile.gameTypes,
+              favoriteGames: expandedProfile.favoriteGames,
+              lookingFor: expandedProfile.lookingFor,
+              kids: expandedProfile.kids,
+              drinking: expandedProfile.drinking,
+              smoking: expandedProfile.smoking,
+              cannabis: expandedProfile.cannabis,
+              pets: expandedProfile.pets,
+              exercise: expandedProfile.exercise,
+            }}
+            photoUrls={matchPhotosByUserId[expandedProfile.userId] ? [matchPhotosByUserId[expandedProfile.userId] as string] : undefined}
+            onClose={() => setExpandedProfile(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <BottomNav hasIncomingChallenge={hasIncomingChallenge} />
     </div>
