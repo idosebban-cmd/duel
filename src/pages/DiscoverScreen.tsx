@@ -121,23 +121,6 @@ const affiliationLabels: Record<string, string> = {
   academia: 'Academia', music: 'Music', art: 'Art', tech: 'Tech', cosmic: 'Cosmic', travel: 'Travel',
 };
 
-const discoverIntentDescriptions: Record<'play' | 'romance' | 'both', string> = {
-  play: 'Looking for gaming partners - no pressure',
-  romance: 'Looking for a real connection',
-  both: 'Open to games and romance',
-};
-
-const discoverIntentColors: Record<'play' | 'romance' | 'both', string> = {
-  play: '#00F5FF',
-  romance: '#FF6BA8',
-  both: '#B565FF',
-};
-
-function safeDiscoverIntent(i: IntentValue | undefined): 'play' | 'romance' | 'both' {
-  if (i === 'play' || i === 'romance' || i === 'both') return i;
-  return 'romance';
-}
-
 function capWord(s: string): string {
   if (!s) return '';
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -443,7 +426,6 @@ function ProfileCard({
   photoBottomOverlay?: ReactNode;
 }) {
   const hasRealPhoto = !!mainPhotoUrl;
-  const intent = safeDiscoverIntent(profile.intent);
 
   const scanlineBg: CSSProperties = {
     backgroundColor: '#12122A',
@@ -491,8 +473,8 @@ function ProfileCard({
           {profile.distance}
         </div>
         {photoBottomOverlay != null && (
-          <div className="pointer-events-none absolute left-1/2 bottom-0 z-20 flex -translate-x-1/2 translate-y-1/2 gap-10">
-            <div className="pointer-events-auto flex gap-10 items-center">{photoBottomOverlay}</div>
+          <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 gap-10">
+            <div className="pointer-events-auto flex items-center gap-10">{photoBottomOverlay}</div>
           </div>
         )}
       </div>
@@ -542,21 +524,6 @@ function ProfileCard({
               </div>
             </div>
           ))}
-        </div>
-
-        <div
-          className="mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          <img src={INTENT_UI[intent].icon} alt="" className="h-6 w-6 flex-shrink-0 object-contain" draggable={false} />
-          <div className="min-w-0">
-            <p className="font-body text-ui-body font-bold leading-tight" style={{ color: discoverIntentColors[intent] }}>
-              {INTENT_UI[intent].label}
-            </p>
-            <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              {discoverIntentDescriptions[intent]}
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -1569,13 +1536,6 @@ export function DiscoverScreen() {
               </div>
             )}
           </motion.button>
-          <div className="w-9 h-9 rounded-full overflow-hidden border-2 flex-shrink-0"
-            style={{ borderColor: '#4EFFC4', background: '#0E0E22', boxShadow: '0 0 10px rgba(78,255,196,0.35)' }}>
-            {character
-              ? <img src={characterImages[character]} alt="" className="w-full h-full object-contain p-0.5" draggable={false} />
-              : <div className="w-full h-full" style={{ background: 'rgba(78,255,196,0.2)' }} />
-            }
-          </div>
         </div>
       </header>
 
