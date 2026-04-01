@@ -15,7 +15,6 @@
 - Swipe-based discovery matches players (like/pass)
 - 6 multiplayer games: Guess Who, Dot Dash, Word Blitz, Draughts, Connect Four, Battleship
 - "Just Play" intent: users choose romance-only, play-only, or both
-- 18 bot seed profiles for testing and fallback matchmaking
 
 ### Tech Stack
 
@@ -116,7 +115,6 @@ duel/
 │   ├── schema.sql                  # Full schema + RLS + triggers
 │   └── migrations/
 │       ├── 20260314_add_intent_column.sql
-│       └── 20260315_seed_bot_profiles.sql
 │
 ├── public/                         # Character/element/affiliation/game-icon PNGs
 ├── render.yaml                     # Primary deployment config
@@ -241,7 +239,6 @@ All tables live in Supabase PostgreSQL with Row-Level Security enabled.
 ### Migration order
 1. `supabase/schema.sql` — full schema
 2. `supabase/migrations/20260314_add_intent_column.sql` — intent field
-3. `supabase/migrations/20260315_seed_bot_profiles.sql` — 18 bot profiles
 
 ---
 
@@ -281,11 +278,6 @@ All tables live in Supabase PostgreSQL with Row-Level Security enabled.
 - Fire-and-forget for non-critical ops (passes, photo metadata)
 - Retry once for critical ops (match insertion — see BUG 2 fix)
 - Console logging with `[functionName]` prefix for errors
-
-### Bot Profiles
-- UUID prefix: `a0000000-0000-0000-0000-00000000` (18 bots, IDs `0001`–`0012`)
-- Bot matches: 25% random chance, independent of DB success
-- Intent distribution: 2 romance, 2 play, 2 both per gender pairing
 
 ---
 
@@ -328,14 +320,13 @@ cd server && npm run dev   # Game server on :3001
 - Supabase auth (sign-up, sign-in, email confirmation bypass)
 - Profile creation, editing, and viewing
 - Discovery/swipe interface with filters (age, distance, gender, intent)
-- Match detection (mutual likes + bot 25% match rate)
+- Match detection (mutual likes)
 - Match persistence with retry logic (no phantom matches)
 - Match list screen with profile previews
 - Navigation between discovery, matches, games, profile
 - All 6 game UIs render (Guess Who, Dot Dash, Word Blitz, Draughts, Connect Four, Battleship)
 - Guess Who and Dot Dash have server-side game logic via Socket.io
 - Photo upload to Supabase Storage
-- Bot seed profiles (18 profiles across intents)
 - Build passes cleanly (`tsc -b && vite build`)
 
 ### Known Incomplete / Broken
@@ -374,7 +365,6 @@ cd server && npm run dev   # Game server on :3001
 ### Match Logic
 - **Never return fake client-generated UUIDs** for matches. If the DB insert fails, the match won't appear on the Matches screen, creating phantom UI state. Always return `{ matched: false }` on failure.
 - Match rows enforce `user_a < user_b` ordering — the insert logic must sort the IDs before upserting
-- Bot match detection is independent of the swipe DB write — bots never "swipe back"
 
 ### Navigation
 - **Don't use `window.history.back()`** in SPA — it navigates to the previous page in browser history, which might be a game result or external page. Use `navigate('/discover')` or explicit routes.
@@ -392,5 +382,4 @@ cd server && npm run dev   # Game server on :3001
 ### Common Pitfalls
 - Adding `async/await` around Supabase calls that return `PromiseLike` can cause subtle issues — always test the build after DB changes
 - The `intent` column was added via migration — if running on a fresh DB, run migrations in order
-- Bot profile UUIDs are hardcoded — don't change the `BOT_PREFIX` constant without updating the seed SQL
 - Fire-and-forget patterns (swipe passes, photo metadata) intentionally skip `await` — don't "fix" these by adding error handling

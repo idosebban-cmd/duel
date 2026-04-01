@@ -50,7 +50,7 @@ export interface MultiplayerGame<S> {
   winner: string | null;
   /** True while the initial game row is being created/fetched */
   loading: boolean;
-  /** True when the match was not found in the DB — game should use bot mode */
+  /** True when the match was not found in the DB — game should use local fallback mode */
   fallbackToBotMode: boolean;
   /** True when both players have signalled presence on the game screen */
   bothPresent: boolean;
@@ -120,7 +120,7 @@ export function useMultiplayerGame<S>({
         const match = await getMatchById(matchId);
         if (cancelled) return;
         if (!match) {
-          // Match not found in DB — likely a fake/seed profile match
+          // Match not found in DB — fall back to local mode for this game session
           console.warn('[useMultiplayerGame] getMatchById returned null for matchId:', matchId, '— setting fallbackToBotMode');
           setFallbackToBotMode(true);
           return;

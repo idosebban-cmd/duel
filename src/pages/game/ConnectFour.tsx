@@ -271,7 +271,7 @@ export function ConnectFour() {
     gameType: 'connect_four',
     enabled: matchIdLooksMultiplayer,
   });
-  // If the match wasn't found in DB (fake/seed profile), fall back to bot mode
+  // If the match wasn't found in DB, fall back to local mode
   const isMultiplayer = matchIdLooksMultiplayer && !mp.fallbackToBotMode;
   const myRole = mp.myRole;
 
