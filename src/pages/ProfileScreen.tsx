@@ -559,6 +559,10 @@ export function ProfileScreen() {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUserListItem[]>([]);
   const [blockedLoading, setBlockedLoading] = useState(false);
   const [showIntentModal, setShowIntentModal] = useState(false);
+  const [intentModalStep, setIntentModalStep] = useState<'intent' | 'goals'>('intent');
+  const [intentDraft, setIntentDraft] = useState<IntentValue>('romance');
+  const [intentGoalsDraft, setIntentGoalsDraft] = useState<string[]>([]);
+  const [intentFlowError, setIntentFlowError] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingCropSrc, setPendingCropSrc] = useState<string | null>(null);
 
@@ -631,9 +635,12 @@ export function ProfileScreen() {
     setEditLat(lat);
     setEditLng(lng);
   }, []);
-  const openArrayEdit = (modal: string, currentValue: string[]) => {
-    setEditArray([...currentValue]);
-    setEditModal(modal);
+  const openIntentFlow = () => {
+    setIntentDraft(intent);
+    setIntentGoalsDraft([...lookingFor]);
+    setIntentModalStep('intent');
+    setIntentFlowError(null);
+    setShowIntentModal(true);
   };
 
   // Age calculation from birthday
@@ -684,7 +691,7 @@ export function ProfileScreen() {
             className="fixed inset-0 z-50 flex items-center justify-center p-6"
             style={{ background: 'rgba(0,0,0,0.85)' }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setShowIntentModal(false)}
+            onClick={() => { setShowIntentModal(false); setIntentModalStep('intent'); setIntentFlowError(null); }}
           >
             <motion.div
               className="w-full max-w-sm rounded-2xl p-5"
@@ -693,53 +700,119 @@ export function ProfileScreen() {
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>What Are You Looking For?</h2>
-              <div className="flex flex-col gap-2.5">
-                {([
-                  { value: 'play' as const, icon: INTENT_UI.play.icon, label: INTENT_UI.play.label, desc: 'Find gaming partners - no strings', color: '#00F5FF' },
-                  { value: 'romance' as const, icon: INTENT_UI.romance.icon, label: INTENT_UI.romance.label, desc: 'Looking for a real connection', color: '#FF6BA8' },
-                  { value: 'both' as const, icon: INTENT_UI.both.icon, label: INTENT_UI.both.label, desc: 'Open to games and romance', color: '#B565FF' },
-                ]).map((opt) => (
-                  <button
-                    key={opt.value}
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-left w-full transition-all"
-                    style={{
-                      background: intent === opt.value ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
-                      border: `2px solid ${intent === opt.value ? `${opt.color}60` : 'rgba(255,255,255,0.08)'}`,
-                    }}
-                    onClick={async () => {
-                      if (user && opt.value !== intent) {
-                        const { error } = await updateProfileField(user.id, 'intent', opt.value);
-                        if (!error) {
-                          setDbProfile((prev) => prev ? { ...prev, intent: opt.value } : prev);
-                          showToast('Intent updated!');
-                        } else {
-                          showToast('Failed to update — try again');
-                        }
+              {intentModalStep === 'intent' ? (
+                <div className="flex flex-col gap-2.5">
+                  {([
+                    { value: 'play' as const, icon: INTENT_UI.play.icon, label: INTENT_UI.play.label, desc: 'Find gaming partners - no strings', color: '#00F5FF' },
+                    { value: 'romance' as const, icon: INTENT_UI.romance.icon, label: INTENT_UI.romance.label, desc: 'Looking for a real connection', color: '#FF6BA8' },
+                    { value: 'both' as const, icon: INTENT_UI.both.icon, label: INTENT_UI.both.label, desc: 'Open to games and romance', color: '#B565FF' },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-left w-full transition-all"
+                      style={{
+                        background: intentDraft === opt.value ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                        border: `2px solid ${intentDraft === opt.value ? `${opt.color}60` : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                      onClick={() => setIntentDraft(opt.value)}
+                    >
+                      <img src={opt.icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
+                      <div>
+                        <p className="font-body text-ui-body font-bold" style={{ color: opt.color }}>{opt.label}</p>
+                        <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{opt.desc}</p>
+                      </div>
+                      {intentDraft === opt.value && (
+                        <span className="ml-auto text-base" style={{ color: opt.color }}>✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {GOAL_OPTIONS.map((opt) => {
+                    const selected = intentGoalsDraft.includes(opt.id);
+                    return (
+                      <button
+                        key={opt.id}
+                        className="flex items-center justify-between px-4 py-3 rounded-xl text-left w-full transition-all"
+                        style={{
+                          background: selected ? `${opt.color}15` : 'rgba(255,255,255,0.03)',
+                          border: `2px solid ${selected ? `${opt.color}60` : 'rgba(255,255,255,0.08)'}`,
+                        }}
+                        onClick={() => {
+                          setIntentGoalsDraft((prev) => prev.includes(opt.id) ? prev.filter((x) => x !== opt.id) : [...prev, opt.id]);
+                        }}
+                      >
+                        <span className="font-body text-ui-body font-bold" style={{ color: selected ? opt.color : 'rgba(255,255,255,0.6)' }}>
+                          {opt.label}
+                        </span>
+                        {selected && <span style={{ color: opt.color }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {intentFlowError && (
+                <p className="font-body text-ui-caption mt-3" style={{ color: '#FF6BA8' }}>
+                  {intentFlowError}
+                </p>
+              )}
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    if (intentModalStep === 'goals') {
+                      setIntentModalStep('intent');
+                      setIntentFlowError(null);
+                      return;
+                    }
+                    setShowIntentModal(false);
+                    setIntentFlowError(null);
+                  }}
+                  className="flex-1 py-2.5 font-body text-ui-body font-bold rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
+                >
+                  {intentModalStep === 'goals' ? 'Back' : 'Cancel'}
+                </button>
+                <button
+                  disabled={saving || (intentModalStep === 'goals' && intentGoalsDraft.length === 0)}
+                  onClick={async () => {
+                    if (!user) return;
+                    setIntentFlowError(null);
+                    if (intentModalStep === 'intent' && intentDraft !== 'play') {
+                      setIntentModalStep('goals');
+                      return;
+                    }
+                    if (intentModalStep === 'goals' && intentGoalsDraft.length === 0) {
+                      setIntentFlowError('Select at least one relationship goal.');
+                      return;
+                    }
+                    const intentOk = await saveField('intent', intentDraft);
+                    if (!intentOk) {
+                      setIntentFlowError('Could not save intent. Please try again.');
+                      return;
+                    }
+                    if (intentDraft !== 'play') {
+                      const goalsOk = await saveField('looking_for', intentGoalsDraft);
+                      if (!goalsOk) {
+                        setIntentFlowError('Could not save relationship goals. Please try again.');
+                        return;
                       }
-                      setShowIntentModal(false);
-                      if (opt.value !== 'play') {
-                        openArrayEdit('looking_for', lookingFor);
-                      }
-                    }}
-                  >
-                    <img src={opt.icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
-                    <div>
-                      <p className="font-body text-ui-body font-bold" style={{ color: opt.color }}>{opt.label}</p>
-                      <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{opt.desc}</p>
-                    </div>
-                    {intent === opt.value && (
-                      <span className="ml-auto text-base" style={{ color: opt.color }}>✓</span>
-                    )}
-                  </button>
-                ))}
+                    }
+                    showToast('Preferences updated!');
+                    setShowIntentModal(false);
+                    setIntentModalStep('intent');
+                  }}
+                  className="flex-1 py-2.5 font-body text-ui-body font-bold rounded-lg"
+                  style={{
+                    background: 'rgba(78,255,196,0.15)',
+                    border: '1.5px solid rgba(78,255,196,0.3)',
+                    color: '#4EFFC4',
+                    opacity: (saving || (intentModalStep === 'goals' && intentGoalsDraft.length === 0)) ? 0.4 : 1,
+                  }}
+                >
+                  {saving ? 'Saving…' : intentModalStep === 'intent' ? (intentDraft === 'play' ? 'Save' : 'Next') : 'Save'}
+                </button>
               </div>
-              <button
-                onClick={() => setShowIntentModal(false)}
-                className="w-full mt-4 py-2 font-body text-ui-body font-bold rounded-lg"
-                style={{ color: 'rgba(255,255,255,0.35)' }}
-              >
-                Cancel
-              </button>
             </motion.div>
           </motion.div>
         )}
@@ -1604,6 +1677,45 @@ export function ProfileScreen() {
           </motion.div>
         )}
 
+        {/* ── Avatar ──────────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <SectionCard>
+            <SectionHeading label="Avatar" />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null, modal: 'character' as const },
+                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null, modal: 'element' as const },
+                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null, modal: 'affiliation' as const },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setEditModal(item.modal)}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 min-h-[44px]"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  {item.img ? (
+                    <img src={item.img} alt={item.name ?? ''} className="w-10 h-10 object-contain" draggable={false} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
+                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
+                      {item.name ?? 'Not set'}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </motion.div>
+
         {/* ── Photo carousel ───────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -1720,45 +1832,6 @@ export function ProfileScreen() {
                   </>
                 )}
               </button>
-            </div>
-          </SectionCard>
-        </motion.div>
-
-        {/* ── Avatar ──────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <SectionCard>
-            <SectionHeading label="Avatar" />
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null, modal: 'character' as const },
-                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null, modal: 'element' as const },
-                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null, modal: 'affiliation' as const },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => setEditModal(item.modal)}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 min-h-[44px]"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  {item.img ? (
-                    <img src={item.img} alt={item.name ?? ''} className="w-10 h-10 object-contain" draggable={false} />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
-                    </div>
-                  )}
-                  <div className="text-center">
-                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
-                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
-                      {item.name ?? 'Not set'}
-                    </p>
-                  </div>
-                </button>
-              ))}
             </div>
           </SectionCard>
         </motion.div>
@@ -1907,7 +1980,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.24 }}
         >
           <SectionCard>
-            <SectionHeading label="What Are You Looking For?" onEdit={() => setShowIntentModal(true)} />
+            <SectionHeading label="What Are You Looking For?" onEdit={openIntentFlow} />
             <div
               className="flex items-center gap-3 px-3 py-3 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
