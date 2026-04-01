@@ -51,6 +51,32 @@ export const REPORT_REASON_VALUES = [
 
 export type ReportReason = (typeof REPORT_REASON_VALUES)[number];
 
+export type IntentValue = 'romance' | 'play' | 'both';
+
+export const INTENT_UI: Record<IntentValue, { icon: string; label: string }> = {
+  romance: { icon: '/looking-for/romance.png', label: 'Here for Romance' },
+  play: { icon: '/looking-for/just-play.png', label: 'Just Want to Play' },
+  both: { icon: '/looking-for/open-to-both.png', label: 'Open to Both' },
+};
+
+/**
+ * Apply write-time hygiene for favourite games only.
+ */
+export function normalizeFavoriteGamesForSave(input: string[]): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const value of input) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    const normalized = trimmed.toLocaleLowerCase();
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    result.push(trimmed);
+    if (result.length >= 10) break;
+  }
+  return result;
+}
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export async function upsertProfile(

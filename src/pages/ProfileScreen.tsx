@@ -13,6 +13,9 @@ import {
   deleteUserAccount,
   listBlockedUsersForSettings,
   unblockUser,
+  INTENT_UI,
+  type IntentValue,
+  normalizeFavoriteGamesForSave,
 } from '../lib/database';
 import type { UserProfile, BlockedUserListItem } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
@@ -108,12 +111,6 @@ const goalColors: Record<string, string> = {
   'open': '#FFE66D',
 };
 
-const intentLabels: Record<'play' | 'romance' | 'both', string> = {
-  play: 'Just Play',
-  romance: 'Find Romance',
-  both: 'Both - Play & Romance',
-};
-
 const intentDescriptions: Record<'play' | 'romance' | 'both', string> = {
   play: 'Looking for gaming partners - no pressure',
   romance: 'Looking for a real connection',
@@ -124,12 +121,6 @@ const intentColors: Record<'play' | 'romance' | 'both', string> = {
   play: '#00F5FF',
   romance: '#FF6BA8',
   both: '#B565FF',
-};
-
-const intentIcons: Record<'play' | 'romance' | 'both', string> = {
-  play: gameTypeIcons.video,
-  romance: elementImages.fire,
-  both: elementImages.electric,
 };
 
 // ─── Option sets (matching onboarding) ───────────────────────────────────────
@@ -555,7 +546,7 @@ export function ProfileScreen() {
   const bio         = dbProfile?.bio         || store.bio         || '';
   const prompts     = store.userPrompts.length > 0 ? store.userPrompts : [];
 
-  const intent    = (dbProfile?.intent as 'romance' | 'play' | 'both') ?? store.intent ?? 'romance';
+  const intent    = (dbProfile?.intent as IntentValue) ?? store.intent ?? 'romance';
 
   const lifestyle = { kids, drinking, smoking, cannabis, pets, exercise };
 
@@ -579,6 +570,7 @@ export function ProfileScreen() {
   const [editArray, setEditArray] = useState<string[]>([]);
   const [editFavGames, setEditFavGames] = useState<string[]>([]);
   const [newFavGame, setNewFavGame] = useState('');
+  const [gamesSaveError, setGamesSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   // Prompts editor state
   const [promptStep, setPromptStep] = useState<'list' | 'pick' | 'answer'>('list');
@@ -618,7 +610,7 @@ export function ProfileScreen() {
       showToast('Failed to save — try again');
       return false;
     }
-    setDbProfile((prev) => prev ? { ...prev, [field]: value } as UserProfile : prev);
+    setDbProfile((prev) => ({ ...(prev ?? ({} as UserProfile)), [field]: value } as UserProfile));
     return true;
   };
 
@@ -700,12 +692,12 @@ export function ProfileScreen() {
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>I'm Here To…</h2>
+              <h2 className="font-display text-xl mb-4" style={{ color: '#FFE66D' }}>What Are You Looking For?</h2>
               <div className="flex flex-col gap-2.5">
                 {([
-                  { value: 'play' as const, icon: intentIcons.play, label: 'Just Play', desc: 'Find gaming partners - no strings', color: '#00F5FF' },
-                  { value: 'romance' as const, icon: intentIcons.romance, label: 'Find Romance', desc: 'Looking for a real connection', color: '#FF6BA8' },
-                  { value: 'both' as const, icon: intentIcons.both, label: 'Both', desc: 'Open to games and romance', color: '#B565FF' },
+                  { value: 'play' as const, icon: INTENT_UI.play.icon, label: INTENT_UI.play.label, desc: 'Find gaming partners - no strings', color: '#00F5FF' },
+                  { value: 'romance' as const, icon: INTENT_UI.romance.icon, label: INTENT_UI.romance.label, desc: 'Looking for a real connection', color: '#FF6BA8' },
+                  { value: 'both' as const, icon: INTENT_UI.both.icon, label: INTENT_UI.both.label, desc: 'Open to games and romance', color: '#B565FF' },
                 ]).map((opt) => (
                   <button
                     key={opt.value}
@@ -725,6 +717,9 @@ export function ProfileScreen() {
                         }
                       }
                       setShowIntentModal(false);
+                      if (opt.value !== 'play') {
+                        openArrayEdit('looking_for', lookingFor);
+                      }
                     }}
                   >
                     <img src={opt.icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
@@ -1254,11 +1249,18 @@ export function ProfileScreen() {
                 <button
                   disabled={saving}
                   onClick={async () => {
+                    if (!user) return;
+                    setGamesSaveError(null);
+                    const sanitizedFavoriteGames = normalizeFavoriteGamesForSave(editFavGames);
                     const ok1 = await saveField('game_types', editArray);
-                    const ok2 = await saveField('favorite_games', editFavGames);
+                    const ok2 = await saveField('favorite_games', sanitizedFavoriteGames);
                     if (ok1 && ok2) {
+                      const { data: refreshed } = await getProfile(user.id);
+                      if (refreshed) setDbProfile(refreshed);
                       showToast('Games updated!');
                       setEditModal(null);
+                    } else {
+                      setGamesSaveError('Could not save favourite games. Please try again.');
                     }
                   }}
                   className="flex-1 py-3 rounded-xl font-body text-ui-body font-bold"
@@ -1266,6 +1268,11 @@ export function ProfileScreen() {
                   {saving ? 'Saving…' : 'Save'}
                 </button>
               </div>
+              {gamesSaveError && (
+                <p className="font-body text-ui-caption mt-3" style={{ color: '#FF6BA8' }}>
+                  {gamesSaveError}
+                </p>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -1488,18 +1495,7 @@ export function ProfileScreen() {
         <h1 className="font-display text-lg" style={{ color: 'rgba(255,255,255,0.85)' }}>
           Your Profile
         </h1>
-
-        {/* Settings gear */}
-        <button
-          className="w-9 h-9 flex items-center justify-center rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-          onClick={() => showToast('Settings coming soon')}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <circle cx="9" cy="9" r="2.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
-            <path d="M9 1.5v1.8M9 14.7v1.8M1.5 9h1.8M14.7 9h1.8M3.58 3.58l1.27 1.27M13.15 13.15l1.27 1.27M14.42 3.58l-1.27 1.27M4.85 13.15l-1.27 1.27" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
+        <div className="w-9 h-9" aria-hidden />
       </header>
 
       {/* Scrollable content */}
@@ -1551,62 +1547,13 @@ export function ProfileScreen() {
             <button onClick={() => openTextEdit('name', name)} className="font-display text-2xl" style={{ color: name ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {name || PLACEHOLDER.name}{age != null ? `, ${age}` : ''}
             </button>
-            <div className="mt-2 flex items-center justify-center gap-2.5">
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden"
-                style={{
-                  background: 'rgba(78,255,196,0.08)',
-                  border: '2px solid rgba(78,255,196,0.35)',
-                  boxShadow: '0 0 18px rgba(78,255,196,0.18)',
-                }}
-              >
-                {character && characterImages[character] ? (
-                  <img src={characterImages[character]} alt={character} className="w-11 h-11 object-contain" draggable={false} />
-                ) : (
-                  <span className="font-body text-ui-title" style={{ color: 'rgba(255,255,255,0.7)' }}>?</span>
-                )}
-              </div>
-              {element && elementImages[element] && (
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: '#0A1628', border: '1.5px solid rgba(255,255,255,0.15)' }}
-                >
-                  <img src={elementImages[element]} alt={element} className="w-6 h-6 object-contain" draggable={false} />
-                </div>
-              )}
-              <button
-                onClick={() => setEditModal('character')}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(78,255,196,0.15)', border: '1.5px solid rgba(78,255,196,0.35)' }}
-                aria-label="Edit avatar"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9.5 2L12 4.5L4.5 12H2V9.5L9.5 2Z" stroke="#4EFFC4" strokeWidth="1.5" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            <button onClick={openLocationEdit} className="font-body text-ui-body mt-0.5 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={openLocationEdit} className="font-body text-ui-body mt-2 flex items-center justify-center gap-1 mx-auto" style={{ color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
                 <circle cx="6" cy="4.5" r="1.2" fill="currentColor"/>
               </svg>
               {location || PLACEHOLDER.location}
             </button>
-            {/* Avatar tag */}
-            {character && element && affiliation ? (
-              <div className="flex items-center justify-center gap-1.5 mt-2">
-                {affiliationImages[affiliation] && (
-                  <img src={affiliationImages[affiliation]} alt="" className="w-6 h-6 object-contain" draggable={false} />
-                )}
-                <span className="font-body text-ui-caption" style={{ color: 'rgba(78,255,196,0.7)' }}>
-                  {cap(element)} {cap(affiliation)} {cap(character)}
-                </span>
-              </div>
-            ) : (
-              <p className="font-body text-ui-caption mt-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                No avatar selected
-              </p>
-            )}
           </div>
         </motion.div>
 
@@ -1656,53 +1603,6 @@ export function ProfileScreen() {
             </SectionCard>
           </motion.div>
         )}
-
-        {/* ── Basics (gender, interested in, birthday) ──────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.07 }}
-        >
-          <SectionCard>
-            <SectionHeading label="Basics" />
-            <div className={`grid gap-2 ${intent === 'play' ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              {[
-                {
-                  label: 'Gender',
-                  value: dbProfile?.gender || store.gender || null,
-                  display: dbProfile?.gender ? cap(dbProfile.gender) : store.gender ? cap(store.gender) : null,
-                  onEdit: () => setEditModal('gender'),
-                },
-                ...(intent !== 'play' ? [{
-                  label: 'Interested in',
-                  value: dbProfile?.interested_in || store.interestedIn || null,
-                  display: dbProfile?.interested_in ? cap(dbProfile.interested_in) : store.interestedIn ? cap(store.interestedIn) : null,
-                  onEdit: () => setEditModal('interested_in'),
-                }] : []),
-                {
-                  label: 'Birthday',
-                  value: dbProfile?.birthday || store.birthday || null,
-                  display: (dbProfile?.birthday || store.birthday)
-                    ? new Date(dbProfile?.birthday || store.birthday || '').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : null,
-                  onEdit: () => openTextEdit('birthday', dbProfile?.birthday || store.birthday || ''),
-                },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={item.onEdit}
-                  className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
-                  <p className="font-body text-ui-label font-bold" style={{ color: item.display ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)' }}>
-                    {item.display ?? 'Not set'}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </SectionCard>
-        </motion.div>
 
         {/* ── Photo carousel ───────────────────────────────────────────── */}
         <motion.div
@@ -1824,6 +1724,92 @@ export function ProfileScreen() {
           </SectionCard>
         </motion.div>
 
+        {/* ── Avatar ──────────────────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <SectionCard>
+            <SectionHeading label="Avatar" />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null, modal: 'character' as const },
+                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null, modal: 'element' as const },
+                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null, modal: 'affiliation' as const },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setEditModal(item.modal)}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 min-h-[44px]"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  {item.img ? (
+                    <img src={item.img} alt={item.name ?? ''} className="w-10 h-10 object-contain" draggable={false} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
+                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
+                      {item.name ?? 'Not set'}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </motion.div>
+
+        {/* ── Basics (gender, interested in, birthday) ──────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.07 }}
+        >
+          <SectionCard>
+            <SectionHeading label="Basics" />
+            <div className={`grid gap-2 ${intent === 'play' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {[
+                {
+                  label: 'Gender',
+                  value: dbProfile?.gender || store.gender || null,
+                  display: dbProfile?.gender ? cap(dbProfile.gender) : store.gender ? cap(store.gender) : null,
+                  onEdit: () => setEditModal('gender'),
+                },
+                ...(intent !== 'play' ? [{
+                  label: 'Interested in',
+                  value: dbProfile?.interested_in || store.interestedIn || null,
+                  display: dbProfile?.interested_in ? cap(dbProfile.interested_in) : store.interestedIn ? cap(store.interestedIn) : null,
+                  onEdit: () => setEditModal('interested_in'),
+                }] : []),
+                {
+                  label: 'Birthday',
+                  value: dbProfile?.birthday || store.birthday || null,
+                  display: (dbProfile?.birthday || store.birthday)
+                    ? new Date(dbProfile?.birthday || store.birthday || '').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : null,
+                  onEdit: () => openTextEdit('birthday', dbProfile?.birthday || store.birthday || ''),
+                },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.onEdit}
+                  className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
+                  <p className="font-body text-ui-label font-bold" style={{ color: item.display ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)' }}>
+                    {item.display ?? 'Not set'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </motion.div>
+
         {/* ── Bio ─────────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -1860,56 +1846,6 @@ export function ProfileScreen() {
           </SectionCard>
         </motion.div>
 
-        {/* ── Avatar ──────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <SectionCard>
-            <SectionHeading label="Avatar" onEdit={() => setEditModal('character')} />
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Character', img: character ? characterImages[character] : null, name: character ? cap(character) : null, modal: 'character' as const },
-                { label: 'Element',   img: element ? elementImages[element] : null,     name: element ? cap(element) : null, modal: 'element' as const },
-                { label: 'World',     img: affiliation ? affiliationImages[affiliation] : null, name: affiliation ? cap(affiliation) : null, modal: 'affiliation' as const },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => setEditModal(item.modal)}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  {item.img ? (
-                    <img src={item.img} alt={item.name ?? ''} className="w-10 h-10 object-contain" draggable={false} />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
-                    </div>
-                  )}
-                  <div className="text-center">
-                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
-                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
-                      {item.name ?? 'Not set'}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setEditModal('character')}
-              className="w-full mt-3 py-2.5 rounded-xl font-body text-ui-body font-bold"
-              style={{
-                background: 'rgba(78,255,196,0.07)',
-                border: '1.5px solid rgba(78,255,196,0.2)',
-                color: '#4EFFC4',
-              }}
-            >
-              Change Avatar
-            </button>
-          </SectionCard>
-        </motion.div>
-
         {/* ── Game preferences ─────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -1917,7 +1853,7 @@ export function ProfileScreen() {
           transition={{ delay: 0.2 }}
         >
           <SectionCard>
-            <SectionHeading label="Loves to Play" onEdit={() => { setEditArray([...gameTypes]); setEditFavGames([...favoriteGames]); setNewFavGame(''); setEditModal('games'); }} />
+            <SectionHeading label="Loves to Play" onEdit={() => { setEditArray([...gameTypes]); setEditFavGames([...favoriteGames]); setNewFavGame(''); setGamesSaveError(null); setEditModal('games'); }} />
             {/* Game type chips */}
             {gameTypes.length > 0 ? (
               <div className="flex flex-wrap gap-2 mb-3">
@@ -1964,46 +1900,24 @@ export function ProfileScreen() {
           </SectionCard>
         </motion.div>
 
-        {/* ── What I Want (unified intent + looking for) ───────────────── */}
+        {/* ── What Are You Looking For (intent + looking for) ───────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.24 }}
         >
           <SectionCard>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>
-                What I Want
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowIntentModal(true)}
-                  className="font-body text-ui-caption px-2.5 py-1 rounded-lg"
-                  style={{ color: '#4EFFC4', background: 'rgba(78,255,196,0.08)', border: '1px solid rgba(78,255,196,0.2)' }}
-                >
-                  Edit intent
-                </button>
-                {intent !== 'play' && (
-                  <button
-                    onClick={() => openArrayEdit('looking_for', lookingFor)}
-                    className="font-body text-ui-caption px-2.5 py-1 rounded-lg"
-                    style={{ color: '#4EFFC4', background: 'rgba(78,255,196,0.08)', border: '1px solid rgba(78,255,196,0.2)' }}
-                  >
-                    Edit goals
-                  </button>
-                )}
-              </div>
-            </div>
+            <SectionHeading label="What Are You Looking For?" onEdit={() => setShowIntentModal(true)} />
             <div
               className="flex items-center gap-3 px-3 py-3 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <img src={intentIcons[intent]} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
+              <img src={INTENT_UI[intent].icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
               <div>
                 <p className="font-body text-ui-body font-bold" style={{
                   color: intentColors[intent],
                 }}>
-                  {intentLabels[intent]}
+                  {INTENT_UI[intent].label}
                 </p>
                 <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.35)' }}>
                   {intentDescriptions[intent]}

@@ -12,6 +12,8 @@ import {
   calculateDistance,
   updateProfileField,
   blockUser,
+  INTENT_UI,
+  type IntentValue,
 } from '../lib/database';
 import type { UserProfile } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
@@ -53,7 +55,7 @@ interface Profile {
   favoriteGames: string[];
   gender: string;
   prompts?: UserPrompt[];
-  intent?: 'romance' | 'play' | 'both';
+  intent?: IntentValue;
 }
 
 const PROMPT_CATEGORY_COLORS: Record<string, string> = {
@@ -441,7 +443,10 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
               border: `1px solid ${profile.intent === 'play' ? 'rgba(0,245,255,0.35)' : profile.intent === 'romance' ? 'rgba(255,107,168,0.35)' : 'rgba(181,101,255,0.35)'}`,
             }}
           >
-            {profile.intent === 'play' ? '🎮 Just Play' : profile.intent === 'romance' ? '💜 Romance' : '✨ Both'}
+            <span className="flex items-center gap-1.5">
+              <img src={INTENT_UI[profile.intent].icon} alt="" className="w-4 h-4 object-contain" draggable={false} />
+              {INTENT_UI[profile.intent].label}
+            </span>
           </div>
         )}
         <div
@@ -486,6 +491,7 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
         >
           {profile.bio}
         </p>
+        {/* NOTE: `favoriteGames` is loaded from DB but intentionally not rendered in Discover cards yet. */}
         {/* Prompt preview */}
         {profile.prompts && profile.prompts.length > 0 && (() => {
           const p = profile.prompts[0];

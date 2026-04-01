@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserPrompt } from '../../store/onboardingStore';
+import { INTENT_UI, type IntentValue } from '../../lib/database';
 
 export interface ProfileDetailData {
   id: string;
@@ -14,6 +15,7 @@ export interface ProfileDetailData {
   bio: string;
   games: string[];
   favoriteGames: string[];
+  intent?: IntentValue;
   lookingFor: string;
   kids: string;
   drinking: string;
@@ -213,6 +215,13 @@ export function ProfileDetailSheet({
           </div>
           {!!profile.location && <div className="flex items-center gap-1.5 mb-3 font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>{profile.location}</div>}
           <div className="flex flex-wrap gap-2 mb-1">
+            {profile.intent && (
+              <span className="font-body text-ui-label font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <img src={INTENT_UI[profile.intent].icon} alt="" className="w-4 h-4 object-contain" draggable={false} />
+                {INTENT_UI[profile.intent].label}
+              </span>
+            )}
             <span className="font-body text-ui-label font-bold px-3 py-1.5 rounded-full"
               style={{ background: `${lfColor}1E`, color: lfColor, border: `1.5px solid ${lfColor}4A` }}>
               {lookingForLabels[profile.lookingFor] ?? profile.lookingFor}
