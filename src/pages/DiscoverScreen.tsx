@@ -13,7 +13,6 @@ import {
   calculateDistance,
   updateProfileField,
   blockUser,
-  INTENT_UI,
   type IntentValue,
 } from '../lib/database';
 import type { UserProfile } from '../lib/database';
@@ -446,21 +445,6 @@ function ProfileCard({
             ? { filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.45))' }
             : { padding: '10px', filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}
         />
-        {profile.intent && (
-          <div
-            className="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
-            style={{
-              background: 'rgba(0,0,0,0.65)',
-              color: profile.intent === 'play' ? '#00F5FF' : profile.intent === 'romance' ? '#FF6BA8' : '#B565FF',
-              border: `1px solid ${profile.intent === 'play' ? 'rgba(0,245,255,0.35)' : profile.intent === 'romance' ? 'rgba(255,107,168,0.35)' : 'rgba(181,101,255,0.35)'}`,
-            }}
-          >
-            <span className="flex items-center gap-1.5">
-              <img src={INTENT_UI[profile.intent].icon} alt="" className="w-4 h-4 object-contain" draggable={false} />
-              {INTENT_UI[profile.intent].label}
-            </span>
-          </div>
-        )}
         <div
           className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
           style={{ background: 'rgba(0,0,0,0.65)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.35)' }}
