@@ -135,6 +135,19 @@ const PROMPT_CATEGORY_COLORS: Record<string, string> = {
   games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
 };
 
+/** Luminous section title colors (glow via text-shadow). */
+const SECTION_TITLE_STYLES = {
+  avatar: '#FF6BA8',
+  basics: '#FFE66D',
+  about: '#4EFFC4',
+  getToKnow: '#B565FF',
+  lovesToPlay: '#00F5FF',
+  lookingFor: '#FF9F1C',
+  lifestyle: '#C8FF4A',
+} as const;
+
+type SectionTitleKey = keyof typeof SECTION_TITLE_STYLES;
+
 function SectionCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
@@ -150,10 +163,18 @@ function SectionCard({ children, className = '' }: { children: React.ReactNode; 
   );
 }
 
-function SectionHeading({ label }: { label: string }) {
+function SectionHeading({ label, section }: { label: string; section: SectionTitleKey }) {
+  const color = SECTION_TITLE_STYLES[section];
   return (
     <div className="flex items-center justify-between mb-3">
-      <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>
+      <span
+        className="font-display text-base uppercase"
+        style={{
+          color,
+          letterSpacing: '0.06em',
+          textShadow: `0 0 14px ${color}99, 0 0 28px ${color}44, 2px 2px 0 rgba(0,0,0,0.35)`,
+        }}
+      >
         {label}
       </span>
     </div>
@@ -311,7 +332,7 @@ export function ProfileDetailSheet({
 
         <div className="px-5 space-y-4 pb-8">
           <SectionCard>
-            <SectionHeading label="Avatar" />
+            <SectionHeading label="Avatar" section="avatar" />
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Character', img: characterImages[profile.character] ?? null, name: cap(profile.character) },
@@ -342,7 +363,7 @@ export function ProfileDetailSheet({
           </SectionCard>
 
           <SectionCard>
-            <SectionHeading label="Basics" />
+            <SectionHeading label="Basics" section="basics" />
             <div className={basicsGridClass}>
               <div
                 className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
@@ -377,7 +398,7 @@ export function ProfileDetailSheet({
           </SectionCard>
 
           <SectionCard>
-            <SectionHeading label="About" />
+            <SectionHeading label="About" section="about" />
             <p className="font-body text-ui-body leading-relaxed" style={{ color: profile.bio?.trim() ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)' }}>
               {profile.bio?.trim() ? profile.bio : 'No bio yet'}
             </p>
@@ -385,7 +406,7 @@ export function ProfileDetailSheet({
 
           {!!profile.prompts?.length && (
             <SectionCard>
-              <SectionHeading label="Get To Know Me" />
+              <SectionHeading label="Get To Know Me" section="getToKnow" />
               <div className="flex flex-col gap-3">
                 {profile.prompts.map((p) => (
                   <PromptReadCard key={p.id} prompt={p} />
@@ -395,7 +416,7 @@ export function ProfileDetailSheet({
           )}
 
           <SectionCard>
-            <SectionHeading label="Loves to Play" />
+            <SectionHeading label="Loves to Play" section="lovesToPlay" />
             {profile.games.filter((g) => gameTypeIcons[g]).length > 0 ? (
               <div className="flex flex-wrap gap-2 mb-3">
                 {profile.games.filter((g) => gameTypeIcons[g]).map((g) => (
@@ -438,7 +459,7 @@ export function ProfileDetailSheet({
           </SectionCard>
 
           <SectionCard>
-            <SectionHeading label="What Are You Looking For?" />
+            <SectionHeading label="What Are You Looking For?" section="lookingFor" />
             <div
               className="flex items-center gap-3 px-3 py-3 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -484,7 +505,7 @@ export function ProfileDetailSheet({
           </SectionCard>
 
           <SectionCard>
-            <SectionHeading label="Lifestyle" />
+            <SectionHeading label="Lifestyle" section="lifestyle" />
             <div className="grid grid-cols-3 gap-1.5">
               {(Object.entries(lifestyle) as [keyof typeof lifestyle, string][]).map(([key, val]) => (
                 <div
