@@ -249,7 +249,7 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
 
   return {
     id:            p.id,
-    name:          p.name          ?? 'Player',
+    name:          p.name?.trim()  ?? '',
     age:           p.age           ?? 25,
     location:      p.location      ?? 'Nearby',
     distance:      distanceLabel,
@@ -273,6 +273,10 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
     prompts: [],
     intent: (p.intent as 'romance' | 'play' | 'both') ?? undefined,
   };
+}
+
+function hasDisplayName(p: UserProfile): boolean {
+  return !!p.name?.trim();
 }
 
 // ─── Removed fake profile seed dataset (kept commented for cleanup reference) ─
@@ -1290,13 +1294,21 @@ export function DiscoverScreen() {
         });
 
         if (dbProfiles.length > 0) {
-          setProfiles(dbProfiles.map((p) => dbProfileToProfile(p, currentProfile)));
+          setProfiles(
+            dbProfiles
+              .filter(hasDisplayName)
+              .map((p) => dbProfileToProfile(p, currentProfile)),
+          );
           setCurrentIndex(0);
         } else {
           // Fall back to basic discovery
           const basicProfiles = await getDiscoverProfiles(user.id);
           if (basicProfiles.length > 0) {
-            setProfiles(basicProfiles.map((p) => dbProfileToProfile(p, currentProfile)));
+            setProfiles(
+              basicProfiles
+                .filter(hasDisplayName)
+                .map((p) => dbProfileToProfile(p, currentProfile)),
+            );
             setCurrentIndex(0);
           } else {
             setProfiles([]);
