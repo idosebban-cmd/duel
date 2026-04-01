@@ -306,7 +306,7 @@ export function ProfileDetailSheet({
         className={`flex-1 overflow-y-auto pb-24 ${hideHeaderNavigation ? 'pt-[calc(env(safe-area-inset-top,0px)+5.25rem)]' : ''}`}
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        <div className="relative w-full select-none" style={{ height: 260, background: '#0A0A1E' }}>
+        <div className="relative w-full aspect-[300/350] select-none bg-[#0A0A1E]">
           <AnimatePresence mode="wait">
             <motion.div key={slides[idx].key} className="absolute inset-0 flex items-center justify-center"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>

@@ -160,17 +160,21 @@ export function PhotoCropModal({
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
             >
-              <img
-                src={imageSrc}
-                alt="Crop preview"
-                draggable={false}
-                className="absolute left-1/2 top-1/2 select-none"
-                style={{
-                  width: displayWidth,
-                  height: displayHeight,
-                  transform: `translate(calc(-50% + ${clampedOffset.x}px), calc(-50% + ${clampedOffset.y}px))`,
-                }}
-              />
+              {naturalSize && (
+                <img
+                  src={imageSrc}
+                  alt="Crop preview"
+                  draggable={false}
+                  className="absolute left-1/2 top-1/2 max-h-none max-w-none select-none"
+                  style={{
+                    width: displayWidth,
+                    height: displayHeight,
+                    maxWidth: 'none',
+                    maxHeight: 'none',
+                    transform: `translate(calc(-50% + ${clampedOffset.x}px), calc(-50% + ${clampedOffset.y}px))`,
+                  }}
+                />
+              )}
               <div
                 className="absolute inset-0 pointer-events-none z-10 rounded-xl"
                 style={{

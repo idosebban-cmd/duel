@@ -23,11 +23,6 @@ import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 import { ProfileDetailSheet } from '../components/profile/ProfileDetailSheet';
 import { SafetyMenuSheet } from '../components/safety/SafetyMenuSheet';
 import { ReportUserModal } from '../components/safety/ReportUserModal';
-import {
-  DISCOVER_CARD_HEIGHT,
-  DISCOVER_CARD_WIDTH,
-} from '../lib/discoverCardConstants';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Profile {
@@ -434,7 +429,7 @@ function ProfileCard({
 
   return (
     <div
-      className="w-full h-full rounded-2xl overflow-hidden flex flex-col"
+      className="w-full h-full overflow-hidden flex flex-col rounded-none"
       style={{
         background: 'linear-gradient(175deg, #1C1C3E 0%, #12122A 100%)',
         border: '2px solid rgba(255,255,255,0.1)',
@@ -1569,9 +1564,9 @@ export function DiscoverScreen() {
 
       {/* Card stack */}
       {!showIncompleteModal && (
-      <div className="flex-1 flex items-center justify-center px-5 overflow-hidden">
+      <div className="flex flex-1 min-h-0 w-full flex-col overflow-hidden">
         {loadingProfiles ? (
-          <div className="flex flex-col items-center justify-center gap-3">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3">
             <div
               className="w-10 h-10 rounded-full border-2 border-white/10 border-t-[#4EFFC4] animate-spin"
               aria-hidden="true"
@@ -1579,9 +1574,11 @@ export function DiscoverScreen() {
             <p className="font-body text-white/70 text-ui-body">Loading nearby profiles...</p>
           </div>
         ) : showEmpty ? (
-          <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <EmptyState onReset={() => { setCurrentIndex(0); setDisabled(false); }} />
+          </div>
         ) : (
-          <div className="relative w-full" style={{ maxWidth: DISCOVER_CARD_WIDTH, height: DISCOVER_CARD_HEIGHT }}>
+          <div className="relative min-h-0 w-full flex-1">
             {stackDepth >= 3 && (
               <BackgroundCard
                 profile={filteredProfiles[currentIndex + 2]}
