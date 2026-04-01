@@ -418,6 +418,29 @@ export function calculateDistance(
   return R * c;
 }
 
+/**
+ * Same labeling as Discover (dbProfileToProfile): under 1 km → meters, else fixed km.
+ * Returns undefined if any coordinate is null/undefined or result is non-finite.
+ */
+export function formatDistanceLabelBetween(
+  viewerLat: number | null | undefined,
+  viewerLon: number | null | undefined,
+  partnerLat: number | null | undefined,
+  partnerLon: number | null | undefined,
+): string | undefined {
+  if (
+    viewerLat == null ||
+    viewerLon == null ||
+    partnerLat == null ||
+    partnerLon == null
+  ) {
+    return undefined;
+  }
+  const km = calculateDistance(viewerLat, viewerLon, partnerLat, partnerLon);
+  if (!Number.isFinite(km)) return undefined;
+  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)} km`;
+}
+
 // ─── Swipes + Matching ────────────────────────────────────────────────────────
 
 export async function recordSwipe(
@@ -509,6 +532,8 @@ export interface MatchWithProfile {
   matchId: string;
   matchedAt: string;
   partner: UserProfile;
+  /** Set when viewer + partner coordinates are all non-null (see formatDistanceLabelBetween). */
+  distance?: string;
 }
 
 export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
@@ -527,15 +552,18 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
     const matchRows = rows as MatchRow[];
 
     const partnerIds = matchRows.map((m) => (m.user_a === userId ? m.user_b : m.user_a));
+    const allIds = Array.from(new Set([userId, ...partnerIds]));
 
-    const { data: partners } = await supabase
+    const { data: profilesRows } = await supabase
       .from('profiles')
       .select('*')
-      .in('id', partnerIds);
+      .in('id', allIds);
 
     const byId = new Map<string, UserProfile>(
-      ((partners as UserProfile[]) ?? []).map((p) => [p.id, p]),
+      ((profilesRows as UserProfile[]) ?? []).map((p) => [p.id, p]),
     );
+
+    const viewer = byId.get(userId);
 
     return matchRows
       .map((m) => {
@@ -543,7 +571,15 @@ export async function getMatches(userId: string): Promise<MatchWithProfile[]> {
         if (blockedIds.has(partnerId)) return null;
         const partner = byId.get(partnerId);
         if (!partner) return null;
-        return { matchId: m.id, matchedAt: m.matched_at, partner };
+        const distance = formatDistanceLabelBetween(
+          viewer?.latitude,
+          viewer?.longitude,
+          partner.latitude,
+          partner.longitude,
+        );
+        const row: MatchWithProfile = { matchId: m.id, matchedAt: m.matched_at, partner };
+        if (distance !== undefined) row.distance = distance;
+        return row;
       })
       .filter((x): x is MatchWithProfile => x !== null);
   } catch {

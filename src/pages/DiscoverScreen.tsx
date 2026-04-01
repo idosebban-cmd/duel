@@ -54,6 +54,10 @@ interface Profile {
   exercise: string;
   favoriteGames: string[];
   gender: string;
+  /** Full list for detail sheet; `lookingFor` is first goal for filters only. */
+  relationshipGoals: string[];
+  interested_in?: string | null;
+  birthday?: string | null;
   prompts?: UserPrompt[];
   intent?: IntentValue;
 }
@@ -260,6 +264,9 @@ function dbProfileToProfile(p: UserProfile, currentUser?: UserProfile | null): P
     bio:           p.bio           ?? '',
     games:         p.game_types    ?? [],
     lookingFor:    p.looking_for?.[0] ?? 'open',
+    relationshipGoals: p.looking_for ?? [],
+    interested_in: p.interested_in,
+    birthday:      p.birthday,
     duelGames:     ['guess_who', 'dot_dash', 'word_blitz'],
     activityLevel,
     kids:          p.kids          ?? '',
@@ -1638,7 +1645,11 @@ export function DiscoverScreen() {
               bio: ep.bio,
               games: ep.games,
               favoriteGames: ep.favoriteGames,
-              lookingFor: ep.lookingFor,
+              relationshipGoals: ep.relationshipGoals,
+              intent: ep.intent,
+              gender: ep.gender || null,
+              interestedIn: ep.interested_in ?? null,
+              birthday: ep.birthday ?? null,
               kids: ep.kids,
               drinking: ep.drinking,
               smoking: ep.smoking,

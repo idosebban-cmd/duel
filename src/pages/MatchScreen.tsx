@@ -17,7 +17,7 @@ import {
   blockUser,
   getPhotos,
 } from '../lib/database';
-import type { UserProfile, GameRow, DbMessage, ChallengeRow } from '../lib/database';
+import type { UserProfile, GameRow, DbMessage, ChallengeRow, IntentValue } from '../lib/database';
 import {
   normalizeGameType,
   prepareAcceptedChallenge,
@@ -1261,7 +1261,14 @@ export function MatchScreen() {
               bio: theirProfile.bio ?? 'No bio available yet.',
               games: theirProfile.game_types ?? [],
               favoriteGames: theirProfile.favorite_games ?? [],
-              lookingFor: theirProfile.looking_for?.[0] ?? 'open',
+              relationshipGoals: theirProfile.looking_for ?? [],
+              intent:
+                theirProfile.intent === 'play' || theirProfile.intent === 'romance' || theirProfile.intent === 'both'
+                  ? (theirProfile.intent as IntentValue)
+                  : undefined,
+              gender: theirProfile.gender ?? null,
+              interestedIn: theirProfile.interested_in ?? null,
+              birthday: theirProfile.birthday ?? null,
               kids: theirProfile.kids ?? 'Not set',
               drinking: theirProfile.drinking ?? 'Not set',
               smoking: theirProfile.smoking ?? 'Not set',

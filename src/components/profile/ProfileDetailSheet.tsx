@@ -15,8 +15,12 @@ export interface ProfileDetailData {
   bio: string;
   games: string[];
   favoriteGames: string[];
+  /** Mirrors `profiles.looking_for`; sole source for relationship goal chips. */
+  relationshipGoals: string[];
   intent?: IntentValue;
-  lookingFor: string;
+  gender?: string | null;
+  interestedIn?: string | null;
+  birthday?: string | null;
   kids: string;
   drinking: string;
   smoking: string;
@@ -54,30 +58,26 @@ const affiliationImages: Record<string, string> = {
 
 const gameTypeIcons: Record<string, string> = {
   trivia: '/game-icons/Trivia%20%26%20quizzes.png',
-  word: '/game-icons/Word%20games.png',
-  board: '/game-icons/Boardgames.png',
-  video: '/game-icons/Video%20games.png',
-  party: '/game-icons/Party%20games.png',
   strategy: '/game-icons/Strategy.png',
+  party: '/game-icons/Party%20games.png',
+  word: '/game-icons/Word%20games.png',
   drawing: '/game-icons/Drawing%20%26%20Creative.png',
-  puzzles: '/game-icons/Puzzles.png',
+  active: '/game-icons/Active%20games.png',
+  board: '/game-icons/Boardgames.png',
   card: '/game-icons/Card%20games.png',
+  coop: '/game-icons/Coop%20games.png',
+  competitive: '/game-icons/Competative%20games.png',
+  roleplay: '/game-icons/Role%20play.png',
+  mobile: '/game-icons/Mobile%20games.png',
+  video: '/game-icons/Video%20games.png',
+  puzzles: '/game-icons/Puzzles.png',
 };
 
 const gameTypeLabels: Record<string, string> = {
-  trivia: 'Trivia', word: 'Word', board: 'Board', video: 'Video',
-  party: 'Party', strategy: 'Strategy', drawing: 'Drawing',
-  puzzles: 'Puzzles', card: 'Card',
-};
-
-const lookingForColors: Record<string, string> = {
-  casual: '#FF3D71', 'short-term': '#FF9F1C',
-  'long-term': '#4EFFC4', 'not-sure': '#B565FF', open: '#FFE66D',
-};
-
-const lookingForLabels: Record<string, string> = {
-  casual: 'Something casual', 'short-term': 'Short-term fun',
-  'long-term': 'Long-term', 'not-sure': 'Not sure yet', open: 'Open to anything',
+  trivia: 'Trivia', strategy: 'Strategy', party: 'Party', word: 'Word',
+  drawing: 'Drawing', active: 'Active', board: 'Board', card: 'Card',
+  coop: 'Co-op', competitive: 'Competitive', roleplay: 'Role Play',
+  mobile: 'Mobile', video: 'Video', puzzles: 'Puzzles',
 };
 
 const elementLabels: Record<string, string> = {
@@ -98,21 +98,95 @@ const lifestyleIcons: Record<string, string> = {
   exercise: '/Lifestyle/Exercise.png',
 };
 
-function Divider() {
-  return <div className="my-5" style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />;
-}
+const lifestyleLabels: Record<string, string> = {
+  kids: 'Kids', drinking: 'Drinking', smoking: 'Smoking',
+  cannabis: 'Cannabis', pets: 'Pets', exercise: 'Exercise',
+};
 
-function StatRow({ iconKey, label, value }: { iconKey: string; label: string; value: string }) {
+const goalLabels: Record<string, string> = {
+  casual: 'Something casual',
+  'short-term': 'Short-term fun',
+  'long-term': 'Long-term relationship',
+  'not-sure': 'Not sure yet',
+  open: 'Open to see what happens',
+};
+
+const goalColors: Record<string, string> = {
+  casual: '#FF6BA8',
+  'short-term': '#FF9F1C',
+  'long-term': '#4EFFC4',
+  'not-sure': '#B565FF',
+  open: '#FFE66D',
+};
+
+const intentDescriptions: Record<'play' | 'romance' | 'both', string> = {
+  play: 'Looking for gaming partners - no pressure',
+  romance: 'Looking for a real connection',
+  both: 'Open to games and romance',
+};
+
+const intentColors: Record<'play' | 'romance' | 'both', string> = {
+  play: '#00F5FF',
+  romance: '#FF6BA8',
+  both: '#B565FF',
+};
+
+const PROMPT_CATEGORY_COLORS: Record<string, string> = {
+  games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
+};
+
+function SectionCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="flex items-center gap-3 py-2">
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <img src={lifestyleIcons[iconKey]} alt="" className="w-5 h-5 object-contain" draggable={false} />
-      </div>
-      <span className="font-body text-ui-body flex-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-      <span className="font-body text-ui-body font-bold" style={{ color: 'rgba(255,255,255,0.85)' }}>{value}</span>
+    <div
+      className={`rounded-2xl px-4 py-4 ${className}`}
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1.5px solid rgba(255,255,255,0.08)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}
+    >
+      {children}
     </div>
   );
+}
+
+function SectionHeading({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <span className="font-display text-base" style={{ color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function PromptReadCard({ prompt }: { prompt: UserPrompt }) {
+  const color = PROMPT_CATEGORY_COLORS[prompt.category] ?? '#4EFFC4';
+  return (
+    <div
+      className="rounded-xl p-4 relative overflow-hidden"
+      style={{
+        background: '#0A1628',
+        border: `2px solid ${color}`,
+        boxShadow: `0 0 14px ${color}25, 3px 3px 0 rgba(0,0,0,0.4)`,
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg">{prompt.icon}</span>
+        <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          {prompt.question}
+        </p>
+      </div>
+      <p className="font-display text-base leading-snug" style={{ color: '#FFFFFF' }}>
+        {prompt.answer}
+      </p>
+    </div>
+  );
+}
+
+function safeIntent(i: IntentValue | undefined): IntentValue {
+  if (i === 'play' || i === 'romance' || i === 'both') return i;
+  return 'romance';
 }
 
 export function ProfileDetailSheet({
@@ -133,7 +207,9 @@ export function ProfileDetailSheet({
 }) {
   const [idx, setIdx] = useState(0);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-  const lfColor = lookingForColors[profile.lookingFor] ?? '#4EFFC4';
+
+  const relationshipGoals = profile.relationshipGoals ?? [];
+  const intent = safeIntent(profile.intent);
 
   const slides = useMemo(() => {
     if (photoUrls && photoUrls.length > 0) {
@@ -149,6 +225,23 @@ export function ProfileDetailSheet({
   const hasUploadedPhotos = !!photoUrls && photoUrls.length > 0;
   useEffect(() => { setIdx(0); }, [profile.id, slides.length]);
 
+  const locationDistanceLine = [profile.location, profile.distance].filter((x) => x && String(x).trim()).join(' ');
+
+  const lifestyle = {
+    kids: profile.kids,
+    drinking: profile.drinking,
+    smoking: profile.smoking,
+    cannabis: profile.cannabis,
+    pets: profile.pets,
+    exercise: profile.exercise,
+  } as const;
+
+  const birthdayDisplay = profile.birthday
+    ? new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : null;
+
+  const basicsGridClass = intent === 'play' ? 'grid gap-2 grid-cols-2' : 'grid gap-2 grid-cols-3';
+
   return (
     <motion.div className="fixed inset-0 z-30 flex flex-col"
       style={{ background: '#12122A' }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
@@ -162,11 +255,7 @@ export function ProfileDetailSheet({
           </svg>
           Back
         </motion.button>
-        <div className="flex-1 flex justify-center min-w-0">
-          {!!profile.distance && (
-            <span className="font-body text-ui-label font-bold truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{profile.distance}</span>
-          )}
-        </div>
+        <div className="flex-1 min-w-0" aria-hidden />
         {onOpenSafetyMenu ? (
           <motion.button
             type="button"
@@ -197,8 +286,8 @@ export function ProfileDetailSheet({
                 style={hasUploadedPhotos ? { filter: 'drop-shadow(0 10px 24px rgba(0,0,0,0.45))' } : { padding: 24, filter: 'drop-shadow(0 10px 30px rgba(0,0,0,0.8))' }} />
             </motion.div>
           </AnimatePresence>
-          <button className="absolute left-0 top-0 w-1/2 h-full z-10" onClick={() => setIdx((i) => (i - 1 + slides.length) % slides.length)} aria-label="Previous photo" />
-          <button className="absolute right-0 top-0 w-1/2 h-full z-10" onClick={() => setIdx((i) => (i + 1) % slides.length)} aria-label="Next photo" />
+          <button type="button" className="absolute left-0 top-0 w-1/2 h-full z-10" onClick={() => setIdx((i) => (i - 1 + slides.length) % slides.length)} aria-label="Previous photo" />
+          <button type="button" className="absolute right-0 top-0 w-1/2 h-full z-10" onClick={() => setIdx((i) => (i + 1) % slides.length)} aria-label="Next photo" />
           <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 z-10 pointer-events-none">
             {slides.map((s, i) => (
               <motion.div key={s.key} className="rounded-full"
@@ -213,94 +302,218 @@ export function ProfileDetailSheet({
             <h1 className="font-display text-4xl leading-none" style={{ color: '#FFE66D', textShadow: '0 0 16px rgba(255,230,109,0.55), 4px 4px 0 rgba(0,0,0,0.4)' }}>{profile.name}</h1>
             <span className="font-body font-bold text-2xl" style={{ color: 'rgba(255,255,255,0.6)' }}>{profile.age}</span>
           </div>
-          {!!profile.location && <div className="flex items-center gap-1.5 mb-3 font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.45)' }}>{profile.location}</div>}
-          <div className="flex flex-wrap gap-2 mb-1">
-            {profile.intent && (
-              <span className="font-body text-ui-label font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                <img src={INTENT_UI[profile.intent].icon} alt="" className="w-4 h-4 object-contain" draggable={false} />
-                {INTENT_UI[profile.intent].label}
-              </span>
-            )}
-            <span className="font-body text-ui-label font-bold px-3 py-1.5 rounded-full"
-              style={{ background: `${lfColor}1E`, color: lfColor, border: `1.5px solid ${lfColor}4A` }}>
-              {lookingForLabels[profile.lookingFor] ?? profile.lookingFor}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            {[
-              { img: characterImages[profile.character] ?? '/characters/Ghost.png', label: cap(profile.character) },
-              { img: elementImages[profile.element] ?? '/elements/Fire.png', label: elementLabels[profile.element] ?? cap(profile.element) },
-              { img: affiliationImages[profile.affiliation] ?? '/affiliation/City.png', label: affiliationLabels[profile.affiliation] ?? cap(profile.affiliation) },
-            ].map(({ img, label }) => (
-              <div key={label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <img src={img} alt="" className="w-5 h-5 object-contain" draggable={false} />
-                <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</span>
-              </div>
-            ))}
-          </div>
+          {!!locationDistanceLine && (
+            <p className="font-body text-ui-label font-bold uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              {locationDistanceLine}
+            </p>
+          )}
         </div>
 
-        <div className="px-5 pt-5"><Divider /><h2 className="font-display text-lg mb-3" style={{ color: '#4EFFC4' }}>ABOUT</h2>
-          <p className="font-body text-ui-body leading-relaxed" style={{ color: 'rgba(255,255,255,0.72)' }}>{profile.bio}</p></div>
-
-        {!!profile.prompts?.length && (
-          <div className="px-5 pt-5"><Divider /><h2 className="font-display text-lg mb-4" style={{ color: '#00F5FF' }}>GET TO KNOW ME</h2>
-            <div className="flex flex-col gap-3">{profile.prompts.map((p) => (
-              <div key={p.id} className="rounded-xl p-4" style={{ background: '#0A0A1E', border: '2px solid rgba(78,255,196,0.3)' }}>
-                <div className="flex items-center gap-2 mb-2"><span className="text-lg">{p.icon}</span><p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.7)' }}>{p.question}</p></div>
-                <p className="font-display text-base leading-snug" style={{ color: '#FFFFFF' }}>{p.answer}</p>
-              </div>
-            ))}</div>
-          </div>
-        )}
-
-        <div className="px-5 pt-5"><Divider /><h2 className="font-display text-lg mb-1" style={{ color: '#B565FF' }}>THE BASICS</h2>
-          <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-            <StatRow iconKey="kids" label="Kids" value={profile.kids} />
-            <StatRow iconKey="drinking" label="Drinking" value={profile.drinking} />
-            <StatRow iconKey="smoking" label="Smoking" value={profile.smoking} />
-            <StatRow iconKey="cannabis" label="Cannabis" value={profile.cannabis} />
-            <StatRow iconKey="pets" label="Pets" value={profile.pets} />
-            <StatRow iconKey="exercise" label="Exercise" value={profile.exercise} />
-          </div>
-        </div>
-
-        <div className="px-5 pt-5 pb-8"><Divider /><h2 className="font-display text-lg mb-4" style={{ color: '#FF6BA8' }}>LOVES TO PLAY</h2>
-          {profile.games.filter((g) => gameTypeIcons[g]).length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {profile.games.filter((g) => gameTypeIcons[g]).map((game) => (
-                <div key={game} className="flex flex-col items-center gap-1.5 py-3 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <img src={gameTypeIcons[game]} alt={game} className="w-8 h-8 object-contain" draggable={false} />
-                  <span className="font-body text-ui-label font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>{gameTypeLabels[game] ?? game}</span>
+        <div className="px-5 space-y-4 pb-8">
+          <SectionCard>
+            <SectionHeading label="Avatar" />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Character', img: characterImages[profile.character] ?? null, name: cap(profile.character) },
+                { label: 'Element', img: elementImages[profile.element] ?? null, name: elementLabels[profile.element] ?? cap(profile.element) },
+                { label: 'World', img: affiliationImages[profile.affiliation] ?? null, name: affiliationLabels[profile.affiliation] ?? cap(profile.affiliation) },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 min-h-[44px]"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  {item.img ? (
+                    <img src={item.img} alt="" className="w-10 h-10 object-contain" draggable={false} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
+                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
+                      {item.name || 'Not set'}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-          {profile.favoriteGames.length > 0 && (
-            <div>
-              <p className="font-body text-ui-caption mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>Favourite games</p>
-              <div className="flex flex-wrap gap-2">
-                {profile.favoriteGames.map((g) => (
-                  <span key={g} className="font-body text-ui-caption px-2.5 py-1 rounded-full"
-                    style={{ background: 'rgba(255,230,109,0.08)', color: '#FFE66D', border: '1px solid rgba(255,230,109,0.25)' }}>{g}</span>
-                ))}
+          </SectionCard>
+
+          <SectionCard>
+            <SectionHeading label="Basics" />
+            <div className={basicsGridClass}>
+              <div
+                className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Gender</p>
+                <p className="font-body text-ui-label font-bold" style={{ color: profile.gender ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)' }}>
+                  {profile.gender ? cap(profile.gender) : 'Not set'}
+                </p>
+              </div>
+              {intent !== 'play' && (
+                <div
+                  className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Interested in</p>
+                  <p className="font-body text-ui-label font-bold" style={{ color: profile.interestedIn ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)' }}>
+                    {profile.interestedIn ? cap(profile.interestedIn) : 'Not set'}
+                  </p>
+                </div>
+              )}
+              <div
+                className="flex flex-col items-center gap-1 py-3 rounded-xl text-center"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Birthday</p>
+                <p className="font-body text-ui-label font-bold" style={{ color: birthdayDisplay ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.7)' }}>
+                  {birthdayDisplay ?? 'Not set'}
+                </p>
               </div>
             </div>
+          </SectionCard>
+
+          <SectionCard>
+            <SectionHeading label="About" />
+            <p className="font-body text-ui-body leading-relaxed" style={{ color: profile.bio?.trim() ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)' }}>
+              {profile.bio?.trim() ? profile.bio : 'No bio yet'}
+            </p>
+          </SectionCard>
+
+          {!!profile.prompts?.length && (
+            <SectionCard>
+              <SectionHeading label="Get To Know Me" />
+              <div className="flex flex-col gap-3">
+                {profile.prompts.map((p) => (
+                  <PromptReadCard key={p.id} prompt={p} />
+                ))}
+              </div>
+            </SectionCard>
           )}
+
+          <SectionCard>
+            <SectionHeading label="Loves to Play" />
+            {profile.games.filter((g) => gameTypeIcons[g]).length > 0 ? (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {profile.games.filter((g) => gameTypeIcons[g]).map((g) => (
+                  <div
+                    key={g}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    <img src={gameTypeIcons[g]} alt="" className="w-6 h-6 object-contain" draggable={false} />
+                    <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      {gameTypeLabels[g] || g}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="font-body text-ui-body mb-3" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                No game types selected
+              </p>
+            )}
+            {profile.favoriteGames.length > 0 && (
+              <>
+                <p className="font-body text-ui-label font-bold mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  FAVOURITE GAMES
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {profile.favoriteGames.map((g) => (
+                    <div
+                      key={g}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                    >
+                      <span className="font-body text-ui-body">🎮</span>
+                      <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </SectionCard>
+
+          <SectionCard>
+            <SectionHeading label="What Are You Looking For?" />
+            <div
+              className="flex items-center gap-3 px-3 py-3 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <img src={INTENT_UI[intent].icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
+              <div>
+                <p className="font-body text-ui-body font-bold" style={{ color: intentColors[intent] }}>
+                  {INTENT_UI[intent].label}
+                </p>
+                <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  {intentDescriptions[intent]}
+                </p>
+              </div>
+            </div>
+            {intent !== 'play' && (
+              <div className="mt-3">
+                {relationshipGoals.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {relationshipGoals.map((id) => {
+                      const color = goalColors[id] || '#4EFFC4';
+                      return (
+                        <div
+                          key={id}
+                          className="px-3 py-2 rounded-lg font-body text-ui-body font-bold"
+                          style={{
+                            color,
+                            background: `${color}18`,
+                            border: `1.5px solid ${color}40`,
+                          }}
+                        >
+                          {goalLabels[id] || id}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                    No relationship goals selected yet
+                  </p>
+                )}
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard>
+            <SectionHeading label="Lifestyle" />
+            <div className="grid grid-cols-3 gap-1.5">
+              {(Object.entries(lifestyle) as [keyof typeof lifestyle, string][]).map(([key, val]) => (
+                <div
+                  key={key}
+                  className="rounded-lg p-2 flex flex-col items-start gap-1 min-h-[82px]"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  <img src={lifestyleIcons[key]} alt="" width={32} height={32} className="object-contain" draggable={false} />
+                  <p className="font-body text-ui-body leading-none" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    {lifestyleLabels[key]}
+                  </p>
+                  <p className="font-body text-ui-label font-bold leading-tight line-clamp-2" style={{ color: val ? '#FFFFFF' : 'rgba(255,255,255,0.7)' }}>
+                    {val || 'Not set'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
         </div>
       </div>
 
       {onAction && actionVariant === 'discover' && (
         <div className="fixed bottom-0 left-0 right-0 flex gap-3 px-5 py-4 z-10"
           style={{ background: 'rgba(12,12,28,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-          <motion.button onClick={() => onAction('left')} className="flex-1 py-4 rounded-2xl font-display text-lg"
+          <motion.button type="button" onClick={() => onAction('left')} className="flex-1 py-4 rounded-2xl font-display text-lg"
             style={{ background: 'rgba(255,61,113,0.12)', border: '2px solid rgba(255,61,113,0.4)', color: '#FF3D71' }} whileTap={{ scale: 0.95 }}>
             Pass
           </motion.button>
-          <motion.button onClick={() => onAction('right')} className="flex-1 py-4 rounded-2xl font-display text-lg"
+          <motion.button type="button" onClick={() => onAction('right')} className="flex-1 py-4 rounded-2xl font-display text-lg"
             style={{ background: 'rgba(78,255,196,0.12)', border: '2px solid rgba(78,255,196,0.4)', color: '#4EFFC4' }} whileTap={{ scale: 0.95 }}>
             Like
           </motion.button>
@@ -310,6 +523,7 @@ export function ProfileDetailSheet({
         <div className="fixed bottom-0 left-0 right-0 px-5 py-4 z-10"
           style={{ background: 'rgba(12,12,28,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <motion.button
+            type="button"
             onClick={() => onAction('right')}
             className="w-full py-4 rounded-2xl font-display font-extrabold text-base relative overflow-hidden"
             style={{

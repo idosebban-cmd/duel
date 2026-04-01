@@ -4,8 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Swords, MessageCircle, Gamepad2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
-import { getMatches, getLastMessages, getPhotos, getMatchPendingActivity } from '../lib/database';
+import {
+  getMatches,
+  getLastMessages,
+  getPhotos,
+  getMatchPendingActivity,
+  formatDistanceLabelBetween,
+} from '../lib/database';
 import type { MatchWithProfile, LastMessageInfo, MatchPendingActivity } from '../lib/database';
+import { useOnboardingStore } from '../store/onboardingStore';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 import { ProfileDetailSheet } from '../components/profile/ProfileDetailSheet';
 
@@ -23,7 +30,11 @@ interface Match {
   affiliation: string;
   gameTypes: string[];
   favoriteGames: string[];
-  lookingFor: string;
+  relationshipGoals: string[];
+  distance?: string;
+  gender?: string | null;
+  interestedIn?: string | null;
+  birthday?: string | null;
   kids: string;
   drinking: string;
   smoking: string;
@@ -98,7 +109,19 @@ function presenceTier(lastSeenIso: string | null | undefined): 'green' | 'dim' |
   return 'none';
 }
 
-function rowFromMatch(m: MatchWithProfile): Match {
+function rowFromMatch(
+  m: MatchWithProfile,
+  viewerFallbackLat: number | null | undefined,
+  viewerFallbackLon: number | null | undefined,
+): Match {
+  const distance =
+    m.distance ??
+    formatDistanceLabelBetween(
+      viewerFallbackLat,
+      viewerFallbackLon,
+      m.partner.latitude,
+      m.partner.longitude,
+    );
   return {
     id:          m.matchId,
     userId:      m.partner.id,
@@ -111,7 +134,11 @@ function rowFromMatch(m: MatchWithProfile): Match {
     affiliation: m.partner.affiliation ?? 'city',
     gameTypes:   m.partner.game_types  ?? [],
     favoriteGames: m.partner.favorite_games ?? [],
-    lookingFor:  m.partner.looking_for?.[0] ?? 'open',
+    relationshipGoals: m.partner.looking_for ?? [],
+    distance,
+    gender:      m.partner.gender ?? null,
+    interestedIn: m.partner.interested_in ?? null,
+    birthday:    m.partner.birthday ?? null,
     kids:        m.partner.kids        ?? 'Not set',
     drinking:    m.partner.drinking    ?? 'Not set',
     smoking:     m.partner.smoking     ?? 'Not set',
@@ -465,6 +492,8 @@ const NEW_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48 hours
 export function MatchesScreen() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const viewerLat = useOnboardingStore((s) => s.latitude);
+  const viewerLng = useOnboardingStore((s) => s.longitude);
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -476,7 +505,7 @@ export function MatchesScreen() {
   const fetchMatchesData = useCallback(async () => {
     if (!user?.id) return;
     const rows = await getMatches(user.id);
-    const matchList = rows.map(rowFromMatch);
+    const matchList = rows.map((row) => rowFromMatch(row, viewerLat, viewerLng));
     if (matchList.length === 0) {
       setMatches([]);
       return;
@@ -490,7 +519,7 @@ export function MatchesScreen() {
         pendingActivity: pendingMap.get(m.id) ?? undefined,
       })),
     );
-  }, [user?.id]);
+  }, [user?.id, viewerLat, viewerLng]);
 
   useEffect(() => {
     if (!user) return;
@@ -693,13 +722,18 @@ export function MatchesScreen() {
               name: expandedProfile.name,
               age: expandedProfile.age,
               location: expandedProfile.location,
+              distance: expandedProfile.distance,
               character: expandedProfile.character,
               element: expandedProfile.element,
               affiliation: expandedProfile.affiliation,
               bio: expandedProfile.bio,
               games: expandedProfile.gameTypes,
               favoriteGames: expandedProfile.favoriteGames,
-              lookingFor: expandedProfile.lookingFor,
+              relationshipGoals: expandedProfile.relationshipGoals,
+              intent: expandedProfile.intent,
+              gender: expandedProfile.gender ?? null,
+              interestedIn: expandedProfile.interestedIn ?? null,
+              birthday: expandedProfile.birthday ?? null,
               kids: expandedProfile.kids,
               drinking: expandedProfile.drinking,
               smoking: expandedProfile.smoking,
