@@ -501,22 +501,19 @@ function ProfileCard({
           ].map((item) => (
             <div
               key={item.label}
-              className="flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5"
+              className="flex min-h-[44px] flex-col items-center justify-center gap-1.5 rounded-xl px-1 py-2.5"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
               {item.img ? (
-                <img src={item.img} alt="" className="h-9 w-9 object-contain" draggable={false} />
+                <img src={item.img} alt="" className="h-12 w-12 object-contain" draggable={false} />
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
                   <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
                 </div>
               )}
-              <div className="text-center">
-                <p className="font-body text-[10px] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>{item.label}</p>
-                <p className="font-body text-ui-label font-bold leading-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                  {item.name}
-                </p>
-              </div>
+              <p className="text-center font-body text-ui-label font-bold leading-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                {item.name}
+              </p>
             </div>
           ))}
         </div>
