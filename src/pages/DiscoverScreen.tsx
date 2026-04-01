@@ -13,6 +13,7 @@ import {
   calculateDistance,
   updateProfileField,
   blockUser,
+  INTENT_UI,
   type IntentValue,
 } from '../lib/database';
 import type { UserProfile } from '../lib/database';
@@ -118,6 +119,23 @@ const affiliationLabels: Record<string, string> = {
 function capWord(s: string): string {
   if (!s) return '';
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+const discoverIntentDescriptions: Record<'play' | 'romance' | 'both', string> = {
+  play: 'Looking for gaming partners - no pressure',
+  romance: 'Looking for a real connection',
+  both: 'Open to games and romance',
+};
+
+const discoverIntentColors: Record<'play' | 'romance' | 'both', string> = {
+  play: '#00F5FF',
+  romance: '#FF6BA8',
+  both: '#B565FF',
+};
+
+function cardIntent(i: IntentValue | undefined): 'play' | 'romance' | 'both' | null {
+  if (i === 'play' || i === 'romance' || i === 'both') return i;
+  return null;
 }
 
 const lookingForColors: Record<string, string> = {
@@ -420,6 +438,7 @@ function ProfileCard({
   photoBottomOverlay?: ReactNode;
 }) {
   const hasRealPhoto = !!mainPhotoUrl;
+  const intentKind = cardIntent(profile.intent);
 
   const scanlineBg: CSSProperties = {
     backgroundColor: '#12122A',
@@ -501,6 +520,23 @@ function ProfileCard({
             </div>
           ))}
         </div>
+
+        {intentKind != null && (
+          <div
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <img src={INTENT_UI[intentKind].icon} alt="" className="h-6 w-6 flex-shrink-0 object-contain" draggable={false} />
+            <div className="min-w-0">
+              <p className="font-body text-ui-body font-bold leading-tight" style={{ color: discoverIntentColors[intentKind] }}>
+                {INTENT_UI[intentKind].label}
+              </p>
+              <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {discoverIntentDescriptions[intentKind]}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
