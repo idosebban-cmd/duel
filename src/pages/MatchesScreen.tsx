@@ -588,11 +588,11 @@ export function MatchesScreen() {
 
       {/* Header */}
       <header
-        className="flex-none flex items-center px-4 pt-5 pb-3 gap-3"
+        className="flex-none relative flex items-center px-4 pt-5 pb-3"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,22,40,0.97)' }}
       >
         <div
-          className="font-logo text-2xl leading-none"
+          className="font-logo text-2xl leading-none z-10"
           style={{
             background: 'linear-gradient(135deg, #FFE66D 0%, #FF9F1C 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
@@ -602,7 +602,7 @@ export function MatchesScreen() {
           DUEL
         </div>
 
-        <div className="flex-1 flex flex-col items-center">
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
           <h1 className="font-display text-lg leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
             Your Matches
           </h1>
@@ -611,6 +611,9 @@ export function MatchesScreen() {
               {newMatches.length} new {newMatches.length === 1 ? 'match' : 'matches'}!
             </span>
           )}
+        </div>
+        <div className="font-logo text-2xl leading-none opacity-0 select-none" aria-hidden>
+          DUEL
         </div>
       </header>
 
@@ -637,7 +640,9 @@ export function MatchesScreen() {
             </motion.button>
           </div>
         ) : matches.length === 0 ? (
-          <EmptyState />
+          <div className="min-h-full flex">
+            <EmptyState />
+          </div>
         ) : (
           <AnimatePresence>
             {newMatches.length > 0 && (
