@@ -21,10 +21,6 @@ import type { UserProfile, BlockedUserListItem } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
-import {
-  DISCOVER_CARD_WIDTH,
-  DISCOVER_PHOTO_AREA_HEIGHT_PX,
-} from '../lib/discoverCardConstants';
 import { fileToDataUrl } from '../lib/imageCrop';
 import { PhotoCropModal } from '../components/profile/PhotoCropModal';
 import { LocationCaptureField } from '../components/location/LocationCaptureField';
@@ -1572,39 +1568,31 @@ export function ProfileScreen() {
       </header>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      <div className="flex flex-1 flex-col overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
 
-        {/* ── Hero (photo-first, avatar-secondary) ───────────────────── */}
+        {/* ── Hero: full-bleed photo, 300:350 (matches Discover card) ───────── */}
         <motion.div
-          className="flex flex-col items-center gap-3 pt-2 pb-4"
+          className="w-full flex-shrink-0 overflow-hidden"
+          style={{ background: '#0E0E22' }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div
-            className="w-full rounded-2xl overflow-hidden relative"
-            style={{
-              maxWidth: DISCOVER_CARD_WIDTH,
-              aspectRatio: `${DISCOVER_CARD_WIDTH} / ${DISCOVER_PHOTO_AREA_HEIGHT_PX}`,
-              background: '#0E0E22',
-              border: '2px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 18px 40px rgba(0,0,0,0.45)',
-            }}
-          >
+          <div className="relative w-full" style={{ aspectRatio: '300 / 350' }}>
             {heroPhoto ? (
               <img
                 src={heroPhoto}
                 alt={name ? `${name} profile` : 'Profile photo'}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 draggable={false}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="flex h-full w-full items-center justify-center">
                 {character && characterImages[character] ? (
                   <img
                     src={characterImages[character]}
                     alt={character}
-                    className="w-36 h-36 object-contain"
+                    className="h-36 w-36 object-contain"
                     draggable={false}
                     style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.7))' }}
                   />
@@ -1614,21 +1602,27 @@ export function ProfileScreen() {
               </div>
             )}
           </div>
+        </motion.div>
 
+        <div className="flex flex-col gap-4 px-4 pb-5 pt-4">
           {/* Name + age */}
-          <div className="text-center">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+          >
             <button onClick={() => openTextEdit('name', name)} className="font-display text-2xl" style={{ color: name ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}>
               {name || PLACEHOLDER.name}{age != null ? `, ${age}` : ''}
             </button>
-            <button onClick={openLocationEdit} className="font-body text-ui-body mt-2 flex items-center justify-center gap-1 mx-auto" style={{ color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={openLocationEdit} className="font-body text-ui-body mx-auto mt-2 flex items-center justify-center gap-1" style={{ color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.5 6 11 6 11C6 11 9.5 7.5 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.3"/>
                 <circle cx="6" cy="4.5" r="1.2" fill="currentColor"/>
               </svg>
               {location || PLACEHOLDER.location}
             </button>
-          </div>
-        </motion.div>
+          </motion.div>
 
         {/* ── Profile completeness ──────────────────────────────────────── */}
         {completeness && !completeness.isComplete && (
@@ -2209,6 +2203,7 @@ export function ProfileScreen() {
 
         {/* bottom padding */}
         <div className="h-4" />
+        </div>
       </div>
 
       {/* Bottom nav */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
@@ -25,7 +26,6 @@ import { ReportUserModal } from '../components/safety/ReportUserModal';
 import {
   DISCOVER_CARD_HEIGHT,
   DISCOVER_CARD_WIDTH,
-  DISCOVER_PHOTO_HEIGHT_PCT,
 } from '../lib/discoverCardConstants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,10 +61,6 @@ interface Profile {
   prompts?: UserPrompt[];
   intent?: IntentValue;
 }
-
-const PROMPT_CATEGORY_COLORS: Record<string, string> = {
-  games: '#00F5FF', fun: '#FFE66D', personality: '#B565FF', playful: '#FF6BA8',
-};
 
 interface FilterState {
   ageMin: number;
@@ -116,18 +112,36 @@ const affiliationImages: Record<string, string> = {
   cosmic: '/affiliation/Cosmos.png', travel: '/affiliation/Travel.png',
 };
 
-const gameTypeIcons: Record<string, string> = {
-  trivia: '/game-icons/Trivia%20%26%20quizzes.png',
-  word: '/game-icons/Word%20games.png',
-  board: '/game-icons/Boardgames.png',
-  video: '/game-icons/Video%20games.png',
-  party: '/game-icons/Party%20games.png',
-  strategy: '/game-icons/Strategy.png',
-  drawing: '/game-icons/Drawing%20%26%20Creative.png',
-  puzzles: '/game-icons/Puzzles.png',
-  card: '/game-icons/Card%20games.png',
+const elementLabels: Record<string, string> = {
+  fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', electric: 'Electric',
 };
 
+const affiliationLabels: Record<string, string> = {
+  city: 'City', country: 'Country', nature: 'Nature', fitness: 'Fitness',
+  academia: 'Academia', music: 'Music', art: 'Art', tech: 'Tech', cosmic: 'Cosmic', travel: 'Travel',
+};
+
+const discoverIntentDescriptions: Record<'play' | 'romance' | 'both', string> = {
+  play: 'Looking for gaming partners - no pressure',
+  romance: 'Looking for a real connection',
+  both: 'Open to games and romance',
+};
+
+const discoverIntentColors: Record<'play' | 'romance' | 'both', string> = {
+  play: '#00F5FF',
+  romance: '#FF6BA8',
+  both: '#B565FF',
+};
+
+function safeDiscoverIntent(i: IntentValue | undefined): 'play' | 'romance' | 'both' {
+  if (i === 'play' || i === 'romance' || i === 'both') return i;
+  return 'romance';
+}
+
+function capWord(s: string): string {
+  if (!s) return '';
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
 
 const lookingForColors: Record<string, string> = {
   casual: '#FF3D71', 'short-term': '#FF9F1C',
@@ -419,9 +433,23 @@ const PROFILES: Profile[] = [
 
 // ─── Profile card content (compact, for stack) ───────────────────────────────
 
-function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl?: string }) {
-  const lfColor = lookingForColors[profile.lookingFor] ?? '#4EFFC4';
+function ProfileCard({
+  profile,
+  mainPhotoUrl,
+  photoBottomOverlay,
+}: {
+  profile: Profile;
+  mainPhotoUrl?: string;
+  photoBottomOverlay?: ReactNode;
+}) {
   const hasRealPhoto = !!mainPhotoUrl;
+  const intent = safeDiscoverIntent(profile.intent);
+
+  const scanlineBg: CSSProperties = {
+    backgroundColor: '#12122A',
+    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
+  };
+
   return (
     <div
       className="w-full h-full rounded-2xl overflow-hidden flex flex-col"
@@ -431,14 +459,10 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
         boxShadow: '0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
       }}
     >
-      {/* Avatar area */}
-      <div
-        className="relative flex-shrink-0"
-        style={{ height: `${DISCOVER_PHOTO_HEIGHT_PCT * 100}%`, background: '#0E0E22' }}
-      >
+      <div className="relative w-full flex-shrink-0 bg-[#0E0E22]" style={{ aspectRatio: '300 / 350' }}>
         <img
           src={mainPhotoUrl ?? characterImages[profile.character] ?? '/characters/Ghost.png'}
-          alt={profile.character}
+          alt=""
           className={`w-full h-full ${hasRealPhoto ? 'object-cover' : 'object-contain'}`}
           draggable={false}
           style={hasRealPhoto
@@ -447,7 +471,7 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
         />
         {profile.intent && (
           <div
-            className="absolute top-3 left-3 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
+            className="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
             style={{
               background: 'rgba(0,0,0,0.65)',
               color: profile.intent === 'play' ? '#00F5FF' : profile.intent === 'romance' ? '#FF6BA8' : '#B565FF',
@@ -461,27 +485,19 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
           </div>
         )}
         <div
-          className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
+          className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full font-body text-ui-label font-bold"
           style={{ background: 'rgba(0,0,0,0.65)', color: '#4EFFC4', border: '1px solid rgba(78,255,196,0.35)' }}
         >
           {profile.distance}
         </div>
-        <div
-          className="absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', border: '1.5px solid rgba(255,255,255,0.2)' }}
-        >
-          <img src={elementImages[profile.element]} alt="" className="w-5 h-5 object-contain" draggable={false} />
-        </div>
-        <div
-          className="absolute bottom-3 left-3 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', border: '1.5px solid rgba(255,255,255,0.2)' }}
-        >
-          <img src={affiliationImages[profile.affiliation]} alt="" className="w-5 h-5 object-contain" draggable={false} />
-        </div>
+        {photoBottomOverlay != null && (
+          <div className="pointer-events-none absolute left-1/2 bottom-0 z-20 flex -translate-x-1/2 translate-y-1/2 gap-10">
+            <div className="pointer-events-auto flex gap-10 items-center">{photoBottomOverlay}</div>
+          </div>
+        )}
       </div>
 
-      {/* Info area */}
-      <div className="flex-1 px-4 pt-3 pb-3 flex flex-col gap-1.5 min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-3" style={scanlineBg}>
         <div className="flex items-baseline gap-2">
           <span className="font-display text-2xl leading-none" style={{ color: '#FFE66D', textShadow: '0 0 10px rgba(255,230,109,0.5)' }}>
             {profile.name}
@@ -490,58 +506,57 @@ function ProfileCard({ profile, mainPhotoUrl }: { profile: Profile; mainPhotoUrl
             {profile.age}
           </span>
         </div>
-        <div className="flex items-center gap-1 font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
-          <svg width="9" height="11" viewBox="0 0 9 11" fill="none">
+        <div
+          className="flex items-center gap-1 font-body text-ui-label font-bold uppercase tracking-wide"
+          style={{ color: 'rgba(255,255,255,0.45)' }}
+        >
+          <svg width="9" height="11" viewBox="0 0 9 11" fill="none" className="flex-shrink-0">
             <path d="M4.5 0C2.57 0 1 1.57 1 3.5C1 6.12 4.5 11 4.5 11C4.5 11 8 6.12 8 3.5C8 1.57 6.43 0 4.5 0ZM4.5 4.75C3.81 4.75 3.25 4.19 3.25 3.5C3.25 2.81 3.81 2.25 4.5 2.25C5.19 2.25 5.75 2.81 5.75 3.5C5.75 4.19 5.19 4.75 4.5 4.75Z" fill="currentColor"/>
           </svg>
-          {profile.location}
+          <span className="truncate">{profile.location || '—'}</span>
         </div>
-        <p
-          className="font-body text-ui-caption leading-relaxed overflow-hidden"
-          style={{ color: 'rgba(255,255,255,0.6)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
-        >
-          {profile.bio}
-        </p>
-        {/* NOTE: `favoriteGames` is loaded from DB but intentionally not rendered in Discover cards yet. */}
-        {/* Prompt preview */}
-        {profile.prompts && profile.prompts.length > 0 && (() => {
-          const p = profile.prompts[0];
-          const color = PROMPT_CATEGORY_COLORS[p.category] ?? '#4EFFC4';
-          return (
+
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: 'Character', img: characterImages[profile.character] ?? null, name: (profile.character || 'ghost').toUpperCase() },
+            { label: 'Element', img: elementImages[profile.element] ?? null, name: (elementLabels[profile.element] ?? capWord(profile.element)).toUpperCase() },
+            { label: 'World', img: affiliationImages[profile.affiliation] ?? null, name: (affiliationLabels[profile.affiliation] ?? capWord(profile.affiliation)).toUpperCase() },
+          ].map((item) => (
             <div
-              className="rounded-lg px-2.5 py-2"
-              style={{ background: `${color}10`, border: `1.5px solid ${color}40` }}
+              key={item.label}
+              className="flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <p className="font-body text-ui-caption mb-0.5" style={{ color: `${color}99` }}>{p.question}</p>
-              <p
-                className="font-body text-ui-caption leading-snug overflow-hidden"
-                style={{ color: 'rgba(255,255,255,0.8)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
-              >
-                {p.answer}
-              </p>
-            </div>
-          );
-        })()}
-        {profile.games.filter((g) => gameTypeIcons[g]).length > 0 && (
-        <div className="flex items-center gap-1.5">
-          {profile.games.filter((g) => gameTypeIcons[g]).slice(0, 3).map((game) => (
-            <div
-              key={game}
-              className="w-6 h-6 rounded-md flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
-            >
-              <img src={gameTypeIcons[game]} alt={game} className="w-5 h-5 object-contain" draggable={false} />
+              {item.img ? (
+                <img src={item.img} alt="" className="h-9 w-9 object-contain" draggable={false} />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
+                </div>
+              )}
+              <div className="text-center">
+                <p className="font-body text-[10px] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>{item.label}</p>
+                <p className="font-body text-ui-label font-bold leading-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                  {item.name}
+                </p>
+              </div>
             </div>
           ))}
         </div>
-        )}
-        <div className="mt-auto">
-          <span
-            className="font-body text-ui-label font-bold px-2.5 py-1 rounded-full"
-            style={{ background: `${lfColor}22`, color: lfColor, border: `1px solid ${lfColor}44` }}
-          >
-            {lookingForLabels[profile.lookingFor]}
-          </span>
+
+        <div
+          className="mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          <img src={INTENT_UI[intent].icon} alt="" className="h-6 w-6 flex-shrink-0 object-contain" draggable={false} />
+          <div className="min-w-0">
+            <p className="font-body text-ui-body font-bold leading-tight" style={{ color: discoverIntentColors[intent] }}>
+              {INTENT_UI[intent].label}
+            </p>
+            <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              {discoverIntentDescriptions[intent]}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -903,6 +918,7 @@ function TopCard({
   onSwipeStart,
   onSwipe,
   onExpand,
+  onButtonSwipe,
   disabled,
 }: {
   profile: Profile;
@@ -912,6 +928,7 @@ function TopCard({
   onSwipeStart: () => void;
   onSwipe: (dir: 'left' | 'right') => void;
   onExpand: () => void;
+  onButtonSwipe: (dir: 'left' | 'right') => void;
   disabled: boolean;
 }) {
   const x = useMotionValue(0);
@@ -996,7 +1013,52 @@ function TopCard({
         NOPE
       </motion.div>
 
-      <ProfileCard profile={profile} mainPhotoUrl={mainPhotoUrl} />
+      <ProfileCard
+        profile={profile}
+        mainPhotoUrl={mainPhotoUrl}
+        photoBottomOverlay={
+          <>
+            <motion.button
+              type="button"
+              disabled={disabled}
+              onPointerDownCapture={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onButtonSwipe('left');
+              }}
+              className="flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ background: 'rgba(255,61,113,0.12)', border: '2px solid rgba(255,61,113,0.45)', boxShadow: '0 0 18px rgba(255,61,113,0.18)' }}
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.08, boxShadow: '0 0 28px rgba(255,61,113,0.35)' }}
+            >
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                <path d="M5 5L21 21M21 5L5 21" stroke="#FF3D71" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </motion.button>
+            <motion.button
+              type="button"
+              disabled={disabled}
+              onPointerDownCapture={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onButtonSwipe('right');
+              }}
+              className="flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ background: 'rgba(78,255,196,0.12)', border: '2px solid rgba(78,255,196,0.45)', boxShadow: '0 0 18px rgba(78,255,196,0.18)' }}
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.08, boxShadow: '0 0 28px rgba(78,255,196,0.35)' }}
+            >
+              <img
+                src="/icons/Star.png"
+                alt="like"
+                className="h-7 w-7 object-contain"
+                draggable={false}
+                style={{ filter: 'drop-shadow(0 0 6px rgba(78,255,196,0.6))' }}
+              />
+            </motion.button>
+          </>
+        }
+      />
     </motion.div>
   );
 }
@@ -1589,33 +1651,13 @@ export function DiscoverScreen() {
               onSwipeStart={() => setDisabled(true)}
               onSwipe={handleSwipe}
               onExpand={() => !disabled && setExpandedProfile(filteredProfiles[currentIndex])}
+              onButtonSwipe={executeButtonSwipe}
               disabled={!emailConfirmed || disabled || expandedProfile !== null}
             />
           </div>
         )}
       </div>
 
-      )}
-
-      {/* Action buttons */}
-      {!loadingProfiles && !showEmpty && !showIncompleteModal && (
-        <div className="flex-none flex items-center justify-center gap-10 py-3">
-          <motion.button onClick={() => executeButtonSwipe('left')} disabled={disabled}
-            className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(255,61,113,0.12)', border: '2px solid rgba(255,61,113,0.45)', boxShadow: '0 0 18px rgba(255,61,113,0.18)' }}
-            whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.08, boxShadow: '0 0 28px rgba(255,61,113,0.35)' }}>
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-              <path d="M5 5L21 21M21 5L5 21" stroke="#FF3D71" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
-          </motion.button>
-          <motion.button onClick={() => executeButtonSwipe('right')} disabled={disabled}
-            className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(78,255,196,0.12)', border: '2px solid rgba(78,255,196,0.45)', boxShadow: '0 0 18px rgba(78,255,196,0.18)' }}
-            whileTap={{ scale: 0.88 }} whileHover={{ scale: 1.08, boxShadow: '0 0 28px rgba(78,255,196,0.35)' }}>
-            <img src="/icons/Star.png" alt="like" className="w-7 h-7 object-contain" draggable={false}
-              style={{ filter: 'drop-shadow(0 0 6px rgba(78,255,196,0.6))' }} />
-          </motion.button>
-        </div>
       )}
 
       {/* Bottom nav */}
