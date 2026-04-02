@@ -123,7 +123,11 @@ export function MazeRaceLobby() {
     if (!matchId || !myId) return;
 
     const socket = socketRef.current;
-    socket.emit('mr_join', { gameId: matchId, userId: myId });
+    const joinRoom = () => {
+      socket.emit('mr_join', { gameId: matchId, userId: myId });
+    };
+    socket.on('connect', joinRoom);
+    joinRoom();
 
     const onLobbyUpdate = (payload: {
       player1Ready: boolean;
@@ -157,6 +161,7 @@ export function MazeRaceLobby() {
     socket.on('mr_game_expired', onGameExpired);
 
     return () => {
+      socket.off('connect', joinRoom);
       socket.off('mr_lobby_update', onLobbyUpdate);
       socket.off('mr_countdown');
       socket.off('mr_game_started');

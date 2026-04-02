@@ -1,4 +1,5 @@
 const gameService = require('../services/gameService');
+const { noopSocketLobbyLog } = require('../socketLobbyLog');
 
 // Map userId → socketId for reconnection
 const userSockets = new Map();
@@ -6,8 +7,10 @@ const userSockets = new Map();
 const gameRooms = new Map();
 // Lobby timers
 const lobbyTimers = new Map();
+// Avoid stacking multiple start countdowns if player_ready repeats while still in lobby
+const pendingLobbyStartByGameId = new Map();
 
-function setupGameHandlers(io) {
+function setupGameHandlers(io, log = noopSocketLobbyLog) {
   io.on('connection', (socket) => {
     console.log(`[Socket] Connected: ${socket.id}`);
 
@@ -15,6 +18,7 @@ function setupGameHandlers(io) {
     socket.on('join_lobby', ({ gameId, userId }) => {
       const game = gameService.getGame(gameId);
       if (!game) {
+        log.playerJoinLobby('guesswho', { gameId, userId, ok: false, detail: 'game_not_found' });
         socket.emit('error', { message: 'Game not found' });
         return;
       }
@@ -27,8 +31,6 @@ function setupGameHandlers(io) {
       socket.join(gameId);
       if (!gameRooms.has(gameId)) gameRooms.set(gameId, new Set());
       gameRooms.get(gameId).add(userId);
-
-      console.log(`[Lobby] ${userId} joined game ${gameId}`);
 
       // Start lobby expiry timer (only once)
       if (!lobbyTimers.has(gameId)) {
@@ -49,9 +51,23 @@ function setupGameHandlers(io) {
       const isPlayer1 = game.player1.userId === userId;
       const isPlayer2 = game.player2.userId === userId;
       if (!isPlayer1 && !isPlayer2) {
+        log.playerJoinLobby('guesswho', {
+          gameId,
+          matchId: game.matchId,
+          userId,
+          ok: false,
+          detail: 'not_in_game',
+        });
         socket.emit('error', { message: 'You are not part of this game' });
         return;
       }
+
+      log.playerJoinLobby('guesswho', {
+        gameId,
+        matchId: game.matchId,
+        userId,
+        ok: true,
+      });
 
       emitLobbyUpdate(io, gameId, game);
     });
@@ -64,14 +80,26 @@ function setupGameHandlers(io) {
         return;
       }
 
-      console.log(`[Lobby] ${userId} is ready in game ${gameId}`);
+      log.playerReady('guesswho', {
+        gameId,
+        matchId: game.matchId,
+        userId,
+        player1Ready: game.player1.ready,
+        player2Ready: game.player2.ready,
+      });
       emitLobbyUpdate(io, gameId, game);
 
       // Both ready → start countdown then game
       if (game.player1.ready && game.player2.ready && game.phase === 'lobby') {
+        if (pendingLobbyStartByGameId.has(gameId)) {
+          return;
+        }
+        pendingLobbyStartByGameId.set(gameId, true);
+        log.bothReadyGameStarting('guesswho', { gameId, matchId: game.matchId });
         io.to(gameId).emit('game_starting', { countdown: 3 });
 
         setTimeout(() => {
+          pendingLobbyStartByGameId.delete(gameId);
           const startedGame = gameService.startGame(gameId);
           if (startedGame) {
             // Send each player their own view
@@ -207,11 +235,16 @@ function setupGameHandlers(io) {
       const { userId, gameId } = socket.data;
       if (!userId || !gameId) return;
 
-      console.log(`[Socket] Disconnected: ${userId} from ${gameId}`);
-
       userSockets.delete(userId);
 
       const game = gameService.getGame(gameId);
+      const phase = game ? game.phase : 'game_missing';
+      log.playerDisconnect('guesswho', {
+        gameId,
+        matchId: game ? game.matchId : null,
+        disconnectedUserId: userId,
+        phase,
+      });
       if (!game || game.phase === 'finished' || game.phase === 'cancelled') return;
 
       // Notify opponent
@@ -252,6 +285,12 @@ function setupGameHandlers(io) {
     socket.on('rejoin_game', ({ gameId, userId }) => {
       const game = gameService.getGame(gameId);
       if (!game) {
+        log.playerReconnect('guesswho', {
+          gameId,
+          userId,
+          restored: false,
+          detail: 'game_not_found',
+        });
         socket.emit('error', { message: 'Game not found' });
         return;
       }
@@ -259,6 +298,13 @@ function setupGameHandlers(io) {
       const isPlayer1 = game.player1.userId === userId;
       const isPlayer2 = game.player2.userId === userId;
       if (!isPlayer1 && !isPlayer2) {
+        log.playerReconnect('guesswho', {
+          gameId,
+          matchId: game.matchId,
+          userId,
+          restored: false,
+          detail: 'not_in_game',
+        });
         socket.emit('error', { message: 'You are not part of this game' });
         return;
       }
@@ -268,7 +314,16 @@ function setupGameHandlers(io) {
       socket.data.gameId = gameId;
       socket.join(gameId);
 
-      console.log(`[Socket] Reconnected: ${userId} to ${gameId}`);
+      log.playerReconnect('guesswho', {
+        gameId,
+        matchId: game.matchId,
+        userId,
+        restored: true,
+        phase: game.phase,
+        player1Ready: game.player1.ready,
+        player2Ready: game.player2.ready,
+        detail: 'game_state_sent',
+      });
 
       // Notify opponent that player is back
       socket.to(gameId).emit('opponent_reconnected', {

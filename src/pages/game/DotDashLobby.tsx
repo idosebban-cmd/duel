@@ -25,7 +25,11 @@ export function DotDashLobby() {
     }
 
     const socket = socketRef.current;
-    socket.emit('dd_join_lobby', { gameId, userId: myId });
+    const joinLobby = () => {
+      socket.emit('dd_join_lobby', { gameId, userId: myId });
+    };
+    socket.on('connect', joinLobby);
+    joinLobby();
 
     socket.on('dd_lobby_updated', (state) => {
       store.setLobbyState(state);
@@ -51,6 +55,7 @@ export function DotDashLobby() {
     });
 
     return () => {
+      socket.off('connect', joinLobby);
       socket.off('dd_lobby_updated');
       socket.off('dd_game_starting');
       socket.off('dd_game_started');

@@ -1,6 +1,7 @@
 'use strict';
 
 const dotDash = require('../services/dotDashService');
+const { noopSocketLobbyLog } = require('../socketLobbyLog');
 
 // gameId → NodeJS interval handle
 const gameLoops = new Map();
@@ -8,30 +9,54 @@ const gameLoops = new Map();
 const userSockets = new Map();
 // gameId → { disconnect timers per userId }
 const disconnectTimers = new Map();
+const pendingLobbyStartByGameId = new Map();
 
-function setupDotDashHandlers(io) {
+function setupDotDashHandlers(io, log = noopSocketLobbyLog) {
   io.on('connection', (socket) => {
 
     // ── JOIN LOBBY ────────────────────────────────────────────────────────────
     socket.on('dd_join_lobby', ({ gameId, userId }) => {
       const game = dotDash.getGame(gameId);
-      if (!game) { socket.emit('dd_error', { message: 'Game not found' }); return; }
+      if (!game) {
+        log.playerJoinLobby('dotdash', { gameId, userId, ok: false, detail: 'game_not_found' });
+        socket.emit('dd_error', { message: 'Game not found' });
+        return;
+      }
 
       const isP1 = game.player1.userId === userId;
       const isP2 = game.player2.userId === userId;
-      if (!isP1 && !isP2) { socket.emit('dd_error', { message: 'Not in this game' }); return; }
+      if (!isP1 && !isP2) {
+        log.playerJoinLobby('dotdash', { gameId, userId, ok: false, detail: 'not_in_game' });
+        socket.emit('dd_error', { message: 'Not in this game' });
+        return;
+      }
 
       userSockets.set(userId, socket.id);
       socket.data.ddUserId  = userId;
       socket.data.ddGameId  = gameId;
       socket.join(`dd:${gameId}`);
 
+      let resumedFromDisconnect = false;
       // Cancel any pending disconnect forfeit
       const dt = disconnectTimers.get(gameId);
       if (dt && dt[userId]) {
         clearTimeout(dt[userId]);
         delete dt[userId];
+        resumedFromDisconnect = true;
         socket.to(`dd:${gameId}`).emit('dd_opponent_reconnected');
+      }
+
+      log.playerJoinLobby('dotdash', { gameId, userId, ok: true, phase: game.phase });
+      if (resumedFromDisconnect) {
+        log.playerReconnect('dotdash', {
+          gameId,
+          userId,
+          restored: true,
+          phase: game.phase,
+          player1Ready: game.player1.ready,
+          player2Ready: game.player2.ready,
+          detail: 'lobby_room_rejoined',
+        });
       }
 
       emitLobbyUpdate(io, gameId, game);
@@ -42,12 +67,24 @@ function setupDotDashHandlers(io) {
       const game = dotDash.setPlayerReady(gameId, userId);
       if (!game) { socket.emit('dd_error', { message: 'Game not found' }); return; }
 
+      log.playerReady('dotdash', {
+        gameId,
+        userId,
+        player1Ready: game.player1.ready,
+        player2Ready: game.player2.ready,
+      });
       emitLobbyUpdate(io, gameId, game);
 
       if (game.player1.ready && game.player2.ready && game.phase === 'lobby') {
+        if (pendingLobbyStartByGameId.has(gameId)) {
+          return;
+        }
+        pendingLobbyStartByGameId.set(gameId, true);
+        log.bothReadyGameStarting('dotdash', { gameId });
         // 3-2-1 countdown then start
         io.to(`dd:${gameId}`).emit('dd_game_starting', { countdown: 3 });
         setTimeout(() => {
+          pendingLobbyStartByGameId.delete(gameId);
           const started = dotDash.startGame(gameId);
           if (!started) return;
           io.to(`dd:${gameId}`).emit('dd_game_started', {
@@ -81,6 +118,12 @@ function setupDotDashHandlers(io) {
       userSockets.delete(userId);
 
       const game = dotDash.getGame(gameId);
+      const phase = game ? game.phase : 'game_missing';
+      log.playerDisconnect('dotdash', {
+        gameId,
+        disconnectedUserId: userId,
+        phase,
+      });
       if (!game || game.phase === 'finished') return;
 
       socket.to(`dd:${gameId}`).emit('dd_opponent_disconnected', {

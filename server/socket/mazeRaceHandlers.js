@@ -1,16 +1,18 @@
 'use strict';
 
 const mazeRace = require('../services/mazeRaceService');
+const { noopSocketLobbyLog } = require('../socketLobbyLog');
 
 const gameLoops = new Map();
 const userSockets = new Map();
 const disconnectTimers = new Map();
 
-function setupMazeRaceHandlers(io) {
+function setupMazeRaceHandlers(io, log = noopSocketLobbyLog) {
   io.on('connection', (socket) => {
     socket.on('mr_join', ({ gameId, userId }) => {
       const game = mazeRace.getGame(gameId);
       if (!game) {
+        log.playerJoinLobby('mazerace', { gameId, userId, ok: false, detail: 'game_not_found' });
         socket.emit('mr_error', { message: 'Game not found' });
         socket.emit('mr_game_expired', {});
         return;
@@ -19,6 +21,7 @@ function setupMazeRaceHandlers(io) {
       const isP1 = game.player1.userId === userId;
       const isP2 = game.player2.userId === userId;
       if (!isP1 && !isP2) {
+        log.playerJoinLobby('mazerace', { gameId, userId, ok: false, detail: 'not_in_game' });
         socket.emit('mr_error', { message: 'Not in this game' });
         return;
       }
@@ -28,11 +31,26 @@ function setupMazeRaceHandlers(io) {
       socket.data.mrGameId = gameId;
       socket.join(`mr:${gameId}`);
 
+      let resumedFromDisconnect = false;
       const dt = disconnectTimers.get(gameId);
       if (dt && dt[userId]) {
         clearTimeout(dt[userId]);
         delete dt[userId];
+        resumedFromDisconnect = true;
         socket.to(`mr:${gameId}`).emit('mr_opponent_reconnected');
+      }
+
+      log.playerJoinLobby('mazerace', { gameId, userId, ok: true, phase: game.phase });
+      if (resumedFromDisconnect) {
+        log.playerReconnect('mazerace', {
+          gameId,
+          userId,
+          restored: true,
+          phase: game.phase,
+          player1Ready: game.player1.ready,
+          player2Ready: game.player2.ready,
+          detail: 'lobby_room_rejoined',
+        });
       }
 
       emitLobbyUpdate(io, gameId, game);
@@ -46,9 +64,16 @@ function setupMazeRaceHandlers(io) {
         return;
       }
 
+      log.playerReady('mazerace', {
+        gameId,
+        userId,
+        player1Ready: game.player1.ready,
+        player2Ready: game.player2.ready,
+      });
       emitLobbyUpdate(io, gameId, game);
 
       if (game.player1.ready && game.player2.ready && game.phase === 'lobby') {
+        log.bothReadyGameStarting('mazerace', { gameId });
         game.phase = 'countdown';
         io.to(`mr:${gameId}`).emit('mr_countdown', { count: 3 });
         setTimeout(() => {
@@ -105,6 +130,12 @@ function setupMazeRaceHandlers(io) {
       userSockets.delete(userId);
 
       const game = mazeRace.getGame(gameId);
+      const phase = game ? game.phase : 'game_missing';
+      log.playerDisconnect('mazerace', {
+        gameId,
+        disconnectedUserId: userId,
+        phase,
+      });
       if (!game || game.phase === 'finished') return;
 
       socket.to(`mr:${gameId}`).emit('mr_opponent_disconnected', {});
