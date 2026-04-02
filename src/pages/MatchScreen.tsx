@@ -745,85 +745,100 @@ export function MatchScreen() {
 
       {/* ── Header ────────────────────────────────────────────── */}
       <header
-        className="flex-none px-4 pt-4 pb-3 z-10"
+        className="flex-none px-4 py-3 z-10"
         style={{
           background: 'rgba(18,18,42,0.96)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        {/* Top row: back + names */}
-        <div className="flex items-center gap-3">
-          <motion.button
-            onClick={() => navigate('/matches')}
-            className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-            whileTap={{ scale: 0.88 }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M11 4L6 9L11 14" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </motion.button>
-
-          {/* Both avatars with VS */}
-          <div className="flex items-center gap-2 flex-1 justify-center">
-            <AvatarBubble src={myAvatar} size={40} />
-            <span
-              className="font-display font-extrabold text-sm"
-              style={{ color: '#FFE66D', textShadow: '0 0 10px rgba(255,230,109,0.4)' }}
-            >
-              VS
-            </span>
-            <button
-              type="button"
-              onClick={() => setProfileSheetOpen(true)}
-              aria-label={`Open ${theirName}'s profile`}
-              disabled={!theirUserId}
-            >
-              <AvatarBubble src={theirAvatar} size={40} />
-            </button>
-          </div>
-
-          {theirUserId ? (
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
+          <div className="flex justify-start min-w-0">
             <motion.button
-              type="button"
-              onClick={() => setSafetyMenuOpen(true)}
+              onClick={() => navigate('/matches')}
               className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
               whileTap={{ scale: 0.88 }}
-              aria-label="More options"
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                <circle cx="9" cy="3.5" r="1.5" fill="rgba(255,255,255,0.65)" />
-                <circle cx="9" cy="9" r="1.5" fill="rgba(255,255,255,0.65)" />
-                <circle cx="9" cy="14.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11 4L6 9L11 14" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </motion.button>
-          ) : (
-            <div className="w-9 flex-shrink-0" aria-hidden />
-          )}
-        </div>
+          </div>
 
-        {/* Names below avatars */}
-        <div className="flex justify-center gap-6 mt-1.5">
-          <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            {myProfile?.name ?? 'You'}
-          </span>
-          {theirUserId ? (
-            <button
-              type="button"
-              onClick={() => setProfileSheetOpen(true)}
-              className="font-body text-ui-caption"
-              style={{ color: 'rgba(255,255,255,0.5)' }}
-              aria-label={`Open ${theirName}'s profile`}
-            >
-              {theirName}
-            </button>
-          ) : (
-            <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              {theirName}
-            </span>
-          )}
+          <div className="flex justify-center min-w-0">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="flex flex-col items-center gap-2 min-w-0 max-w-[36vw] sm:max-w-[7.5rem]">
+                <AvatarBubble src={myAvatar} size={56} />
+                <span
+                  className="font-body text-ui-body text-center truncate w-full px-0.5"
+                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                >
+                  {myProfile?.name ?? 'You'}
+                </span>
+              </div>
+              <div
+                className="flex flex-shrink-0 items-center justify-center font-display font-extrabold text-base"
+                style={{
+                  height: 56,
+                  color: '#FFE66D',
+                  textShadow: '0 0 10px rgba(255,230,109,0.4)',
+                }}
+              >
+                VS
+              </div>
+              <div className="flex flex-col items-center gap-2 min-w-0 max-w-[36vw] sm:max-w-[7.5rem]">
+                <button
+                  type="button"
+                  onClick={() => setProfileSheetOpen(true)}
+                  aria-label={`Open ${theirName}'s profile`}
+                  disabled={!theirUserId}
+                  className="flex-shrink-0 disabled:opacity-50"
+                >
+                  <AvatarBubble src={theirAvatar} size={56} />
+                </button>
+                {theirUserId ? (
+                  <button
+                    type="button"
+                    onClick={() => setProfileSheetOpen(true)}
+                    className="font-body text-ui-body text-center truncate w-full px-0.5 max-w-full"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                    aria-label={`Open ${theirName}'s profile`}
+                  >
+                    {theirName}
+                  </button>
+                ) : (
+                  <span
+                    className="font-body text-ui-body text-center truncate w-full px-0.5"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    {theirName}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end min-w-0">
+            {theirUserId ? (
+              <motion.button
+                type="button"
+                onClick={() => setSafetyMenuOpen(true)}
+                className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                whileTap={{ scale: 0.88 }}
+                aria-label="More options"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+                  <circle cx="9" cy="3.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+                  <circle cx="9" cy="9" r="1.5" fill="rgba(255,255,255,0.65)" />
+                  <circle cx="9" cy="14.5" r="1.5" fill="rgba(255,255,255,0.65)" />
+                </svg>
+              </motion.button>
+            ) : (
+              <div className="w-9 flex-shrink-0" aria-hidden />
+            )}
+          </div>
         </div>
       </header>
 
