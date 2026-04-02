@@ -91,7 +91,7 @@ function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocket
           io.to(`dd:${gameId}`).emit('dd_game_started', {
             gameState: dotDash.serializeGame(started),
           });
-          startGameLoop(io, gameId);
+          startGameLoop(io, gameId, roomDbg);
         }, 4000);
       }
     });
@@ -149,7 +149,7 @@ function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocket
 // ─────────────────────────────────────────────────────────────────────────────
 // GAME LOOP (20 tps)
 // ─────────────────────────────────────────────────────────────────────────────
-function startGameLoop(io, gameId) {
+function startGameLoop(io, gameId, roomDbg = noopSocketRoomDebug) {
   if (gameLoops.has(gameId)) return;
 
   const interval = setInterval(() => {

@@ -93,7 +93,7 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
           io.to(`mr:${gameId}`).emit('mr_game_started', {
             gameState: mazeRace.serializeGame(started),
           });
-          startGameLoop(io, gameId);
+          startGameLoop(io, gameId, roomDbg);
         }, 3000);
       }
     });
@@ -156,7 +156,7 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
   });
 }
 
-function startGameLoop(io, gameId) {
+function startGameLoop(io, gameId, roomDbg = noopSocketRoomDebug) {
   if (gameLoops.has(gameId)) return;
 
   const interval = setInterval(() => {
