@@ -35,8 +35,8 @@ function piecesToDb(ps: Piece[], role: 'player1'|'player2'): DbPiece[] {
   const flip = role === 'player2';
   return ps.map(p => ({
     id: p.id,
-    row: flip ? 7 - p.row : p.row,
-    col: flip ? 7 - p.col : p.col,
+    row: flip ? 7 - Number(p.row) : Number(p.row),
+    col: flip ? 7 - Number(p.col) : Number(p.col),
     isKing: p.isKing,
     player: p.player === 'player' ? mine : theirs,
   }));
@@ -46,9 +46,9 @@ function piecesFromDb(db: DbPiece[], role: 'player1'|'player2'): Piece[] {
   const flip = role === 'player2';
   return db.map(p => ({
     id: p.id,
-    row: flip ? 7 - p.row : p.row,
-    col: flip ? 7 - p.col : p.col,
-    isKing: p.isKing,
+    row: flip ? 7 - Number(p.row) : Number(p.row),
+    col: flip ? 7 - Number(p.col) : Number(p.col),
+    isKing: !!p.isKing,
     player: p.player === mine ? 'player' : 'bot',
   }));
 }
@@ -185,6 +185,60 @@ function getValidDests(ps: Piece[], piece: Piece): Dest[] {
   // No forced capture rule:
   // any legal move is allowed, whether it's a simple move or a capture.
   return [...getJumps(ps, piece), ...getSimpleMoves(ps, piece)];
+}
+
+/** True if this side has at least one legal move for any of their pieces. */
+function sideHasAnyLegalMove(ps: Piece[], side: Player): boolean {
+  for (const p of ps) {
+    if (p.player !== side) continue;
+    if (getValidDests(ps, p).length > 0) return true;
+  }
+  return false;
+}
+
+/** Local "bot" side lost: no pieces, or every piece has zero legal moves. */
+function opponentSideHasLost(ps: Piece[]): boolean {
+  if (!ps.some(p => p.player === 'bot')) return true;
+  return !sideHasAnyLegalMove(ps, 'bot');
+}
+
+/** Local "player" side lost: no pieces, or every piece has zero legal moves. */
+function playerSideHasLost(ps: Piece[]): boolean {
+  if (!ps.some(p => p.player === 'player')) return true;
+  return !sideHasAnyLegalMove(ps, 'player');
+}
+
+/** Compact board snapshot for diagnostics (browser console; Draughts has no Render game server). */
+function draughtsBoardSnapshot(ps: Piece[]) {
+  return {
+    pieceCount: ps.length,
+    playerPieces: ps.filter(p => p.player === 'player').length,
+    botPieces: ps.filter(p => p.player === 'bot').length,
+    playerHasLegalMove: sideHasAnyLegalMove(ps, 'player'),
+    botHasLegalMove: sideHasAnyLegalMove(ps, 'bot'),
+    squares: ps.map(p => ({
+      id: p.id,
+      row: p.row,
+      col: p.col,
+      side: p.player,
+      king: p.isKing,
+    })),
+  };
+}
+
+function logDraughtsGameOver(
+  reason: string,
+  extra: Record<string, unknown> & { board?: ReturnType<typeof draughtsBoardSnapshot> | null },
+) {
+  const { board, ...rest } = extra;
+  const line = JSON.stringify({
+    tag: 'Draughts.gameOver',
+    reason,
+    at: new Date().toISOString(),
+    ...rest,
+    ...(board !== undefined && board !== null ? { board } : {}),
+  });
+  console.info(`[Draughts.gameOver] ${line}`);
 }
 
 function applyMove(ps: Piece[], pieceId: string, dest: Dest): Piece[] {
@@ -503,21 +557,43 @@ export function Draughts() {
     if (turn !== 'bot' || phase !== 'playing' || isMultiplayer) return;
     const delay = 2000 + Math.random() * 1000;
     const timer = setTimeout(() => {
-      const chain = computeBotMoveChain(piecesRef.current);
-      if (!chain.length) {
+      const before = piecesRef.current;
+      let chain = computeBotMoveChain(before);
+      if (!chain.length && opponentSideHasLost(before)) {
+        logDraughtsGameOver('solo_player_wins_no_opponent_moves', {
+          board: draughtsBoardSnapshot(before),
+        });
         setResult('player_wins');
         setPhase('result');
+        return;
+      }
+      if (!chain.length) {
+        logDraughtsGameOver('solo_bot_empty_chain_recover_first_legal', {
+          board: draughtsBoardSnapshot(before),
+        });
+        for (const p of before.filter(x => x.player === 'bot')) {
+          const dests = getValidDests(before, p);
+          if (dests.length) {
+            chain = [{ pieceId: p.id, dest: dests[0] }];
+            break;
+          }
+        }
+      }
+      if (!chain.length) {
+        logDraughtsGameOver('solo_bot_stuck_no_chain', {
+          board: draughtsBoardSnapshot(before),
+        });
         return;
       }
 
       let pcs = piecesRef.current;
       const executeStep = (i: number) => {
         if (i >= chain.length) {
-          const playerHasMoves = pcs.filter(p => p.player === 'player').some(p =>
-            getValidDests(pcs, p).length > 0
-          );
           setPieces([...pcs]);
-          if (!pcs.some(p => p.player === 'player') || !playerHasMoves) {
+          if (playerSideHasLost(pcs)) {
+            logDraughtsGameOver('solo_bot_wins_player_no_moves_or_no_pieces', {
+              board: draughtsBoardSnapshot(pcs),
+            });
             setResult('bot_wins');
             setPhase('result');
           } else {
@@ -556,14 +632,16 @@ export function Draughts() {
       }
     }
 
-    // Victory check
+    // Victory check (solo): win only if opponent has no pieces or no legal move on any piece.
     if (!isMultiplayer) {
-      const botAlive = newPieces.some(p => p.player === 'bot');
-      if (!botAlive) { setResult('player_wins'); setPhase('result'); return; }
-      const botHasMoves = newPieces.filter(p => p.player === 'bot').some(p =>
-        getValidDests(newPieces, p).length > 0
-      );
-      if (!botHasMoves) { setResult('player_wins'); setPhase('result'); return; }
+      if (opponentSideHasLost(newPieces)) {
+        logDraughtsGameOver('solo_player_wins_after_move', {
+          board: draughtsBoardSnapshot(newPieces),
+        });
+        setResult('player_wins');
+        setPhase('result');
+        return;
+      }
     }
 
     setSelectedId(null);
@@ -575,10 +653,15 @@ export function Draughts() {
       const dbPieces = piecesToDb(newPieces, myRole);
       const newMoves = moves + (chainJumpId ? 0 : 1);
       let winner: string | null = null;
-      if (!newPieces.some(p => p.player === 'bot')) winner = myRole;
-      else if (!newPieces.filter(p => p.player === 'bot').some(p =>
-        getValidDests(newPieces, p).length > 0
-      )) winner = myRole;
+      if (opponentSideHasLost(newPieces)) {
+        winner = myRole;
+        logDraughtsGameOver('mp_submit_winner_self', {
+          myRole,
+          winner,
+          moveCount: newMoves,
+          board: draughtsBoardSnapshot(newPieces),
+        });
+      }
       mp.submitMove(
         { pieceId, dest },
         { ...(mp.gameState ?? {}), pieces: dbPieces, moveCount: newMoves } as DraughtsState,
@@ -639,6 +722,24 @@ export function Draughts() {
 
     if (leavingRef.current) return;
     if (mp.gameRow.winner && phase !== 'result') {
+      if (Array.isArray(mp.gameState.pieces)) {
+        const local = piecesFromDb(mp.gameState.pieces, myRole);
+        piecesRef.current = local;
+        setPieces(local);
+        logDraughtsGameOver('mp_remote_winner_row', {
+          winner: mp.gameRow.winner,
+          myRole,
+          board: draughtsBoardSnapshot(local),
+          gameRowUpdatedAt: mp.gameRow.updated_at,
+        });
+      } else {
+        logDraughtsGameOver('mp_remote_winner_row', {
+          winner: mp.gameRow.winner,
+          myRole,
+          note: 'missing_pieces_in_state',
+          gameRowUpdatedAt: mp.gameRow.updated_at,
+        });
+      }
       setResult(mp.gameRow.winner === myRole ? 'player_wins' : 'bot_wins');
       setPhase('result');
       return;
