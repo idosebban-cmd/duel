@@ -1979,7 +1979,7 @@ export function ProfileScreen() {
               className="flex items-center gap-3 px-3 py-3 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <img src={INTENT_UI[intent].icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
+              <img src={INTENT_UI[intent].icon} alt="" className="h-12 w-12 object-contain flex-shrink-0" draggable={false} />
               <div>
                 <p className="font-body text-ui-body font-bold" style={{
                   color: intentColors[intent],
