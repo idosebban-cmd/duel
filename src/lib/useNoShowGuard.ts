@@ -16,6 +16,8 @@ export interface UseNoShowGuardOptions {
   titleCardComplete: boolean;
   /** Increments when opponent-originated game row activity is detected */
   opponentActivityTick: number;
+  /** When true, hide no-show timers (session already started or opponent activity seen). */
+  suppressNoShow?: boolean;
   opponentDisplayName: string;
   navigate: NavigateFunction;
   /** True while title overlay is visible — unmount cleanup only runs if still true */
@@ -48,6 +50,7 @@ export function useNoShowGuard({
   gameStatus,
   titleCardComplete,
   opponentActivityTick,
+  suppressNoShow = false,
   opponentDisplayName,
   navigate,
   titleCardActiveRef,
@@ -95,7 +98,7 @@ export function useNoShowGuard({
 
   // Start / restart timeline when anchor is ready or opponent activity resets the clock
   useEffect(() => {
-    if (!enabled || !titleCardComplete) {
+    if (!enabled || !titleCardComplete || suppressNoShow) {
       resetTimers();
       return;
     }
@@ -114,7 +117,7 @@ export function useNoShowGuard({
       clearTimerIds(timerIdsRef.current);
       timerIdsRef.current = [];
     };
-  }, [enabled, titleCardComplete, opponentActivityTick, resetTimers, runAutoAbandon]);
+  }, [enabled, titleCardComplete, opponentActivityTick, suppressNoShow, resetTimers, runAutoAbandon]);
 
   const gameIdRef = useRef(gameId);
   const gameStatusRef = useRef(gameStatus);

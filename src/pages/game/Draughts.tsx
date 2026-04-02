@@ -528,7 +528,7 @@ export function Draughts() {
     isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
   );
 
-  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.playSessionActive);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
 
   const leavingRef = useRef(false);
@@ -678,7 +678,7 @@ export function Draughts() {
   const handleCellTap = (row: number, col: number) => {
     if (turn !== 'player' || phase !== 'playing') return;
     // Mirror Battleship: don't hard-block on bothPresent until at least one move happened.
-    if (isMultiplayer && (!mp.isMyTurn || (moves > 0 && !mp.bothPresent))) return;
+    if (isMultiplayer && (!mp.isMyTurn || (moves > 0 && !mp.playSessionActive))) return;
 
     if (chainJumpId) {
       const d = validDests.find(d => d.row === row && d.col === col);
@@ -775,6 +775,7 @@ export function Draughts() {
     gameStatus: mp.gameRow?.status,
     titleCardComplete,
     opponentActivityTick: mp.opponentActivityTick,
+    suppressNoShow: mp.playSessionActive,
     opponentDisplayName: opponentName ?? 'Opponent',
     navigate,
     titleCardActiveRef,
@@ -798,7 +799,7 @@ export function Draughts() {
       {/* Multiplayer overlays */}
       {isMultiplayer && (
         <>
-          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
+          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.playSessionActive} opponentName="opponent" matchId={matchId!} />
           <ReconnectOverlay visible={graceActive} opponentName="opponent" />
           <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
           <AnimatePresence>
@@ -1018,7 +1019,7 @@ export function Draughts() {
       {/* Footer info bar */}
       <div className="flex-none flex items-center justify-between px-5 py-3"
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
-        {isMultiplayer && phase === 'playing' && mp.bothPresent ? (
+        {isMultiplayer && phase === 'playing' && mp.playSessionActive ? (
           <button onClick={() => setShowLeaveDialog(true)} className="font-body text-ui-caption"
             style={{ color: '#FF3D71' }}>
             Leave Game

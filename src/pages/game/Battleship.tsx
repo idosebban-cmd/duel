@@ -393,7 +393,7 @@ export function Battleship() {
     isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
   );
 
-  useBeforeUnload(isMultiplayer && phase === 'battle' && mp.bothPresent);
+  useBeforeUnload(isMultiplayer && phase === 'battle' && mp.playSessionActive);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
 
   const leavingRef = useRef(false);
@@ -567,7 +567,7 @@ export function Battleship() {
 
   const handleFire = () => {
     if (!selectedCell || turn !== 'player') return;
-    if (isMultiplayer && (!mp.isMyTurn || !mp.bothPresent)) return;
+    if (isMultiplayer && (!mp.isMyTurn || !mp.playSessionActive)) return;
     const [row, col] = selectedCell;
     if (myShots[row][col]) return;
 
@@ -727,6 +727,7 @@ export function Battleship() {
     gameStatus: mp.gameRow?.status,
     titleCardComplete,
     opponentActivityTick: mp.opponentActivityTick,
+    suppressNoShow: mp.playSessionActive,
     opponentDisplayName: opponentName ?? 'Opponent',
     navigate,
     titleCardActiveRef,
@@ -769,7 +770,7 @@ export function Battleship() {
       {/* Multiplayer overlays */}
       {isMultiplayer && (
         <>
-          <WaitingForOpponentOverlay visible={phase === 'battle' && !mp.bothPresent} opponentName="opponent" matchId={matchId!} />
+          <WaitingForOpponentOverlay visible={phase === 'battle' && !mp.playSessionActive} opponentName="opponent" matchId={matchId!} />
           <ReconnectOverlay visible={graceActive} opponentName="opponent" />
           <OpponentLeftOverlay visible={showForfeit} opponentName="opponent" />
           <AnimatePresence>
@@ -1028,7 +1029,7 @@ export function Battleship() {
           {/* Footer */}
           <div className="flex-none flex items-center justify-between px-5 py-2"
             style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
-            {isMultiplayer && phase === 'battle' && mp.bothPresent ? (
+            {isMultiplayer && phase === 'battle' && mp.playSessionActive ? (
               <button onClick={() => setShowLeaveDialog(true)} className="font-body text-ui-caption" style={{ color: '#FF3D71' }}>
                 Leave Game
               </button>

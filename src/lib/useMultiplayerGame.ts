@@ -54,6 +54,11 @@ export interface MultiplayerGame<S> {
   fallbackToBotMode: boolean;
   /** True when both players have signalled presence on the game screen */
   bothPresent: boolean;
+  /**
+   * True when play should not be blocked by the “waiting for opponent” overlay:
+   * both present, or turns/moves have started, or we have seen opponent activity via Realtime.
+   */
+  playSessionActive: boolean;
   /** True when the opponent abandoned (game status='abandoned' and winner is not me) */
   opponentLeft: boolean;
   /** Increments when a non-self game row update is applied (for no-show timer reset). */
@@ -176,7 +181,9 @@ export function useMultiplayerGame<S>({
 
     function applyUpdate(updated: GameRow) {
       const local = gameRowRef.current;
-      // Skip if local updated_at is newer (prevents optimistic state being overwritten by self-echo)
+      // Skip only when local row is strictly newer than incoming (server timestamps).
+      // Optimistic submitMove must NOT bump updated_at with client clock — that made
+      // local appear newer than the opponent's Realtime payload and dropped their moves.
       if (local?.updated_at && updated.updated_at && local.updated_at > updated.updated_at) {
         devLog('[useMultiplayerGame] Realtime: skipping stale update (local is newer)');
         return;
@@ -245,7 +252,14 @@ export function useMultiplayerGame<S>({
           if (status === 'SUBSCRIBED') {
             // On reconnect: fetch once to reconcile missed events, then stop fallback
             getGame(gameId).then((updated) => {
-              if (updated) applyUpdate(updated);
+              if (updated) {
+                applyUpdate(updated);
+                const present = ((updated.state as Record<string, unknown>)?.present ?? {}) as Record<string, boolean>;
+                if (myUserId && !present[myUserId]) {
+                  presenceWritePendingRef.current = true;
+                  void setPlayerPresent(gameId, myUserId);
+                }
+              }
               stopFallbackPoll();
             });
           } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
@@ -273,7 +287,7 @@ export function useMultiplayerGame<S>({
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, gameRow?.id, gameRow?.winner, fallbackPollInterval]);
+  }, [enabled, gameRow?.id, gameRow?.winner, fallbackPollInterval, myUserId]);
 
   // ── Derived values ───────────────────────────────────────────────────────
   const myRole: PlayerRole =
@@ -288,6 +302,13 @@ export function useMultiplayerGame<S>({
   const bothPresent = !!gameRow
     && !!presentMap[gameRow.player1_id]
     && !!presentMap[gameRow.player2_id];
+  const moveCount =
+    typeof gameState?.moveCount === 'number' ? gameState.moveCount : 0;
+  const playSessionActive =
+    bothPresent
+    || !!(gameRow?.current_turn && String(gameRow.current_turn).length > 0)
+    || moveCount > 0
+    || opponentActivityTick > 0;
   const opponentLeft = !!gameRow
     && gameRow.status === 'abandoned'
     && !!gameRow.winner
@@ -328,13 +349,12 @@ export function useMultiplayerGame<S>({
       const nextTurn =
         row.current_turn === row.player1_id ? row.player2_id : row.player1_id;
 
-      // Optimistic update
+      // Optimistic update — keep server updated_at until Realtime / fetch returns canonical row
       const optimistic: GameRow = {
         ...row,
         state: newState as Record<string, unknown>,
         current_turn: winner ? '' : nextTurn,
         winner: winner ?? null,
-        updated_at: new Date().toISOString(),
       };
       gameRowRef.current = optimistic;
       setGameRow(optimistic);
@@ -389,6 +409,7 @@ export function useMultiplayerGame<S>({
       loading: false,
       fallbackToBotMode,
       bothPresent: false,
+      playSessionActive: false,
       opponentLeft: false,
       opponentActivityTick: 0,
       moveError: null,
@@ -407,6 +428,7 @@ export function useMultiplayerGame<S>({
     loading,
     fallbackToBotMode: false,
     bothPresent,
+    playSessionActive,
     opponentLeft,
     opponentActivityTick,
     moveError,

@@ -193,6 +193,7 @@ export function GameBoard() {
     gameStatus: mp.gameRow?.status,
     titleCardComplete,
     opponentActivityTick: mp.opponentActivityTick,
+    suppressNoShow: mp.playSessionActive,
     opponentDisplayName: opponentName ?? 'Opponent',
     navigate,
     titleCardActiveRef,

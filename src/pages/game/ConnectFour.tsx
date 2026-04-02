@@ -322,7 +322,7 @@ export function ConnectFour() {
     isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
   );
 
-  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.playSessionActive);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
 
   const [board,      setBoard]      = useState<Board>(makeBoard);
@@ -373,7 +373,7 @@ export function ConnectFour() {
   const handleColumnTap = (col: number) => {
     if (turn !== 'player' || phase !== 'playing' || winCells) return;
     // Mirror Battleship: don't hard-block on bothPresent until at least one move happened.
-    if (isMultiplayer && (!mp.isMyTurn || (moveCount > 0 && !mp.bothPresent))) return;
+    if (isMultiplayer && (!mp.isMyTurn || (moveCount > 0 && !mp.playSessionActive))) return;
     if (getDropRow(boardRef.current, col) === -1) {
       setShakeCol(col);
       setTimeout(() => setShakeCol(null), 450);
@@ -498,6 +498,7 @@ export function ConnectFour() {
     gameStatus: mp.gameRow?.status,
     titleCardComplete,
     opponentActivityTick: mp.opponentActivityTick,
+    suppressNoShow: mp.playSessionActive,
     opponentDisplayName: opponentName ?? 'Opponent',
     navigate,
     titleCardActiveRef,
@@ -525,7 +526,7 @@ export function ConnectFour() {
       {isMultiplayer && (
         <>
           <WaitingForOpponentOverlay
-            visible={phase === 'playing' && !mp.bothPresent}
+            visible={phase === 'playing' && !mp.playSessionActive}
             opponentName="opponent"
             matchId={matchId!}
           />
@@ -764,7 +765,7 @@ export function ConnectFour() {
       {/* Footer */}
       <div className="flex-none flex items-center justify-between px-5 py-3"
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,15,26,0.9)' }}>
-        {isMultiplayer && phase === 'playing' && mp.bothPresent ? (
+        {isMultiplayer && phase === 'playing' && mp.playSessionActive ? (
           <button onClick={() => setShowLeaveDialog(true)} className="font-body text-ui-caption"
             style={{ color: '#FF3D71' }}>
             Leave Game

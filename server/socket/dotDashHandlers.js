@@ -2,6 +2,7 @@
 
 const dotDash = require('../services/dotDashService');
 const { noopSocketLobbyLog } = require('../socketLobbyLog');
+const { noopSocketRoomDebug } = require('../socketRoomDebug');
 
 // gameId → NodeJS interval handle
 const gameLoops = new Map();
@@ -11,7 +12,7 @@ const userSockets = new Map();
 const disconnectTimers = new Map();
 const pendingLobbyStartByGameId = new Map();
 
-function setupDotDashHandlers(io, log = noopSocketLobbyLog) {
+function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocketRoomDebug) {
   io.on('connection', (socket) => {
 
     // ── JOIN LOBBY ────────────────────────────────────────────────────────────
@@ -158,6 +159,7 @@ function startGameLoop(io, gameId) {
 
     const { winner } = dotDash.tick(game);
 
+    roomDbg.logDdGameTickRoom(io, gameId);
     io.to(`dd:${gameId}`).emit('dd_game_tick', {
       gameState: dotDash.serializeGame(game),
     });

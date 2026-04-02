@@ -315,7 +315,7 @@ export function Hangman() {
     localPhase === 'result' ? 'result' : 'playing',
   );
 
-  useBeforeUnload(isMultiplayer && gs?.phase === 'in_progress' && mp.bothPresent);
+  useBeforeUnload(isMultiplayer && gs?.phase === 'in_progress' && mp.playSessionActive);
   useOpponentLeftRedirect(showForfeit, matchId, 'opponent');
 
   const leavingRef = useRef(false);
@@ -365,6 +365,7 @@ export function Hangman() {
     gameStatus: mp.gameRow?.status,
     titleCardComplete,
     opponentActivityTick: mp.opponentActivityTick,
+    suppressNoShow: mp.playSessionActive,
     opponentDisplayName: opponentName ?? 'Opponent',
     navigate,
     titleCardActiveRef,
@@ -401,13 +402,13 @@ export function Hangman() {
   const showWaitingOverlay =
     isMultiplayer &&
     gs?.phase === 'in_progress' &&
-    !mp.bothPresent;
+    !mp.playSessionActive;
 
   const canGuess =
     isMultiplayer &&
     mp.isMyTurn &&
     gs?.phase === 'in_progress' &&
-    mp.bothPresent &&
+    mp.playSessionActive &&
     !guessBusy &&
     !mp.gameRow?.winner;
 

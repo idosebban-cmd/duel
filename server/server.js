@@ -7,11 +7,13 @@ const gamesRouter = require('./routes/games');
 const dotDashRouter = require('./routes/dotDash');
 const mazeRaceRouter = require('./routes/mazeRace');
 const { createSocketLobbyLogger } = require('./socketLobbyLog');
+const { createSocketRoomDebug } = require('./socketRoomDebug');
 const { setupGameHandlers } = require('./socket/gameHandlers');
 const { setupDotDashHandlers } = require('./socket/dotDashHandlers');
 const { setupMazeRaceHandlers } = require('./socket/mazeRaceHandlers');
 
 const socketLobbyLog = createSocketLobbyLogger();
+const socketRoomDebug = createSocketRoomDebug();
 
 const PORT = process.env.PORT || 3001;
 // When serving from the same origin, CLIENT_URL = self
@@ -54,8 +56,8 @@ app.get('*', (req, res) => {
 
 // Socket.io game handlers (lobby lifecycle logs → Render via socketLobbyLog)
 setupGameHandlers(io, socketLobbyLog);
-setupDotDashHandlers(io, socketLobbyLog);
-setupMazeRaceHandlers(io, socketLobbyLog);
+setupDotDashHandlers(io, socketLobbyLog, socketRoomDebug);
+setupMazeRaceHandlers(io, socketLobbyLog, socketRoomDebug);
 
 server.listen(PORT, () => {
   console.log(`🎮 Duel game server running on port ${PORT}`);

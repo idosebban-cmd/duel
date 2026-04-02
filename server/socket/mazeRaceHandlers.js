@@ -2,12 +2,13 @@
 
 const mazeRace = require('../services/mazeRaceService');
 const { noopSocketLobbyLog } = require('../socketLobbyLog');
+const { noopSocketRoomDebug } = require('../socketRoomDebug');
 
 const gameLoops = new Map();
 const userSockets = new Map();
 const disconnectTimers = new Map();
 
-function setupMazeRaceHandlers(io, log = noopSocketLobbyLog) {
+function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocketRoomDebug) {
   io.on('connection', (socket) => {
     socket.on('mr_join', ({ gameId, userId }) => {
       const game = mazeRace.getGame(gameId);
@@ -169,6 +170,7 @@ function startGameLoop(io, gameId) {
       return;
     }
 
+    roomDbg.logMrTickRoom(io, gameId);
     io.to(`mr:${gameId}`).emit('mr_tick', {
       player1: { x: game.player1.x, y: game.player1.y },
       player2: { x: game.player2.x, y: game.player2.y },

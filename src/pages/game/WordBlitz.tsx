@@ -567,7 +567,7 @@ export function WordBlitz() {
     isMultiplayer, mp.bothPresent, mp.opponentLeft, phase,
   );
 
-  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.bothPresent);
+  useBeforeUnload(isMultiplayer && phase === 'playing' && mp.playSessionActive);
   useOpponentLeftRedirect(showForfeit, matchId ?? null, 'opponent');
 
   const leavingRef = useRef(false);
@@ -734,13 +734,13 @@ export function WordBlitz() {
     elapsedRef.current = 0;
     setTimeLeft(GAME_SECONDS);
     setPhase('playing');
-    // Solo: start timer immediately. MP: timer starts when bothPresent (see effect below).
+    // Solo: start timer immediately. MP: timer starts when playSessionActive (see effect below).
     if (!isMultiplayer) startTimer();
   }, [dictionaryReady, isMultiplayer, startTimer]);
 
   // ─── MP: persist started_at once when game starts for both players ──────────
   useEffect(() => {
-    if (!isMultiplayer || phase !== 'playing' || !mp.bothPresent || !mp.gameRow?.id) return;
+    if (!isMultiplayer || phase !== 'playing' || !mp.playSessionActive || !mp.gameRow?.id) return;
     const gs = mp.gameState as GWState | null;
     if (gs?.started_at) return;
     if (startedAtWriteForGameRef.current === mp.gameRow.id) return;
@@ -756,7 +756,7 @@ export function WordBlitz() {
         startedAtWriteForGameRef.current = null;
       }
     })();
-  }, [isMultiplayer, phase, mp.bothPresent, mp.gameRow?.id, mp.gameState]);
+  }, [isMultiplayer, phase, mp.playSessionActive, mp.gameRow?.id, mp.gameState]);
 
   // ─── MP: hydrate countdown from server start time on refresh/reconnect ──────
   useEffect(() => {
@@ -1108,7 +1108,7 @@ export function WordBlitz() {
       {/* Multiplayer overlays */}
       {isMultiplayer && (
         <>
-          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.bothPresent} opponentName={opponentDisplayName} matchId={matchId!} />
+          <WaitingForOpponentOverlay visible={phase === 'playing' && !mp.playSessionActive} opponentName={opponentDisplayName} matchId={matchId!} />
           <ReconnectOverlay visible={graceActive} opponentName={opponentDisplayName} />
           <OpponentLeftOverlay visible={showForfeit} opponentName={opponentDisplayName} />
           <AnimatePresence>
@@ -1495,7 +1495,7 @@ export function WordBlitz() {
       </div>
 
       {/* Leave Game button (multiplayer only) */}
-      {isMultiplayer && phase === 'playing' && mp.bothPresent && (
+      {isMultiplayer && phase === 'playing' && mp.playSessionActive && (
         <button
           onClick={() => setShowLeaveDialog(true)}
           className="fixed bottom-4 left-4 z-20 font-body text-ui-caption px-3 py-1.5 rounded-lg"
