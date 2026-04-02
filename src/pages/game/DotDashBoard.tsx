@@ -453,8 +453,9 @@ export function DotDashBoard() {
     const dpr = window.devicePixelRatio || 1;
     canvas.width  = W * dpr;
     canvas.height = H * dpr;
-    canvas.style.width  = `${W}px`;
-    canvas.style.height = `${H}px`;
+    // Display size comes from CSS (w-full h-full in aspect-ratio wrapper) so the maze fits narrow viewports.
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
     const ctx = canvas.getContext('2d')!;
     ctx.scale(dpr, dpr);
 
@@ -530,7 +531,7 @@ export function DotDashBoard() {
       onTouchEnd={handleTouchEnd}
     >
       {/* ── HUD ── */}
-      <div className="w-full max-w-[456px] flex flex-col gap-0">
+      <div className="w-full max-w-[456px] mx-auto flex flex-col gap-0">
 
         {/* Top bar: timer + exit */}
         <div className="flex items-center justify-between px-4 py-2"
@@ -583,11 +584,15 @@ export function DotDashBoard() {
         </div>
       </div>
 
-      {/* ── Canvas ── */}
-      <div className="relative flex-shrink-0" style={{ width: W, height: H }}>
+      {/* ── Canvas (scales down on narrow screens; internal grid stays W×H logical px) ── */}
+      <div
+        className="relative w-full max-w-[456px] mx-auto flex-shrink-0"
+        style={{ aspectRatio: `${W} / ${H}` }}
+      >
         <canvas
           ref={canvasRef}
-          style={{ display: 'block', imageRendering: 'pixelated' }}
+          className="block h-full w-full"
+          style={{ imageRendering: 'pixelated' }}
         />
 
         {/* Socket reconnecting overlay */}
@@ -661,7 +666,7 @@ export function DotDashBoard() {
 
       {/* ── Controls hint ── */}
       <div
-        className="w-full max-w-[456px] px-4 py-3 relative flex items-center justify-center"
+        className="w-full max-w-[456px] mx-auto px-4 py-3 relative flex items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
         <p className="font-body text-ui-caption text-white/70 absolute left-4">

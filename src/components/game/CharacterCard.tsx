@@ -59,12 +59,11 @@ export function CharacterCard({
           onClick={isSelectable && !isFlipped ? onClick : undefined}
           whileHover={isSelectable && !isFlipped ? { y: -2, scale: 1.02 } : {}}
         >
-          {/* Character image — fills the card */}
+          {/* Character image — contained with inset so sprites are not clipped */}
           <img
             src={character.image}
             alt={character.name}
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: isLg ? 'contain' : 'cover' }}
+            className={`absolute object-contain ${isLg ? 'inset-2' : 'inset-1.5'}`}
             draggable={false}
           />
 
