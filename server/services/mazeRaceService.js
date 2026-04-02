@@ -63,9 +63,8 @@ function setPlayerReady(gameId, userId) {
 function startGame(gameId) {
   const game = getGame(gameId);
   if (!game) return null;
-  const idx = mazes.getRandomIndex();
-  game.mazeIndex = idx;
-  game.maze = mazes.cloneMaze(mazes.MAZES[idx]);
+  game.mazeIndex = -1;
+  game.maze = mazes.cloneMaze(mazes.generateMaze());
   game.player1.x = P1_START.x;
   game.player1.y = P1_START.y;
   game.player2.x = P2_START.x;
