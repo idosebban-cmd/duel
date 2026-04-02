@@ -151,12 +151,6 @@ const lookingForLabels: Record<string, string> = {
 
 // ─── Filter constants ──────────────────────────────────────────────────────────
 
-const DUEL_GAMES = ['guess_who', 'dot_dash', 'word_blitz'];
-const DUEL_GAME_LABELS: Record<string, string> = {
-  'guess_who': 'Guess Who',
-  'dot_dash': 'Dot Dash',
-  'word_blitz': 'Word Blitz',
-};
 const RELATIONSHIP_GOALS = ['casual', 'short-term', 'long-term', 'not-sure', 'open'];
 const LIFESTYLE_OPTIONS: Array<{ key: 'exercise' | 'smoking' | 'drinking' | 'pets'; label: string; options: string[] }> = [
   { key: 'exercise',  label: 'Exercise', options: ['Any', 'Daily', 'Often', 'Sometimes', 'Rarely'] },
@@ -585,11 +579,16 @@ function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
   });
 
   return (
-    <div ref={trackRef} style={{ position: 'relative', height: 36, userSelect: 'none' }}>
-      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
-      <div style={{ position: 'absolute', top: '50%', left: `${minPct}%`, width: `${maxPct - minPct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
-      <div style={handleStyle(minPct, 'linear-gradient(135deg, #4EFFC4, #B565FF)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'min'; }} />
-      <div style={handleStyle(maxPct, 'linear-gradient(135deg, #B565FF, #FF6BA8)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'max'; }} />
+    <div
+      className="w-full min-w-0 box-border"
+      style={{ paddingLeft: 14, paddingRight: 14 }}
+    >
+      <div ref={trackRef} className="w-full min-w-0" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
+        <div style={{ position: 'absolute', top: '50%', left: `${minPct}%`, width: `${maxPct - minPct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
+        <div style={handleStyle(minPct, 'linear-gradient(135deg, #4EFFC4, #B565FF)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'min'; }} />
+        <div style={handleStyle(maxPct, 'linear-gradient(135deg, #B565FF, #FF6BA8)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'max'; }} />
+      </div>
     </div>
   );
 }
@@ -620,13 +619,18 @@ function SingleRangeSlider({ min, max, value, onChange }: {
 
   const pct = ((value - min) / (max - min)) * 100;
   return (
-    <div ref={trackRef} style={{ position: 'relative', height: 36, userSelect: 'none' }}>
-      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
-      <div style={{ position: 'absolute', top: '50%', left: 0, width: `${pct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
-      <div
-        style={{ position: 'absolute', top: '50%', left: `${pct}%`, width: 24, height: 24, transform: 'translate(-50%, -50%)', background: 'linear-gradient(135deg, #4EFFC4, #B565FF)', borderRadius: '50%', border: '3px solid #0A1628', boxShadow: '0 0 14px rgba(78,255,196,0.7)', cursor: 'grab', touchAction: 'none' }}
-        onPointerDown={(e) => { e.preventDefault(); draggingRef.current = true; }}
-      />
+    <div
+      className="w-full min-w-0 box-border"
+      style={{ paddingLeft: 14, paddingRight: 14 }}
+    >
+      <div ref={trackRef} className="w-full min-w-0" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
+        <div style={{ position: 'absolute', top: '50%', left: 0, width: `${pct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
+        <div
+          style={{ position: 'absolute', top: '50%', left: `${pct}%`, width: 24, height: 24, transform: 'translate(-50%, -50%)', background: 'linear-gradient(135deg, #4EFFC4, #B565FF)', borderRadius: '50%', border: '3px solid #0A1628', boxShadow: '0 0 14px rgba(78,255,196,0.7)', cursor: 'grab', touchAction: 'none' }}
+          onPointerDown={(e) => { e.preventDefault(); draggingRef.current = true; }}
+        />
+      </div>
     </div>
   );
 }
@@ -662,12 +666,6 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
       ? prev.relationshipGoals.filter(x => x !== g)
       : [...prev.relationshipGoals, g],
   }));
-  const toggleGame = (g: string) => setDraft(prev => ({
-    ...prev,
-    duelGames: prev.duelGames.includes(g)
-      ? prev.duelGames.filter(x => x !== g)
-      : [...prev.duelGames, g],
-  }));
 
   const sectionHead = (label: string) => (
     <span className="font-display" style={{ color: '#B565FF', fontSize: 16, textShadow: '0 0 8px rgba(181,101,255,0.4)', display: 'block', marginBottom: 4 }}>{label}</span>
@@ -675,7 +673,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex w-full max-w-[100vw] min-w-0 flex-col overflow-x-hidden"
       style={{ background: '#0A1628' }}
       initial={{ y: '100%' }}
       animate={{ y: 0 }}
@@ -696,13 +694,16 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
       </div>
 
       {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      <div
+        className="min-w-0 w-full overflow-x-hidden"
+        style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+      >
 
         {/* ── Age Range ── */}
-        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <section className="min-w-0 w-full box-border" style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="min-w-0" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
             {sectionHead('AGE RANGE')}
-            <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>{draft.ageMin} – {draft.ageMax}</span>
+            <span className="font-body flex-shrink-0" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>{draft.ageMin} – {draft.ageMax}</span>
           </div>
           <DualRangeSlider min={18} max={50} valueMin={draft.ageMin} valueMax={draft.ageMax}
             onChange={(mn, mx) => setDraft(p => ({ ...p, ageMin: mn, ageMax: mx }))} />
@@ -751,22 +752,6 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
                 </motion.button>
               );
             })}
-          </div>
-        </section>
-
-        {/* ── Game Preferences ── */}
-        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          {sectionHead('GAME PREFERENCES')}
-          <p className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 16, marginTop: 2 }}>Show me people who like...</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {DUEL_GAMES.map(game => (
-              <label key={game} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => toggleGame(game)}>
-                <CheckBox checked={draft.duelGames.includes(game)} />
-                <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: draft.duelGames.includes(game) ? '#fff' : 'rgba(255,255,255,0.5)' }}>
-                  {DUEL_GAME_LABELS[game]}
-                </span>
-              </label>
-            ))}
           </div>
         </section>
 
