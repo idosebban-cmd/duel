@@ -11,11 +11,13 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onDismiss }: SplashScreenProps) {
   const [phase, setPhase] = useState<Phase>('visible');
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
+    if (!imageLoaded) return;
     const id = window.setTimeout(() => setPhase('fadeOut'), DISPLAY_MS);
     return () => window.clearTimeout(id);
-  }, []);
+  }, [imageLoaded]);
 
   const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== 'opacity') return;
@@ -39,6 +41,7 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
         alt=""
         className="h-full w-full object-contain"
         draggable={false}
+        onLoad={() => setImageLoaded(true)}
       />
     </div>
   );
