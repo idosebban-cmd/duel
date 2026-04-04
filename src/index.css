@@ -161,14 +161,6 @@
     cursor: pointer;
   }
 
-  .discover-dual-range-native__min {
-    z-index: 1;
-  }
-
-  .discover-dual-range-native__max {
-    z-index: 2;
-  }
-
   .discover-dual-range-native__min::-webkit-slider-runnable-track {
     height: 6px;
     background: rgba(255, 255, 255, 0.08);

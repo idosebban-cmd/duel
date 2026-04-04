@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
+import type { ChangeEvent, CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
@@ -538,10 +538,16 @@ function ProfileCard({
 
 // ─── Dual-handle range slider (native inputs, stacked in CSS grid) ───────────
 
+const DUAL_RANGE_Z = { top: 3, bottom: 1, defaultMin: 1, defaultMax: 2 } as const;
+
 function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
   min: number; max: number; valueMin: number; valueMax: number;
   onChange: (min: number, max: number) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const minInputRef = useRef<HTMLInputElement>(null);
+  const maxInputRef = useRef<HTMLInputElement>(null);
+
   const minSliderMax = Math.min(max, valueMax - 1);
   const maxSliderMin = Math.max(min, valueMin + 1);
 
@@ -557,9 +563,67 @@ function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
     onChange(valueMin, nextMax);
   };
 
+  const applyStackZ = useCallback((layer: 'min' | 'max') => {
+    const elMin = minInputRef.current;
+    const elMax = maxInputRef.current;
+    if (!elMin || !elMax) return;
+    if (layer === 'min') {
+      elMin.style.zIndex = String(DUAL_RANGE_Z.top);
+      elMax.style.zIndex = String(DUAL_RANGE_Z.bottom);
+    } else {
+      elMin.style.zIndex = String(DUAL_RANGE_Z.bottom);
+      elMax.style.zIndex = String(DUAL_RANGE_Z.top);
+    }
+  }, []);
+
+  const resetStackZ = useCallback(() => {
+    const elMin = minInputRef.current;
+    const elMax = maxInputRef.current;
+    if (!elMin || !elMax) return;
+    elMin.style.zIndex = String(DUAL_RANGE_Z.defaultMin);
+    elMax.style.zIndex = String(DUAL_RANGE_Z.defaultMax);
+  }, []);
+
+  const onPointerDownCapture = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const wrap = containerRef.current;
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const span = max - min;
+    const posMin = span > 0 ? (valueMin - min) / span : 0;
+    const posMax = span > 0 ? (valueMax - min) / span : 1;
+    const distMin = Math.abs(pct - posMin);
+    const distMax = Math.abs(pct - posMax);
+    const closer: 'min' | 'max' = distMin <= distMax ? 'min' : 'max';
+    applyStackZ(closer);
+  }, [applyStackZ, max, min, valueMax, valueMin]);
+
+  const onMinFocus = useCallback(() => applyStackZ('min'), [applyStackZ]);
+  const onMaxFocus = useCallback(() => applyStackZ('max'), [applyStackZ]);
+
+  useLayoutEffect(() => {
+    resetStackZ();
+  }, [resetStackZ]);
+
+  useEffect(() => {
+    const onPointerEnd = () => resetStackZ();
+    window.addEventListener('pointerup', onPointerEnd);
+    window.addEventListener('pointercancel', onPointerEnd);
+    return () => {
+      window.removeEventListener('pointerup', onPointerEnd);
+      window.removeEventListener('pointercancel', onPointerEnd);
+    };
+  }, [resetStackZ]);
+
   return (
-    <div className="discover-dual-range-native w-full min-w-0 max-w-full">
+    <div
+      ref={containerRef}
+      className="discover-dual-range-native w-full min-w-0 max-w-full"
+      onPointerDownCapture={onPointerDownCapture}
+    >
       <input
+        ref={minInputRef}
         type="range"
         className="discover-dual-range-native__min"
         min={min}
@@ -567,9 +631,11 @@ function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
         step={1}
         value={valueMin <= minSliderMax ? valueMin : minSliderMax}
         onChange={onMinChange}
+        onFocus={onMinFocus}
         aria-label="Minimum age"
       />
       <input
+        ref={maxInputRef}
         type="range"
         className="discover-dual-range-native__max"
         min={maxSliderMin}
@@ -577,6 +643,7 @@ function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
         step={1}
         value={valueMax >= maxSliderMin ? valueMax : maxSliderMin}
         onChange={onMaxChange}
+        onFocus={onMaxFocus}
         aria-label="Maximum age"
       />
     </div>
