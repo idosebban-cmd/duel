@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://playduel.app',
     cleartext: false,
+    // WebView scheme must stay https with remote server.url — do not set to app.playduel.
+    // Email/OAuth deep links use app.playduel:// via Android intent filters + @capacitor/app.
+    androidScheme: 'https',
   },
   plugins: {
     PushNotifications: {

@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { SignupLegalConsent } from '../legal/SignupLegalConsent';
+import { getEmailRedirectTo, getOAuthRedirectTo } from '../../lib/authRedirect';
 
 // Check if URL contains an OAuth redirect hash (access_token, etc.)
 function hasOAuthRedirectHash(): boolean {
@@ -128,7 +129,7 @@ export function CreateAccountScreen() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/onboarding/create-account`,
+          redirectTo: getOAuthRedirectTo(),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -155,7 +156,11 @@ export function CreateAccountScreen() {
     setError(null);
     setResendBusy(true);
     try {
-      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email: addr });
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: addr,
+        options: { emailRedirectTo: getEmailRedirectTo() },
+      });
       if (resendError) {
         setResendMessage(resendError.message);
       } else {
@@ -190,7 +195,11 @@ export function CreateAccountScreen() {
 
     setLoading(true);
     try {
-      const { data, error: authError } = await supabase.auth.signUp({ email, password });
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: getEmailRedirectTo() },
+      });
       console.log('[CreateAccount] supabase.auth.signUp response', { data, error: authError });
 
       if (authError) {

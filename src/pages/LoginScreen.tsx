@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { SignupLegalConsent } from '../components/legal/SignupLegalConsent';
+import { getEmailRedirectTo, getPasswordResetRedirectTo } from '../lib/authRedirect';
 
 // ─── CRT corner brackets ──────────────────────────────────────────────────────
 
@@ -144,7 +145,11 @@ export function LoginScreen() {
     }
 
     setLoading(true);
-    const { data, error: authError } = await supabase.auth.signUp({ email, password });
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: getEmailRedirectTo() },
+    });
     setLoading(false);
 
     if (authError) {
@@ -179,7 +184,9 @@ export function LoginScreen() {
     }
     setError(null);
     setLoading(true);
-    const { error: authError } = await supabase.auth.resetPasswordForEmail(email);
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getPasswordResetRedirectTo(),
+    });
     setLoading(false);
     if (authError) {
       setError(authError.message);

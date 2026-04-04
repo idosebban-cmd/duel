@@ -18,6 +18,20 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Deep link: Supabase email/OAuth/password redirects (custom scheme, no host) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.playduel" />
+            </intent-filter>
+            <!-- Deep link: production HTTPS URLs (SPA paths) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="playduel.app" android:pathPrefix="/" />
+            </intent-filter>
         </activity>
 
         <provider

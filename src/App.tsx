@@ -49,6 +49,8 @@ import { supabase as supabaseClient } from './lib/supabase';
 import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
@@ -121,6 +123,30 @@ function LastSeenHeartbeat() {
 
 function PushNotificationsBridge() {
   usePushNotifications();
+  return null;
+}
+
+/** Merges custom-scheme auth callbacks (app.playduel://#…) onto the WebView origin so Supabase can parse tokens. */
+function AuthDeepLinkHandler() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle: PluginListenerHandle | undefined;
+    void CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+      try {
+        const incoming = new URL(url);
+        if (!incoming.hash && !incoming.search) return;
+        const next = `${window.location.origin}${incoming.pathname}${incoming.search}${incoming.hash}`;
+        window.location.replace(next);
+      } catch (err) {
+        console.error('[auth] appUrlOpen', err);
+      }
+    }).then((h) => {
+      handle = h;
+    });
+    return () => {
+      void handle?.remove();
+    };
+  }, []);
   return null;
 }
 
@@ -486,6 +512,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <LastSeenHeartbeat />
+      <AuthDeepLinkHandler />
       <PushNotificationsBridge />
       <PostEmailConfirmProfileSync />
       <GlobalChallengeListener />
