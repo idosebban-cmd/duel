@@ -1,7 +1,8 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
-import type { ChangeEvent, CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Range } from 'react-range';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '../store/authStore';
 import {
@@ -536,120 +537,6 @@ function ProfileCard({
   );
 }
 
-// ─── Dual-handle range slider (native inputs, stacked in CSS grid) ───────────
-
-const DUAL_RANGE_Z = { top: 3, bottom: 1, defaultMin: 1, defaultMax: 2 } as const;
-
-function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
-  min: number; max: number; valueMin: number; valueMax: number;
-  onChange: (min: number, max: number) => void;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const minInputRef = useRef<HTMLInputElement>(null);
-  const maxInputRef = useRef<HTMLInputElement>(null);
-
-  const minSliderMax = Math.min(max, valueMax - 1);
-  const maxSliderMin = Math.max(min, valueMin + 1);
-
-  const onMinChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
-    const nextMin = Math.max(min, Math.min(v, valueMax - 1));
-    onChange(nextMin, valueMax);
-  };
-
-  const onMaxChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
-    const nextMax = Math.min(max, Math.max(v, valueMin + 1));
-    onChange(valueMin, nextMax);
-  };
-
-  const applyStackZ = useCallback((layer: 'min' | 'max') => {
-    const elMin = minInputRef.current;
-    const elMax = maxInputRef.current;
-    if (!elMin || !elMax) return;
-    if (layer === 'min') {
-      elMin.style.zIndex = String(DUAL_RANGE_Z.top);
-      elMax.style.zIndex = String(DUAL_RANGE_Z.bottom);
-    } else {
-      elMin.style.zIndex = String(DUAL_RANGE_Z.bottom);
-      elMax.style.zIndex = String(DUAL_RANGE_Z.top);
-    }
-  }, []);
-
-  const resetStackZ = useCallback(() => {
-    const elMin = minInputRef.current;
-    const elMax = maxInputRef.current;
-    if (!elMin || !elMax) return;
-    elMin.style.zIndex = String(DUAL_RANGE_Z.defaultMin);
-    elMax.style.zIndex = String(DUAL_RANGE_Z.defaultMax);
-  }, []);
-
-  const onPointerDownCapture = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    const wrap = containerRef.current;
-    if (!wrap) return;
-    const rect = wrap.getBoundingClientRect();
-    if (rect.width <= 0) return;
-    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    const span = max - min;
-    const posMin = span > 0 ? (valueMin - min) / span : 0;
-    const posMax = span > 0 ? (valueMax - min) / span : 1;
-    const distMin = Math.abs(pct - posMin);
-    const distMax = Math.abs(pct - posMax);
-    const closer: 'min' | 'max' = distMin <= distMax ? 'min' : 'max';
-    applyStackZ(closer);
-  }, [applyStackZ, max, min, valueMax, valueMin]);
-
-  const onMinFocus = useCallback(() => applyStackZ('min'), [applyStackZ]);
-  const onMaxFocus = useCallback(() => applyStackZ('max'), [applyStackZ]);
-
-  useLayoutEffect(() => {
-    resetStackZ();
-  }, [resetStackZ]);
-
-  useEffect(() => {
-    const onPointerEnd = () => resetStackZ();
-    window.addEventListener('pointerup', onPointerEnd);
-    window.addEventListener('pointercancel', onPointerEnd);
-    return () => {
-      window.removeEventListener('pointerup', onPointerEnd);
-      window.removeEventListener('pointercancel', onPointerEnd);
-    };
-  }, [resetStackZ]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="discover-dual-range-native w-full min-w-0 max-w-full"
-      onPointerDownCapture={onPointerDownCapture}
-    >
-      <input
-        ref={minInputRef}
-        type="range"
-        className="discover-dual-range-native__min"
-        min={min}
-        max={minSliderMax}
-        step={1}
-        value={valueMin <= minSliderMax ? valueMin : minSliderMax}
-        onChange={onMinChange}
-        onFocus={onMinFocus}
-        aria-label="Minimum age"
-      />
-      <input
-        ref={maxInputRef}
-        type="range"
-        className="discover-dual-range-native__max"
-        min={maxSliderMin}
-        max={max}
-        step={1}
-        value={valueMax >= maxSliderMin ? valueMax : maxSliderMin}
-        onChange={onMaxChange}
-        onFocus={onMaxFocus}
-        aria-label="Maximum age"
-      />
-    </div>
-  );
-}
-
 // ─── Single-handle range slider ───────────────────────────────────────────────
 
 function SingleRangeSlider({ min, max, value, onChange }: {
@@ -759,13 +646,88 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
             <div className="min-w-0 flex-1">{sectionHead('AGE RANGE')}</div>
             <span className="font-body flex-shrink-0" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>{draft.ageMin} – {draft.ageMax}</span>
           </div>
-          <div className="w-full min-w-0 max-w-full">
-            <DualRangeSlider min={18} max={50} valueMin={draft.ageMin} valueMax={draft.ageMax}
-              onChange={(mn, mx) => setDraft(p => ({ ...p, ageMin: mn, ageMax: mx }))} />
+          <div className="w-full min-w-0 max-w-full box-border px-4">
+            <Range
+              label="Age range filter"
+              step={1}
+              min={18}
+              max={65}
+              values={[draft.ageMin, draft.ageMax]}
+              onChange={(values) => setDraft(p => ({ ...p, ageMin: values[0], ageMax: values[1] }))}
+              renderTrack={({ props, children }) => {
+                const span = 65 - 18;
+                const minPct = span > 0 ? ((draft.ageMin - 18) / span) * 100 : 0;
+                const maxPct = span > 0 ? ((draft.ageMax - 18) / span) * 100 : 100;
+                return (
+                  <div
+                    {...props}
+                    style={{
+                      ...props.style,
+                      height: 36,
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      position: 'relative',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: '50%',
+                        height: 6,
+                        transform: 'translateY(-50%)',
+                        background: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 3,
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: `${minPct}%`,
+                        width: `${Math.max(0, maxPct - minPct)}%`,
+                        top: '50%',
+                        height: 6,
+                        transform: 'translateY(-50%)',
+                        background: 'linear-gradient(90deg, #4EFFC4, #B565FF)',
+                        borderRadius: 3,
+                        boxShadow: '0 0 10px rgba(78,255,196,0.35)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    {children}
+                  </div>
+                );
+              }}
+              renderThumb={({ props, index }) => (
+                <div
+                  {...props}
+                  style={{
+                    ...props.style,
+                    height: 24,
+                    width: 24,
+                    borderRadius: '50%',
+                    border: '3px solid #0A1628',
+                    outline: 'none',
+                    background:
+                      index === 0
+                        ? 'linear-gradient(135deg, #4EFFC4, #B565FF)'
+                        : 'linear-gradient(135deg, #B565FF, #FF6BA8)',
+                    boxShadow:
+                      index === 0
+                        ? '0 0 14px rgba(78,255,196,0.7)'
+                        : '0 0 14px rgba(181,101,255,0.7)',
+                  }}
+                  aria-label={index === 0 ? 'Minimum age' : 'Maximum age'}
+                />
+              )}
+            />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
             <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>18</span>
-            <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>50</span>
+            <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>65</span>
           </div>
         </section>
 
