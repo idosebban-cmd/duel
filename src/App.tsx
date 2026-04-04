@@ -48,6 +48,7 @@ import { getProfile } from './lib/database';
 import { supabase as supabaseClient } from './lib/supabase';
 import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
@@ -115,6 +116,11 @@ function LastSeenHeartbeat() {
     };
   }, [bumpLastSeen]);
 
+  return null;
+}
+
+function PushNotificationsBridge() {
+  usePushNotifications();
   return null;
 }
 
@@ -480,6 +486,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <LastSeenHeartbeat />
+      <PushNotificationsBridge />
       <PostEmailConfirmProfileSync />
       <GlobalChallengeListener />
       <AnimatePresence mode="wait">

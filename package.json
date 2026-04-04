@@ -6,10 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:ios": "npm run build && npx cap sync ios",
+    "build:android": "npm run build && npx cap sync android",
+    "cap:sync": "npx cap sync",
+    "cap:assets": "cp resources/icon.png resources/icon-only.png && npx @capacitor/assets generate --assetPath resources --ios --android --splashBackgroundColor '#050510' --iconBackgroundColor '#050510' --splashBackgroundColorDark '#050510' --iconBackgroundColorDark '#050510'",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0",
+    "@capacitor/push-notifications": "^8.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.99.1",
     "framer-motion": "^12.34.3",
@@ -23,6 +32,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.58.2",
     "@types/google.maps": "^3.58.1",
