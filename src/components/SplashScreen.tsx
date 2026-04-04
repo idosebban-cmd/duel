@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const DISPLAY_MS = 2000;
+const DISPLAY_MS = 3000;
 const FADE_MS = 400;
 
 type Phase = 'visible' | 'fadeOut';
