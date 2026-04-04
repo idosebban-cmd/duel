@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '../store/onboardingStore';
@@ -536,56 +536,49 @@ function ProfileCard({
   );
 }
 
-// ─── Dual-handle range slider ─────────────────────────────────────────────────
+// ─── Dual-handle range slider (native inputs, stacked in CSS grid) ───────────
 
 function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
   min: number; max: number; valueMin: number; valueMax: number;
   onChange: (min: number, max: number) => void;
 }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef<'min' | 'max' | null>(null);
-  const valuesRef = useRef({ valueMin, valueMax });
-  valuesRef.current = { valueMin, valueMax };
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  const minSliderMax = Math.min(max, valueMax - 1);
+  const maxSliderMin = Math.max(min, valueMin + 1);
 
-  const toPercent = (v: number) => ((v - min) / (max - min)) * 100;
+  const onMinChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    const nextMin = Math.max(min, Math.min(v, valueMax - 1));
+    onChange(nextMin, valueMax);
+  };
 
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (!draggingRef.current || !trackRef.current) return;
-      e.preventDefault();
-      const rect = trackRef.current.getBoundingClientRect();
-      const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      const val = Math.round(min + pct * (max - min));
-      const { valueMin: vMin, valueMax: vMax } = valuesRef.current;
-      if (draggingRef.current === 'min') onChangeRef.current(Math.min(val, vMax - 1), vMax);
-      else onChangeRef.current(vMin, Math.max(val, vMin + 1));
-    };
-    const onUp = () => { draggingRef.current = null; };
-    window.addEventListener('pointermove', onMove, { passive: false });
-    window.addEventListener('pointerup', onUp);
-    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
-  }, [min, max]);
-
-  const minPct = toPercent(valueMin);
-  const maxPct = toPercent(valueMax);
-  const handleStyle = (pct: number, gradient: string): React.CSSProperties => ({
-    position: 'absolute', top: '50%', left: `${pct}%`,
-    width: 24, height: 24, transform: 'translate(-50%, -50%)',
-    background: gradient, borderRadius: '50%', border: '3px solid #0A1628',
-    boxShadow: `0 0 14px ${gradient.includes('4EFFC4') ? 'rgba(78,255,196,0.7)' : 'rgba(181,101,255,0.7)'}`,
-    cursor: 'grab', touchAction: 'none', zIndex: 2,
-  });
+  const onMaxChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    const nextMax = Math.min(max, Math.max(v, valueMin + 1));
+    onChange(valueMin, nextMax);
+  };
 
   return (
-    <div className="w-full min-w-0 max-w-full box-border px-4">
-      <div ref={trackRef} className="w-full min-w-0 max-w-full" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
-        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
-        <div style={{ position: 'absolute', top: '50%', left: `${minPct}%`, width: `${maxPct - minPct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
-        <div style={handleStyle(minPct, 'linear-gradient(135deg, #4EFFC4, #B565FF)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'min'; }} />
-        <div style={handleStyle(maxPct, 'linear-gradient(135deg, #B565FF, #FF6BA8)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'max'; }} />
-      </div>
+    <div className="discover-dual-range-native w-full min-w-0 max-w-full">
+      <input
+        type="range"
+        className="discover-dual-range-native__min"
+        min={min}
+        max={minSliderMax}
+        step={1}
+        value={valueMin <= minSliderMax ? valueMin : minSliderMax}
+        onChange={onMinChange}
+        aria-label="Minimum age"
+      />
+      <input
+        type="range"
+        className="discover-dual-range-native__max"
+        min={maxSliderMin}
+        max={max}
+        step={1}
+        value={valueMax >= maxSliderMin ? valueMax : maxSliderMin}
+        onChange={onMaxChange}
+        aria-label="Maximum age"
+      />
     </div>
   );
 }
