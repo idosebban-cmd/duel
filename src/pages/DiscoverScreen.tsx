@@ -579,11 +579,8 @@ function DualRangeSlider({ min, max, valueMin, valueMax, onChange }: {
   });
 
   return (
-    <div
-      className="w-full min-w-0 box-border"
-      style={{ paddingLeft: 14, paddingRight: 14 }}
-    >
-      <div ref={trackRef} className="w-full min-w-0" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
+    <div className="w-full min-w-0 max-w-full box-border px-4">
+      <div ref={trackRef} className="w-full min-w-0 max-w-full" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
         <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
         <div style={{ position: 'absolute', top: '50%', left: `${minPct}%`, width: `${maxPct - minPct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
         <div style={handleStyle(minPct, 'linear-gradient(135deg, #4EFFC4, #B565FF)')} onPointerDown={(e) => { e.preventDefault(); draggingRef.current = 'min'; }} />
@@ -619,11 +616,8 @@ function SingleRangeSlider({ min, max, value, onChange }: {
 
   const pct = ((value - min) / (max - min)) * 100;
   return (
-    <div
-      className="w-full min-w-0 box-border"
-      style={{ paddingLeft: 14, paddingRight: 14 }}
-    >
-      <div ref={trackRef} className="w-full min-w-0" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
+    <div className="w-full min-w-0 max-w-full box-border px-4">
+      <div ref={trackRef} className="w-full min-w-0 max-w-full" style={{ position: 'relative', height: 36, userSelect: 'none' }}>
         <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 6, transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }} />
         <div style={{ position: 'absolute', top: '50%', left: 0, width: `${pct}%`, height: 6, transform: 'translateY(-50%)', background: 'linear-gradient(90deg, #4EFFC4, #B565FF)', borderRadius: 3, boxShadow: '0 0 10px rgba(78,255,196,0.35)' }} />
         <div
@@ -700,13 +694,15 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
       >
 
         {/* ── Age Range ── */}
-        <section className="min-w-0 w-full box-border" style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <div className="min-w-0" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8 }}>
-            {sectionHead('AGE RANGE')}
+        <section className="min-w-0 w-full max-w-full box-border" style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex min-w-0 w-full max-w-full items-center justify-between gap-2" style={{ marginBottom: 16 }}>
+            <div className="min-w-0 flex-1">{sectionHead('AGE RANGE')}</div>
             <span className="font-body flex-shrink-0" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>{draft.ageMin} – {draft.ageMax}</span>
           </div>
-          <DualRangeSlider min={18} max={50} valueMin={draft.ageMin} valueMax={draft.ageMax}
-            onChange={(mn, mx) => setDraft(p => ({ ...p, ageMin: mn, ageMax: mx }))} />
+          <div className="w-full min-w-0 max-w-full">
+            <DualRangeSlider min={18} max={50} valueMin={draft.ageMin} valueMax={draft.ageMax}
+              onChange={(mn, mx) => setDraft(p => ({ ...p, ageMin: mn, ageMax: mx }))} />
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
             <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>18</span>
             <span className="font-body" style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>50</span>
@@ -714,7 +710,7 @@ function FilterModal({ initialFilters, previewProfiles, onApply, onClose }: {
         </section>
 
         {/* ── Distance ── */}
-        <section style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <section className="min-w-0 w-full max-w-full box-border" style={{ padding: '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             {sectionHead('DISTANCE')}
             <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: '#FFE66D' }}>
