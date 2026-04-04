@@ -51,6 +51,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { SplashScreen as CapacitorSplashScreen } from '@capacitor/splash-screen';
+import { SplashScreen } from './components/SplashScreen';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
@@ -462,6 +464,7 @@ function RootRedirect() {
 export default function App() {
   const { setUser, setSession, setLoading } = useAuthStore();
   const { setUserId } = useOnboardingStore();
+  const [showLaunchSplash, setShowLaunchSplash] = useState(true);
 
   useEffect(() => {
     preloadImages();
@@ -511,6 +514,22 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {showLaunchSplash ? (
+        <SplashScreen
+          onDismiss={() => {
+            setShowLaunchSplash(false);
+            if (Capacitor.isNativePlatform()) {
+              void (async () => {
+                try {
+                  await CapacitorSplashScreen.hide();
+                } catch (err) {
+                  console.error('[SplashScreen] hide failed', err);
+                }
+              })();
+            }
+          }}
+        />
+      ) : null}
       <LastSeenHeartbeat />
       <AuthDeepLinkHandler />
       <PushNotificationsBridge />
