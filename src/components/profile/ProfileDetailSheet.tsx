@@ -304,8 +304,8 @@ export function ProfileDetailSheet({
       )}
 
       <div
-        className={`flex-1 overflow-y-auto pb-24 ${hideHeaderNavigation ? 'pt-[calc(env(safe-area-inset-top,0px)+5.25rem)]' : ''}`}
-        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        className={`flex-1 overflow-y-auto pb-24 pr-2 ${hideHeaderNavigation ? 'pt-[calc(env(safe-area-inset-top,0px)+5.25rem)]' : ''}`}
+        style={{ WebkitOverflowScrolling: 'touch', scrollbarGutter: 'stable' } as React.CSSProperties}
       >
         <div className="relative w-full aspect-[300/350] select-none bg-[#0A0A1E]">
           <AnimatePresence mode="wait">
@@ -428,7 +428,7 @@ export function ProfileDetailSheet({
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                   >
-                    <img src={gameTypeIcons[g]} alt="" className="w-6 h-6 object-contain" draggable={false} />
+                    <img src={gameTypeIcons[g]} alt="" className="w-10 h-10 object-contain" draggable={false} />
                     <span className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
                       {gameTypeLabels[g] || g}
                     </span>
@@ -452,7 +452,7 @@ export function ProfileDetailSheet({
                       className="flex items-center gap-2 px-3 py-2 rounded-lg"
                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
                     >
-                      <img src="/game-icons/Video%20games.png" alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
+                      <img src="/game-icons/Video%20games.png" alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
                       <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
                     </div>
                   ))}
@@ -464,10 +464,10 @@ export function ProfileDetailSheet({
           <SectionCard>
             <SectionHeading label="What Are You Looking For?" section="lookingFor" />
             <div
-              className="flex items-center gap-3 px-3 py-3 rounded-xl"
+              className="flex items-start gap-3 px-3 py-3 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <img src={INTENT_UI[intent].icon} alt="" className="w-6 h-6 object-contain flex-shrink-0" draggable={false} />
+              <img src={INTENT_UI[intent].icon} alt="" className="w-12 h-12 object-contain flex-shrink-0" draggable={false} />
               <div>
                 <p className="font-body text-ui-body font-bold" style={{ color: intentColors[intent] }}>
                   {INTENT_UI[intent].label}
@@ -531,15 +531,22 @@ export function ProfileDetailSheet({
       </div>
 
       {onAction && actionVariant === 'discover' && (
-        <div className="fixed bottom-0 left-0 right-0 flex gap-3 px-5 py-4 z-10"
-          style={{ background: 'rgba(12,12,28,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div
+          className="fixed bottom-0 left-0 right-0 z-10 flex gap-3 px-5 pt-4"
+          style={{
+            background: 'rgba(12,12,28,0.97)',
+            backdropFilter: 'blur(12px)',
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+          }}
+        >
           <motion.button type="button" onClick={() => onAction('left')} className="flex-1 py-4 rounded-2xl font-display text-lg"
             style={{ background: 'rgba(255,61,113,0.12)', border: '2px solid rgba(255,61,113,0.4)', color: '#FF3D71' }} whileTap={{ scale: 0.95 }}>
             Pass
           </motion.button>
           <motion.button type="button" onClick={() => onAction('right')} className="flex-1 py-4 rounded-2xl font-display text-lg"
             style={{ background: 'rgba(78,255,196,0.12)', border: '2px solid rgba(78,255,196,0.4)', color: '#4EFFC4' }} whileTap={{ scale: 0.95 }}>
-            Like
+            Play
           </motion.button>
         </div>
       )}

@@ -348,7 +348,7 @@ function GamesSection() {
     { icon: '/game-icons/Boardgames.png',           name: 'Connect 4',  bg: 'linear-gradient(135deg, #FF6BA8, #FF3D71)' },
     { icon: '/game-icons/Competative%20games.png',   name: 'Battleship', bg: 'linear-gradient(135deg, #4EFFC4, #00D9FF)' },
     { icon: '/game-icons/Strategy.png',             name: 'Draughts',   bg: 'linear-gradient(135deg, #FFE66D, #FF9F1C)' },
-    { icon: '/landing-icons/Ghost.png',             name: 'Guess Who',  bg: 'linear-gradient(135deg, #B565FF, #FF6BA8)' },
+    { icon: '/landing-icons/GuessWho.png',           name: 'Guess Who',  bg: 'linear-gradient(135deg, #B565FF, #FF6BA8)' },
     { icon: '/landing-icons/Dot%20Dash.png',         name: 'Dot Dash',   bg: 'linear-gradient(135deg, #00D9FF, #4EFFC4)' },
     { icon: '/game-icons/Word%20games.png',         name: 'Word Blitz', bg: 'linear-gradient(135deg, #FF9F1C, #FFE66D)' },
   ];

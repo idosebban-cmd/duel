@@ -1704,7 +1704,6 @@ export function ProfileScreen() {
                     </div>
                   )}
                   <div className="text-center">
-                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
                     <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
                       {item.name ?? 'Not set'}
                     </p>

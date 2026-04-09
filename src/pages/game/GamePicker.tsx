@@ -22,7 +22,7 @@ const GAMES: GameOption[] = [
   {
     id: 'guess_who',
     name: 'Guess Who?',
-    imgSrc: '/landing-icons/Ghost.png',
+    imgSrc: '/landing-icons/GuessWho.png',
     description: 'Ask questions to deduce your opponent\'s secret character. Quick deduction game.',
     route: '/game',
     gradient: 'linear-gradient(135deg, #FF6BA8, #B565FF)',
@@ -228,7 +228,7 @@ export function GamePicker() {
                     src={game.imgSrc}
                     alt={game.name}
                     className={
-                      game.id === 'hangman'
+                      game.id === 'hangman' || game.id === 'guess_who'
                         ? 'w-14 h-14 sm:w-16 sm:h-16 object-contain flex-shrink-0'
                         : 'w-12 h-12 object-contain flex-shrink-0'
                     }

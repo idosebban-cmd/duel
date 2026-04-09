@@ -472,7 +472,7 @@ function ProfileCard({
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-3 pt-3" style={scanlineBg}>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" style={scanlineBg}>
         <div className="flex items-baseline gap-2">
           <span className="font-display text-2xl leading-none" style={{ color: '#FFE66D', textShadow: '0 0 10px rgba(255,230,109,0.5)' }}>
             {profile.name}
@@ -518,10 +518,10 @@ function ProfileCard({
 
         {intentKind != null && (
           <div
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+            className="flex items-start gap-3 rounded-xl px-3 py-2.5"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
-            <img src={INTENT_UI[intentKind].icon} alt="" className="h-6 w-6 flex-shrink-0 object-contain" draggable={false} />
+            <img src={INTENT_UI[intentKind].icon} alt="" className="h-12 w-12 flex-shrink-0 object-contain" draggable={false} />
             <div className="min-w-0">
               <p className="font-body text-ui-body font-bold leading-tight" style={{ color: discoverIntentColors[intentKind] }}>
                 {INTENT_UI[intentKind].label}
@@ -984,7 +984,7 @@ function TopCard({
         className="absolute top-6 right-5 z-20 font-display text-2xl border-[3px] rounded-xl px-3 py-0.5 pointer-events-none"
         style={{ opacity: likeOpacity, color: '#4EFFC4', borderColor: '#4EFFC4', textShadow: '0 0 15px rgba(78,255,196,0.7)', rotate: -15 }}
       >
-        LIKE
+        PLAY
       </motion.div>
 
       {/* NOPE stamp */}
@@ -1033,7 +1033,7 @@ function TopCard({
               <img
                 src="/icons/Star.png"
                 alt="like"
-                className="h-7 w-7 object-contain"
+                className="h-11 w-11 object-contain"
                 draggable={false}
                 style={{ filter: 'drop-shadow(0 0 6px rgba(78,255,196,0.6))' }}
               />
@@ -1116,10 +1116,11 @@ function MatchModal({ matchProfile, userCharacter, onDismiss, onPlay }: {
           </motion.div>
         </div>
         {/* Always require a game before chat */}
-        <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3"
+        <motion.button onClick={onPlay} className="w-full py-4 rounded-xl font-display text-xl mb-3 flex items-center justify-center gap-2"
           style={{ background: 'linear-gradient(135deg, #4EFFC4 0%, #00F5FF 100%)', color: '#12122A', boxShadow: '0 0 24px rgba(0,245,255,0.4), 4px 4px 0 rgba(0,0,0,0.35)', border: '3px solid rgba(255,255,255,0.2)' }}
           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-          LET'S PLAY 🎮
+          <span>LET'S PLAY</span>
+          <img src="/game-icons/Video%20games.png" alt="" className="h-6 w-6 object-contain flex-shrink-0" draggable={false} />
         </motion.button>
         <button onClick={onDismiss} className="w-full py-2 font-body font-bold text-ui-body mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
           Maybe Later
@@ -1141,7 +1142,14 @@ function BottomNav({
   hasIncomingChallenge: boolean;
 }) {
   return (
-    <nav className="flex-none flex items-stretch border-t" style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(14,14,34,0.97)' }}>
+    <nav
+      className="flex-none flex items-stretch border-t"
+      style={{
+        borderColor: 'rgba(255,255,255,0.08)',
+        background: 'rgba(14,14,34,0.97)',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom, 0px))',
+      }}
+    >
       <button className="flex-1 flex flex-col items-center justify-center gap-1 py-3 relative" onClick={onMatches} style={{ color: 'rgba(255,255,255,0.35)' }}>
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 19.25C11 19.25 2.75 14.667 2.75 9.167C2.75 6.728 4.728 4.75 7.167 4.75C8.574 4.75 9.828 5.4 10.657 6.427L11 6.844L11.343 6.427C12.172 5.4 13.426 4.75 14.833 4.75C17.272 4.75 19.25 6.728 19.25 9.167C19.25 14.667 11 19.25 11 19.25Z" fill="currentColor"/></svg>
         {hasIncomingChallenge && (
@@ -1488,7 +1496,7 @@ export function DiscoverScreen() {
   const stackDepth = Math.min(remaining, 3);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
+    <div className="min-h-[100dvh] h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
       {/* Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.025]"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
@@ -1520,7 +1528,10 @@ export function DiscoverScreen() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="flex-none flex items-center justify-between px-5 pt-5 pb-3">
+      <header
+        className="flex-none flex items-center justify-between px-5 pb-3"
+        style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top, 0px))' }}
+      >
         <div className="font-logo text-2xl" style={{ color: '#FFE66D', textShadow: '0 0 16px rgba(255,230,109,0.65), 4px 4px 0 rgba(0,0,0,0.4)' }}>
           DUEL
         </div>
