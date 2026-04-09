@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserPrompt } from '../../store/onboardingStore';
+import { promptCategoryIconSrc } from '../../constants/promptCategoryIcons';
 import { INTENT_UI, type IntentValue } from '../../lib/database';
 
 export interface ProfileDetailData {
@@ -193,7 +194,7 @@ function PromptReadCard({ prompt }: { prompt: UserPrompt }) {
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{prompt.icon}</span>
+        <img src={promptCategoryIconSrc(prompt.category)} alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
         <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.7)' }}>
           {prompt.question}
         </p>
@@ -349,22 +350,16 @@ export function ProfileDetailSheet({
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 min-h-[44px]"
+                  className="flex flex-col items-center justify-center rounded-xl px-2 py-3 min-h-[44px]"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
                   {item.img ? (
-                    <img src={item.img} alt="" className="w-10 h-10 object-contain" draggable={false} />
+                    <img src={item.img} alt="" className="w-16 h-16 object-contain flex-shrink-0" draggable={false} />
                   ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }}>
                       <span style={{ color: 'rgba(255,255,255,0.15)' }}>?</span>
                     </div>
                   )}
-                  <div className="text-center">
-                    <p className="font-body text-ui-caption" style={{ color: 'rgba(255,255,255,0.7)' }}>{item.label}</p>
-                    <p className="font-body text-ui-label font-bold" style={{ color: item.name ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)' }}>
-                      {item.name || 'Not set'}
-                    </p>
-                  </div>
                 </div>
               ))}
             </div>
@@ -457,7 +452,7 @@ export function ProfileDetailSheet({
                       className="flex items-center gap-2 px-3 py-2 rounded-lg"
                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
                     >
-                      <span className="font-body text-ui-body">🎮</span>
+                      <img src="/game-icons/Video%20games.png" alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
                       <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
                     </div>
                   ))}

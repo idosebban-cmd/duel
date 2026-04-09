@@ -19,6 +19,7 @@ import {
 } from '../lib/database';
 import type { UserProfile, BlockedUserListItem } from '../lib/database';
 import type { UserPrompt } from '../store/onboardingStore';
+import { promptCategoryIconSrc } from '../constants/promptCategoryIcons';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
 import { fileToDataUrl } from '../lib/imageCrop';
@@ -219,7 +220,7 @@ function PromptCard({ prompt }: { prompt: UserPrompt }) {
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{prompt.icon}</span>
+        <img src={promptCategoryIconSrc(prompt.category)} alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
         <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.7)' }}>
           {prompt.question}
         </p>
@@ -1485,7 +1486,10 @@ export function ProfileScreen() {
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                             onClick={() => { setPickedPrompt(p); setPromptAnswer(''); setPromptStep('answer'); }}
                           >
-                            <span className="font-body text-ui-caption" style={{ color }}>{p.icon} {p.question}</span>
+                            <span className="font-body text-ui-caption inline-flex items-center gap-2" style={{ color }}>
+                              <img src={promptCategoryIconSrc(p.category)} alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
+                              {p.question}
+                            </span>
                           </button>
                         );
                       })}
@@ -1499,8 +1503,9 @@ export function ProfileScreen() {
               )}
               {promptStep === 'answer' && pickedPrompt && (
                 <>
-                  <h2 className="font-display text-lg mb-2" style={{ color: '#FFE66D' }}>
-                    {pickedPrompt.icon} {pickedPrompt.question}
+                  <h2 className="font-display text-lg mb-2 flex items-start gap-2" style={{ color: '#FFE66D' }}>
+                    <img src={promptCategoryIconSrc(pickedPrompt.category)} alt="" className="w-5 h-5 object-contain flex-shrink-0 mt-0.5" draggable={false} />
+                    <span>{pickedPrompt.question}</span>
                   </h2>
                   <textarea
                     value={promptAnswer}
@@ -1957,7 +1962,7 @@ export function ProfileScreen() {
                       className="flex items-center gap-2 px-3 py-2 rounded-lg"
                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
                     >
-                      <span className="font-body text-ui-body">🎮</span>
+                      <img src="/game-icons/Video%20games.png" alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
                       <span className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.7)' }}>{g}</span>
                     </div>
                   ))}

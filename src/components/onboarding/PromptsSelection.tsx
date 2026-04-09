@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS, type UserPrompt } from '../../store/onboardingStore';
+import { promptCategoryIconSrc } from '../../constants/promptCategoryIcons';
 import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
 
 // ─── Prompt library ───────────────────────────────────────────────────────────
@@ -75,10 +76,10 @@ const ALL_PROMPTS: Omit<UserPrompt, 'answer'>[] = [
 ];
 
 const CATEGORIES = [
-  { key: 'games',       label: 'Games & Competition', icon: '🎮', color: '#00F5FF', glow: 'rgba(0,245,255,0.3)' },
-  { key: 'fun',         label: 'Random Fun',          icon: '🎲', color: '#FFE66D', glow: 'rgba(255,230,109,0.3)' },
-  { key: 'personality', label: 'Personality & Quirks',icon: '💭', color: '#B565FF', glow: 'rgba(181,101,255,0.3)' },
-  { key: 'playful',     label: 'Playful Challenge',   icon: '🔥', color: '#FF6BA8', glow: 'rgba(255,107,168,0.3)' },
+  { key: 'games',       label: 'Games & Competition', color: '#00F5FF', glow: 'rgba(0,245,255,0.3)' },
+  { key: 'fun',         label: 'Random Fun',          color: '#FFE66D', glow: 'rgba(255,230,109,0.3)' },
+  { key: 'personality', label: 'Personality & Quirks', color: '#B565FF', glow: 'rgba(181,101,255,0.3)' },
+  { key: 'playful',     label: 'Playful Challenge',   color: '#FF6BA8', glow: 'rgba(255,107,168,0.3)' },
 ] as const;
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -127,7 +128,7 @@ function SelectedPromptCard({
 
       {/* Icon + question */}
       <div className="flex items-start gap-2 mb-3 pr-8">
-        <span className="text-xl flex-shrink-0 mt-0.5">{prompt.icon}</span>
+        <img src={promptCategoryIconSrc(prompt.category)} alt="" className="w-5 h-5 object-contain flex-shrink-0 mt-0.5" draggable={false} />
         <p className="font-body text-ui-caption leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>
           {prompt.question}
         </p>
@@ -188,7 +189,7 @@ function PromptListItem({
       }}
       whileTap={!isDisabled || isSelected ? { scale: 0.97 } : {}}
     >
-      <span className="text-base flex-shrink-0">{prompt.icon}</span>
+      <img src={promptCategoryIconSrc(prompt.category)} alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
       <span className="font-body text-ui-body leading-snug pr-6" style={{ color: isSelected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.65)' }}>
         {prompt.question}
       </span>
@@ -220,7 +221,7 @@ function CategorySection({
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-3 px-4 py-3"
       >
-        <span className="text-xl">{category.icon}</span>
+        <img src={promptCategoryIconSrc(category.key)} alt="" className="w-5 h-5 object-contain flex-shrink-0" draggable={false} />
         <span className="flex-1 text-left font-body text-ui-body font-bold" style={{ color: category.color }}>
           {category.label}
         </span>

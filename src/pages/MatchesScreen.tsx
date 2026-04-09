@@ -283,9 +283,6 @@ function MatchCard({
               />
             </div>
           )}
-          <div className="absolute -bottom-2 -right-2">
-            <AvatarStack character={match.character} element={match.element} size={30} />
-          </div>
         </div>
         {isNew && (
           <motion.div
@@ -296,6 +293,10 @@ function MatchCard({
           />
         )}
       </button>
+
+      <div className="flex-shrink-0" aria-hidden>
+        <AvatarStack character={match.character} element={match.element} size={62} />
+      </div>
 
       {/* Right content */}
       <div className="flex-1 min-w-0 flex flex-col gap-2">
