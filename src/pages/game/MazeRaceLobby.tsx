@@ -5,15 +5,20 @@ import { connectSocket } from '../../lib/socket';
 import { useMazeRaceStore } from '../../store/mazeRaceStore';
 import { useAuthStore } from '../../store/authStore';
 import { getMatchById, getProfile } from '../../lib/database';
+import type { MRGameState } from '../../types/mazeRace';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
   || (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
 
+const MAX_LOBBY_JOIN_ATTEMPTS = 10;
+
 export function MazeRaceLobby() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const store = useMazeRaceStore();
+  const setLobbyReady = useMazeRaceStore((s) => s.setLobbyReady);
+  const setGameState = useMazeRaceStore((s) => s.setGameState);
   const { user } = useAuthStore();
   const socketRef = useRef(connectSocket());
 
@@ -24,8 +29,16 @@ export function MazeRaceLobby() {
   const [reconnecting, setReconnecting] = useState(false);
   const recoveringRef = useRef(false);
 
+  const hasJoinedRef = useRef(false);
+  const joinEmitCountRef = useRef(0);
+  const phaseNavHandledRef = useRef(false);
+
+  /** Prefer Supabase auth id over store so join matches server-side player slots. */
+  const myId = user?.id ?? store.myUserId;
+
+  const recoverExpiredGameRef = useRef<() => Promise<void>>(async () => {});
+
   const lobby = store.lobbyReady;
-  const myId = store.myUserId;
 
   useEffect(() => {
     if (!user?.id) return;
@@ -94,6 +107,8 @@ export function MazeRaceLobby() {
       });
       if (!res.ok) throw new Error(`Could not restore game (${res.status})`);
       const socket = socketRef.current;
+      hasJoinedRef.current = false;
+      joinEmitCountRef.current = 0;
       socket.emit('mr_join', { gameId: matchId, userId: myId });
       socket.emit('mr_ready', { gameId: matchId, userId: myId });
     } catch (e) {
@@ -104,6 +119,110 @@ export function MazeRaceLobby() {
     }
   }, [matchId, myId, opponentId]);
 
+  recoverExpiredGameRef.current = recoverExpiredGame;
+
+  const checkPhaseAndNavigate = useCallback(async () => {
+    if (!matchId || phaseNavHandledRef.current) return;
+    try {
+      const res = await fetch(`${SERVER_URL}/api/mazerace/${matchId}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as { phase?: string };
+      if (data.phase === 'playing') {
+        phaseNavHandledRef.current = true;
+        navigate(`/mazerace/${matchId}/play`);
+      } else if (data.phase === 'finished') {
+        phaseNavHandledRef.current = true;
+        navigate(`/mazerace/${matchId}/result`);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [matchId, navigate]);
+
+  useEffect(() => {
+    hasJoinedRef.current = false;
+    joinEmitCountRef.current = 0;
+    phaseNavHandledRef.current = false;
+  }, [matchId]);
+
+  useEffect(() => {
+    if (!matchId || !myId) return;
+
+    const socket = socketRef.current;
+
+    const tryEmitJoin = () => {
+      if (hasJoinedRef.current) return;
+      if (joinEmitCountRef.current >= MAX_LOBBY_JOIN_ATTEMPTS) return;
+      joinEmitCountRef.current += 1;
+      socket.emit('mr_join', { gameId: matchId, userId: myId });
+    };
+
+    const onConnect = () => {
+      if (hasJoinedRef.current) {
+        socket.emit('mr_join', { gameId: matchId, userId: myId });
+        return;
+      }
+      tryEmitJoin();
+    };
+
+    const onLobbyUpdate = (payload: {
+      player1Ready: boolean;
+      player2Ready: boolean;
+      player1Name?: string;
+      player2Name?: string;
+    }) => {
+      setLobbyReady(payload);
+      if (!hasJoinedRef.current) {
+        hasJoinedRef.current = true;
+        void checkPhaseAndNavigate();
+      }
+    };
+
+    const onGameExpired = () => {
+      void recoverExpiredGameRef.current();
+    };
+
+    socket.on('connect', onConnect);
+    tryEmitJoin();
+
+    socket.on('mr_lobby_update', onLobbyUpdate);
+
+    socket.on('mr_countdown', ({ count }: { count: number }) => {
+      setCountdown(count);
+    });
+
+    socket.on('mr_game_started', ({ gameState: gs }: { gameState: unknown }) => {
+      phaseNavHandledRef.current = true;
+      setGameState(gs as MRGameState);
+      navigate(`/mazerace/${matchId}/play`);
+    });
+
+    socket.on('mr_error', ({ message }: { message: string }) => {
+      if (message === 'Game not found') return;
+      setError(message);
+      if (joinEmitCountRef.current >= MAX_LOBBY_JOIN_ATTEMPTS && !hasJoinedRef.current) {
+        setError(`${message} (lobby join failed after ${MAX_LOBBY_JOIN_ATTEMPTS} attempts)`);
+      }
+    });
+
+    socket.on('mr_game_expired', onGameExpired);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('mr_lobby_update', onLobbyUpdate);
+      socket.off('mr_countdown');
+      socket.off('mr_game_started');
+      socket.off('mr_error');
+      socket.off('mr_game_expired', onGameExpired);
+    };
+  }, [matchId, myId, navigate, setLobbyReady, setGameState, checkPhaseAndNavigate]);
+
+  const handleReady = () => {
+    if (!matchId || !myId) return;
+    socketRef.current.emit('mr_ready', { gameId: matchId, userId: myId });
+  };
+
+  /** Server create flow uses lexicographic order for player1 vs player2 (see App challenge / recover). */
   const isP1 = myId && opponentId ? myId < opponentId : true;
   const myReady = lobby
     ? (isP1 ? lobby.player1Ready : lobby.player2Ready)
@@ -118,62 +237,6 @@ export function MazeRaceLobby() {
   const oppDisplayName = isP1
     ? (lobby?.player2Name ?? opponentName ?? 'Opponent')
     : (lobby?.player1Name ?? opponentName ?? 'Opponent');
-
-  useEffect(() => {
-    if (!matchId || !myId) return;
-
-    const socket = socketRef.current;
-    const joinRoom = () => {
-      socket.emit('mr_join', { gameId: matchId, userId: myId });
-    };
-    socket.on('connect', joinRoom);
-    joinRoom();
-
-    const onLobbyUpdate = (payload: {
-      player1Ready: boolean;
-      player2Ready: boolean;
-      player1Name?: string;
-      player2Name?: string;
-    }) => {
-      useMazeRaceStore.getState().setLobbyReady(payload);
-    };
-
-    const onGameExpired = () => {
-      void recoverExpiredGame();
-    };
-
-    socket.on('mr_lobby_update', onLobbyUpdate);
-
-    socket.on('mr_countdown', ({ count }: { count: number }) => {
-      setCountdown(count);
-    });
-
-    socket.on('mr_game_started', ({ gameState: gs }: { gameState: unknown }) => {
-      useMazeRaceStore.getState().setGameState(gs as import('../../types/mazeRace').MRGameState);
-      navigate(`/mazerace/${matchId}/play`);
-    });
-
-    socket.on('mr_error', ({ message }: { message: string }) => {
-      if (message === 'Game not found') return;
-      setError(message);
-    });
-
-    socket.on('mr_game_expired', onGameExpired);
-
-    return () => {
-      socket.off('connect', joinRoom);
-      socket.off('mr_lobby_update', onLobbyUpdate);
-      socket.off('mr_countdown');
-      socket.off('mr_game_started');
-      socket.off('mr_error');
-      socket.off('mr_game_expired', onGameExpired);
-    };
-  }, [matchId, myId, navigate, recoverExpiredGame]);
-
-  const handleReady = () => {
-    if (!matchId || !myId) return;
-    socketRef.current.emit('mr_ready', { gameId: matchId, userId: myId });
-  };
 
   const gridBg = (
     <div
@@ -321,6 +384,7 @@ export function MazeRaceLobby() {
         )}
 
         <motion.button
+          type="button"
           onClick={handleReady}
           disabled={myReady || reconnecting}
           className="w-full py-5 rounded-2xl font-display font-extrabold text-xl"
@@ -339,10 +403,11 @@ export function MazeRaceLobby() {
           whileHover={!myReady ? { scale: 1.03 } : {}}
           whileTap={!myReady ? { scale: 0.97 } : {}}
         >
-          {myReady ? '✓ READY!' : '⚡ I\'M READY'}
+          {myReady ? '✓ READY!' : "⚡ I'M READY"}
         </motion.button>
 
         <motion.button
+          type="button"
           onClick={() => navigate(matchId ? `/match/${matchId}` : '/play')}
           className="font-body text-ui-body text-white/30 text-center hover:text-white/60 transition-colors"
           initial={{ opacity: 0 }}

@@ -50,7 +50,7 @@ const GAMES: GameOption[] = [
     id: 'word_blitz',
     name: 'Word Blitz',
     imgSrc: '/game-icons/Word%20games.png',
-    description: 'Build connecting words from your letters in 3 minutes. Vocabulary & speed!',
+    description: 'Build connecting words from your letters in 2 minutes. Vocabulary & speed!',
     route: '/games/word-blitz',
     gradient: 'linear-gradient(135deg, #B565FF, #FF6BA8)',
     color: '#B565FF',
