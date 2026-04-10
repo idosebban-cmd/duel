@@ -178,41 +178,44 @@ export function MazeRaceLobby() {
       }
     };
 
+    const onCountdown = ({ count }: { count: number }) => {
+      setCountdown(count);
+    };
+
+    /** Navigate as soon as the server starts play — do not rely on DB polling alone. */
+    const onMrGameStarted = ({ gameState: gs }: { gameState: unknown }) => {
+      phaseNavHandledRef.current = true;
+      setGameState(gs as MRGameState);
+      navigate(`/mazerace/${matchId}/play`);
+    };
+
     const onGameExpired = () => {
       void recoverExpiredGameRef.current();
     };
 
-    socket.on('connect', onConnect);
-    tryEmitJoin();
-
-    socket.on('mr_lobby_update', onLobbyUpdate);
-
-    socket.on('mr_countdown', ({ count }: { count: number }) => {
-      setCountdown(count);
-    });
-
-    socket.on('mr_game_started', ({ gameState: gs }: { gameState: unknown }) => {
-      phaseNavHandledRef.current = true;
-      setGameState(gs as MRGameState);
-      navigate(`/mazerace/${matchId}/play`);
-    });
-
-    socket.on('mr_error', ({ message }: { message: string }) => {
+    const onMrError = ({ message }: { message: string }) => {
       if (message === 'Game not found') return;
       setError(message);
       if (joinEmitCountRef.current >= MAX_LOBBY_JOIN_ATTEMPTS && !hasJoinedRef.current) {
         setError(`${message} (lobby join failed after ${MAX_LOBBY_JOIN_ATTEMPTS} attempts)`);
       }
-    });
+    };
 
+    socket.on('connect', onConnect);
+    socket.on('mr_lobby_update', onLobbyUpdate);
+    socket.on('mr_countdown', onCountdown);
+    socket.on('mr_game_started', onMrGameStarted);
+    socket.on('mr_error', onMrError);
     socket.on('mr_game_expired', onGameExpired);
+
+    tryEmitJoin();
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('mr_lobby_update', onLobbyUpdate);
-      socket.off('mr_countdown');
-      socket.off('mr_game_started');
-      socket.off('mr_error');
+      socket.off('mr_countdown', onCountdown);
+      socket.off('mr_game_started', onMrGameStarted);
+      socket.off('mr_error', onMrError);
       socket.off('mr_game_expired', onGameExpired);
     };
   }, [matchId, myId, navigate, setLobbyReady, setGameState, checkPhaseAndNavigate]);

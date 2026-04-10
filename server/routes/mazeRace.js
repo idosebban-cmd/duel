@@ -18,6 +18,8 @@ router.post('/create', (req, res) => {
 
   if (requestedGameId) {
     const existing = mazeRace.getGame(requestedGameId);
+    // If existing is null (e.g. server restart / memory cleared), fall through and
+    // create a fresh lobby for the same id — never 404 on POST /create.
     if (existing) {
       if (existing.phase === 'finished') {
         mazeRace.deleteGame(requestedGameId);

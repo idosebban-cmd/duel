@@ -1,6 +1,7 @@
 'use strict';
 
 const mazeRace = require('../services/mazeRaceService');
+const { updateMazeRaceGameStatus } = require('../services/supabaseAdmin');
 const { noopSocketLobbyLog } = require('../socketLobbyLog');
 const { noopSocketRoomDebug } = require('../socketRoomDebug');
 
@@ -90,10 +91,13 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
         setTimeout(() => {
           const started = mazeRace.startGame(gameId);
           if (!started) return;
-          io.to(`mr:${gameId}`).emit('mr_game_started', {
-            gameState: mazeRace.serializeGame(started),
-          });
-          startGameLoop(io, gameId, roomDbg);
+          void (async () => {
+            await updateMazeRaceGameStatus(gameId, 'playing');
+            io.to(`mr:${gameId}`).emit('mr_game_started', {
+              gameState: mazeRace.serializeGame(started),
+            });
+            startGameLoop(io, gameId, roomDbg);
+          })();
         }, 3000);
       }
     });
@@ -104,6 +108,7 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
         stopGameLoop(gameId);
         const g = mazeRace.getGame(gameId);
         if (!g) return;
+        void updateMazeRaceGameStatus(gameId, 'finished');
         const finalState = mazeRace.serializeGame(g);
         setTimeout(() => {
           io.to(`mr:${gameId}`).emit('mr_game_over', {
@@ -206,6 +211,8 @@ function endGame(io, gameId, winnerId, forfeit = false) {
   game.phase = 'finished';
   game.winner = winnerId;
   game.finishedAt = Date.now();
+
+  void updateMazeRaceGameStatus(gameId, 'finished');
 
   const finalState = mazeRace.serializeGame(game);
   io.to(`mr:${gameId}`).emit('mr_game_over', {
