@@ -40,7 +40,7 @@ const GAMES: GameOption[] = [
   {
     id: 'maze_race',
     name: 'Maze Race',
-    imgSrc: '/game-icons/maze.png',
+    imgSrc: '/game-icons/Maze.png',
     description: 'Same maze, opposite goals — first to their exit wins. Real-time race!',
     route: '/matches',
     gradient: 'linear-gradient(135deg, #FF6BA8, #00D9FF)',

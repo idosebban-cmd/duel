@@ -595,12 +595,13 @@ export function MazeRaceBoard() {
         </div>
       </div>
 
-      {/* Exit confirmation — isolate pointer/touch from root swipe handlers */}
+      {/* ── Exit confirmation (isolate pointer/touch from root swipe handlers) ── */}
       <AnimatePresence>
         {showExit && (
           <motion.div
             role="dialog"
             aria-modal="true"
+            aria-labelledby="mazerace-exit-title"
             className="fixed inset-0 z-[100] flex items-center justify-center px-6 pointer-events-auto"
             style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
             initial={{ opacity: 0 }}
@@ -619,7 +620,9 @@ export function MazeRaceBoard() {
               onPointerDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >
-              <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
+              <p id="mazerace-exit-title" className="font-display font-bold text-white text-xl mb-2">
+                Leave game?
+              </p>
               <p className="font-body text-white/70 text-ui-body mb-6">
                 Leaving forfeits the match. Your opponent wins.
               </p>

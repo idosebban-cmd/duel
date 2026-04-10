@@ -5,7 +5,6 @@ import { connectSocket } from '../../lib/socket';
 import { useMazeRaceStore } from '../../store/mazeRaceStore';
 import { useAuthStore } from '../../store/authStore';
 import { getGamesByMatch, getMatchById, getProfile } from '../../lib/database';
-import type { MRGameState } from '../../types/mazeRace';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
@@ -18,7 +17,6 @@ export function MazeRaceLobby() {
   const navigate = useNavigate();
   const store = useMazeRaceStore();
   const setLobbyReady = useMazeRaceStore((s) => s.setLobbyReady);
-  const setGameState = useMazeRaceStore((s) => s.setGameState);
   const { user } = useAuthStore();
   const socketRef = useRef(connectSocket());
 
@@ -172,21 +170,13 @@ export function MazeRaceLobby() {
       player2Name?: string;
     }) => {
       setLobbyReady(payload);
-      if (!hasJoinedRef.current) {
-        hasJoinedRef.current = true;
-        void checkPhaseAndNavigate();
-      }
+      if (!hasJoinedRef.current) hasJoinedRef.current = true;
+      void checkPhaseAndNavigate();
     };
 
     const onCountdown = ({ count }: { count: number }) => {
       setCountdown(count);
-    };
-
-    /** Navigate as soon as the server starts play — do not rely on DB polling alone. */
-    const onMrGameStarted = ({ gameState: gs }: { gameState: unknown }) => {
-      phaseNavHandledRef.current = true;
-      setGameState(gs as MRGameState);
-      navigate(`/mazerace/${matchId}/play`);
+      void checkPhaseAndNavigate();
     };
 
     const onGameExpired = () => {
@@ -204,7 +194,6 @@ export function MazeRaceLobby() {
     socket.on('connect', onConnect);
     socket.on('mr_lobby_update', onLobbyUpdate);
     socket.on('mr_countdown', onCountdown);
-    socket.on('mr_game_started', onMrGameStarted);
     socket.on('mr_error', onMrError);
     socket.on('mr_game_expired', onGameExpired);
 
@@ -214,11 +203,10 @@ export function MazeRaceLobby() {
       socket.off('connect', onConnect);
       socket.off('mr_lobby_update', onLobbyUpdate);
       socket.off('mr_countdown', onCountdown);
-      socket.off('mr_game_started', onMrGameStarted);
       socket.off('mr_error', onMrError);
       socket.off('mr_game_expired', onGameExpired);
     };
-  }, [matchId, myId, navigate, setLobbyReady, setGameState, checkPhaseAndNavigate]);
+  }, [matchId, myId, navigate, setLobbyReady, checkPhaseAndNavigate]);
 
   const handleReady = () => {
     if (!matchId || !myId) return;
