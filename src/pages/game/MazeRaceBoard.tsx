@@ -33,6 +33,16 @@ const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
   || (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
 
+const DIRECTION_ARROW_ICON = '/icons/arrow.png';
+const ARROW_ICON_PX = 56;
+/** Base asset points right; rotate for each control. */
+const ARROW_ROTATE: Record<MRDirection, string> = {
+  right: 'rotate(0deg)',
+  left: 'rotate(180deg)',
+  up: 'rotate(270deg)',
+  down: 'rotate(90deg)',
+};
+
 function drawMaze(ctx: CanvasRenderingContext2D, maze: number[][]) {
   ctx.fillStyle = C_BG;
   ctx.fillRect(0, 0, W, H);
@@ -520,29 +530,18 @@ export function MazeRaceBoard() {
         className="w-full max-w-[456px] px-4 py-3 flex flex-col items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
-        <p className="font-body text-ui-caption text-white/70 mb-2 self-start">Tap arrows to move one cell</p>
         <div
           className="grid place-items-center"
           style={{
-            gridTemplateColumns: '56px 56px 56px',
-            gridTemplateRows: '56px 56px 56px',
+            gridTemplateColumns: `${ARROW_ICON_PX}px ${ARROW_ICON_PX}px ${ARROW_ICON_PX}px`,
+            gridTemplateRows: `${ARROW_ICON_PX}px ${ARROW_ICON_PX}px ${ARROW_ICON_PX}px`,
             columnGap: 18,
             rowGap: 12,
           }}
         >
-          {([
-            ['up', '↑'] as const,
-            ['left', '←'] as const,
-            ['right', '→'] as const,
-            ['down', '↓'] as const,
-          ]).map(([dir, arrow]) => {
-            const d = dir as MRDirection;
+          {(['up', 'left', 'right', 'down'] as const).map((dir) => {
+            const d = dir;
             const isPressed = pressedDir === d;
-            const border = '#4EFFC4';
-            const baseBg = 'rgba(10, 16, 28, 0.55)';
-            const pressedBg = 'rgba(78, 255, 196, 0.18)';
-            const baseShadow = '0 0 14px rgba(78,255,196,0.22), 0 0 26px rgba(0,217,255,0.10)';
-            const pressedShadow = '0 0 18px rgba(78,255,196,0.42), 0 0 34px rgba(0,217,255,0.18)';
             const gridPos =
               d === 'up'
                 ? { gridColumn: 2, gridRow: 1 }
@@ -556,19 +555,16 @@ export function MazeRaceBoard() {
                 <button
                   type="button"
                   aria-label={`Move ${dir}`}
-                  className="rounded-2xl flex items-center justify-center select-none"
+                  className="flex items-center justify-center select-none outline-none focus:outline-none"
                   style={{
-                    width: 56,
-                    height: 56,
-                    background: isPressed ? pressedBg : baseBg,
-                    border: `2px solid ${border}`,
-                    boxShadow: isPressed ? pressedShadow : baseShadow,
-                    color: 'white',
-                    fontSize: 26,
-                    lineHeight: 1,
-                    transition: 'background 120ms ease, box-shadow 120ms ease, transform 120ms ease',
-                    transform: isPressed ? 'scale(0.98)' : 'scale(1)',
-                    touchAction: 'none',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    boxShadow: 'none',
+                    width: ARROW_ICON_PX,
+                    height: ARROW_ICON_PX,
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
                   }}
                   onPointerDown={() => {
                     setPressedDir(d);
@@ -578,7 +574,19 @@ export function MazeRaceBoard() {
                   onPointerCancel={() => setPressedDir(null)}
                   onPointerLeave={() => setPressedDir(null)}
                 >
-                  {arrow}
+                  <img
+                    src={DIRECTION_ARROW_ICON}
+                    alt=""
+                    width={ARROW_ICON_PX}
+                    height={ARROW_ICON_PX}
+                    draggable={false}
+                    className="pointer-events-none block"
+                    style={{
+                      transform: ARROW_ROTATE[d],
+                      opacity: isPressed ? 0.65 : 1,
+                      transition: 'opacity 100ms ease',
+                    }}
+                  />
                 </button>
               </div>
             );

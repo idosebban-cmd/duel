@@ -40,6 +40,16 @@ const DIR_ANGLE: Record<Direction, number> = {
   up:   -Math.PI / 2,
 };
 
+const DIRECTION_ARROW_ICON = '/icons/arrow.png';
+const ARROW_ICON_PX = 56;
+/** Base asset points right; rotate for each control. */
+const ARROW_ROTATE: Record<Direction, string> = {
+  right: 'rotate(0deg)',
+  left: 'rotate(180deg)',
+  up: 'rotate(270deg)',
+  down: 'rotate(90deg)',
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CANVAS DRAWING
 // ─────────────────────────────────────────────────────────────────────────────
@@ -665,73 +675,72 @@ export function DotDashBoard() {
         </AnimatePresence>
       </div>
 
-      {/* ── Controls hint ── */}
+      {/* ── Direction controls (floating arrow icons) ── */}
       <div
-        className="w-full max-w-[456px] mx-auto px-4 py-3 relative flex items-center justify-center"
+        className="w-full max-w-[456px] mx-auto px-4 py-3 flex items-center justify-center"
         style={{ borderTop: '2px solid rgba(78,255,196,0.1)' }}
       >
-        <p className="font-body text-ui-caption text-white/70 absolute left-4">
-          Swipe or ← ↑ → ↓ to move
-        </p>
-        {(() => {
-          const border = '#4EFFC4';
-          const baseBg = 'rgba(10, 16, 28, 0.55)';
-          const pressedBg = 'rgba(78, 255, 196, 0.18)';
-          const baseShadow = '0 0 14px rgba(78,255,196,0.22), 0 0 26px rgba(0,217,255,0.10)';
-          const pressedShadow = '0 0 18px rgba(78,255,196,0.42), 0 0 34px rgba(0,217,255,0.18)';
-
-          const mkBtn = (dir: Direction, arrow: string) => {
+        <div
+          className="grid place-items-center"
+          style={{
+            gridTemplateColumns: `${ARROW_ICON_PX}px ${ARROW_ICON_PX}px ${ARROW_ICON_PX}px`,
+            gridTemplateRows: `${ARROW_ICON_PX}px ${ARROW_ICON_PX}px ${ARROW_ICON_PX}px`,
+            columnGap: 18,
+            rowGap: 12,
+          }}
+        >
+          {(['up', 'left', 'right', 'down'] as const).map((dir) => {
             const isPressed = pressedDir === dir;
+            const gridPos =
+              dir === 'up'
+                ? { gridColumn: 2, gridRow: 1 }
+                : dir === 'left'
+                  ? { gridColumn: 1, gridRow: 2 }
+                  : dir === 'right'
+                    ? { gridColumn: 3, gridRow: 2 }
+                    : { gridColumn: 2, gridRow: 3 };
             return (
-              <button
-                key={dir}
-                type="button"
-                aria-label={`Move ${dir}`}
-                className="rounded-2xl flex items-center justify-center select-none"
-                style={{
-                  width: 56,
-                  height: 56,
-                  background: isPressed ? pressedBg : baseBg,
-                  border: `2px solid ${border}`,
-                  boxShadow: isPressed ? pressedShadow : baseShadow,
-                  color: 'white',
-                  fontSize: 26,
-                  lineHeight: 1,
-                  transition: 'background 120ms ease, box-shadow 120ms ease, transform 120ms ease',
-                  transform: isPressed ? 'scale(0.98)' : 'scale(1)',
-                  touchAction: 'none',
-                }}
-                onPointerDown={() => {
-                  setPressedDir(dir);
-                  sendMove(dir);
-                }}
-                onPointerUp={() => setPressedDir(null)}
-                onPointerCancel={() => setPressedDir(null)}
-                onPointerLeave={() => setPressedDir(null)}
-              >
-                {arrow}
-              </button>
+              <div key={dir} style={gridPos}>
+                <button
+                  type="button"
+                  aria-label={`Move ${dir}`}
+                  className="flex items-center justify-center select-none outline-none focus:outline-none"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    boxShadow: 'none',
+                    width: ARROW_ICON_PX,
+                    height: ARROW_ICON_PX,
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                  onPointerDown={() => {
+                    setPressedDir(dir);
+                    sendMove(dir);
+                  }}
+                  onPointerUp={() => setPressedDir(null)}
+                  onPointerCancel={() => setPressedDir(null)}
+                  onPointerLeave={() => setPressedDir(null)}
+                >
+                  <img
+                    src={DIRECTION_ARROW_ICON}
+                    alt=""
+                    width={ARROW_ICON_PX}
+                    height={ARROW_ICON_PX}
+                    draggable={false}
+                    className="pointer-events-none block"
+                    style={{
+                      transform: ARROW_ROTATE[dir],
+                      opacity: isPressed ? 0.65 : 1,
+                      transition: 'opacity 100ms ease',
+                    }}
+                  />
+                </button>
+              </div>
             );
-          };
-
-          return (
-            <div
-              className="grid place-items-center"
-              style={{
-                gridTemplateColumns: '56px 56px 56px',
-                gridTemplateRows: '56px 56px 56px',
-                columnGap: 18,
-                rowGap: 12,
-              }}
-            >
-              <div style={{ gridColumn: 2, gridRow: 1 }}>{mkBtn('up', '↑')}</div>
-              <div style={{ gridColumn: 1, gridRow: 2 }}>{mkBtn('left', '←')}</div>
-              {/* center gap intentionally empty */}
-              <div style={{ gridColumn: 3, gridRow: 2 }}>{mkBtn('right', '→')}</div>
-              <div style={{ gridColumn: 2, gridRow: 3 }}>{mkBtn('down', '↓')}</div>
-            </div>
-          );
-        })()}
+          })}
+        </div>
       </div>
 
       {/* ── Exit confirmation (isolate pointer/touch from root swipe handlers) ── */}
