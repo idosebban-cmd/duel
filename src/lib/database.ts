@@ -919,8 +919,8 @@ export async function createOrJoinGame(
 ): Promise<GameRow | null> {
   const [p1, p2] = myUserId < opponentId ? [myUserId, opponentId] : [opponentId, myUserId];
 
-  // SELECT for an existing ACTIVE game:
-  // match_id + game_type + winner IS NULL + status NOT IN ('abandoned', 'finished')
+  // SELECT for an existing in-progress game only — never reuse finished/abandoned rows.
+  // match_id + game_type + winner IS NULL + status IN ('pending','playing')
   const selectExistingActiveGame = async (): Promise<GameRow | null> => {
     const { data } = await supabase
       .from('games')
@@ -928,15 +928,14 @@ export async function createOrJoinGame(
       .eq('match_id', matchId)
       .eq('game_type', gameType)
       .is('winner', null)
-      .neq('status', 'abandoned')
-      .neq('status', 'finished')
+      .in('status', ['pending', 'playing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
     return (data as GameRow) ?? null;
   };
 
-  // Final SELECT after a uniqueness race:
-  // return whatever row exists for winner IS NULL (no status filter),
-  // because the DB conflict predicate is winner IS NULL.
+  // Final SELECT after a uniqueness race: same filters as above (not stale finished rows).
   const selectWinnerNullGame = async (): Promise<GameRow | null> => {
     const { data } = await supabase
       .from('games')
@@ -944,6 +943,9 @@ export async function createOrJoinGame(
       .eq('match_id', matchId)
       .eq('game_type', gameType)
       .is('winner', null)
+      .in('status', ['pending', 'playing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
     return (data as GameRow) ?? null;
   };

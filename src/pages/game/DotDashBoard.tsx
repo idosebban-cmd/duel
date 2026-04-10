@@ -521,6 +521,7 @@ export function DotDashBoard() {
   // ── Forfeit ─────────────────────────────────────────────────────────────────
   const handleForfeit = () => {
     if (!gameId || !myId) return;
+    setShowExit(false);
     socketRef.current.emit('dd_forfeit', { gameId, userId: myId });
   };
 
@@ -733,34 +734,50 @@ export function DotDashBoard() {
         })()}
       </div>
 
-      {/* ── Exit confirmation ── */}
+      {/* ── Exit confirmation (isolate pointer/touch from root swipe handlers) ── */}
       <AnimatePresence>
         {showExit && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dotdash-exit-title"
+            className="fixed inset-0 z-[100] flex items-center justify-center px-6 pointer-events-auto"
             style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             <motion.div
-              className="w-full max-w-xs rounded-2xl p-6 text-center"
+              className="w-full max-w-xs rounded-2xl p-6 text-center pointer-events-auto relative z-10"
               style={{ background: '#1a0a2e', border: '4px solid #FF3D71', boxShadow: '8px 8px 0 #FF3D71' }}
-              initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
             >
-              <p className="font-display font-bold text-white text-xl mb-2">Leave game?</p>
+              <p id="dotdash-exit-title" className="font-display font-bold text-white text-xl mb-2">
+                Leave game?
+              </p>
               <p className="font-body text-white/70 text-ui-body mb-6">
                 Leaving forfeits the match. Your opponent wins.
               </p>
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => setShowExit(false)}
-                  className="flex-1 py-3 rounded-xl font-display font-bold text-white/70"
+                  className="flex-1 py-3 rounded-xl font-display font-bold text-white/70 touch-manipulation min-h-[44px]"
                   style={{ background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,255,255,0.2)' }}
                 >
                   Stay
                 </button>
                 <button
+                  type="button"
                   onClick={handleForfeit}
-                  className="flex-1 py-3 rounded-xl font-display font-bold text-white"
+                  className="flex-1 py-3 rounded-xl font-display font-bold text-white touch-manipulation min-h-[44px]"
                   style={{ background: '#FF3D71', border: '2px solid black' }}
                 >
                   Leave
