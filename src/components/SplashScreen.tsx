@@ -11,13 +11,13 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onDismiss }: SplashScreenProps) {
   const [phase, setPhase] = useState<Phase>('visible');
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    if (!imageLoaded) return;
-    const id = window.setTimeout(() => setPhase('fadeOut'), DISPLAY_MS);
+    const id = window.setTimeout(() => {
+      setPhase((prev) => (prev === 'visible' ? 'fadeOut' : prev));
+    }, DISPLAY_MS);
     return () => window.clearTimeout(id);
-  }, [imageLoaded]);
+  }, []);
 
   const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== 'opacity') return;
@@ -27,7 +27,7 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#000000]"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#12122A]"
       style={{
         opacity: phase === 'visible' ? 1 : 0,
         transition: `opacity ${FADE_MS}ms ease-out`,
@@ -37,11 +37,10 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
       aria-hidden
     >
       <img
-        src="/splash.png"
+        src="/Splash.png"
         alt=""
         className="h-full w-full object-contain"
         draggable={false}
-        onLoad={() => setImageLoaded(true)}
       />
     </div>
   );
