@@ -4,13 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { connectSocket } from '../../lib/socket';
 import { useDotDashStore } from '../../store/dotDashStore';
 import { useAuthStore } from '../../store/authStore';
-import { getProfile } from '../../lib/database';
+import { getGamesByMatch, getProfile } from '../../lib/database';
 import type { DDLobbyState, DDGameState } from '../../types/dotDash';
-
-const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
-const SERVER_URL =
-  import.meta.env.VITE_SERVER_URL ||
-  (import.meta.env.DEV ? 'http://localhost:3001' : FALLBACK_PROD_SERVER_URL);
 
 const MAX_LOBBY_JOIN_ATTEMPTS = 10;
 
@@ -60,13 +55,13 @@ export function DotDashLobby() {
   const checkPhaseAndNavigate = useCallback(async () => {
     if (!gameId || phaseNavHandledRef.current) return;
     try {
-      const res = await fetch(`${SERVER_URL}/api/dotdash/${gameId}`);
-      if (!res.ok) return;
-      const data = (await res.json()) as { phase?: string };
-      if (data.phase === 'playing') {
+      const games = await getGamesByMatch(gameId);
+      const row = games.find((g) => g.game_type === 'dot_dash');
+      if (!row) return;
+      if (row.status === 'playing') {
         phaseNavHandledRef.current = true;
         navigate(`/dotdash/${gameId}/play`);
-      } else if (data.phase === 'finished') {
+      } else if (row.status === 'finished') {
         phaseNavHandledRef.current = true;
         navigate(`/dotdash/${gameId}/result`);
       }

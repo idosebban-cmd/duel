@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { connectSocket } from '../../lib/socket';
 import { useMazeRaceStore } from '../../store/mazeRaceStore';
 import { useAuthStore } from '../../store/authStore';
-import { getMatchById, getProfile } from '../../lib/database';
+import { getGamesByMatch, getMatchById, getProfile } from '../../lib/database';
 import type { MRGameState } from '../../types/mazeRace';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
@@ -124,13 +124,13 @@ export function MazeRaceLobby() {
   const checkPhaseAndNavigate = useCallback(async () => {
     if (!matchId || phaseNavHandledRef.current) return;
     try {
-      const res = await fetch(`${SERVER_URL}/api/mazerace/${matchId}`);
-      if (!res.ok) return;
-      const data = (await res.json()) as { phase?: string };
-      if (data.phase === 'playing') {
+      const games = await getGamesByMatch(matchId);
+      const row = games.find((g) => g.game_type === 'maze_race');
+      if (!row) return;
+      if (row.status === 'playing') {
         phaseNavHandledRef.current = true;
         navigate(`/mazerace/${matchId}/play`);
-      } else if (data.phase === 'finished') {
+      } else if (row.status === 'finished') {
         phaseNavHandledRef.current = true;
         navigate(`/mazerace/${matchId}/result`);
       }
