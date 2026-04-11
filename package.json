@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:ios": "npm run build && npx cap sync ios",
-    "build:android": "npm run build && npx cap sync android",
+    "build:ios": "npm run build && CAPACITOR_PLATFORM=ios npx cap sync ios",
+    "build:android": "npm run build && CAPACITOR_PLATFORM=android npx cap sync android",
+    "android:sync": "CAPACITOR_PLATFORM=android npx cap sync android",
+    "ios:sync": "CAPACITOR_PLATFORM=ios npx cap sync ios",
     "cap:sync": "npx cap sync",
     "cap:assets": "cp resources/icon.png resources/icon-only.png && npx @capacitor/assets generate --assetPath resources --ios --android --splashBackgroundColor '#050510' --iconBackgroundColor '#050510' --splashBackgroundColorDark '#050510' --iconBackgroundColorDark '#050510'",
     "lint": "eslint .",
