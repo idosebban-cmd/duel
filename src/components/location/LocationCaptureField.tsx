@@ -1,7 +1,11 @@
 import { useRef, useCallback } from 'react';
 import { MapPin, Locate } from '../ui/Icons';
 import { Input } from '../ui/Input';
-import { useLocationAutocompleteAndGps, LOCATION_MAPS_KEY } from '../../lib/useLocationAutocompleteAndGps';
+import {
+  useLocationAutocompleteAndGps,
+  LOCATION_MAPS_KEY,
+  type PlaceSuggestion,
+} from '../../lib/useLocationAutocompleteAndGps';
 
 export type LocationCaptureFieldProps = {
   active: boolean;
@@ -36,12 +40,20 @@ export function LocationCaptureField({
     [onChangeValue, onCoordsChange],
   );
 
-  const { geoLoading, mapLoadError, setMapLoadError, mapsKey, requestCurrentLocation } =
-    useLocationAutocompleteAndGps({
-      active,
-      inputRef,
-      onResolved,
-    });
+  const {
+    geoLoading,
+    mapLoadError,
+    setMapLoadError,
+    mapsKey,
+    suggestions,
+    debouncedFetch,
+    selectSuggestion,
+    requestCurrentLocation,
+  } = useLocationAutocompleteAndGps({
+    active,
+    inputRef,
+    onResolved,
+  });
 
   const mapsKeyTrimmed = mapsKey?.trim();
   const hasCoords = latitude != null && longitude != null;
@@ -51,13 +63,23 @@ export function LocationCaptureField({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onCoordsChange(null, null);
       setMapLoadError(null);
-      onChangeValue(e.target.value);
+      const v = e.target.value;
+      onChangeValue(v);
+      debouncedFetch(v);
     },
-    [onCoordsChange, onChangeValue, setMapLoadError],
+    [onCoordsChange, onChangeValue, setMapLoadError, debouncedFetch],
+  );
+
+  const handleSelect = useCallback(
+    (suggestion: PlaceSuggestion) => {
+      onChangeValue(suggestion.mainText + ', ' + suggestion.secondaryText);
+      void selectSuggestion(suggestion);
+    },
+    [onChangeValue, selectSuggestion],
   );
 
   return (
-    <div>
+    <div className="relative">
       <Input
         dark={dark}
         label={label}
@@ -73,7 +95,29 @@ export function LocationCaptureField({
         ref={inputRef}
         value={value}
         onChange={handleInputChange}
+        autoComplete="off"
       />
+
+      {suggestions.length > 0 && (
+        <ul className="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-[#1a1a2e] shadow-xl">
+          {suggestions.map((s) => (
+            <li key={s.placeId}>
+              <button
+                type="button"
+                className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/10"
+                onClick={() => handleSelect(s)}
+              >
+                <MapPin size={16} className="mt-0.5 shrink-0 text-[#FF9F1C]" />
+                <span>
+                  <span className="font-body text-sm font-medium text-white">{s.mainText}</span>
+                  <span className="ml-1 font-body text-xs text-white/50">{s.secondaryText}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <button
         type="button"
         onClick={requestCurrentLocation}
