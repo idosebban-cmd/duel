@@ -67,9 +67,6 @@ export function PlayerCardPreview() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden" style={{ background: '#12122A' }}>
-      {/* Grid + scanlines (match other onboarding steps) */}
-      <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      <div className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)' }} />
 
       {/* z-[60] above ProfileDetailSheet (z-30): sole Back control for this step */}
       <div className="fixed left-0 right-0 top-0 z-[60] flex items-center gap-3 px-4 py-4 sm:px-6" style={{ background: 'rgba(18,18,42,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Range } from 'react-range';
@@ -435,10 +435,6 @@ function ProfileCard({
   const hasRealPhoto = !!mainPhotoUrl;
   const intentKind = cardIntent(profile.intent);
 
-  const scanlineBg: CSSProperties = {
-    backgroundColor: '#12122A',
-    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
-  };
 
   return (
     <div
@@ -472,7 +468,7 @@ function ProfileCard({
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" style={scanlineBg}>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 pt-3" style={{ backgroundColor: '#12122A' }}>
         <div className="flex items-baseline gap-2">
           <span className="font-display text-2xl leading-none" style={{ color: '#FFE66D', textShadow: '0 0 10px rgba(255,230,109,0.5)' }}>
             {profile.name}
@@ -1497,10 +1493,6 @@ export function DiscoverScreen() {
 
   return (
     <div className="min-h-[100dvh] h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
-      {/* Scanlines */}
-      <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.025]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
 
       {/* Non-blocking swipe error toast */}
       <AnimatePresence>

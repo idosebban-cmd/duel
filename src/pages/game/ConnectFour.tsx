@@ -143,9 +143,6 @@ function SetupScreen({ playerChar, onDone }: { playerChar: string; onDone: () =>
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center gap-8"
       style={{ background: '#0A1628', zIndex: 60 }}>
-      <div className="fixed inset-0 pointer-events-none opacity-[0.025]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
-
       {/* Avatars */}
       <div className="flex items-center gap-12">
         <div className="flex flex-col items-center gap-2">
@@ -510,9 +507,6 @@ export function ConnectFour() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A1628' }}>
-      {/* Scanlines */}
-      <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,1) 3px,rgba(255,255,255,1) 4px)' }} />
 
       {isMultiplayer && !titleCardComplete && (
         <GameTitleCard

@@ -182,11 +182,6 @@ export function DotDashLobby() {
         className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
         style={{ background: '#12122A' }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage:
-            'linear-gradient(rgba(78,255,196,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(78,255,196,0.06) 1px,transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
         <div className="relative z-10 flex flex-col items-center gap-3">
           <p className="font-display font-bold text-electric-mint/80 text-sm uppercase tracking-widest">
             Dot Dash
@@ -202,16 +197,6 @@ export function DotDashLobby() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden"
       style={{ background: '#12122A' }}
     >
-      {/* Grid bg */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(78,255,196,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(78,255,196,0.06) 1px,transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-
       {/* Countdown overlay */}
       <AnimatePresence>
         {countdown !== null && (

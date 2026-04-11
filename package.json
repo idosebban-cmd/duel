@@ -12,6 +12,7 @@
     "ios:sync": "CAPACITOR_PLATFORM=ios npx cap sync ios",
     "cap:sync": "npx cap sync",
     "cap:assets": "cp resources/icon.png resources/icon-only.png && npx @capacitor/assets generate --assetPath resources --ios --android --splashBackgroundColor '#050510' --iconBackgroundColor '#050510' --splashBackgroundColorDark '#050510' --iconBackgroundColorDark '#050510'",
+    "build:native": "vite build && cap sync",
     "lint": "eslint .",
     "preview": "vite preview"
   },

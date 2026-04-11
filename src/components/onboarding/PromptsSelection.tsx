@@ -331,10 +331,6 @@ export function PromptsSelection() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#12122A' }}>
-      {/* Grid background */}
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(0,245,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      {/* Scanlines */}
-      <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px)' }} />
       {/* Corner brackets */}
       <div className="absolute top-4 left-4 w-8 h-8 border-t-[3px] border-l-[3px] border-pixel-cyan/30 pointer-events-none" />
       <div className="absolute top-4 right-4 w-8 h-8 border-t-[3px] border-r-[3px] border-pixel-cyan/30 pointer-events-none" />

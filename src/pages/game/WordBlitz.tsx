@@ -266,11 +266,6 @@ function SetupScreen({ onGo, myCharacter, myName, opponentCharacter, opponentNam
       className="h-screen flex flex-col items-center justify-center gap-8 px-6"
       style={{ background: '#0A1628' }}
     >
-      {/* Scanlines */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
-
       {/* Avatars */}
       <div className="flex items-center gap-8">
         <motion.div
@@ -372,10 +367,6 @@ function ResultScreen({ myScore, oppScore, myName, myCharacter, oppName, oppChar
     <div className="h-screen flex flex-col items-center justify-center gap-6 px-6 overflow-y-auto"
       style={{ background: '#0A1628' }}
     >
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
-
       {/* Result heading */}
       <motion.div
         className="text-center"
@@ -1100,11 +1091,6 @@ export function WordBlitz() {
       className="h-screen overflow-y-auto flex flex-col md:flex-row md:overflow-hidden"
       style={{ background: '#0A1628' }}
     >
-      {/* Scanlines */}
-      <div className="fixed inset-0 pointer-events-none z-10 opacity-[0.02]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
-
       {/* Multiplayer overlays */}
       {isMultiplayer && (
         <>

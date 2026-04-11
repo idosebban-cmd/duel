@@ -737,11 +737,6 @@ export function MatchScreen() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
-      {/* Scanlines */}
-      <div
-        className="fixed inset-0 pointer-events-none z-40 opacity-[0.02]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
 
       {/* ── Header ────────────────────────────────────────────── */}
       <header

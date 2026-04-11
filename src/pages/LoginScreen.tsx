@@ -202,11 +202,6 @@ export function LoginScreen() {
       className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-5"
       style={{ background: '#0A1628' }}
     >
-      {/* Scanlines */}
-      <div
-        className="fixed inset-0 pointer-events-none z-10 opacity-[0.025]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
 
       {/* Radial glow */}
       <div

@@ -197,10 +197,6 @@ export function TermsOfUse() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#12122A' }}>
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,1) 3px, rgba(255,255,255,1) 4px)' }}
-      />
 
       <header
         className="relative z-10 flex-none flex items-center justify-between px-4 pt-5 pb-3"

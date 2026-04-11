@@ -145,24 +145,6 @@ export function GamePicker() {
       className="min-h-screen flex flex-col items-center px-4 py-12 relative overflow-y-auto"
       style={{ background: '#12122A' }}
     >
-      {/* Grid bg */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(78,255,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(78,255,196,0.06) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-
-      {/* Scanlines */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px)',
-        }}
-      />
 
       <div className="relative z-10 w-full max-w-2xl flex flex-col gap-8">
         {/* Header */}
