@@ -63,6 +63,13 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
       }
 
       emitLobbyUpdate(io, gameId, game);
+
+      // If the game is already in progress, send current state so late-joiners get the maze
+      if (game.phase === 'playing' || game.phase === 'countdown') {
+        socket.emit('mr_game_started', {
+          gameState: mazeRace.serializeGame(game),
+        });
+      }
     });
 
     socket.on('mr_ready', ({ gameId, userId }) => {

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { connectSocket } from '../../lib/socket';
 import { useMazeRaceStore } from '../../store/mazeRaceStore';
 import { useAuthStore } from '../../store/authStore';
-import { getGamesByMatch, getMatchById, getProfile } from '../../lib/database';
+import { getMatchById, getProfile } from '../../lib/database';
 
 const FALLBACK_PROD_SERVER_URL = 'https://duel-fast.onrender.com';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
@@ -119,24 +119,6 @@ export function MazeRaceLobby() {
 
   recoverExpiredGameRef.current = recoverExpiredGame;
 
-  const checkPhaseAndNavigate = useCallback(async () => {
-    if (!matchId || phaseNavHandledRef.current) return;
-    try {
-      const games = await getGamesByMatch(matchId);
-      const row = games.find((g) => g.game_type === 'maze_race');
-      if (!row) return;
-      if (row.status === 'playing') {
-        phaseNavHandledRef.current = true;
-        navigate(`/mazerace/${matchId}/play`);
-      } else if (row.status === 'finished') {
-        phaseNavHandledRef.current = true;
-        navigate(`/mazerace/${matchId}/result`);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [matchId, navigate]);
-
   useEffect(() => {
     hasJoinedRef.current = false;
     joinEmitCountRef.current = 0;
@@ -171,12 +153,16 @@ export function MazeRaceLobby() {
     }) => {
       setLobbyReady(payload);
       if (!hasJoinedRef.current) hasJoinedRef.current = true;
-      void checkPhaseAndNavigate();
     };
 
     const onCountdown = ({ count }: { count: number }) => {
       setCountdown(count);
-      void checkPhaseAndNavigate();
+    };
+
+    const onGameStarted = () => {
+      if (phaseNavHandledRef.current) return;
+      phaseNavHandledRef.current = true;
+      navigate(`/mazerace/${matchId}/play`);
     };
 
     const onGameExpired = () => {
@@ -194,6 +180,7 @@ export function MazeRaceLobby() {
     socket.on('connect', onConnect);
     socket.on('mr_lobby_update', onLobbyUpdate);
     socket.on('mr_countdown', onCountdown);
+    socket.on('mr_game_started', onGameStarted);
     socket.on('mr_error', onMrError);
     socket.on('mr_game_expired', onGameExpired);
 
@@ -203,10 +190,11 @@ export function MazeRaceLobby() {
       socket.off('connect', onConnect);
       socket.off('mr_lobby_update', onLobbyUpdate);
       socket.off('mr_countdown', onCountdown);
+      socket.off('mr_game_started', onGameStarted);
       socket.off('mr_error', onMrError);
       socket.off('mr_game_expired', onGameExpired);
     };
-  }, [matchId, myId, navigate, setLobbyReady, checkPhaseAndNavigate]);
+  }, [matchId, myId, navigate, setLobbyReady]);
 
   const handleReady = () => {
     if (!matchId || !myId) return;
