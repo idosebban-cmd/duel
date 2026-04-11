@@ -15,45 +15,78 @@ export type PlaceSuggestion = {
   secondaryText: string;
 };
 
-type PlacesLibrary = {
-  AutocompleteSuggestion: {
-    fetchAutocompleteSuggestions: (req: {
-      input: string;
-      includedPrimaryTypes?: string[];
-      sessionToken?: unknown;
-    }) => Promise<{
-      suggestions: Array<{
-        placePrediction?: {
-          placeId: string;
-          mainText: { text: string };
-          secondaryText: { text: string };
-          toPlace: () => { fetchFields: (opts: { fields: string[] }) => Promise<{ place: PlaceResult }> };
-        };
-      }>;
-    }>;
-  };
-  AutocompleteSessionToken: new () => unknown;
+type AutocompleteResponse = {
+  suggestions?: Array<{
+    placePrediction?: {
+      placeId: string;
+      structuredFormat?: {
+        mainText?: { text: string };
+        secondaryText?: { text: string };
+      };
+      text?: { text: string };
+    };
+  }>;
 };
 
-type PlaceResult = {
-  location?: { lat: () => number; lng: () => number } | null;
+type PlaceDetailsResponse = {
+  location?: { latitude: number; longitude: number };
+  displayName?: { text: string };
   formattedAddress?: string;
-  displayName?: string;
 };
 
-let placesLib: PlacesLibrary | null = null;
-let placesLibPromise: Promise<PlacesLibrary> | null = null;
+async function fetchAutocompleteSuggestions(
+  input: string,
+  apiKey: string,
+): Promise<PlaceSuggestion[]> {
+  const response = await fetch(
+    'https://places.googleapis.com/v1/places:autocomplete',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+      },
+      body: JSON.stringify({
+        input,
+        includedPrimaryTypes: ['locality', 'administrative_area_level_1'],
+        languageCode: 'en',
+      }),
+    },
+  );
+  if (!response.ok) return [];
+  const data = (await response.json()) as AutocompleteResponse;
+  if (!data.suggestions) return [];
+  return data.suggestions
+    .filter((s) => s.placePrediction)
+    .map((s) => ({
+      placeId: s.placePrediction!.placeId,
+      mainText:
+        s.placePrediction!.structuredFormat?.mainText?.text ??
+        s.placePrediction!.text?.text ??
+        '',
+      secondaryText:
+        s.placePrediction!.structuredFormat?.secondaryText?.text ?? '',
+    }));
+}
 
-async function getPlacesLib(): Promise<PlacesLibrary> {
-  if (placesLib) return placesLib;
-  if (placesLibPromise) return placesLibPromise;
-  placesLibPromise = (
-    google.maps.importLibrary('places') as Promise<PlacesLibrary>
-  ).then((lib) => {
-    placesLib = lib;
-    return lib;
-  });
-  return placesLibPromise;
+async function fetchPlaceDetails(
+  placeId: string,
+  apiKey: string,
+): Promise<{ label: string; lat: number; lng: number } | null> {
+  const response = await fetch(
+    `https://places.googleapis.com/v1/places/${placeId}?fields=location,displayName,formattedAddress`,
+    {
+      headers: {
+        'X-Goog-Api-Key': apiKey,
+      },
+    },
+  );
+  if (!response.ok) return null;
+  const data = (await response.json()) as PlaceDetailsResponse;
+  if (!data.location) return null;
+  const label =
+    data.formattedAddress ?? data.displayName?.text ?? 'Unknown location';
+  return { label, lat: data.location.latitude, lng: data.location.longitude };
 }
 
 export function useLocationAutocompleteAndGps(options: {
@@ -64,35 +97,11 @@ export function useLocationAutocompleteAndGps(options: {
   const { active, onResolved } = options;
   const [geoLoading, setGeoLoading] = useState(false);
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
-  const [mapsReady, setMapsReady] = useState(false);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const sessionTokenRef = useRef<unknown>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapsKey = LOCATION_MAPS_KEY;
-
-  // Load the core Maps JS bootstrap (once)
-  useEffect(() => {
-    if (!active || !mapsKey?.trim()) return;
-    const w = window as unknown as { google?: { maps?: { importLibrary?: unknown } } };
-    if (w.google?.maps?.importLibrary) {
-      setMapsReady(true);
-      return;
-    }
-    const existing = document.getElementById('duel-google-maps-js');
-    if (existing) {
-      const onLoad = () => setMapsReady(true);
-      existing.addEventListener('load', onLoad);
-      return () => existing.removeEventListener('load', onLoad);
-    }
-    const s = document.createElement('script');
-    s.id = 'duel-google-maps-js';
-    s.async = true;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsKey.trim())}&loading=async`;
-    s.onload = () => setMapsReady(true);
-    s.onerror = () => setMapLoadError('Could not load location search. Try GPS or check the API key.');
-    document.head.appendChild(s);
-  }, [active, mapsKey]);
+  const mapsReady = !!mapsKey?.trim();
 
   useEffect(() => {
     if (!active) {
@@ -101,67 +110,37 @@ export function useLocationAutocompleteAndGps(options: {
     }
   }, [active]);
 
-  const fetchSuggestions = useCallback(
+  const fetchSuggestionsCb = useCallback(
     async (input: string) => {
-      if (!mapsReady || !mapsKey?.trim() || input.trim().length < 2) {
+      if (!mapsKey?.trim() || input.trim().length < 2) {
         setSuggestions([]);
         return;
       }
       try {
-        const lib = await getPlacesLib();
-        if (!sessionTokenRef.current) {
-          sessionTokenRef.current = new lib.AutocompleteSessionToken();
-        }
-        const { suggestions: results } = await lib.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input,
-          includedPrimaryTypes: ['(cities)'],
-          sessionToken: sessionTokenRef.current,
-        });
-        const mapped: PlaceSuggestion[] = results
-          .filter((s) => s.placePrediction)
-          .map((s) => ({
-            placeId: s.placePrediction!.placeId,
-            mainText: s.placePrediction!.mainText.text,
-            secondaryText: s.placePrediction!.secondaryText.text,
-          }));
-        setSuggestions(mapped);
+        const results = await fetchAutocompleteSuggestions(input, mapsKey.trim());
+        setSuggestions(results);
       } catch {
         setSuggestions([]);
       }
     },
-    [mapsReady, mapsKey],
+    [mapsKey],
   );
 
   const debouncedFetch = useCallback(
     (input: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => fetchSuggestions(input), 250);
+      debounceRef.current = setTimeout(() => fetchSuggestionsCb(input), 250);
     },
-    [fetchSuggestions],
+    [fetchSuggestionsCb],
   );
 
   const selectSuggestion = useCallback(
     async (suggestion: PlaceSuggestion) => {
-      if (!mapsReady) return;
+      if (!mapsKey?.trim()) return;
       try {
-        const lib = await getPlacesLib();
-        const { suggestions: results } = await lib.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: `${suggestion.mainText}, ${suggestion.secondaryText}`,
-          sessionToken: sessionTokenRef.current,
-        });
-        const match = results.find((s) => s.placePrediction?.placeId === suggestion.placeId);
-        if (!match?.placePrediction) {
-          onResolved(`${suggestion.mainText}, ${suggestion.secondaryText}`, 0, 0);
-          setSuggestions([]);
-          sessionTokenRef.current = null;
-          return;
-        }
-        const place = match.placePrediction.toPlace();
-        const { place: details } = await place.fetchFields({ fields: ['location', 'formattedAddress', 'displayName'] });
-        const loc = details.location;
-        if (loc) {
-          const addr = details.formattedAddress || details.displayName || `${suggestion.mainText}, ${suggestion.secondaryText}`;
-          onResolved(addr, loc.lat(), loc.lng());
+        const details = await fetchPlaceDetails(suggestion.placeId, mapsKey.trim());
+        if (details) {
+          onResolved(details.label, details.lat, details.lng);
         } else {
           onResolved(`${suggestion.mainText}, ${suggestion.secondaryText}`, 0, 0);
         }
@@ -169,9 +148,8 @@ export function useLocationAutocompleteAndGps(options: {
         onResolved(`${suggestion.mainText}, ${suggestion.secondaryText}`, 0, 0);
       }
       setSuggestions([]);
-      sessionTokenRef.current = null;
     },
-    [mapsReady, onResolved],
+    [mapsKey, onResolved],
   );
 
   const requestCurrentLocation = useCallback(async () => {
