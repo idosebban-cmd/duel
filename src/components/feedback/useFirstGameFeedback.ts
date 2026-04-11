@@ -45,7 +45,7 @@ export function useFirstGameFeedback(
           setShow(false);
           return;
         }
-        setShow(count === 1);
+        setShow(count === 2);
       } catch {
         if (!cancelled) {
           setLoading(false);

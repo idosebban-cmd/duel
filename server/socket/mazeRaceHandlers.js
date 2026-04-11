@@ -28,6 +28,13 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
         return;
       }
 
+      // Idempotent guard: if this socket already joined this game, just re-send lobby state
+      if (socket.data.mrGameId === gameId && socket.data.mrUserId === userId) {
+        log.playerJoinLobby('mazerace', { gameId, userId, ok: true, detail: 'duplicate_join_ignored', phase: game.phase });
+        emitLobbyUpdate(io, gameId, game);
+        return;
+      }
+
       userSockets.set(userId, socket.id);
       socket.data.mrUserId = userId;
       socket.data.mrGameId = gameId;

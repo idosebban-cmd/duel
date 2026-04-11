@@ -32,6 +32,13 @@ function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocket
         return;
       }
 
+      // Idempotent guard: if this socket already joined this game, just re-send lobby state
+      if (socket.data.ddGameId === gameId && socket.data.ddUserId === userId) {
+        log.playerJoinLobby('dotdash', { gameId, userId, ok: true, detail: 'duplicate_join_ignored', phase: game.phase });
+        emitLobbyUpdate(io, gameId, game);
+        return;
+      }
+
       userSockets.set(userId, socket.id);
       socket.data.ddUserId  = userId;
       socket.data.ddGameId  = gameId;

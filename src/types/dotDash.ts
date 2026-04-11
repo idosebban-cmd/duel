@@ -39,9 +39,11 @@ export interface DDGameState {
   player1:     DDPlayer;
   player2:     DDPlayer;
   ghosts:      DDGhost[];
-  tick:        number;
-  winner:      string | null;
-  finalScores: { player1: number; player2: number } | null;
+  tick:           number;
+  gameStartedAt:  number | null;
+  gameDurationMs: number;
+  winner:         string | null;
+  finalScores:    { player1: number; player2: number } | null;
 }
 
 export interface DDLobbyState {

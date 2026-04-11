@@ -231,7 +231,7 @@ export function DotDashBoard() {
   const rafRef      = useRef<number>(0);
   const stateRef    = useRef<DDGameState | null>(null); // latest game state (mutable, avoid re-renders)
 
-  const [elapsed,      setElapsed]      = useState(0);
+  const [remaining,    setRemaining]    = useState(90);
   const [showExit,     setShowExit]     = useState(false);
   const [disconnected, setDisconnected] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
@@ -413,9 +413,15 @@ export function DotDashBoard() {
     return () => window.clearInterval(id);
   }, [gameId]);
 
-  // ── Elapsed timer ────────────────────────────────────────────────────────────
+  // ── Countdown timer (90 s) ──────────────────────────────────────────────────
   useEffect(() => {
-    const t = setInterval(() => setElapsed(s => s + 1), 1000);
+    const t = setInterval(() => {
+      const g = stateRef.current;
+      if (!g?.gameStartedAt) { setRemaining(90); return; }
+      const elapsed = Date.now() - g.gameStartedAt;
+      const left = Math.max(0, Math.ceil((g.gameDurationMs - elapsed) / 1000));
+      setRemaining(left);
+    }, 250);
     return () => clearInterval(t);
   }, []);
 
@@ -526,7 +532,7 @@ export function DotDashBoard() {
   const me    = isP1 ? game?.player1 : game?.player2;
   const opp   = isP1 ? game?.player2 : game?.player1;
 
-  const elapsedStr = `${String(Math.floor(elapsed / 60)).padStart(2,'0')}:${String(elapsed % 60).padStart(2,'0')}`;
+  const timerStr = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2,'0')}`;
 
   // ── Forfeit ─────────────────────────────────────────────────────────────────
   const handleForfeit = () => {
@@ -550,8 +556,8 @@ export function DotDashBoard() {
         >
           <div className="flex items-center gap-2">
             <span className="text-sm">⏱️</span>
-            <span className="font-mono font-bold text-lg" style={{ color: '#FFE66D', letterSpacing: 1 }}>
-              {elapsedStr}
+            <span className="font-mono font-bold text-lg" style={{ color: remaining <= 10 ? '#FF3D71' : '#FFE66D', letterSpacing: 1 }}>
+              {timerStr}
             </span>
           </div>
           <div className="font-display font-extrabold text-lg text-white/80">DOT DASH</div>

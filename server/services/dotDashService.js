@@ -67,6 +67,8 @@ const GHOST_CONFIGS = [
 const PLAYER_STEP_TICKS = 7;   // ≈ 2.86 cells/sec
 const GHOST_STEP_TICKS  = 10;  // = 2.00 cells/sec
 
+const GAME_DURATION_MS = 90_000; // 90-second game clock
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTIVE GAMES
 // ─────────────────────────────────────────────────────────────────────────────
@@ -273,9 +275,14 @@ function resolveWinner(game) {
   if (p2.lives <= 0) return p1.userId;
 
   if (game.dots.size === 0) {
-    // Player 1 (woman, always chose the game) wins ties per spec
     return p1.score >= p2.score ? p1.userId : p2.userId;
   }
+
+  // Time expired — higher score wins; P1 wins ties
+  if (game.gameStartedAt && Date.now() - game.gameStartedAt >= GAME_DURATION_MS) {
+    return p1.score >= p2.score ? p1.userId : p2.userId;
+  }
+
   return null;
 }
 
@@ -331,9 +338,11 @@ function serializeGame(game) {
     player1:  serializePlayer(p1),
     player2:  serializePlayer(p2),
     ghosts:   game.ghosts.map(({ id, color, label, x, y }) => ({ id, color, label, x, y })),
-    tick:     game.tick,
-    winner:   game.winner,
-    finalScores: game.finalScores,
+    tick:           game.tick,
+    gameStartedAt:  game.gameStartedAt,
+    gameDurationMs: GAME_DURATION_MS,
+    winner:         game.winner,
+    finalScores:    game.finalScores,
   };
 }
 
