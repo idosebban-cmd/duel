@@ -568,7 +568,10 @@ export function ProfileDetailSheet({
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           >
             <span className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
-            Challenge to a Game
+            <span className="relative z-[1] flex items-center justify-center gap-2">
+              <img src="/game-icons/Video games.png" alt="" className="w-6 h-6 object-contain" draggable={false} />
+              Challenge to a Game
+            </span>
           </motion.button>
         </div>
       )}

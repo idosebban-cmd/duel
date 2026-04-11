@@ -499,7 +499,7 @@ export function MatchesScreen() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string | undefined>>({});
+  const [matchPhotosByUserId, setMatchPhotosByUserId] = useState<Record<string, string[]>>({});
   const [expandedProfile, setExpandedProfile] = useState<Match | null>(null);
   const hasIncomingChallenge = useIncomingChallengeBadge(user?.id);
 
@@ -541,7 +541,7 @@ export function MatchesScreen() {
     return () => { cancelled = true; };
   }, [user?.id, fetchMatchesData]);
 
-  // Load first photo for each visible match partner.
+  // Load photos for each visible match partner.
   useEffect(() => {
     if (matches.length === 0) return;
     let cancelled = false;
@@ -554,14 +554,14 @@ export function MatchesScreen() {
       const entries = await Promise.all(
         missingUserIds.map(async (partnerId) => {
           const photos = await getPhotos(partnerId);
-          return [partnerId, photos[0]] as const;
+          return [partnerId, photos] as const;
         }),
       );
       if (cancelled) return;
       setMatchPhotosByUserId((prev) => {
         const next = { ...prev };
-        entries.forEach(([partnerId, firstPhoto]) => {
-          if (next[partnerId] === undefined) next[partnerId] = firstPhoto;
+        entries.forEach(([partnerId, photos]) => {
+          if (next[partnerId] === undefined) next[partnerId] = photos;
         });
         return next;
       });
@@ -685,7 +685,7 @@ export function MatchesScreen() {
                       isNew={true}
                       onTap={() => handleTap(m)}
                       onOpenProfile={() => setExpandedProfile(m)}
-                      photoUrl={matchPhotosByUserId[m.userId]}
+                      photoUrl={matchPhotosByUserId[m.userId]?.[0]}
                     />
                   </motion.div>
                 ))}
@@ -702,7 +702,7 @@ export function MatchesScreen() {
                       isNew={false}
                       onTap={() => handleTap(m)}
                       onOpenProfile={() => setExpandedProfile(m)}
-                      photoUrl={matchPhotosByUserId[m.userId]}
+                      photoUrl={matchPhotosByUserId[m.userId]?.[0]}
                     />
                   </motion.div>
                 ))}
@@ -742,8 +742,13 @@ export function MatchesScreen() {
               pets: expandedProfile.pets,
               exercise: expandedProfile.exercise,
             }}
-            photoUrls={matchPhotosByUserId[expandedProfile.userId] ? [matchPhotosByUserId[expandedProfile.userId] as string] : undefined}
+            photoUrls={matchPhotosByUserId[expandedProfile.userId]}
             onClose={() => setExpandedProfile(null)}
+            onAction={() => {
+              setExpandedProfile(null);
+              navigate('/play', { state: { matchId: expandedProfile.id } });
+            }}
+            actionVariant="challenge"
           />
         )}
       </AnimatePresence>
