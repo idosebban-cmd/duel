@@ -21,15 +21,16 @@ export function getEmailRedirectTo(): string {
 }
 
 /**
- * Google OAuth return URL (Custom Tabs / browser on Android should reopen the app via this redirect).
- * `app.playduel:///path` = empty host, path /path (matches intent filter scheme app.playduel).
+ * Google OAuth return URL.
+ * Native: `app.playduel:///path` (empty host, path /path — matches intent filter scheme).
+ * Web: defaults to /onboarding/create-account; callers can override with `webPath` (must be in Supabase redirect allowlist).
  */
-export function getOAuthRedirectTo(): string {
+export function getOAuthRedirectTo(webPath?: string): string {
   if (Capacitor.isNativePlatform()) {
     const path = WEB_POST_CONFIRM_PATH.replace(/^\//, '');
     return `app.playduel:///${path}`;
   }
-  return `${webOrigin()}${WEB_POST_CONFIRM_PATH}`;
+  return `${webOrigin()}${webPath ?? WEB_POST_CONFIRM_PATH}`;
 }
 
 /**

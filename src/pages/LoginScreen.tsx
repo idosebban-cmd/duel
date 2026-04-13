@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { profileRowExistsForUser } from '../lib/database';
@@ -6,7 +6,21 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { SignupLegalConsent } from '../components/legal/SignupLegalConsent';
-import { getEmailRedirectTo, getPasswordResetRedirectTo } from '../lib/authRedirect';
+import { getEmailRedirectTo, getOAuthRedirectTo, getPasswordResetRedirectTo } from '../lib/authRedirect';
+
+function hasOAuthRedirectHash(): boolean {
+  const hash = window.location.hash;
+  return hash.includes('access_token=') || hash.includes('error=');
+}
+
+function friendlyOAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('provider') && lower.includes('not enabled'))
+    return 'Google sign-in is not set up yet. Please use email instead.';
+  if (lower.includes('network') || lower.includes('fetch'))
+    return 'Network error — check your connection and try again.';
+  return message;
+}
 
 // ─── CRT corner brackets ──────────────────────────────────────────────────────
 
@@ -64,10 +78,13 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+
+  const oauthHandled = useRef(false);
 
   const inputStyle = (focused: boolean) => ({
     background: 'rgba(255,255,255,0.04)',
@@ -77,8 +94,85 @@ export function LoginScreen() {
     transition: 'border-color 0.2s, box-shadow 0.2s',
   });
 
+  const routeAfterAuth = async (userId: string) => {
+    const { hasCompletedOnboardingProfile } = useOnboardingStore.getState();
+    if (hasCompletedOnboardingProfile) {
+      navigate('/discover', { replace: true });
+      return;
+    }
+    const exists = await profileRowExistsForUser(userId);
+    if (exists) {
+      useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+      navigate('/discover', { replace: true });
+    } else {
+      navigate('/onboarding/avatar', { replace: true });
+    }
+  };
+
+  // ─── Handle Google OAuth redirect return ─────────────────────────────────────
+  useEffect(() => {
+    if (oauthHandled.current || !supabase || !hasOAuthRedirectHash()) return;
+    oauthHandled.current = true;
+
+    setOauthBusy(true);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      if ((event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') || !s?.user) return;
+      subscription.unsubscribe();
+      setSession(s);
+      setUser(s.user);
+      setOauthBusy(false);
+      void routeAfterAuth(s.user.id);
+    });
+
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe();
+      setOauthBusy(false);
+      setError('Google sign-in did not complete. Please try again.');
+    }, 15_000);
+
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Google OAuth ────────────────────────────────────────────────────────────
+  const handleGoogleSignIn = async () => {
+    if (loading || oauthBusy) return;
+    setError(null);
+    setMessage(null);
+
+    if (!supabase) {
+      setError('Authentication is not configured.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getOAuthRedirectTo(),
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      if (oauthError) {
+        setError(friendlyOAuthError(oauthError.message));
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('[LoginScreen] Google OAuth threw:', err);
+      setError('Google sign-in is not available. Please use email instead.');
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async () => {
-    if (loading) return;
+    if (loading || oauthBusy) return;
     setError(null);
     setMessage(null);
 
@@ -126,7 +220,7 @@ export function LoginScreen() {
   };
 
   const handleSignUp = async () => {
-    if (loading) return;
+    if (loading || oauthBusy) return;
     setError(null);
     setMessage(null);
 
@@ -196,6 +290,35 @@ export function LoginScreen() {
   };
 
   const handleSubmit = mode === 'signin' ? handleSignIn : handleSignUp;
+
+  if (oauthBusy) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ background: '#0A1628' }}>
+        <motion.div
+          className="text-center px-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            className="w-12 h-12 mx-auto mb-6 rounded-full"
+            style={{ border: '3px solid rgba(78,255,196,0.2)', borderTopColor: '#4EFFC4' }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+          />
+          <h2
+            className="font-display font-extrabold text-2xl mb-2"
+            style={{ color: '#4EFFC4', textShadow: '0 0 16px rgba(78,255,196,0.5)' }}
+          >
+            SIGNING YOU IN
+          </h2>
+          <p className="font-body text-ui-body" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Almost there…
+          </p>
+        </motion.div>
+        <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ background: 'linear-gradient(90deg, #FF6BA8, #FFE66D, #4EFFC4, #B565FF, #FF6BA8)', boxShadow: '0 0 14px rgba(78,255,196,0.7)' }} />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -292,6 +415,40 @@ export function LoginScreen() {
               {tab === 'signin' ? 'SIGN IN' : 'SIGN UP'}
             </button>
           ))}
+        </div>
+
+        {/* ─── Google OAuth ──────────────────────────────────────────────── */}
+        <motion.button
+          onClick={() => void handleGoogleSignIn()}
+          disabled={loading}
+          className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-display font-extrabold text-lg relative overflow-hidden mb-1 ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+          style={{
+            background: loading ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #4EFFC4 0%, #B565FF 100%)',
+            border: '3px solid rgba(255,255,255,0.25)',
+            boxShadow: loading ? 'none' : '0 0 28px rgba(78,255,196,0.45), 6px 6px 0px rgba(0,0,0,0.4)',
+            color: loading ? 'rgba(255,255,255,0.4)' : '#12122A',
+          }}
+          whileHover={loading ? {} : { scale: 1.03, boxShadow: '0 0 40px rgba(78,255,196,0.6), 6px 6px 0px rgba(0,0,0,0.4)' }}
+          whileTap={loading ? {} : { scale: 0.97 }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <span className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          CONTINUE WITH GOOGLE
+        </motion.button>
+
+        {/* ─── Divider ────────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-1">
+          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
+          <span className="font-body text-ui-label font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.7)' }}>OR</span>
+          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.12)' }} />
         </div>
 
         {/* ─── Form card ──────────────────────────────────────────────────── */}
