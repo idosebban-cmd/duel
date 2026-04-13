@@ -6,6 +6,8 @@ const path = require('path');
 const gamesRouter = require('./routes/games');
 const dotDashRouter = require('./routes/dotDash');
 const mazeRaceRouter = require('./routes/mazeRace');
+const notifyRouter = require('./routes/notify');
+const { initFirebase } = require('./services/pushNotifications');
 const { createSocketLobbyLogger } = require('./socketLobbyLog');
 const { createSocketRoomDebug } = require('./socketRoomDebug');
 const { setupGameHandlers } = require('./socket/gameHandlers');
@@ -41,6 +43,7 @@ app.use(express.json());
 app.use('/api/games',   gamesRouter);
 app.use('/api/dotdash', dotDashRouter);
 app.use('/api/mazerace', mazeRaceRouter);
+app.use('/api/notify',  notifyRouter);
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
 // Serve built frontend (../dist relative to this file)
@@ -58,6 +61,8 @@ app.get('*', (req, res) => {
 setupGameHandlers(io, socketLobbyLog);
 setupDotDashHandlers(io, socketLobbyLog, socketRoomDebug);
 setupMazeRaceHandlers(io, socketLobbyLog, socketRoomDebug);
+
+initFirebase();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🎮 Duel game server running on port ${PORT}`);
