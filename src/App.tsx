@@ -128,27 +128,55 @@ function PushNotificationsBridge() {
   return null;
 }
 
-/** Merges custom-scheme auth callbacks (app.playduel://#…) onto the WebView origin so Supabase can parse tokens. */
+/** Handles custom-scheme auth callbacks (app.playduel://#…) by extracting tokens and calling setSession directly. */
 function AuthDeepLinkHandler() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let handle: PluginListenerHandle | undefined;
     void CapacitorApp.addListener('appUrlOpen', ({ url }) => {
-      try {
-        const incoming = new URL(url);
-        if (!incoming.hash && !incoming.search) return;
-        const next = `${window.location.origin}${incoming.pathname}${incoming.search}${incoming.hash}`;
-        window.location.replace(next);
-      } catch (err) {
-        console.error('[auth] appUrlOpen', err);
-      }
+      void (async () => {
+        try {
+          console.log('[AuthDeepLink] incoming url:', url);
+          const incoming = new URL(url);
+
+          const fragment = incoming.hash?.replace(/^#/, '') ?? '';
+          const params = new URLSearchParams(fragment);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken && supabase) {
+            console.log('[AuthDeepLink] found tokens in hash, calling setSession');
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (error) {
+              console.error('[AuthDeepLink] setSession failed:', error.message);
+            } else if (data.session) {
+              console.log('[AuthDeepLink] session established, navigating');
+            }
+            const target = incoming.pathname || '/onboarding/create-account';
+            navigate(target, { replace: true });
+            return;
+          }
+
+          if (!incoming.hash && !incoming.search) return;
+          const next = `${window.location.origin}${incoming.pathname}${incoming.search}${incoming.hash}`;
+          console.log('[AuthDeepLink] non-auth deep link, rewriting to:', next);
+          window.location.replace(next);
+        } catch (err) {
+          console.error('[auth] appUrlOpen', err);
+        }
+      })();
     }).then((h) => {
       handle = h;
     });
     return () => {
       void handle?.remove();
     };
-  }, []);
+  }, [navigate]);
   return null;
 }
 
@@ -448,6 +476,8 @@ function RootRedirect() {
   const session = useAuthStore((s) => s.session);
 
   useEffect(() => {
+    if (session) return;
+
     const hash = window.location.hash;
     const isAuthCallback =
       hash.includes('access_token') ||

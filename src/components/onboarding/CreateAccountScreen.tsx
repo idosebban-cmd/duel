@@ -90,28 +90,33 @@ export function CreateAccountScreen() {
 
   // ─── Handle Google OAuth redirect return ─────────────────────────────────────
   useEffect(() => {
+    console.log('[OAuthEffect] running, hash:', window.location.hash, 'hasOAuthHash:', hasOAuthRedirectHash(), 'oauthHandled:', oauthHandled.current);
     if (oauthHandled.current || !supabase || !hasOAuthRedirectHash()) return;
     oauthHandled.current = true;
 
     setOauthBusy(true);
+    console.log('[OAuthEffect] entering OAuth handler block');
 
-    (async () => {
-      try {
-        const { data: { session: s } } = await supabase.auth.getSession();
-        if (s?.user) {
-          setSession(s);
-          setUser(s.user);
-          continueAfterAuth(s.user.id);
-        } else {
-          setError('Google sign-in did not complete. Please try again.');
-        }
-      } catch (err) {
-        console.error('[CreateAccount] OAuth return error:', err);
-        setError('Something went wrong after Google sign-in. Please try again.');
-      } finally {
-        setOauthBusy(false);
-      }
-    })();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      console.log('[OAuthEffect] onAuthStateChange event:', event, 'session:', s ? 'present' : 'null');
+      if ((event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') || !s?.user) return;
+      subscription.unsubscribe();
+      setSession(s);
+      setUser(s.user);
+      setOauthBusy(false);
+      continueAfterAuth(s.user.id);
+    });
+
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe();
+      setOauthBusy(false);
+      setError('Google sign-in did not complete. Please try again.');
+    }, 15_000);
+
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Google OAuth ────────────────────────────────────────────────────────────
