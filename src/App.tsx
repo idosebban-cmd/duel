@@ -504,15 +504,12 @@ export default function App() {
       return;
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setUserId(session?.user?.id ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // Rely on onAuthStateChange for ALL session bootstrapping.
+    // Supabase v2 guarantees INITIAL_SESSION fires exactly once, including
+    // after it finishes consuming OAuth tokens from the URL hash. Calling
+    // getSession() separately raced with the hash-parsing and could resolve
+    // to null before the tokens were consumed, causing the ProtectedRoute
+    // guard to redirect to /login.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         setSession(null);
@@ -522,19 +519,11 @@ export default function App() {
         setSession(session);
         setUser(session.user);
         setUserId(session.user.id);
-      } else {
-        // Transient failure (no session, not SIGNED_OUT) — attempt refresh
-        supabase!.auth.getSession().then(({ data }) => {
-          if (data.session) {
-            setSession(data.session);
-            setUser(data.session.user);
-            setUserId(data.session.user.id);
-          } else {
-            setSession(null);
-            setUser(null);
-            setUserId(null);
-          }
-        });
+      } else if (event === 'INITIAL_SESSION') {
+        // No session on cold start — clear auth state
+        setSession(null);
+        setUser(null);
+        setUserId(null);
       }
       setLoading(false);
     });

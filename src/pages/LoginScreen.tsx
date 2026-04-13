@@ -159,7 +159,7 @@ export function LoginScreen() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: getOAuthRedirectTo(),
+          redirectTo: getOAuthRedirectTo('/login'),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
