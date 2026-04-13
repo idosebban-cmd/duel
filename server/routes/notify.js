@@ -168,6 +168,40 @@ router.post('/chat-message', verifyWebhook, async (req, res) => {
   }
 });
 
+// ── Game challenge created ────────────────────────────────────────────────
+// Supabase webhook fires on INSERT into challenges table.
+// Payload: { type: 'INSERT', record: { id, match_id, from_user, to_user, game_type, status } }
+router.post('/challenge-created', verifyWebhook, async (req, res) => {
+  try {
+    console.log('[notify/challenge-created] Received body:', JSON.stringify(req.body, null, 2));
+    const record = req.body?.record;
+    if (!record) {
+      console.error('[notify/challenge-created] Missing record in body. Keys:', Object.keys(req.body || {}));
+      return res.status(400).json({ error: 'Missing record' });
+    }
+
+    const { match_id, from_user, to_user, game_type } = record;
+    if (!from_user || !to_user) {
+      return res.status(400).json({ error: 'Missing users' });
+    }
+
+    const challengerName = await getDisplayName(from_user);
+    const gameLabel = formatGameType(game_type);
+
+    await sendPushNotification(
+      to_user,
+      'Game Challenge!',
+      `${challengerName} challenged you to ${gameLabel}`,
+      { screen: 'match', matchId: match_id },
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[notify/challenge-created]', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 function formatGameType(gameType) {
   if (!gameType) return 'a game';
   const labels = {

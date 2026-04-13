@@ -121,3 +121,38 @@ create trigger trg_notify_chat_message
   after insert on public.messages
   for each row
   execute function public.notify_chat_message();
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 4. Game challenge created → notify the challenged user
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+create or replace function public.notify_challenge_created()
+returns trigger language plpgsql security definer as $$
+begin
+  perform net.http_post(
+    url     := 'https://duel-fast.onrender.com/api/notify/challenge-created',
+    body    := jsonb_build_object(
+      'type', 'INSERT',
+      'record', jsonb_build_object(
+        'id', NEW.id,
+        'match_id', NEW.match_id,
+        'from_user', NEW.from_user,
+        'to_user', NEW.to_user,
+        'game_type', NEW.game_type,
+        'status', NEW.status
+      )
+    ),
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-webhook-secret', '__WEBHOOK_SECRET__'
+    )
+  );
+  return NEW;
+end;
+$$;
+
+drop trigger if exists trg_notify_challenge_created on public.challenges;
+create trigger trg_notify_challenge_created
+  after insert on public.challenges
+  for each row
+  execute function public.notify_challenge_created();
