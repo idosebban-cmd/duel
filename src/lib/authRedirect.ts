@@ -26,11 +26,12 @@ export function getEmailRedirectTo(): string {
  * Web: defaults to /onboarding/create-account; callers can override with `webPath` (must be in Supabase redirect allowlist).
  */
 export function getOAuthRedirectTo(webPath?: string): string {
+  const resolved = webPath ?? WEB_POST_CONFIRM_PATH;
   if (Capacitor.isNativePlatform()) {
-    const path = WEB_POST_CONFIRM_PATH.replace(/^\//, '');
+    const path = resolved.replace(/^\//, '');
     return `app.playduel:///${path}`;
   }
-  return `${webOrigin()}${webPath ?? WEB_POST_CONFIRM_PATH}`;
+  return `${webOrigin()}${resolved}`;
 }
 
 /**

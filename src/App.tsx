@@ -157,7 +157,7 @@ function AuthDeepLinkHandler() {
             } else if (data.session) {
               console.log('[AuthDeepLink] session established, navigating');
             }
-            const target = incoming.pathname || '/onboarding/create-account';
+            const target = incoming.pathname || '/login';
             navigate(target, { replace: true });
             return;
           }
