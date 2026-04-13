@@ -70,7 +70,7 @@ function EyeIcon({ open }: { open: boolean }) {
 export function LoginScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setUser, setSession } = useAuthStore();
+  const { setUser, setSession, user, session } = useAuthStore();
 
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
@@ -108,6 +108,12 @@ export function LoginScreen() {
       navigate('/onboarding/avatar', { replace: true });
     }
   };
+
+  // ─── Route when session appears (covers OAuth return where GoTrue already consumed the hash) ───
+  useEffect(() => {
+    if (!user || !session) return;
+    void routeAfterAuth(user.id);
+  }, [user, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Handle Google OAuth redirect return ─────────────────────────────────────
   useEffect(() => {
