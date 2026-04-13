@@ -39,11 +39,18 @@ async function getDisplayName(userId) {
 // Payload: { type: 'INSERT', record: { id, user_a, user_b, ... } }
 router.post('/match-created', verifyWebhook, async (req, res) => {
   try {
+    console.log('[notify/match-created] Received body:', JSON.stringify(req.body, null, 2));
     const record = req.body?.record;
-    if (!record) return res.status(400).json({ error: 'Missing record' });
+    if (!record) {
+      console.error('[notify/match-created] Missing record in body. Keys:', Object.keys(req.body || {}));
+      return res.status(400).json({ error: 'Missing record' });
+    }
 
     const { id: matchId, user_a, user_b } = record;
-    if (!user_a || !user_b) return res.status(400).json({ error: 'Missing users' });
+    if (!user_a || !user_b) {
+      console.error('[notify/match-created] Missing users. record keys:', Object.keys(record), 'record:', JSON.stringify(record));
+      return res.status(400).json({ error: 'Missing users' });
+    }
 
     const [nameA, nameB] = await Promise.all([
       getDisplayName(user_a),
@@ -73,9 +80,13 @@ router.post('/match-created', verifyWebhook, async (req, res) => {
 // Payload: { type: 'UPDATE', record: { id, match_id, current_turn, player1_id, player2_id, game_type, status, winner } }
 router.post('/turn-changed', verifyWebhook, async (req, res) => {
   try {
+    console.log('[notify/turn-changed] Received body:', JSON.stringify(req.body, null, 2));
     const record = req.body?.record;
     const oldRecord = req.body?.old_record;
-    if (!record) return res.status(400).json({ error: 'Missing record' });
+    if (!record) {
+      console.error('[notify/turn-changed] Missing record in body. Keys:', Object.keys(req.body || {}));
+      return res.status(400).json({ error: 'Missing record' });
+    }
 
     const { match_id, current_turn, player1_id, player2_id, status, winner, game_type } = record;
 
@@ -115,8 +126,12 @@ router.post('/turn-changed', verifyWebhook, async (req, res) => {
 // Payload: { type: 'INSERT', record: { id, room_id, sender, content, ... } }
 router.post('/chat-message', verifyWebhook, async (req, res) => {
   try {
+    console.log('[notify/chat-message] Received body:', JSON.stringify(req.body, null, 2));
     const record = req.body?.record;
-    if (!record) return res.status(400).json({ error: 'Missing record' });
+    if (!record) {
+      console.error('[notify/chat-message] Missing record in body. Keys:', Object.keys(req.body || {}));
+      return res.status(400).json({ error: 'Missing record' });
+    }
 
     const { room_id: matchId, sender, content } = record;
     if (!matchId || !sender) return res.status(400).json({ error: 'Missing fields' });

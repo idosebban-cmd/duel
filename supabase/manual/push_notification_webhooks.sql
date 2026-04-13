@@ -9,8 +9,8 @@
 --   __RENDER_SERVER_URL__  → e.g. https://duel-fast.onrender.com
 --   __WEBHOOK_SECRET__     → a random string you generate (set same value in Render dashboard)
 
--- Ensure pg_net is available
-create extension if not exists pg_net with schema extensions;
+-- Ensure pg_net is available (installs into the `net` schema by default on Supabase)
+create extension if not exists pg_net with schema net;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 1. New match created → notify both users
@@ -19,9 +19,9 @@ create extension if not exists pg_net with schema extensions;
 create or replace function public.notify_match_created()
 returns trigger language plpgsql security definer as $$
 begin
-  perform extensions.http_post(
-    url    := '__RENDER_SERVER_URL__/api/notify/match-created',
-    body   := jsonb_build_object(
+  perform net.http_post(
+    url     := '__RENDER_SERVER_URL__/api/notify/match-created',
+    body    := jsonb_build_object(
       'type', 'INSERT',
       'record', jsonb_build_object(
         'id', NEW.id,
@@ -51,14 +51,13 @@ create trigger trg_notify_match_created
 create or replace function public.notify_turn_changed()
 returns trigger language plpgsql security definer as $$
 begin
-  -- Only fire when current_turn actually changes and game is still active
   if OLD.current_turn is distinct from NEW.current_turn
      and NEW.winner is null
      and NEW.status in ('playing', 'pending')
   then
-    perform extensions.http_post(
-      url    := '__RENDER_SERVER_URL__/api/notify/turn-changed',
-      body   := jsonb_build_object(
+    perform net.http_post(
+      url     := '__RENDER_SERVER_URL__/api/notify/turn-changed',
+      body    := jsonb_build_object(
         'type', 'UPDATE',
         'record', jsonb_build_object(
           'id', NEW.id,
@@ -97,9 +96,9 @@ create trigger trg_notify_turn_changed
 create or replace function public.notify_chat_message()
 returns trigger language plpgsql security definer as $$
 begin
-  perform extensions.http_post(
-    url    := '__RENDER_SERVER_URL__/api/notify/chat-message',
-    body   := jsonb_build_object(
+  perform net.http_post(
+    url     := '__RENDER_SERVER_URL__/api/notify/chat-message',
+    body    := jsonb_build_object(
       'type', 'INSERT',
       'record', jsonb_build_object(
         'id', NEW.id,
