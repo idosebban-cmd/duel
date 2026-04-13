@@ -59,7 +59,7 @@ setupGameHandlers(io, socketLobbyLog);
 setupDotDashHandlers(io, socketLobbyLog, socketRoomDebug);
 setupMazeRaceHandlers(io, socketLobbyLog, socketRoomDebug);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🎮 Duel game server running on port ${PORT}`);
   console.log(`   Serving frontend from: ${distPath}`);
 });
