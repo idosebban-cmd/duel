@@ -234,7 +234,7 @@ export const useOnboardingStore = create<OnboardingState & OnboardingActions>()(
 
       markOnboardingCompleteAndClearDraft: () => {
         try { sessionStorage.removeItem('duel-photos'); } catch {}
-        set({ ...initialState, photos: [], hasCompletedOnboardingProfile: true });
+        set((prev) => ({ ...initialState, photos: [], hasCompletedOnboardingProfile: true, userId: prev.userId }));
       },
     }),
     {

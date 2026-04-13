@@ -19,12 +19,16 @@ export function WelcomeScreen() {
   const navigate = useNavigate();
   const { user, session, loading } = useAuthStore();
   const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
+  const onboardingUserId = useOnboardingStore((s) => s.userId);
   const [sessionOnboardingResolve, setSessionOnboardingResolve] = useState<
     'none' | 'checking' | 'avatar'
   >('none');
 
+  const profileCompletedForCurrentUser =
+    hasCompletedOnboardingProfile && onboardingUserId === user?.id;
+
   useEffect(() => {
-    if (loading || !session || hasCompletedOnboardingProfile) {
+    if (loading || !session || profileCompletedForCurrentUser) {
       setSessionOnboardingResolve('none');
       return;
     }
@@ -36,6 +40,7 @@ export function WelcomeScreen() {
       if (cancelled) return;
       if (exists) {
         useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+        useOnboardingStore.getState().setUserId(uid);
         navigate('/discover', { replace: true });
       } else {
         setSessionOnboardingResolve('avatar');
@@ -44,9 +49,9 @@ export function WelcomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [loading, session?.user?.id, hasCompletedOnboardingProfile, navigate]);
+  }, [loading, session?.user?.id, profileCompletedForCurrentUser, navigate]);
 
-  if (!loading && user && hasCompletedOnboardingProfile) {
+  if (!loading && user && profileCompletedForCurrentUser) {
     return <Navigate to="/discover" replace />;
   }
   // Logged-in session + local flag false: DB check first, then avatar or discover

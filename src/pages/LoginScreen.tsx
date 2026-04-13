@@ -85,6 +85,7 @@ export function LoginScreen() {
   const [passFocused, setPassFocused] = useState(false);
 
   const oauthHandled = useRef(false);
+  const routingRef = useRef(false);
 
   const inputStyle = (focused: boolean) => ({
     background: 'rgba(255,255,255,0.04)',
@@ -95,14 +96,19 @@ export function LoginScreen() {
   });
 
   const routeAfterAuth = async (userId: string) => {
-    const { hasCompletedOnboardingProfile } = useOnboardingStore.getState();
-    if (hasCompletedOnboardingProfile) {
+    if (routingRef.current) return;
+    routingRef.current = true;
+
+    const onb = useOnboardingStore.getState();
+    if (onb.hasCompletedOnboardingProfile && onb.userId === userId) {
       navigate('/discover', { replace: true });
       return;
     }
+
     const exists = await profileRowExistsForUser(userId);
     if (exists) {
       useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+      useOnboardingStore.getState().setUserId(userId);
       navigate('/discover', { replace: true });
     } else {
       navigate('/onboarding/avatar', { replace: true });
@@ -128,7 +134,6 @@ export function LoginScreen() {
       setSession(s);
       setUser(s.user);
       setOauthBusy(false);
-      void routeAfterAuth(s.user.id);
     });
 
     const timeout = setTimeout(() => {
@@ -210,8 +215,8 @@ export function LoginScreen() {
       return;
     }
 
-    const { hasCompletedOnboardingProfile } = useOnboardingStore.getState();
-    if (hasCompletedOnboardingProfile) {
+    const onb = useOnboardingStore.getState();
+    if (onb.hasCompletedOnboardingProfile && onb.userId === userId) {
       navigate('/discover');
       return;
     }
@@ -219,6 +224,7 @@ export function LoginScreen() {
     const exists = await profileRowExistsForUser(userId);
     if (exists) {
       useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+      useOnboardingStore.getState().setUserId(userId);
       navigate('/discover');
     } else {
       navigate('/onboarding/avatar');

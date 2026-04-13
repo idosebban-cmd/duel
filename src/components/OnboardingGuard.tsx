@@ -10,9 +10,13 @@ const userIdsKnownToHaveNoProfileRow = new Set<string>();
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();
   const hasCompletedOnboardingProfile = useOnboardingStore((s) => s.hasCompletedOnboardingProfile);
+  const onboardingUserId = useOnboardingStore((s) => s.userId);
   const pendingEmailVerification = useOnboardingStore((s) => s.pendingEmailVerification);
   const name = useOnboardingStore((s) => s.name);
   const completedSteps = useOnboardingStore((s) => s.completedSteps);
+
+  const profileCompletedForCurrentUser =
+    hasCompletedOnboardingProfile && onboardingUserId === user?.id;
 
   const hasLocalProgress =
     !pendingEmailVerification && (name.trim().length > 0 || completedSteps.length > 0);
@@ -27,7 +31,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
       setDbResolved(false);
       return;
     }
-    if (hasCompletedOnboardingProfile) {
+    if (profileCompletedForCurrentUser) {
       return;
     }
     if (hasLocalProgress) {
@@ -44,6 +48,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
       if (cancelled) return;
       if (exists) {
         useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+        useOnboardingStore.getState().setUserId(user.id);
       } else {
         userIdsKnownToHaveNoProfileRow.add(user.id);
         setDbResolved(true);
@@ -52,18 +57,15 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [loading, user?.id, hasCompletedOnboardingProfile, hasLocalProgress]);
+  }, [loading, user?.id, profileCompletedForCurrentUser, hasLocalProgress]);
 
-  // While auth is still loading, show the children (no flash)
   if (loading) return <>{children}</>;
 
-  // Must be signed in before profile steps (account is step 2)
   if (!user) {
     return <Navigate to="/onboarding/create-account" replace />;
   }
 
-  // Finished onboarding — go to app
-  if (hasCompletedOnboardingProfile) {
+  if (profileCompletedForCurrentUser) {
     return <Navigate to="/discover" replace />;
   }
 

@@ -65,7 +65,8 @@ export function CreateAccountScreen() {
   };
 
   useEffect(() => {
-    if (hasCompletedOnboardingProfile) {
+    const onb = useOnboardingStore.getState();
+    if (hasCompletedOnboardingProfile && onb.userId === user?.id) {
       navigate('/discover', { replace: true });
       return;
     }
@@ -78,6 +79,7 @@ export function CreateAccountScreen() {
       if (cancelled) return;
       if (exists) {
         useOnboardingStore.getState().markOnboardingCompleteAndClearDraft();
+        useOnboardingStore.getState().setUserId(user.id);
         navigate('/discover', { replace: true });
       } else {
         navigate('/onboarding/avatar', { replace: true });
