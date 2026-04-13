@@ -39,6 +39,7 @@ import { ProfileScreen } from './pages/ProfileScreen';
 import { MatchScreen } from './pages/MatchScreen';
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { TermsOfUse } from './pages/legal/TermsOfUse';
+import { ChildSafety } from './pages/legal/ChildSafety';
 import { WordBlitz } from './pages/game/WordBlitz';
 import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
@@ -583,6 +584,7 @@ export default function App() {
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
+          <Route path="/child-safety" element={<ChildSafety />} />
 
           {/* Protected routes */}
           <Route path="/discover" element={<ProtectedRoute><DiscoverScreen /></ProtectedRoute>} />
