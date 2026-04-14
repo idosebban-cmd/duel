@@ -11,6 +11,8 @@ const userSockets = new Map();
 // gameId → { disconnect timers per userId }
 const disconnectTimers = new Map();
 const pendingLobbyStartByGameId = new Map();
+// gameId → { resolve, timer } — pending game starts waiting for room presence
+const pendingPresenceChecks = new Map();
 
 function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocketRoomDebug) {
   io.on('connection', (socket) => {
@@ -32,10 +34,15 @@ function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocket
         return;
       }
 
-      // Idempotent guard: if this socket already joined this game, just re-send lobby state
+      // Idempotent guard: if this socket already joined this game, just re-send state
       if (socket.data.ddGameId === gameId && socket.data.ddUserId === userId) {
         log.playerJoinLobby('dotdash', { gameId, userId, ok: true, detail: 'duplicate_join_ignored', phase: game.phase });
         emitLobbyUpdate(io, gameId, game);
+        // Still resolve pending presence checks and push game state on duplicate joins
+        resolvePresenceCheck(gameId);
+        if (game.phase === 'playing') {
+          socket.emit('dd_game_started', { gameState: dotDash.serializeGame(game) });
+        }
         return;
       }
 
@@ -68,6 +75,16 @@ function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocket
       }
 
       emitLobbyUpdate(io, gameId, game);
+
+      // If a game start is pending on room presence, re-check now (event-driven)
+      resolvePresenceCheck(gameId);
+
+      // If game already started, push current state so late-joiners can navigate
+      if (game.phase === 'playing') {
+        socket.emit('dd_game_started', {
+          gameState: dotDash.serializeGame(game),
+        });
+      }
     });
 
     // ── PLAYER READY ──────────────────────────────────────────────────────────
@@ -88,18 +105,50 @@ function setupDotDashHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocket
           return;
         }
         pendingLobbyStartByGameId.set(gameId, true);
-        log.bothReadyGameStarting('dotdash', { gameId });
-        // 3-2-1 countdown then start
-        io.to(`dd:${gameId}`).emit('dd_game_starting', { countdown: 3 });
-        setTimeout(() => {
-          pendingLobbyStartByGameId.delete(gameId);
-          const started = dotDash.startGame(gameId);
-          if (!started) return;
-          io.to(`dd:${gameId}`).emit('dd_game_started', {
-            gameState: dotDash.serializeGame(started),
-          });
-          startGameLoop(io, gameId, roomDbg);
-        }, 4000);
+
+        const roomName = `dd:${gameId}`;
+        const p1Id = game.player1.userId;
+        const p2Id = game.player2.userId;
+
+        // Event-driven wait: verify both players are in the room (up to 5 s)
+        waitForBothInRoom(io, roomName, gameId, p1Id, p2Id, 5000).then((bothIn) => {
+          const g = dotDash.getGame(gameId);
+          if (!g || g.phase !== 'lobby') {
+            pendingLobbyStartByGameId.delete(gameId);
+            return;
+          }
+          if (!bothIn) {
+            // Timeout — reset pending flag so players can retry
+            pendingLobbyStartByGameId.delete(gameId);
+            log.bothReadyGameStarting('dotdash', { gameId, detail: 'presence_timeout' });
+            emitLobbyUpdate(io, gameId, g);
+            return;
+          }
+
+          log.bothReadyGameStarting('dotdash', { gameId });
+          // 3-2-1 countdown then start
+          io.to(roomName).emit('dd_game_starting', { countdown: 3 });
+          setTimeout(async () => {
+            pendingLobbyStartByGameId.delete(gameId);
+            // Re-verify room presence after countdown in case a player dropped
+            const stillBothIn = await areBothInRoom(io, roomName, p1Id, p2Id);
+            if (!stillBothIn) {
+              // Wait up to 5 s for the missing player to rejoin
+              const recovered = await waitForBothInRoom(io, roomName, gameId, p1Id, p2Id, 5000);
+              if (!recovered) {
+                const latest = dotDash.getGame(gameId);
+                if (latest) emitLobbyUpdate(io, gameId, latest);
+                return;
+              }
+            }
+            const started = dotDash.startGame(gameId);
+            if (!started) return;
+            io.to(roomName).emit('dd_game_started', {
+              gameState: dotDash.serializeGame(started),
+            });
+            startGameLoop(io, gameId, roomDbg);
+          }, 4000);
+        });
       }
     });
 
@@ -194,6 +243,52 @@ function stopGameLoop(gameId) {
     gameLoops.delete(gameId);
     console.log(`[DotDash] Game loop stopped for ${gameId}`);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOM PRESENCE HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Check if both players have a socket in the given room. */
+async function areBothInRoom(io, roomName, player1Id, player2Id) {
+  const sockets = await io.in(roomName).fetchSockets();
+  const idsInRoom = new Set(sockets.map((s) => s.data.ddUserId));
+  return idsInRoom.has(player1Id) && idsInRoom.has(player2Id);
+}
+
+/**
+ * Event-driven wait for both players to be present in the Socket.IO room.
+ * Returns true if both present, false on timeout.
+ *
+ * The join handler calls `resolvePresenceCheck(gameId)` when a player
+ * joins, which re-checks room membership and resolves the promise.
+ */
+function waitForBothInRoom(io, roomName, gameId, player1Id, player2Id, timeoutMs) {
+  return new Promise((resolve) => {
+    const check = async () => {
+      if (await areBothInRoom(io, roomName, player1Id, player2Id)) {
+        cleanup();
+        resolve(true);
+      }
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, timeoutMs);
+    const cleanup = () => {
+      clearTimeout(timer);
+      pendingPresenceChecks.delete(gameId);
+    };
+    pendingPresenceChecks.set(gameId, { check, timer });
+    // Initial check — may already be resolved
+    check();
+  });
+}
+
+/** Called from the join handler when a player enters the room. */
+function resolvePresenceCheck(gameId) {
+  const pending = pendingPresenceChecks.get(gameId);
+  if (pending) pending.check();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

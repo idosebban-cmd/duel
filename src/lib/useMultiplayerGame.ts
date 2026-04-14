@@ -159,7 +159,7 @@ export function useMultiplayerGame<S>({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, myUserId, matchId, gameType]);
 
-  // ── Presence: signal "I've loaded the game screen" once ──────────────────
+  // ── Presence: signal "I've loaded the game screen" with retry ─────────────
   const presenceSentRef = useRef(false);
   useEffect(() => {
     if (!enabled || !gameRow?.id || !myUserId || presenceSentRef.current) return;
@@ -167,6 +167,35 @@ export function useMultiplayerGame<S>({
     presenceWritePendingRef.current = true;
     setPlayerPresent(gameRow.id, myUserId);
   }, [enabled, gameRow?.id, myUserId]);
+
+  // Retry presence if our flag is not confirmed within 3 s (event-driven via state check)
+  const presenceRetryCountRef = useRef(0);
+  useEffect(() => {
+    if (!enabled || !gameRow?.id || !myUserId || !presenceSentRef.current) return;
+    // If our own presence is already confirmed in the state, no retry needed
+    const state = gameRow.state as Record<string, unknown> | null;
+    const present = (state?.present ?? {}) as Record<string, boolean>;
+    if (present[myUserId]) {
+      presenceRetryCountRef.current = 0;
+      return;
+    }
+    // Cap retries to avoid infinite loops
+    if (presenceRetryCountRef.current >= 3) return;
+
+    const timer = setTimeout(() => {
+      // Re-check: if still not confirmed, retry the RPC
+      const currentRow = gameRowRef.current;
+      const currentState = currentRow?.state as Record<string, unknown> | null;
+      const currentPresent = (currentState?.present ?? {}) as Record<string, boolean>;
+      if (currentRow?.id && !currentPresent[myUserId]) {
+        presenceRetryCountRef.current += 1;
+        devLog('[useMultiplayerGame] Presence not confirmed, retrying setPlayerPresent (attempt', presenceRetryCountRef.current, ')');
+        presenceWritePendingRef.current = true;
+        setPlayerPresent(currentRow.id, myUserId);
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [enabled, gameRow?.id, gameRow?.state, myUserId]);
 
   // ── Realtime subscription with fallback polling ──────────────────────────
   useEffect(() => {

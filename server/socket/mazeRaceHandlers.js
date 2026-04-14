@@ -8,6 +8,9 @@ const { noopSocketRoomDebug } = require('../socketRoomDebug');
 const gameLoops = new Map();
 const userSockets = new Map();
 const disconnectTimers = new Map();
+const pendingLobbyStartByGameId = new Map();
+// gameId → { check, timer } — pending game starts waiting for room presence
+const pendingPresenceChecks = new Map();
 
 function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocketRoomDebug) {
   io.on('connection', (socket) => {
@@ -28,10 +31,14 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
         return;
       }
 
-      // Idempotent guard: if this socket already joined this game, just re-send lobby state
+      // Idempotent guard: if this socket already joined this game, just re-send state
       if (socket.data.mrGameId === gameId && socket.data.mrUserId === userId) {
         log.playerJoinLobby('mazerace', { gameId, userId, ok: true, detail: 'duplicate_join_ignored', phase: game.phase });
         emitLobbyUpdate(io, gameId, game);
+        resolvePresenceCheck(gameId);
+        if (game.phase === 'playing' || game.phase === 'countdown') {
+          socket.emit('mr_game_started', { gameState: mazeRace.serializeGame(game) });
+        }
         return;
       }
 
@@ -64,6 +71,9 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
 
       emitLobbyUpdate(io, gameId, game);
 
+      // If a game start is pending on room presence, re-check now (event-driven)
+      resolvePresenceCheck(gameId);
+
       // If the game is already in progress, send current state so late-joiners get the maze
       if (game.phase === 'playing' || game.phase === 'countdown') {
         socket.emit('mr_game_started', {
@@ -89,30 +99,67 @@ function setupMazeRaceHandlers(io, log = noopSocketLobbyLog, roomDbg = noopSocke
       emitLobbyUpdate(io, gameId, game);
 
       if (game.player1.ready && game.player2.ready && game.phase === 'lobby') {
-        log.bothReadyGameStarting('mazerace', { gameId });
-        game.phase = 'countdown';
-        io.to(`mr:${gameId}`).emit('mr_countdown', { count: 3 });
-        setTimeout(() => {
+        if (pendingLobbyStartByGameId.has(gameId)) {
+          return;
+        }
+        pendingLobbyStartByGameId.set(gameId, true);
+
+        const roomName = `mr:${gameId}`;
+        const p1Id = game.player1.userId;
+        const p2Id = game.player2.userId;
+
+        // Event-driven wait: verify both players are in the room (up to 5 s)
+        waitForBothInRoom(io, roomName, gameId, p1Id, p2Id, 5000).then((bothIn) => {
           const g = mazeRace.getGame(gameId);
-          if (!g || g.phase !== 'countdown') return;
-          io.to(`mr:${gameId}`).emit('mr_countdown', { count: 2 });
-        }, 1000);
-        setTimeout(() => {
-          const g = mazeRace.getGame(gameId);
-          if (!g || g.phase !== 'countdown') return;
-          io.to(`mr:${gameId}`).emit('mr_countdown', { count: 1 });
-        }, 2000);
-        setTimeout(() => {
-          const started = mazeRace.startGame(gameId);
-          if (!started) return;
-          void (async () => {
+          if (!g || g.phase !== 'lobby') {
+            pendingLobbyStartByGameId.delete(gameId);
+            return;
+          }
+          if (!bothIn) {
+            // Timeout — reset so players can retry
+            pendingLobbyStartByGameId.delete(gameId);
+            log.bothReadyGameStarting('mazerace', { gameId, detail: 'presence_timeout' });
+            emitLobbyUpdate(io, gameId, g);
+            return;
+          }
+
+          log.bothReadyGameStarting('mazerace', { gameId });
+          g.phase = 'countdown';
+          io.to(roomName).emit('mr_countdown', { count: 3 });
+          setTimeout(() => {
+            const g2 = mazeRace.getGame(gameId);
+            if (!g2 || g2.phase !== 'countdown') return;
+            io.to(roomName).emit('mr_countdown', { count: 2 });
+          }, 1000);
+          setTimeout(() => {
+            const g2 = mazeRace.getGame(gameId);
+            if (!g2 || g2.phase !== 'countdown') return;
+            io.to(roomName).emit('mr_countdown', { count: 1 });
+          }, 2000);
+          setTimeout(async () => {
+            pendingLobbyStartByGameId.delete(gameId);
+            // Re-verify room presence after countdown
+            const stillBothIn = await areBothInRoom(io, roomName, p1Id, p2Id);
+            if (!stillBothIn) {
+              const recovered = await waitForBothInRoom(io, roomName, gameId, p1Id, p2Id, 5000);
+              if (!recovered) {
+                const latest = mazeRace.getGame(gameId);
+                if (latest) {
+                  latest.phase = 'lobby';
+                  emitLobbyUpdate(io, gameId, latest);
+                }
+                return;
+              }
+            }
+            const started = mazeRace.startGame(gameId);
+            if (!started) return;
             await updateMazeRaceGameStatus(gameId, 'playing');
-            io.to(`mr:${gameId}`).emit('mr_game_started', {
+            io.to(roomName).emit('mr_game_started', {
               gameState: mazeRace.serializeGame(started),
             });
             startGameLoop(io, gameId, roomDbg);
-          })();
-        }, 3000);
+          }, 3000);
+        });
       }
     });
 
@@ -206,6 +253,52 @@ function stopGameLoop(gameId) {
     gameLoops.delete(gameId);
     console.log(`[MazeRace] Game loop stopped for ${gameId}`);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOM PRESENCE HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Check if both players have a socket in the given room. */
+async function areBothInRoom(io, roomName, player1Id, player2Id) {
+  const sockets = await io.in(roomName).fetchSockets();
+  const idsInRoom = new Set(sockets.map((s) => s.data.mrUserId));
+  return idsInRoom.has(player1Id) && idsInRoom.has(player2Id);
+}
+
+/**
+ * Event-driven wait for both players to be present in the Socket.IO room.
+ * Returns true if both present, false on timeout.
+ *
+ * The join handler calls `resolvePresenceCheck(gameId)` when a player
+ * joins, which re-checks room membership and resolves the promise.
+ */
+function waitForBothInRoom(io, roomName, gameId, player1Id, player2Id, timeoutMs) {
+  return new Promise((resolve) => {
+    const check = async () => {
+      if (await areBothInRoom(io, roomName, player1Id, player2Id)) {
+        cleanup();
+        resolve(true);
+      }
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, timeoutMs);
+    const cleanup = () => {
+      clearTimeout(timer);
+      pendingPresenceChecks.delete(gameId);
+    };
+    pendingPresenceChecks.set(gameId, { check, timer });
+    // Initial check — may already be resolved
+    check();
+  });
+}
+
+/** Called from the join handler when a player enters the room. */
+function resolvePresenceCheck(gameId) {
+  const pending = pendingPresenceChecks.get(gameId);
+  if (pending) pending.check();
 }
 
 function emitLobbyUpdate(io, gameId, game) {
