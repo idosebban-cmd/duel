@@ -348,6 +348,34 @@ function GlobalChallengeListener() {
     });
   }, [navigate]);
 
+  // Listen for foreground push notification events (e.g. new chat messages)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        type: string;
+        title: string;
+        body: string;
+        matchId?: string;
+      } | undefined;
+      if (!detail || detail.type !== 'chat_message') return;
+
+      setToast({
+        kind: 'success',
+        message: `${detail.title}: ${detail.body}`,
+        actionLabel: 'View',
+        onAction: () => {
+          setToast(null);
+          if (detail.matchId) {
+            navigate(`/match/${detail.matchId}`);
+          }
+        },
+      });
+    };
+
+    window.addEventListener('foreground-push', handler);
+    return () => window.removeEventListener('foreground-push', handler);
+  }, [navigate]);
+
   useEffect(() => {
     if (!supabase || !user?.id) return;
     const sb = supabase;

@@ -158,7 +158,7 @@ router.post('/chat-message', verifyWebhook, async (req, res) => {
       recipientId,
       senderName,
       preview,
-      { screen: 'match', matchId },
+      { screen: 'match', matchId, type: 'chat_message' },
     );
 
     res.json({ ok: true });

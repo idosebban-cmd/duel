@@ -88,6 +88,23 @@ export function usePushNotifications(): void {
         if (import.meta.env.DEV) {
           console.debug('[push] foreground', notification.id, notification.title);
         }
+
+        const data = notification.data as Record<string, unknown> | undefined;
+        const type = data && typeof data.type === 'string' ? data.type : undefined;
+
+        if (type === 'chat_message') {
+          const matchId = getDataString(data, 'matchId');
+          window.dispatchEvent(
+            new CustomEvent('foreground-push', {
+              detail: {
+                type,
+                title: notification.title ?? '',
+                body: notification.body ?? '',
+                matchId,
+              },
+            }),
+          );
+        }
       }),
     );
 
