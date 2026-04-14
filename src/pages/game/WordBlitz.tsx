@@ -31,25 +31,45 @@ const CELL_PX      = 40;         // px per cell (my grid)
 const OPP_CELL_PX  = 36;         // px per cell (opponent grid – slightly smaller)
 const GAME_SECONDS = 120;        // 2 minutes
 
-// Letter pool: 21 letters with Scrabble-like distribution
-const LETTER_POOL = [
-  'A','A','E','E','E','I','I','O','U',       // 9 vowels
-  'R','S','T','N','L','C','D','M',           // 8 common consonants
-  'P','B','G','H','Y','K','W','F',           // extras (pick 4 from this set)
-].slice(0, 21);
+// Letter bags for random distribution (Scrabble-like frequencies)
+const VOWELS = ['A','A','A','E','E','E','E','I','I','I','O','O','O','U','U'];
+const CONSONANTS = [
+  'R','R','S','S','T','T','N','N','L','L',
+  'C','C','D','D','M','M',
+  'P','B','G','H','Y','K','W','F',
+];
 
-// Deterministic shuffle so both players get same letters
-function seededLetters(seed: string): string[] {
-  const base = [...LETTER_POOL];
-  // simple fisher-yates with string-hash seed
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-  const rng = () => { h ^= h << 13; h ^= h >> 17; h ^= h << 5; return (h >>> 0) / 0x100000000; };
-  for (let i = base.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [base[i], base[j]] = [base[j], base[i]];
+const POOL_SIZE = 21;
+const MIN_VOWELS = 7;
+const MAX_VOWELS = 9;
+
+// Generate a fresh random letter set per player per game
+function randomLetters(): string[] {
+  const pick = (arr: string[], n: number): string[] => {
+    const copy = [...arr];
+    const result: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const idx = Math.floor(Math.random() * copy.length);
+      result.push(copy[idx]);
+      copy.splice(idx, 1);
+    }
+    return result;
+  };
+
+  const vowelCount = MIN_VOWELS + Math.floor(Math.random() * (MAX_VOWELS - MIN_VOWELS + 1));
+  const consonantCount = POOL_SIZE - vowelCount;
+
+  const letters = [
+    ...pick(VOWELS, vowelCount),
+    ...pick(CONSONANTS, consonantCount),
+  ];
+
+  // Fisher-Yates shuffle the combined set
+  for (let i = letters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [letters[i], letters[j]] = [letters[j], letters[i]];
   }
-  return base;
+  return letters;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -496,8 +516,6 @@ export function WordBlitz() {
 
   const myChar = character || 'fox';
   const myName = name || 'Alex';
-  const seed   = matchId || 'demo';
-
   // ── Phase ─────────────────────────────────────────────────────────────────
   const isMultiplayer = !!matchId && matchId !== 'demo';
   const [phase, setPhase] = useState<Phase>('setup');
@@ -576,7 +594,7 @@ export function WordBlitz() {
 
   // ── Pool & grid ───────────────────────────────────────────────────────────
   const [pool, setPool] = useState<PoolLetter[]>(() =>
-    seededLetters(seed).map((l, i) => ({
+    randomLetters().map((l, i) => ({
       id: `${l}-${i}`,
       letter: l,
       rotation: (Math.random() - 0.5) * 10,
@@ -1070,7 +1088,7 @@ export function WordBlitz() {
           myCharacter={myDisplayCharacter}
           oppName={opponentDisplayName}
           oppCharacter={opponentDisplayCharacter}
-          onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(seededLetters(seed).map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
+          onPlayAgain={() => { setPhase('setup'); setGrid(emptyGrid()); setPool(randomLetters().map((l,i)=>({id:`${l}-${i}`,letter:l,rotation:(Math.random()-0.5)*10}))); setMyScore(0); setOppScore(0); setTimeLeft(GAME_SECONDS); botMovesDone.current.clear(); setOppGrid(emptyGrid()); setOppWords([]); }}
           onChat={() => {
             if (matchId) localStorage.setItem(`first_game_played_${matchId}`, 'true');
             if (matchId) navigate(`/match/${matchId}`); else navigate('/matches');
