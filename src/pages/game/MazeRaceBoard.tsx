@@ -200,6 +200,8 @@ export function MazeRaceBoard() {
   const myId = store.myUserId;
   const game = store.gameState;
   const keepaliveFailureLoggedRef = useRef(false);
+  /** Debounce timer so transient socket disconnects don't flash the overlay. */
+  const disconnectDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const finalizeMazeRaceInSupabase = useCallback(async (payload: {
     winner?: string;
@@ -309,8 +311,23 @@ export function MazeRaceBoard() {
       navigate(`/mazerace/${matchId}/result`);
     });
 
-    socket.on('mr_opponent_disconnected', () => setDisconnected(true));
-    socket.on('mr_opponent_reconnected', () => setDisconnected(false));
+    socket.on('mr_opponent_disconnected', () => {
+      // Debounce: wait 500ms before showing the overlay so transient
+      // transport upgrades / brief reconnect cycles don't flash a warning.
+      if (!disconnectDebounceRef.current) {
+        disconnectDebounceRef.current = setTimeout(() => {
+          disconnectDebounceRef.current = null;
+          setDisconnected(true);
+        }, 500);
+      }
+    });
+    socket.on('mr_opponent_reconnected', () => {
+      if (disconnectDebounceRef.current) {
+        clearTimeout(disconnectDebounceRef.current);
+        disconnectDebounceRef.current = null;
+      }
+      setDisconnected(false);
+    });
 
     socket.on('mr_error', ({ message }: { message: string }) => {
       useMazeRaceStore.getState().setError(message);
@@ -326,6 +343,10 @@ export function MazeRaceBoard() {
       socket.off('mr_opponent_disconnected');
       socket.off('mr_opponent_reconnected');
       socket.off('mr_error');
+      if (disconnectDebounceRef.current) {
+        clearTimeout(disconnectDebounceRef.current);
+        disconnectDebounceRef.current = null;
+      }
     };
   }, [matchId, myId, navigate, finalizeMazeRaceInSupabase]); // eslint-disable-line react-hooks/exhaustive-deps -- socket wiring once per match
 

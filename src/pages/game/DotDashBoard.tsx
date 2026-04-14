@@ -245,6 +245,8 @@ export function DotDashBoard() {
   const setIdentity = store.setIdentity;
   const readySentForGameIdRef = useRef<string | null>(null);
   const keepaliveFailureLoggedRef = useRef(false);
+  /** Debounce timer so transient socket disconnects don't flash the overlay. */
+  const disconnectDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Persist DotDash end state to Supabase so `games.winner` is never left NULL.
   // Without this, the partial unique index (winner IS NULL) keeps treating old
@@ -373,8 +375,23 @@ export function DotDashBoard() {
       navigate(`/dotdash/${gameId}/result`);
     });
 
-    socket.on('dd_opponent_disconnected', () => setDisconnected(true));
-    socket.on('dd_opponent_reconnected',  () => setDisconnected(false));
+    socket.on('dd_opponent_disconnected', () => {
+      // Debounce: wait 500ms before showing the overlay so transient
+      // transport upgrades / brief reconnect cycles don't flash a warning.
+      if (!disconnectDebounceRef.current) {
+        disconnectDebounceRef.current = setTimeout(() => {
+          disconnectDebounceRef.current = null;
+          setDisconnected(true);
+        }, 500);
+      }
+    });
+    socket.on('dd_opponent_reconnected', () => {
+      if (disconnectDebounceRef.current) {
+        clearTimeout(disconnectDebounceRef.current);
+        disconnectDebounceRef.current = null;
+      }
+      setDisconnected(false);
+    });
 
     socket.on('dd_error', ({ message }: { message: string }) => {
       store.setError(message);
@@ -389,6 +406,10 @@ export function DotDashBoard() {
       socket.off('dd_opponent_disconnected');
       socket.off('dd_opponent_reconnected');
       socket.off('dd_error');
+      if (disconnectDebounceRef.current) {
+        clearTimeout(disconnectDebounceRef.current);
+        disconnectDebounceRef.current = null;
+      }
     };
   }, [gameId, myId, navigate, store, finalizeDotDashInSupabase]); // eslint-disable-line react-hooks/exhaustive-deps
 

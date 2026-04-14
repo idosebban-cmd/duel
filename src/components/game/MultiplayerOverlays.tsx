@@ -207,6 +207,8 @@ export function useReconnectGrace(
   const [showForfeit, setShowForfeit] = useState(false);
   const prevBothPresentRef = useRef(false);
   const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Short debounce so transient presence drops don't flash the overlay. */
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isMultiplayer || gamePhase === resultPhase) {
@@ -216,6 +218,7 @@ export function useReconnectGrace(
 
     // If opponent abandoned, skip grace and show forfeit immediately
     if (opponentLeft) {
+      if (debounceTimerRef.current) { clearTimeout(debounceTimerRef.current); debounceTimerRef.current = null; }
       if (graceTimerRef.current) { clearTimeout(graceTimerRef.current); graceTimerRef.current = null; }
       setGraceActive(false);
       setShowForfeit(true);
@@ -224,20 +227,30 @@ export function useReconnectGrace(
     }
 
     // Detect transition: bothPresent was true → now false (opponent dropped)
-    if (prevBothPresentRef.current && !bothPresent && !showForfeit) {
-      setGraceActive(true);
-      graceTimerRef.current = setTimeout(() => {
-        graceTimerRef.current = null;
-        // Timer expired without recovery or abandon — dismiss grace overlay
-        // (polling will eventually pick up the abandon status)
-        setGraceActive(false);
-      }, 15000);
+    // Use a 500ms debounce so transient Realtime re-syncs don't trigger the overlay.
+    if (prevBothPresentRef.current && !bothPresent && !showForfeit && !graceActive) {
+      if (!debounceTimerRef.current) {
+        debounceTimerRef.current = setTimeout(() => {
+          debounceTimerRef.current = null;
+          // Still absent after debounce — activate grace period
+          setGraceActive(true);
+          graceTimerRef.current = setTimeout(() => {
+            graceTimerRef.current = null;
+            // Timer expired without recovery or abandon — dismiss grace overlay
+            // (polling will eventually pick up the abandon status)
+            setGraceActive(false);
+          }, 15000);
+        }, 500);
+      }
     }
 
-    // Opponent reconnected during grace period
-    if (bothPresent && graceActive) {
-      if (graceTimerRef.current) { clearTimeout(graceTimerRef.current); graceTimerRef.current = null; }
-      setGraceActive(false);
+    // Opponent came back during debounce or grace period
+    if (bothPresent) {
+      if (debounceTimerRef.current) { clearTimeout(debounceTimerRef.current); debounceTimerRef.current = null; }
+      if (graceActive) {
+        if (graceTimerRef.current) { clearTimeout(graceTimerRef.current); graceTimerRef.current = null; }
+        setGraceActive(false);
+      }
     }
 
     prevBothPresentRef.current = bothPresent;
@@ -245,7 +258,10 @@ export function useReconnectGrace(
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => { if (graceTimerRef.current) clearTimeout(graceTimerRef.current); };
+    return () => {
+      if (graceTimerRef.current) clearTimeout(graceTimerRef.current);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
   }, []);
 
   return { graceActive, showForfeit };
