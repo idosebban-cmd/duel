@@ -139,7 +139,7 @@ function AuthDeepLinkHandler() {
     void CapacitorApp.addListener('appUrlOpen', ({ url }) => {
       void (async () => {
         try {
-          console.log('[AuthDeepLink] incoming url:', url);
+          if (import.meta.env.DEV) console.log('[AuthDeepLink] incoming url:', url);
           const incoming = new URL(url);
 
           const fragment = incoming.hash?.replace(/^#/, '') ?? '';
@@ -148,15 +148,15 @@ function AuthDeepLinkHandler() {
           const refreshToken = params.get('refresh_token');
 
           if (accessToken && refreshToken && supabase) {
-            console.log('[AuthDeepLink] found tokens in hash, calling setSession');
+            if (import.meta.env.DEV) console.log('[AuthDeepLink] found tokens in hash, calling setSession');
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
             if (error) {
-              console.error('[AuthDeepLink] setSession failed:', error.message);
+              if (import.meta.env.DEV) console.error('[AuthDeepLink] setSession failed:', error.message);
             } else if (data.session) {
-              console.log('[AuthDeepLink] session established, navigating');
+              if (import.meta.env.DEV) console.log('[AuthDeepLink] session established, navigating');
             }
             const target = incoming.pathname || '/login';
             navigate(target, { replace: true });
@@ -165,7 +165,7 @@ function AuthDeepLinkHandler() {
 
           if (!incoming.hash && !incoming.search) return;
           const next = `${window.location.origin}${incoming.pathname}${incoming.search}${incoming.hash}`;
-          console.log('[AuthDeepLink] non-auth deep link, rewriting to:', next);
+          if (import.meta.env.DEV) console.log('[AuthDeepLink] non-auth deep link, rewriting to:', next);
           window.location.replace(next);
         } catch (err) {
           console.error('[auth] appUrlOpen', err);

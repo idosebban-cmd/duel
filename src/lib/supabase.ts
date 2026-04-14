@@ -13,8 +13,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-console.log('[supabase] creating client, window.location.hash:', typeof window !== 'undefined' ? window.location.hash : 'N/A');
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     detectSessionInUrl: true,

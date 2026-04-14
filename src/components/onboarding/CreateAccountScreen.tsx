@@ -92,15 +92,15 @@ export function CreateAccountScreen() {
 
   // ─── Handle Google OAuth redirect return ─────────────────────────────────────
   useEffect(() => {
-    console.log('[OAuthEffect] running, hash:', window.location.hash, 'hasOAuthHash:', hasOAuthRedirectHash(), 'oauthHandled:', oauthHandled.current);
+    if (import.meta.env.DEV) console.log('[OAuthEffect] running, hash:', window.location.hash, 'hasOAuthHash:', hasOAuthRedirectHash(), 'oauthHandled:', oauthHandled.current);
     if (oauthHandled.current || !supabase || !hasOAuthRedirectHash()) return;
     oauthHandled.current = true;
 
     setOauthBusy(true);
-    console.log('[OAuthEffect] entering OAuth handler block');
+    if (import.meta.env.DEV) console.log('[OAuthEffect] entering OAuth handler block');
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      console.log('[OAuthEffect] onAuthStateChange event:', event, 'session:', s ? 'present' : 'null');
+      if (import.meta.env.DEV) console.log('[OAuthEffect] onAuthStateChange event:', event, 'session:', s ? 'present' : 'null');
       if ((event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') || !s?.user) return;
       subscription.unsubscribe();
       setSession(s);
