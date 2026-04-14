@@ -59,13 +59,19 @@ export function CharacterCard({
           onClick={isSelectable && !isFlipped ? onClick : undefined}
           whileHover={isSelectable && !isFlipped ? { y: -2, scale: 1.02 } : {}}
         >
-          {/* Character image — contained with inset so sprites are not clipped */}
-          <img
-            src={character.image}
-            alt={character.name}
-            className={`absolute object-contain ${isLg ? 'inset-2' : 'inset-1.5'}`}
-            draggable={false}
-          />
+          {/* Character image — uniform fixed-size container so all sprites render at consistent size */}
+          <div
+            className={`absolute inset-0 flex items-center justify-center ${
+              isLg ? 'p-2 pb-7' : 'p-1 pb-4'
+            }`}
+          >
+            <img
+              src={character.image}
+              alt={character.name}
+              className="w-full h-full object-contain"
+              draggable={false}
+            />
+          </div>
 
           {/* Gradient overlay at the bottom for the name */}
           <div

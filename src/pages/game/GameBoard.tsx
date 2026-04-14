@@ -420,8 +420,8 @@ export function GameBoard() {
   const elapsedSecs = String(elapsed % 60).padStart(2, '0');
   const questionValid = !validateQuestion(question);
   // For display: who answered? During flip phase, current_turn is the asker.
-  // If it's my turn during flip → opponent answered.
-  const answererIsMe = !isMyTurn && turnPhase === 'answer';
+  // If it's my turn during flip → opponent answered; otherwise I answered.
+  const answererIsMe = turnPhase === 'flip' && !isMyTurn;
 
   return (
     <>
@@ -697,7 +697,7 @@ export function GameBoard() {
                   <span className="text-2xl">{currentAnswer === 'yes' ? '\u2705' : '\u274C'}</span>
                   <div>
                     <p className="font-body text-ui-caption text-white/70">
-                      {answererIsMe ? 'You' : 'Opponent'} answered:
+                      {answererIsMe ? 'You' : 'They'} answered:
                     </p>
                     <p
                       className="font-display font-extrabold text-xl"
