@@ -5,6 +5,9 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 
+/** Module-level token so it's accessible at logout time. */
+let currentDeviceToken: string | null = null;
+
 function getDataString(data: unknown, key: string): string | undefined {
   if (!data || typeof data !== 'object') return undefined;
   const v = (data as Record<string, unknown>)[key];
@@ -72,6 +75,7 @@ export function usePushNotifications(): void {
     listenerPromises.push(
       PushNotifications.addListener('registration', (t) => {
         tokenRef.current = t.value;
+        currentDeviceToken = t.value;
         const uid = userIdRef.current;
         if (uid) void upsertPushToken(uid, t.value);
       }),
@@ -130,4 +134,24 @@ export function usePushNotifications(): void {
     if (!uid || !token) return;
     void upsertPushToken(uid, token);
   }, [user?.id]);
+}
+
+/**
+ * Remove the current device's push token from `push_tokens` before sign-out.
+ * Fails silently so it never blocks logout.
+ */
+export async function removePushTokenForCurrentUser(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  const uid = useAuthStore.getState().user?.id;
+  if (!uid || !currentDeviceToken) return;
+  try {
+    const { error } = await supabase
+      .from('push_tokens')
+      .delete()
+      .eq('user_id', uid)
+      .eq('token', currentDeviceToken);
+    if (error) console.error('[push] delete push_token failed', error);
+  } catch (e) {
+    console.error('[push] delete push_token', e);
+  }
 }

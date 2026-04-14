@@ -22,6 +22,7 @@ import type { UserPrompt } from '../store/onboardingStore';
 import { promptCategoryIconSrc } from '../constants/promptCategoryIcons';
 import { checkProfileCompleteness } from '../utils/profileValidation';
 import { useIncomingChallengeBadge } from '../lib/useIncomingChallengeBadge';
+import { removePushTokenForCurrentUser } from '../hooks/usePushNotifications';
 import { fileToDataUrl } from '../lib/imageCrop';
 import { PhotoCropModal } from '../components/profile/PhotoCropModal';
 import { LocationCaptureField } from '../components/location/LocationCaptureField';
@@ -589,6 +590,7 @@ export function ProfileScreen() {
     setDeleteError(null);
     setDeletingAccount(true);
     try {
+      await removePushTokenForCurrentUser();
       await deleteUserAccount();
       await supabase?.auth.signOut();
       store.reset();
@@ -2179,7 +2181,7 @@ export function ProfileScreen() {
 
               {/* Logout */}
               <motion.button
-                onClick={async () => { await supabase?.auth.signOut(); useOnboardingStore.getState().reset(); navigate('/login'); }}
+                onClick={async () => { await removePushTokenForCurrentUser(); await supabase?.auth.signOut(); useOnboardingStore.getState().reset(); navigate('/login'); }}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-body text-ui-body font-bold mt-1"
                 style={{
                   background: 'rgba(78,255,196,0.07)',
