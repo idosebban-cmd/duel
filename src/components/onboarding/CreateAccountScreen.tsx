@@ -8,6 +8,8 @@ import { useAuthStore } from '../../store/authStore';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { SignupLegalConsent } from '../legal/SignupLegalConsent';
 import { getEmailRedirectTo, getOAuthRedirectTo } from '../../lib/authRedirect';
+import { getNativeAppleIdToken } from '../../lib/nativeAppleAuth';
+import { Capacitor } from '@capacitor/core';
 
 // Check if URL contains an OAuth redirect hash (access_token, etc.)
 function hasOAuthRedirectHash(): boolean {
@@ -152,6 +154,49 @@ export function CreateAccountScreen() {
     } catch (err) {
       console.error('[CreateAccount] Google OAuth threw:', err);
       setError('Google sign-in is not available. Please use email instead.');
+      setLoading(false);
+    }
+  };
+
+  // ─── Apple Sign-In ───────────────────────────────────────────────────────────
+  const handleAppleSignUp = async () => {
+    if (loading || oauthBusy) return;
+    setError(null);
+
+    if (!supabase) {
+      setError('Authentication is not configured.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const nativeIdToken = await getNativeAppleIdToken();
+      if (!nativeIdToken) {
+        setError('Apple sign-in is only available on the iOS app.');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: idTokenError } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: nativeIdToken,
+      });
+      if (idTokenError) {
+        setError(friendlyOAuthError(idTokenError.message));
+        setLoading(false);
+        return;
+      }
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        setLoading(false);
+        continueAfterAuth(data.session.user.id);
+        return;
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error('[CreateAccount] Apple sign-in threw:', err);
+      setError('Apple sign-in is not available. Please use email instead.');
       setLoading(false);
     }
   };
@@ -436,6 +481,28 @@ export function CreateAccountScreen() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
               >
+                {/* Apple button (native iOS only) */}
+                {Capacitor.isNativePlatform() && (
+                  <motion.button
+                    onClick={() => void handleAppleSignUp()}
+                    disabled={loading}
+                    className={`w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-display font-extrabold text-lg relative overflow-hidden ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
+                    style={{
+                      background: '#000000',
+                      border: '3px solid rgba(255,255,255,0.25)',
+                      boxShadow: loading ? 'none' : '0 0 20px rgba(0,0,0,0.5), 6px 6px 0px rgba(0,0,0,0.4)',
+                      color: '#FFFFFF',
+                    }}
+                    whileHover={loading ? {} : { scale: 1.03, boxShadow: '0 0 30px rgba(0,0,0,0.6), 6px 6px 0px rgba(0,0,0,0.4)' }}
+                    whileTap={loading ? {} : { scale: 0.97 }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                    </svg>
+                    CONTINUE WITH APPLE
+                  </motion.button>
+                )}
+
                 {/* Google button (primary) */}
                 <motion.button
                   onClick={handleGoogleSignUp}
