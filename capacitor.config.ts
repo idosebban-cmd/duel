@@ -21,6 +21,14 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       backgroundColor: '#12122A',
     },
+    SocialLogin: {
+      providers: {
+        google: true,
+        facebook: false,
+        apple: true,
+        twitter: false,
+      },
+    },
   },
 };
 

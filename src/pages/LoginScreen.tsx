@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { SignupLegalConsent } from '../components/legal/SignupLegalConsent';
 import { getEmailRedirectTo, getOAuthRedirectTo, getPasswordResetRedirectTo } from '../lib/authRedirect';
+import { getNativeGoogleIdToken } from '../lib/nativeGoogleAuth';
 
 function hasOAuthRedirectHash(): boolean {
   const hash = window.location.hash;
@@ -161,6 +162,28 @@ export function LoginScreen() {
 
     setLoading(true);
     try {
+      // Native (iOS/Android): use in-app Google Sign-In via ASWebAuthenticationSession,
+      // then exchange the ID token with Supabase directly — never leaves the app.
+      const nativeIdToken = await getNativeGoogleIdToken();
+      if (nativeIdToken) {
+        const { data, error: idTokenError } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: nativeIdToken,
+        });
+        if (idTokenError) {
+          setError(friendlyOAuthError(idTokenError.message));
+          setLoading(false);
+          return;
+        }
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Web fallback: redirect-based OAuth flow
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
