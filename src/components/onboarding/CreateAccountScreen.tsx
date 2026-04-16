@@ -481,7 +481,7 @@ export function CreateAccountScreen() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
               >
-                {/* Apple button (native iOS only) */}
+                {/* Apple button (primary — Apple HIG: must appear first) */}
                 {Capacitor.isNativePlatform() && (
                   <motion.button
                     onClick={() => void handleAppleSignUp()}
