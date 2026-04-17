@@ -179,7 +179,7 @@ export function GamePicker() {
               key={game.id}
               onClick={() => handleGameSelect(game)}
               disabled={busy}
-              className="group relative rounded-3xl p-6 text-left overflow-hidden transition-all"
+              className="group relative rounded-3xl p-6 lg:p-5 text-left overflow-hidden transition-all"
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: '3px solid rgba(255,255,255,0.1)',
@@ -205,18 +205,18 @@ export function GamePicker() {
               {/* Content */}
               <div className="relative flex flex-col h-full gap-4">
                 {/* Icon + name */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 lg:gap-2 min-w-0">
                   <img
                     src={game.imgSrc}
                     alt={game.name}
                     className={
                       game.id === 'hangman' || game.id === 'guess_who'
-                        ? 'w-14 h-14 sm:w-16 sm:h-16 object-contain flex-shrink-0'
-                        : 'w-12 h-12 object-contain flex-shrink-0'
+                        ? 'w-14 h-14 sm:w-16 sm:h-16 lg:w-10 lg:h-10 object-contain flex-shrink-0'
+                        : 'w-12 h-12 lg:w-9 lg:h-9 object-contain flex-shrink-0'
                     }
                     draggable={false}
                   />
-                  <h2 className="font-display font-extrabold text-2xl text-white">
+                  <h2 className="font-display font-extrabold text-2xl lg:text-base text-white leading-tight break-words min-w-0">
                     {game.name}
                   </h2>
                 </div>
