@@ -9,6 +9,7 @@ import { Input } from '../ui/Input';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { LocationCaptureField, LOCATION_MAPS_KEY } from '../location/LocationCaptureField';
 import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 const basicsSchema = z.object({
   name: z
@@ -106,6 +107,8 @@ export function BasicsForm() {
 
   const allValid = isValid && selectedGender !== null && selectedInterest !== null;
 
+  const { scrollRef } = useOnboardingScroll<HTMLFormElement>(allValid);
+
   const onSubmit = (data: BasicsFormData) => {
     if (!selectedGender || !selectedInterest) return;
     const lat = useOnboardingStore.getState().latitude;
@@ -153,7 +156,7 @@ export function BasicsForm() {
         <div className="w-14 flex-shrink-0" />
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <form ref={scrollRef} onSubmit={handleSubmit(onSubmit)} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <motion.div className="max-w-lg mx-auto space-y-7" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Input dark label="WHAT SHOULD WE CALL YOU?" placeholder="Your name..." error={errors.name?.message} success={!errors.name && !!watch('name')} {...register('name')} />
 

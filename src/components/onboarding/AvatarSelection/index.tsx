@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../../ui/Icons';
@@ -6,6 +6,7 @@ import { CharacterStep } from './CharacterStep';
 import { ElementStep } from './ElementStep';
 import { AffiliationStep } from './AffiliationStep';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../../store/onboardingStore';
+import { useOnboardingScroll } from '../../../hooks/useOnboardingScroll';
 
 const subSteps = ['Character', 'Element', 'Affiliation'];
 
@@ -37,6 +38,12 @@ export function AvatarSelection() {
     !!localElement,
     !!localAffiliation,
   ][subStep];
+
+  const { scrollRef, resetToTop } = useOnboardingScroll<HTMLDivElement>(canContinue);
+
+  useEffect(() => {
+    resetToTop();
+  }, [subStep, resetToTop]);
 
   const handleContinue = () => {
     if (subStep < 2) {
@@ -96,7 +103,7 @@ export function AvatarSelection() {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 py-4 pb-6">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 py-4 pb-6">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div key={subStep} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
             {subStep === 0 && <CharacterStep selected={localChar} onSelect={setLocalChar} />}

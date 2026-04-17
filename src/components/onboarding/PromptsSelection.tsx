@@ -5,6 +5,7 @@ import { ArrowLeft, Shuffle, X, ChevronDown, ChevronUp } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS, type UserPrompt } from '../../store/onboardingStore';
 import { promptCategoryIconSrc } from '../../constants/promptCategoryIcons';
 import { GOLD_SELECTION, GoldCornerCheckmarkSm } from './SelectionChrome';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 // ─── Prompt library ───────────────────────────────────────────────────────────
 
@@ -274,6 +275,8 @@ export function PromptsSelection() {
   const isMaxSelected = selected.length >= 3;
   const isComplete = selected.length === 3 && selected.every(p => p.answer.trim().length > 0);
 
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(isComplete);
+
   const promptsByCategory = useMemo(() =>
     Object.fromEntries(
       CATEGORIES.map(c => [c.key, ALL_PROMPTS.filter(p => p.category === c.key)])
@@ -383,7 +386,7 @@ export function PromptsSelection() {
       </div>
 
       {/* Scrollable content */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <div className="max-w-lg mx-auto">
 
           {/* Header */}

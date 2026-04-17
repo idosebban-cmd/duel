@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, X, Camera, AlertCircle } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { fileToDataUrl } from '../../lib/imageCrop';
 import { PhotoCropModal } from '../profile/PhotoCropModal';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 const MAX_PHOTOS = 5;
 const MIN_PHOTOS = 2;
@@ -133,6 +134,8 @@ export function PhotoUpload() {
 
   const canContinue = photos.length >= MIN_PHOTOS;
 
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(canContinue);
+
   // Build the grid: always show 5 slots
   const slots = [
     ...photos,
@@ -161,7 +164,7 @@ export function PhotoUpload() {
         <div className="w-14 flex-shrink-0" />
       </div>
 
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <motion.div className="text-center mb-6" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>

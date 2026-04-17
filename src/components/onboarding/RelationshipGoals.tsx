@@ -5,6 +5,7 @@ import { ArrowLeft } from '../ui/Icons';
 import { GOLD_SELECTION, GoldCornerCheckmark } from './SelectionChrome';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { ENABLE_JUST_PLAY } from '../../lib/featureFlags';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 type GoalOption = {
   id: string;
@@ -111,6 +112,9 @@ export function RelationshipGoals() {
   const { lookingFor, updateRelationship, intent, setIntent, completeStep } = useOnboardingStore();
   const [showTooltip, setShowTooltip] = useState(false);
 
+  const canContinue = lookingFor.length > 0 || (ENABLE_JUST_PLAY && intent === 'play');
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(canContinue);
+
   const handleSelect = (id: string) => {
     updateRelationship(id);
   };
@@ -146,7 +150,7 @@ export function RelationshipGoals() {
         </motion.button>
       </div>
 
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <motion.div className="text-center mb-8" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
