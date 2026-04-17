@@ -49,6 +49,7 @@ import { getProfile } from './lib/database';
 import { supabase as supabaseClient } from './lib/supabase';
 import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { DesktopFrame } from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -534,6 +535,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <DesktopFrame>
       {showLaunchSplash ? (
         <SplashScreen
           onDismiss={() => {
@@ -633,6 +635,7 @@ export default function App() {
           </Routes>
         </ErrorBoundary>
       </AnimatePresence>
+      </DesktopFrame>
     </BrowserRouter>
   );
 }
