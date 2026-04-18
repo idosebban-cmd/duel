@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 // ─── Dual-handle range slider (inline) ──────────────────────────────────────
 
@@ -117,6 +118,8 @@ export function PreferencesStep() {
   const [distance, setDistance] = useState(preferredDistance ?? 50);
   const [anywhere, setAnywhere] = useState(preferredDistance === null);
 
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(false);
+
   const handleContinue = useCallback(() => {
     // Update interestedIn in Basics (single source of truth)
     const st = useOnboardingStore.getState();
@@ -164,7 +167,7 @@ export function PreferencesStep() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <motion.div className="text-center mb-8" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>

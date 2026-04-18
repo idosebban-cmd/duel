@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 const MAX_LENGTH = 300;
 
@@ -12,6 +13,8 @@ export function BioStep() {
   const [value, setValue] = useState(bio);
 
   const hasContent = value.trim().length > 0;
+
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(false);
 
   const handleContinue = () => {
     updateBio(value.trim());
@@ -41,7 +44,7 @@ export function BioStep() {
         <div className="w-[72px] flex-shrink-0" aria-hidden />
       </div>
 
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="max-w-lg mx-auto">
           {/* Header */}
           <motion.div className="text-center mb-8" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>

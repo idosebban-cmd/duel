@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 interface Question {
   id: 'kids' | 'drinking' | 'smoking' | 'cannabis' | 'pets' | 'exercise';
@@ -79,6 +80,8 @@ export function LifestyleQuestions() {
     [kids, drinking, smoking, cannabis, pets, exercise],
   );
 
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(allAnswered);
+
   const handleContinue = () => {
     if (!allAnswered) return;
     completeStep(8);
@@ -105,7 +108,7 @@ export function LifestyleQuestions() {
         <div className="w-14 flex-shrink-0" />
       </div>
 
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-36">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-36">
         <div className="max-w-lg mx-auto w-full space-y-8 py-2">
           {questions.map((question) => {
             const currentAnswer = answers[question.id];

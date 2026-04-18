@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X } from '../ui/Icons';
 import { useOnboardingStore, ONBOARDING_PROGRESS_DOTS } from '../../store/onboardingStore';
 import { GOLD_SELECTION, GoldCornerCheckmark } from './SelectionChrome';
+import { useOnboardingScroll } from '../../hooks/useOnboardingScroll';
 
 interface GameType {
   id: string;
@@ -70,6 +71,8 @@ export function GameSelection() {
 
   const canContinue = selected.length >= MIN_SELECTION;
 
+  const { scrollRef } = useOnboardingScroll<HTMLDivElement>(canContinue);
+
   const handleContinue = () => {
     updateGameTypes(selected);
     updateFavoriteGames(favorites.filter(Boolean));
@@ -107,7 +110,7 @@ export function GameSelection() {
         </motion.button>
       </div>
 
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="max-w-lg mx-auto space-y-8">
           {/* Part A: Game Types */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
