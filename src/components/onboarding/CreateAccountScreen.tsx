@@ -43,6 +43,7 @@ export function CreateAccountScreen() {
   const [loading, setLoading] = useState(false);
   const [oauthBusy, setOauthBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicateEmail, setDuplicateEmail] = useState(false);
   const [resendBusy, setResendBusy] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [emailFocused, setEmailFocused] = useState(false);
@@ -230,6 +231,7 @@ export function CreateAccountScreen() {
     console.log('sign-up attempted', email);
     if (loading || oauthBusy) return;
     setError(null);
+    setDuplicateEmail(false);
 
     if (!supabase) {
       setError('Authentication is not configured.');
@@ -256,6 +258,17 @@ export function CreateAccountScreen() {
 
       if (authError) {
         setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Supabase does not surface an error for duplicate-email signup (by design,
+      // to prevent enumeration). The tell is an empty `identities` array on the
+      // returned user. Treat that as a duplicate and steer the user to sign in.
+      const isDuplicate = !data.session && data.user?.identities?.length === 0;
+      if (isDuplicate) {
+        setError('Looks like you already have an account with this email.');
+        setDuplicateEmail(true);
         setLoading(false);
         return;
       }
@@ -468,6 +481,16 @@ export function CreateAccountScreen() {
                 exit={{ opacity: 0 }}
               >
                 <p>{error}</p>
+                {duplicateEmail && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login?mode=signin')}
+                    className="mt-2 font-semibold underline underline-offset-2"
+                    style={{ color: '#FF6BA8' }}
+                  >
+                    Sign in instead →
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
