@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.playduel",
+      "sha256_cert_fingerprints": [
+        "0B:3C:4F:81:75:28:B9:52:17:87:18:7A:03:8F:C1:6C:7D:14:58:F3:28:87:7D:AF:A7:31:98:73:A2:81:70:19"
+      ]
+    }
+  }
+]
