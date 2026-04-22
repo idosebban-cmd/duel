@@ -45,6 +45,7 @@ import { Draughts } from './pages/game/Draughts';
 import { ConnectFour } from './pages/game/ConnectFour';
 import { Battleship } from './pages/game/Battleship';
 import { Hangman } from './pages/game/Hangman';
+import { WorldTest } from './pages/WorldTest';
 import { getProfile } from './lib/database';
 import { supabase as supabaseClient } from './lib/supabase';
 import { prepareAcceptedChallenge, resolveGameRoute, normalizeGameType } from './lib/challengeGameFlow';
@@ -630,6 +631,9 @@ export default function App() {
           <Route path="/mazerace/:matchId/lobby" element={<ProtectedRoute><MazeRaceLobby /></ProtectedRoute>} />
           <Route path="/mazerace/:matchId/play" element={<ProtectedRoute><ErrorBoundary><MazeRaceBoard /></ErrorBoundary></ProtectedRoute>} />
           <Route path="/mazerace/:matchId/result" element={<ProtectedRoute><MazeRaceResult /></ProtectedRoute>} />
+
+          {/* PixiJS spike — standalone, no auth */}
+          <Route path="/world-test" element={<WorldTest />} />
 
           <Route path="*" element={<Navigate to="/onboarding/welcome" replace />} />
           </Routes>
