@@ -565,8 +565,7 @@ export default function App() {
           <Route path="/landing" element={<LandingPage />} />
 
           {/* Welcome screen (public — entry point) */}
-          {/* TEMPORARY: root redirected to /world-test for PixiJS spike. Restore `element={<RootRedirect />}` after testing. */}
-          <Route path="/" element={<Navigate to="/world-test" replace />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/onboarding/welcome" element={<WelcomeScreen />} />
 
           {/* Onboarding (sign-up is step 2; profile steps require auth via OnboardingGuard) */}
