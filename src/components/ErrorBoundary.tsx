@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/capacitor';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -23,9 +24,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true };
   }
 
-  public componentDidCatch(error: unknown) {
+  public componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
     // eslint-disable-next-line no-console
     console.error('[ErrorBoundary] caught error:', error);
+    Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
   }
 
   private handleTryAgain = () => {
