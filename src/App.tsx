@@ -474,7 +474,7 @@ function GlobalChallengeListener() {
 }
 
 /** Defers client-side redirect from `/` when the URL hash is a Supabase auth callback so GoTrue can parse tokens before history.replaceState drops the fragment. */
-function RootRedirect() {
+export function RootRedirect() {
   const navigate = useNavigate();
   const session = useAuthStore((s) => s.session);
 
